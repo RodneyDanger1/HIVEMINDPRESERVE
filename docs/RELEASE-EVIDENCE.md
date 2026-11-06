@@ -15,19 +15,17 @@ artifact hashes. Exact 1.1.0 artifact hashes appear here only after the sealed 1
 - **Replay:** `HISTORY_REVISION_SET` → read-only `HISTORY_SNAPSHOT`; canvas projects snapshot nodes/edges; browser
   proof recorded in the 1.1 wave.
 - **State parity:** 16 states including `interrupted` (backend and web).
-- **Artifact hashes:** not yet sealed for 1.1.0. The authoritative values will be the `artifacts` / `package` blocks
-  of `tools/release-manifest.json` after `tools/build-release.ps1` runs on the tagged, clean tree; this document must
-  then quote those values verbatim (no hand-copied or estimated hashes). Until then `tools/release-manifest.json`
-  still records the 1.0.0 sealed build as historical.
-- **Live paid-provider streaming smoke on a 1.1.0 artifact:** not yet run (no sealed 1.1.0 binary; no key access).
-  Streaming is proven offline (wiremock matrix) plus the 1.1 backend test log, not by a paid call.
+- **Artifact hashes (sealed 1.1.0 build):** `hiverouter.exe` `9c3174fb7c118143139ff283c08a3190c8e146a831717fb3ff8e25d6468d7207` (13,624,320 B); `hiverouter-cli.exe` `f757f55833f52f626cff6f962d31cb18d740dab53e314c5ba6048599f09214df` (5,372,416 B); `dist/HiveMind-1.1.0-win64.zip` `af2345f663643f1c0d1dbc18a298511817bf38090351d5f5b4842418f4d63e56` (8,613,122 B). Authoritative registry: `tools/release-manifest.json` (`version=1.1.0`, source `87079cecf6a4cf2212b9d41e56f4c7643a97c7fe`, tag `hivemind-1.1.0`). Zip extraction verified 6 members + CHECKSUMS.
+- **Live paid-provider streaming smoke on the sealed release binary:** `target/release/hiverouter.exe` via the live e2e harness with `LIVE_ONE_PROMPT=1` and `E2E_SERVER_BIN=target/release/hiverouter.exe`; `live-streaming.spec.ts` **3 passed** (boot, no-key fail-closed, paid ordered `REPLY_DELTA -> REPLY_DONE -> RUN_STATUS completed`), and `live-replay.spec.ts` **2 passed** (unknown-run refusal, paid `HISTORY_SNAPSHOT` >=2 nodes with read-only UI). No key material was written to evidence.
 
 ## Test evidence at the 1.1 baseline
 
-- Backend 1.1 log: `docs/evidence/1.1-backend-tests.log` (recorded 2026-11-06 15:55; includes the streaming adapter
-  matrix). Earlier `docs/evidence/final-gate-tests.log` is the historical 1.0.0 gate log, not the 1.1 gate.
-- Web: 46+ unit tests / typecheck / production build at the 1.0.0 baseline; re-run on the sealed 1.1.0 build before
-  quoting green counts.
+- Backend 1.1 gate: **286 passed / 0 failed / 2 ignored** (`docs/evidence/1.1-backend-final.log`; includes the
+  truncation, provider-error, prompt-asset and streaming suites).
+- Web: **93/93** unit tests (15 files), typecheck 0 errors, production build green.
+- Docs truth checker: **11/11 checks, 0 violations** (`node tools/qa/check-docs-truth.mjs`).
+- Release build log: `docs/evidence/1.1-release-build-4.log` (web build, cargo build, deterministic zip, extraction
+  verification, manifest write, absolute-path scan, DONE).
 
 <!-- docs-truth:historical:start -->
 ## Historical: HiveMind 1.0.0 (SUPERSEDED)
