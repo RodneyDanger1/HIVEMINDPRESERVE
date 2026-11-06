@@ -1,0 +1,1442 @@
+{
+  "contract": "hiverouter.v1",
+  "envelope": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Envelope",
+    "description": "One wire frame.",
+    "type": "object",
+    "properties": {
+      "schema": {
+        "description": "Contract schema id; always [`SCHEMA_VERSION`].",
+        "type": "string"
+      },
+      "type": {
+        "description": "Frame direction discriminator (wire field `type`).",
+        "$ref": "#/$defs/FrameKind"
+      },
+      "name": {
+        "description": "Command or event name from the frozen vocabulary.",
+        "type": "string"
+      },
+      "id": {
+        "description": "Unique frame id (uuid-v7).",
+        "type": "string",
+        "format": "uuid"
+      },
+      "correlation_id": {
+        "description": "Stable across a request/ACK/ERROR/event chain (uuid-v7).",
+        "type": "string",
+        "format": "uuid"
+      },
+      "run_id": {
+        "description": "Run this frame belongs to, if any.",
+        "anyOf": [
+          {
+            "$ref": "#/$defs/RunId"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "task_id": {
+        "description": "Task this frame belongs to, if any.",
+        "anyOf": [
+          {
+            "$ref": "#/$defs/TaskId"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "seq": {
+        "description": "Server event sequence number; `None` on commands and pre-sequenced events.",
+        "type": [
+          "integer",
+          "null"
+        ],
+        "format": "uint64",
+        "minimum": 0,
+        "default": null
+      },
+      "ts": {
+        "description": "RFC3339 creation timestamp.",
+        "$ref": "#/$defs/Timestamp"
+      },
+      "payload": {
+        "description": "Command/event specific body."
+      }
+    },
+    "required": [
+      "schema",
+      "type",
+      "name",
+      "id",
+      "correlation_id",
+      "ts",
+      "payload"
+    ],
+    "$defs": {
+      "FrameKind": {
+        "description": "Envelope `type` discriminator.",
+        "oneOf": [
+          {
+            "description": "Client -> server frame.",
+            "type": "string",
+            "const": "COMMAND"
+          },
+          {
+            "description": "Server -> client frame.",
+            "type": "string",
+            "const": "EVENT"
+          }
+        ]
+      },
+      "RunId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "TaskId": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  },
+  "commands": {
+    "SUBMIT_PROMPT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "SubmitPrompt",
+      "description": "`SUBMIT_PROMPT` payload.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "description": "Prompt text, 1..=8000 characters.",
+          "type": "string"
+        },
+        "project_id": {
+          "description": "Project/workspace the run belongs to.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "project_id"
+      ]
+    },
+    "SPAWN_SUB_HIVE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "SpawnSubHive",
+      "description": "`SPAWN_SUB_HIVE` payload.",
+      "type": "object",
+      "properties": {
+        "parent_task_id": {
+          "description": "Parent task to spawn under.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "role": {
+          "description": "Agent role/tier name for the child.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "parent_task_id",
+        "role"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "REWIRE_TASK": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "RewireTask",
+      "description": "`REWIRE_TASK` payload.",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task to move.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "new_parent_id": {
+          "description": "New parent task.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "expected_rev": {
+          "description": "Optimistic-concurrency revision the client observed.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "task_id",
+        "new_parent_id",
+        "expected_rev"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "CANCEL_RUN": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "CancelRun",
+      "description": "`CANCEL_RUN` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run to cancel.",
+          "$ref": "#/$defs/RunId"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "KILL_WORKER": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "KillWorker",
+      "description": "`KILL_WORKER` payload.",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task whose worker should be killed.",
+          "$ref": "#/$defs/TaskId"
+        }
+      },
+      "required": [
+        "task_id"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "CHAT_PIN": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ChatPin",
+      "description": "`CHAT_PIN` payload.",
+      "type": "object",
+      "properties": {
+        "pinned": {
+          "description": "Pinned state of the chat surface.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pinned"
+      ]
+    },
+    "TEMPLATE_INSERT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "TemplateInsert",
+      "description": "`TEMPLATE_INSERT` payload.",
+      "type": "object",
+      "properties": {
+        "template_id": {
+          "description": "Template manifest row id.",
+          "type": "string"
+        },
+        "project_id": {
+          "description": "Project/workspace the nodes are inserted into.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "template_id",
+        "project_id"
+      ]
+    },
+    "HISTORY_REVISION_SET": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "HistoryRevisionSet",
+      "description": "`HISTORY_REVISION_SET` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run whose history is requested.",
+          "$ref": "#/$defs/RunId"
+        },
+        "revision": {
+          "description": "Revision to read; must be <= latest.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "run_id",
+        "revision"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "VIEWPORT_SET": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ViewportSet",
+      "description": "`VIEWPORT_SET` payload.",
+      "type": "object",
+      "properties": {
+        "x": {
+          "description": "Canvas x translation.",
+          "type": "number",
+          "format": "double"
+        },
+        "y": {
+          "description": "Canvas y translation.",
+          "type": "number",
+          "format": "double"
+        },
+        "zoom": {
+          "description": "Zoom factor, 0.1..=3.0.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "zoom"
+      ]
+    },
+    "VIEWPORT_RECENTER": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ViewportRecenter",
+      "description": "`VIEWPORT_RECENTER` payload (no fields; a recenter request is `{}`).",
+      "type": "object"
+    }
+  },
+  "events": {
+    "ACK": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Ack",
+      "description": "`ACK` payload.",
+      "type": "object",
+      "properties": {
+        "command": {
+          "description": "Command that was accepted.",
+          "$ref": "#/$defs/CommandName"
+        },
+        "correlation_id": {
+          "description": "Correlation id shared with the request frame.",
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "command",
+        "correlation_id"
+      ],
+      "$defs": {
+        "CommandName": {
+          "description": "Command names of the frozen vocabulary.",
+          "oneOf": [
+            {
+              "description": "`SUBMIT_PROMPT` — user submits a prompt, creates a run.",
+              "type": "string",
+              "const": "SUBMIT_PROMPT"
+            },
+            {
+              "description": "`SPAWN_SUB_HIVE` — spawn a child task.",
+              "type": "string",
+              "const": "SPAWN_SUB_HIVE"
+            },
+            {
+              "description": "`REWIRE_TASK` — move a task under a different parent.",
+              "type": "string",
+              "const": "REWIRE_TASK"
+            },
+            {
+              "description": "`CANCEL_RUN` — cancel an active run.",
+              "type": "string",
+              "const": "CANCEL_RUN"
+            },
+            {
+              "description": "`KILL_WORKER` — kill a running worker.",
+              "type": "string",
+              "const": "KILL_WORKER"
+            },
+            {
+              "description": "`CHAT_PIN` — pin chat (client surface only).",
+              "type": "string",
+              "const": "CHAT_PIN"
+            },
+            {
+              "description": "`TEMPLATE_INSERT` — insert a template node set.",
+              "type": "string",
+              "const": "TEMPLATE_INSERT"
+            },
+            {
+              "description": "`HISTORY_REVISION_SET` — request a history revision snapshot.",
+              "type": "string",
+              "const": "HISTORY_REVISION_SET"
+            },
+            {
+              "description": "`VIEWPORT_SET` — set viewport (client-only, no server effect).",
+              "type": "string",
+              "const": "VIEWPORT_SET"
+            },
+            {
+              "description": "`VIEWPORT_RECENTER` — recenter viewport (client-only, no server effect).",
+              "type": "string",
+              "const": "VIEWPORT_RECENTER"
+            },
+            {
+              "description": "`DIFF_PROPOSE` — decision-gated, NOT frozen in v1.",
+              "type": "string",
+              "const": "DIFF_PROPOSE"
+            },
+            {
+              "description": "`DIFF_APPLY` — decision-gated, NOT frozen in v1.",
+              "type": "string",
+              "const": "DIFF_APPLY"
+            },
+            {
+              "description": "`DIFF_REJECT` — decision-gated, NOT frozen in v1.",
+              "type": "string",
+              "const": "DIFF_REJECT"
+            }
+          ]
+        }
+      }
+    },
+    "ERROR": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ErrorPayload",
+      "description": "`ERROR` payload — a typed refusal, never a silent drop.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "Stable refusal code (`E_*`).",
+          "type": "string"
+        },
+        "message": {
+          "description": "Human-readable cause.",
+          "type": "string"
+        },
+        "how_to_fix": {
+          "description": "Actionable remedy shown by the UI.",
+          "type": "string"
+        },
+        "retryable": {
+          "description": "Whether retrying the same request may succeed.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "how_to_fix",
+        "retryable"
+      ]
+    },
+    "SERVER_HELLO": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ServerHello",
+      "description": "`SERVER_HELLO` payload.",
+      "type": "object",
+      "properties": {
+        "last_seq": {
+          "description": "Last server sequence number the client had seen; `None` for a fresh client.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "schema": {
+          "description": "Contract schema id.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema"
+      ]
+    },
+    "RESYNC_REQUIRED": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ResyncRequiredPayload",
+      "description": "`RESYNC_REQUIRED` payload.",
+      "type": "object",
+      "properties": {
+        "expected_seq": {
+          "description": "First sequence number the client needs before applying diffs.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "last_seq": {
+          "description": "Last sequence number the client reported.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "expected_seq",
+        "last_seq"
+      ]
+    },
+    "RUN_CREATED": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "RunCreated",
+      "description": "`RUN_CREATED` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "New run id.",
+          "$ref": "#/$defs/RunId"
+        },
+        "status": {
+          "description": "Initial run status (`queued`).",
+          "$ref": "#/$defs/AgentState"
+        }
+      },
+      "required": [
+        "run_id",
+        "status"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "RUN_STATUS": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "RunStatusPayload",
+      "description": "`RUN_STATUS` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run id.",
+          "$ref": "#/$defs/RunId"
+        },
+        "status": {
+          "description": "New run status.",
+          "$ref": "#/$defs/AgentState"
+        },
+        "error_code": {
+          "description": "Refusal code when the run failed; absent otherwise.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "run_id",
+        "status"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "REPLY_DELTA": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ReplyDelta",
+      "description": "`REPLY_DELTA` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run the delta belongs to.",
+          "$ref": "#/$defs/RunId"
+        },
+        "text_delta": {
+          "description": "Incremental assistant text.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id",
+        "text_delta"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "REPLY_DONE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ReplyDone",
+      "description": "`REPLY_DONE` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run the reply belongs to.",
+          "$ref": "#/$defs/RunId"
+        },
+        "usage": {
+          "description": "Provider usage for the reply; absent counters stay absent.",
+          "$ref": "#/$defs/Usage"
+        }
+      },
+      "required": [
+        "run_id",
+        "usage"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "Usage": {
+          "description": "Token/cache counters reported by the provider for one call or one run.\n\nAll fields are optional because the provider may omit any of them; `None`\nmeans \"not reported\", not zero.",
+          "type": "object",
+          "properties": {
+            "prompt_tokens": {
+              "description": "Prompt tokens billed for the request.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            },
+            "completion_tokens": {
+              "description": "Completion tokens generated by the model.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            },
+            "total_tokens": {
+              "description": "Total tokens reported by the provider.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            },
+            "prompt_cache_hit_tokens": {
+              "description": "Prompt tokens served from the provider cache.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            },
+            "prompt_cache_miss_tokens": {
+              "description": "Prompt tokens not served from the provider cache.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            },
+            "reasoning_tokens": {
+              "description": "Reasoning tokens included in the completion.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0,
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    "NODE_SPAWN": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "NodeEvent",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task id.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "state": {
+          "description": "New node state.",
+          "$ref": "#/$defs/AgentState"
+        }
+      },
+      "required": [
+        "task_id",
+        "state"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "NODE_DRAG": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "NodeEvent",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task id.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "state": {
+          "description": "New node state.",
+          "$ref": "#/$defs/AgentState"
+        }
+      },
+      "required": [
+        "task_id",
+        "state"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "NODE_REWIRE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "NodeEvent",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task id.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "state": {
+          "description": "New node state.",
+          "$ref": "#/$defs/AgentState"
+        }
+      },
+      "required": [
+        "task_id",
+        "state"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "NODE_STATE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "NodeEvent",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "description": "Task id.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "state": {
+          "description": "New node state.",
+          "$ref": "#/$defs/AgentState"
+        }
+      },
+      "required": [
+        "task_id",
+        "state"
+      ],
+      "$defs": {
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "AgentState": {
+          "description": "One agent/node/run state.\n\nThe frozen minimum set is 15 values (`healthy .. loading`); `Interrupted` is\na recorded superset addition needed by the Phase 9 crash-recovery read model\n(a run killed mid-flight must be distinguishable from `cancelled`).",
+          "oneOf": [
+            {
+              "description": "Node is healthy and idle.",
+              "type": "string",
+              "const": "healthy"
+            },
+            {
+              "description": "Node is executing.",
+              "type": "string",
+              "const": "running"
+            },
+            {
+              "description": "Node is queued and has not started.",
+              "type": "string",
+              "const": "queued"
+            },
+            {
+              "description": "Node/run failed.",
+              "type": "string",
+              "const": "failed"
+            },
+            {
+              "description": "Node/run completed.",
+              "type": "string",
+              "const": "completed"
+            },
+            {
+              "description": "Run was cancelled by the user.",
+              "type": "string",
+              "const": "cancelled"
+            },
+            {
+              "description": "Worker was killed by `KILL_WORKER`.",
+              "type": "string",
+              "const": "killed"
+            },
+            {
+              "description": "Agent is planning (intent -> task DAG).",
+              "type": "string",
+              "const": "planning"
+            },
+            {
+              "description": "Agent is thinking (model reasoning phase).",
+              "type": "string",
+              "const": "thinking"
+            },
+            {
+              "description": "Agent is waiting for an approval decision.",
+              "type": "string",
+              "const": "awaiting_approval"
+            },
+            {
+              "description": "Agent reply is streaming.",
+              "type": "string",
+              "const": "streaming"
+            },
+            {
+              "description": "Client-side transport state: reconnecting.",
+              "type": "string",
+              "const": "reconnecting"
+            },
+            {
+              "description": "Client-side transport state: replaying buffered events.",
+              "type": "string",
+              "const": "replay"
+            },
+            {
+              "description": "No data yet.",
+              "type": "string",
+              "const": "empty"
+            },
+            {
+              "description": "Data is loading.",
+              "type": "string",
+              "const": "loading"
+            },
+            {
+              "description": "Run was interrupted by a crash/restart and recovered from a snapshot.",
+              "type": "string",
+              "const": "interrupted"
+            }
+          ]
+        }
+      }
+    },
+    "RUN_METRICS": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "RunMetrics",
+      "description": "`RUN_METRICS` payload.",
+      "type": "object",
+      "properties": {
+        "superagents": {
+          "description": "Super-agent count.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "workers": {
+          "description": "Worker count.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "green_pct": {
+          "description": "Percentage of green nodes (0..=100).",
+          "type": "number",
+          "format": "double"
+        },
+        "delta": {
+          "description": "Change in green percentage since the previous metrics frame.",
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "required": [
+        "superagents",
+        "workers",
+        "green_pct",
+        "delta"
+      ]
+    },
+    "APPROVAL_REQUEST": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ApprovalRequest",
+      "description": "`APPROVAL_REQUEST` payload.",
+      "type": "object",
+      "properties": {
+        "approval_id": {
+          "description": "Approval id.",
+          "$ref": "#/$defs/ApprovalId"
+        },
+        "tool": {
+          "description": "Tool name awaiting approval.",
+          "type": "string"
+        },
+        "decision": {
+          "description": "Pending decision; absent while the request is open.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "approval_id",
+        "tool"
+      ],
+      "$defs": {
+        "ApprovalId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "APPROVAL_RESOLVED": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ApprovalResolved",
+      "description": "`APPROVAL_RESOLVED` payload.",
+      "type": "object",
+      "properties": {
+        "approval_id": {
+          "description": "Approval id.",
+          "$ref": "#/$defs/ApprovalId"
+        },
+        "tool": {
+          "description": "Tool name.",
+          "type": "string"
+        },
+        "decision": {
+          "description": "Resolved decision (`approved` / `rejected`).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "approval_id",
+        "tool",
+        "decision"
+      ],
+      "$defs": {
+        "ApprovalId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "HISTORY_SNAPSHOT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "HistorySnapshot",
+      "description": "`HISTORY_SNAPSHOT` payload.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run id.",
+          "$ref": "#/$defs/RunId"
+        },
+        "revision": {
+          "description": "Revision number (0-based, monotonic).",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "graph": {
+          "description": "Versioned graph snapshot body (schema owned by the Phase 9 snapshot store)."
+        }
+      },
+      "required": [
+        "run_id",
+        "revision",
+        "graph"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "PING": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "EmptyPayload",
+      "description": "Payload for events that carry no fields (`PING` / `PONG`).",
+      "type": "object"
+    },
+    "PONG": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "EmptyPayload",
+      "description": "Payload for events that carry no fields (`PING` / `PONG`).",
+      "type": "object"
+    }
+  }
+}

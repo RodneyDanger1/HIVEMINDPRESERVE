@@ -1,0 +1,297 @@
+//! Shared fixtures for the contract acceptance tests.
+//!
+//! These are test-only constructors; production code never fabricates frames.
+
+#![allow(dead_code)]
+
+use hiverouter_contract::command::{
+    CancelRun, ChatPin, Command, CommandName, HistoryRevisionSet, KillWorker, RewireTask,
+    SpawnSubHive, SubmitPrompt, TemplateInsert, ViewportRecenter, ViewportSet,
+};
+use hiverouter_contract::event::{
+    Ack, ApprovalRequest, ApprovalResolved, EmptyPayload, ErrorPayload, Event, HistorySnapshot,
+    NodeEvent, ReplyDelta, ReplyDone, ResyncRequiredPayload, RunCreated, RunMetrics,
+    RunStatusPayload, ServerHello,
+};
+use hiverouter_contract::ids::{ApprovalId, RunId, TaskId};
+use hiverouter_contract::state::AgentState;
+use hiverouter_contract::usage::Usage;
+use hiverouter_contract::Refusal;
+
+/// One representative value for every frozen command (the decision-gated names
+/// are covered by their refusal samples instead).
+pub fn command_samples() -> Vec<Command> {
+    vec![
+        Command::SubmitPrompt(SubmitPrompt {
+            text: "Build a honeycomb graph for the run".to_owned(),
+            project_id: "project-1".to_owned(),
+        }),
+        Command::SpawnSubHive(SpawnSubHive {
+            parent_task_id: TaskId::new(),
+            role: "worker".to_owned(),
+        }),
+        Command::RewireTask(RewireTask {
+            task_id: TaskId::new(),
+            new_parent_id: TaskId::new(),
+            expected_rev: 3,
+        }),
+        Command::CancelRun(CancelRun {
+            run_id: RunId::new(),
+        }),
+        Command::KillWorker(KillWorker {
+            task_id: TaskId::new(),
+        }),
+        Command::ChatPin(ChatPin { pinned: true }),
+        Command::TemplateInsert(TemplateInsert {
+            template_id: "template-1".to_owned(),
+            project_id: "project-1".to_owned(),
+        }),
+        Command::HistoryRevisionSet(HistoryRevisionSet {
+            run_id: RunId::new(),
+            revision: 12,
+        }),
+        Command::ViewportSet(ViewportSet {
+            x: 120.5,
+            y: -40.0,
+            zoom: 1.25,
+        }),
+        Command::ViewportRecenter(ViewportRecenter {}),
+    ]
+}
+
+/// One representative value for every event name.
+pub fn event_samples() -> Vec<Event> {
+    let run_id = RunId::new();
+    let task_id = TaskId::new();
+    let approval_id = ApprovalId::new();
+    vec![
+        Event::Ack(Ack {
+            command: CommandName::SubmitPrompt,
+            correlation_id: uuid::Uuid::now_v7(),
+        }),
+        Event::Error(ErrorPayload::from_refusal(&Refusal::Cycle)),
+        Event::ServerHello(ServerHello {
+            last_seq: Some(41),
+            schema: hiverouter_contract::SCHEMA_VERSION.to_owned(),
+        }),
+        Event::ResyncRequired(ResyncRequiredPayload {
+            expected_seq: 10,
+            last_seq: 3,
+        }),
+        Event::RunCreated(RunCreated {
+            run_id,
+            status: AgentState::Queued,
+        }),
+        Event::RunStatus(RunStatusPayload {
+            run_id,
+            status: AgentState::Failed,
+            error_code: Some(Refusal::Cycle.code().to_owned()),
+        }),
+        Event::ReplyDelta(ReplyDelta {
+            run_id,
+            text_delta: "partial reply".to_owned(),
+        }),
+        Event::ReplyDone(ReplyDone {
+            run_id,
+            usage: Usage {
+                prompt_tokens: Some(10),
+                completion_tokens: Some(20),
+                total_tokens: Some(30),
+                prompt_cache_hit_tokens: None,
+                prompt_cache_miss_tokens: Some(10),
+                reasoning_tokens: Some(5),
+            },
+        }),
+        Event::NodeSpawn(NodeEvent {
+            task_id,
+            state: AgentState::Queued,
+        }),
+        Event::NodeDrag(NodeEvent {
+            task_id,
+            state: AgentState::Running,
+        }),
+        Event::NodeRewire(NodeEvent {
+            task_id,
+            state: AgentState::Running,
+        }),
+        Event::NodeState(NodeEvent {
+            task_id,
+            state: AgentState::Completed,
+        }),
+        Event::RunMetrics(RunMetrics {
+            superagents: 2,
+            workers: 8,
+            green_pct: 62.5,
+            delta: -1.5,
+        }),
+        Event::ApprovalRequest(ApprovalRequest {
+            approval_id,
+            tool: "shell.run".to_owned(),
+            decision: None,
+        }),
+        Event::ApprovalResolved(ApprovalResolved {
+            approval_id,
+            tool: "shell.run".to_owned(),
+            decision: "approved".to_owned(),
+        }),
+        Event::HistorySnapshot(HistorySnapshot {
+            run_id,
+            revision: 12,
+            graph: serde_json::json!({"nodes": [], "edges": []}),
+        }),
+        Event::Ping(EmptyPayload {}),
+        Event::Pong(EmptyPayload {}),
+    ]
+}
+
+/// A valid command envelope as a JSON value (fixed ids, fixed timestamp), used
+/// to prove the decoders accept the frozen wire shape.
+pub fn frozen_command_envelope() -> serde_json::Value {
+    serde_json::json!({
+        "schema": "hiverouter.v1",
+        "type": "COMMAND",
+        "name": "SUBMIT_PROMPT",
+        "id": "019a0d5c-1111-7abc-8def-0123456789ab",
+        "correlation_id": "019a0d5c-1111-7abc-8def-0123456789ac",
+        "run_id": null,
+        "task_id": null,
+        "seq": null,
+        "ts": "2026-11-06T09:15:41Z",
+        "payload": {"text": "hello hive", "project_id": "project-1"}
+    })
+}
+
+fn command_envelope(name: &str, payload: serde_json::Value) -> serde_json::Value {
+    serde_json::json!({
+        "schema": "hiverouter.v1",
+        "type": "COMMAND",
+        "name": name,
+        "id": "019a0d5c-2222-7abc-8def-0123456789ab",
+        "correlation_id": "019a0d5c-2222-7abc-8def-0123456789ab",
+        "run_id": null,
+        "task_id": null,
+        "seq": null,
+        "ts": "2026-11-06T09:15:41Z",
+        "payload": payload,
+    })
+}
+
+/// Every command name (except the decision-gated names) paired with an envelope
+/// that must be refused by name.
+pub fn refusal_samples() -> Vec<(CommandName, &'static str, serde_json::Value, Refusal)> {
+    vec![
+        (
+            CommandName::SubmitPrompt,
+            "SUBMIT_PROMPT empty text",
+            command_envelope("SUBMIT_PROMPT", serde_json::json!({"text": "", "project_id": "p"})),
+            Refusal::PromptEmpty,
+        ),
+        (
+            CommandName::SubmitPrompt,
+            "SUBMIT_PROMPT too long",
+            command_envelope(
+                "SUBMIT_PROMPT",
+                serde_json::json!({"text": "x".repeat(8001), "project_id": "p"}),
+            ),
+            Refusal::PromptTooLong,
+        ),
+        (
+            CommandName::SubmitPrompt,
+            "SUBMIT_PROMPT missing field",
+            command_envelope("SUBMIT_PROMPT", serde_json::json!({"text": "hi"})),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::SpawnSubHive,
+            "SPAWN_SUB_HIVE bad uuid",
+            command_envelope(
+                "SPAWN_SUB_HIVE",
+                serde_json::json!({"parent_task_id": "not-a-uuid", "role": "worker"}),
+            ),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::RewireTask,
+            "REWIRE_TASK missing expected_rev",
+            command_envelope(
+                "REWIRE_TASK",
+                serde_json::json!({
+                    "task_id": "019a0d5c-3333-7abc-8def-0123456789ab",
+                    "new_parent_id": "019a0d5c-3333-7abc-8def-0123456789ac"
+                }),
+            ),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::CancelRun,
+            "CANCEL_RUN bad run id",
+            command_envelope("CANCEL_RUN", serde_json::json!({"run_id": "nope"})),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::KillWorker,
+            "KILL_WORKER wrong type",
+            command_envelope("KILL_WORKER", serde_json::json!({"task_id": 7})),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::ChatPin,
+            "CHAT_PIN wrong type",
+            command_envelope("CHAT_PIN", serde_json::json!({"pinned": "yes"})),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::TemplateInsert,
+            "TEMPLATE_INSERT missing template",
+            command_envelope("TEMPLATE_INSERT", serde_json::json!({"project_id": "p"})),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::HistoryRevisionSet,
+            "HISTORY_REVISION_SET revision string",
+            command_envelope(
+                "HISTORY_REVISION_SET",
+                serde_json::json!({
+                    "run_id": "019a0d5c-4444-7abc-8def-0123456789ab",
+                    "revision": "twelve"
+                }),
+            ),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::ViewportSet,
+            "VIEWPORT_SET zoom out of range",
+            command_envelope("VIEWPORT_SET", serde_json::json!({"x": 0.0, "y": 0.0, "zoom": 5.0})),
+            Refusal::ZoomRange,
+        ),
+        (
+            CommandName::ViewportRecenter,
+            "VIEWPORT_RECENTER bad payload",
+            command_envelope("VIEWPORT_RECENTER", serde_json::json!("recenter")),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::DiffPropose,
+            "DIFF_PROPOSE is decision-gated",
+            command_envelope("DIFF_PROPOSE", serde_json::json!({"decision": "approve"})),
+            Refusal::DecisionRequired,
+        ),
+        (
+            CommandName::DiffApply,
+            "DIFF_APPLY is decision-gated",
+            command_envelope("DIFF_APPLY", serde_json::json!({"decision": "approve"})),
+            Refusal::DecisionRequired,
+        ),
+        (
+            CommandName::DiffReject,
+            "DIFF_REJECT is decision-gated",
+            command_envelope("DIFF_REJECT", serde_json::json!({"decision": "reject"})),
+            Refusal::DecisionRequired,
+        ),
+    ]
+}
+
+/// Unknown command name sample.
+pub fn unknown_command_envelope() -> serde_json::Value {
+    command_envelope("NOT_A_REAL_COMMAND", serde_json::json!({}))
+}

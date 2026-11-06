@@ -1,0 +1,9 @@
+claim_id,claim_text,location,type,source_doc,source_url,fetched_at,status,also_in,notes
+C-001,"All nine blueprint source-of-truth hashes match the locked values",docs/plans/HASH-VERIFICATION.md,fact,EXECUTION-PROMPT.md §0,,2026-11-06,VERIFIED,HASH-VERIFICATION.md,"Get-FileHash observed; full table recorded"
+C-002,"FigCraft headless CLI is installed and exposes 597 commands",C:\Program Files\FigCraft\figcraft-cli.exe,capability,FIGCRAFT-COMMANDREPORT.txt,,2026-11-06,VERIFIED,EXECUTION-PROMPT.md §6,"commands --json 164,601 bytes; 597 parsed"
+C-003,"Rust toolchain is not installed on this host at W0",docs/plans/HASH-VERIFICATION.md,fact,environment probe,,2026-11-06,VERIFIED,,rustc/cargo/rustup NOT FOUND; installing per-user GNU minimal
+C-004,"MSVC cl.exe and Windows SDK are absent; GNU toolchain + portable gcc is the viable route",docs/plans/HASH-VERIFICATION.md,fact,environment probe,,2026-11-06,VERIFIED,,cl.exe NOT FOUND; VS dirs empty; w64devkit downloading
+C-005,"Node v26.7.0 satisfies the blueprint floor Node >=22.12.0",docs/plans/HASH-VERIFICATION.md,fact,environment probe,,2026-11-06,VERIFIED,,node --version v26.7.0
+C-006,"Disk free is 6.05 GB at W0, below a comfortable Rust+Node build budget",docs/plans/HASH-VERIFICATION.md,fact,environment probe,,2026-11-06,VERIFIED,,risk: cargo target + node_modules; mitigations recorded
+C-007,"FigCraft GUI attach (mcp --attach) requires the GUI launched with --control; not available for the existing window",FIGCRAFT-COMMANDREPORT.txt,capability,FIGCRAFT-COMMANDREPORT.txt,,2026-11-06,READ,,use headless `figcraft-cli run/export` path instead
+C-008,"The blueprint is a NEW synthesis for the proposed HiveMind, not the current app",blueprint/HIVEMIND-BLUEPRINT-v1.md §0,fact,EXECUTION-PROMPT.md,,2026-11-06,READ,,all implementation decisions follow the blueprint

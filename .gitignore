@@ -1,0 +1,11 @@
+target/
+node_modules/
+dist/
+tools/w64devkit/
+*.pdb
+*.tmp
+docs/ui/figcraft/*/*.figcraft
+docs/ui/figcraft/ASSETS/*.png
+docs/ui/figcraft/ASSETS/*.svg
+.env
+*.log

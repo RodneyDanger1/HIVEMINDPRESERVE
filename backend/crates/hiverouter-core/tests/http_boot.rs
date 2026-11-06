@@ -1,0 +1,178 @@
+//! Boot + HTTP acceptance tests for Phase 1: the binary boots on loopback, serves
+//! `GET /health`, returns an honest 404, and refuses a non-loopback bind by name.
+
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::time::Duration;
+
+use hiverouter_core::config::Config;
+use hiverouter_core::db::Database;
+use hiverouter_core::http::{self, AppState};
+use hiverouter_core::run_checks;
+use serde_json::Value;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::oneshot;
+
+struct TestServer {
+    addr: SocketAddr,
+    shutdown: Option<oneshot::Sender<()>>,
+    handle: tokio::task::JoinHandle<()>,
+}
+
+impl TestServer {
+    async fn start(temp: &tempfile::TempDir) -> Self {
+        let config = Config::resolve(
+            "127.0.0.1:0",
+            temp.path().to_str().expect("utf8 path"),
+            None,
+        )
+        .expect("test config");
+        let database = Database::open(config.db_file()).expect("database");
+        database.migrate().expect("migrations");
+        let state = Arc::new(AppState::new(
+            Arc::new(database),
+            run_checks(),
+            Arc::new(config),
+        ));
+        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let addr = listener.local_addr().expect("local addr");
+        let (shutdown, shutdown_rx) = oneshot::channel();
+        let handle = tokio::spawn(async move {
+            let _ = http::serve(listener, state, async move {
+                let _ = shutdown_rx.await;
+            })
+            .await;
+        });
+        Self {
+            addr,
+            shutdown: Some(shutdown),
+            handle,
+        }
+    }
+}
+
+impl Drop for TestServer {
+    fn drop(&mut self) {
+        if let Some(shutdown) = self.shutdown.take() {
+            let _ = shutdown.send(());
+        }
+    }
+}
+
+async fn http_get(addr: SocketAddr, path: &str) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).await.expect("connect");
+    let request =
+        format!("GET {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\nAccept: application/json\r\n\r\n");
+    stream.write_all(request.as_bytes()).await.expect("write request");
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).await.expect("read response");
+    let text = String::from_utf8_lossy(&raw).into_owned();
+    let status = text
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+        .expect("http status line");
+    let body = text
+        .split("\r\n\r\n")
+        .nth(1)
+        .unwrap_or_default()
+        .to_owned();
+    (status, body)
+}
+
+#[tokio::test]
+async fn health_endpoint_reports_boot_checks_and_database() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+
+    let (status, body) = http_get(server.addr, "/health").await;
+    assert_eq!(status, 200, "health must answer 200: {body}");
+    let health: Value = serde_json::from_str(&body).expect("health body is JSON");
+    assert_eq!(health["schema"], "hiverouter.v1");
+    assert_eq!(health["version"], env!("CARGO_PKG_VERSION"));
+    assert!(
+        health["status"] == "ok" || health["status"] == "degraded",
+        "status must be ok/degraded, got {}",
+        health["status"]
+    );
+    assert!(health["uptime_secs"].is_u64());
+    assert_eq!(health["database"]["schema_version"], 1);
+
+    let checks = health["checks"].as_array().expect("checks array");
+    assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
+    assert!(checks.iter().any(|check| check["name"] == "node"));
+    let rustc = checks
+        .iter()
+        .find(|check| check["name"] == "rustc")
+        .expect("rustc check");
+    let detail = rustc["detail"].as_str().expect("rustc detail");
+    assert!(detail.contains("MSRV 1.89.0"), "detail: {detail}");
+}
+
+#[tokio::test]
+async fn unknown_route_is_an_honest_404() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (status, body) = http_get(server.addr, "/nope").await;
+    assert_eq!(status, 404);
+    let value: Value = serde_json::from_str(&body).expect("404 body is JSON");
+    assert_eq!(value["error"], "not found");
+}
+
+#[tokio::test]
+async fn graceful_shutdown_lets_the_server_exit() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let mut server = TestServer::start(&temp).await;
+    let (status, _) = http_get(server.addr, "/health").await;
+    assert_eq!(status, 200);
+    if let Some(shutdown) = server.shutdown.take() {
+        let _ = shutdown.send(());
+    }
+    let finished = tokio::time::timeout(Duration::from_secs(5), &mut server.handle).await;
+    assert!(finished.is_ok(), "server did not stop after the shutdown signal");
+}
+
+#[tokio::test]
+async fn binary_refuses_a_non_loopback_bind_by_name() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let output = tokio::process::Command::new(env!("CARGO_BIN_EXE_hiverouter"))
+        .args([
+            "--bind",
+            "0.0.0.0:0",
+            "--data-dir",
+            temp.path().to_str().expect("utf8 path"),
+        ])
+        .output()
+        .await
+        .expect("run binary");
+    assert!(!output.status.success(), "non-loopback bind must fail");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("E_ORIGIN_REJECTED"),
+        "stderr must name the refusal, got: {stderr}"
+    );
+}
+
+#[tokio::test]
+async fn binary_help_and_version_are_successful() {
+    let help = tokio::process::Command::new(env!("CARGO_BIN_EXE_hiverouter"))
+        .arg("--help")
+        .output()
+        .await
+        .expect("run --help");
+    assert!(help.status.success());
+    let help_text = String::from_utf8_lossy(&help.stdout);
+    assert!(help_text.contains("hiverouter"), "help output: {help_text}");
+    assert!(help_text.contains("--bind"));
+
+    let version = tokio::process::Command::new(env!("CARGO_BIN_EXE_hiverouter"))
+        .arg("--version")
+        .output()
+        .await
+        .expect("run --version");
+    assert!(version.status.success());
+    let version_text = String::from_utf8_lossy(&version.stdout);
+    assert!(version_text.contains("hiverouter.v1"), "version output: {version_text}");
+}

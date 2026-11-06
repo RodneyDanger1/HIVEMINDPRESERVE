@@ -1,0 +1,4354 @@
+[
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 0,
+   "y": 0,
+   "width": 1440,
+   "height": 1200,
+   "props": {
+    "fill": "#F8F4EB"
+   },
+   "parent": 5,
+   "name": "00/board-bg"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "01 / FOUNDATIONS  ·  20 SWATCHES  ·  8 TYPE STEPS  ·  7 RADII  ·  3 ELEVATION TIERS  ·  PDF p2:20-92, p3:111-124, p4:130-146",
+   "x": 48,
+   "y": 44,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "parent": 5,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Warm ink on honey paper.",
+   "x": 48,
+   "y": 64,
+   "props": {
+    "fontSize": 56,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 60,
+    "letterSpacing": "-2%"
+   },
+   "width": 1100,
+   "parent": 5,
+   "name": "00/title"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Every value below is either sampled from the supplied canvas reference or inherited from the shipped app tokens; derived values are recorded as derived. Token names map 1:1 to FigCraft colour variables.",
+   "x": 48,
+   "y": 140,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 28
+   },
+   "width": 900,
+   "parent": 5,
+   "name": "body"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIVEROUTER  ·  DESIGN SYSTEM  /  V1.0",
+   "x": 1092,
+   "y": 44,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 5,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "FIGCRAFT NATIVE  ·  1440 × 1200",
+   "x": 1092,
+   "y": 62,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "8%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 5,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PALETTE · 20 PRINTED SWATCHES",
+   "x": 48,
+   "y": 220,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 456,
+   "parent": 5,
+   "name": "sec/palette · 20 printed swa"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p2:20-79",
+   "x": 518,
+   "y": 220,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/palette · 20 print"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 242,
+   "width": 620,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/palette · 20 printed swa"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 250,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#F8F4EB",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/surface/canvas/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Canvas",
+   "x": 88,
+   "y": 245,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/surface/canvas/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#F8F4EB",
+   "x": 88,
+   "y": 264,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/surface/canvas/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "surface/canvas",
+   "x": 218,
+   "y": 264,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/surface/canvas/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 294,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/surface/panel/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Paper",
+   "x": 88,
+   "y": 289,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/surface/panel/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#FFFFFF",
+   "x": 88,
+   "y": 308,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/surface/panel/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "surface/panel",
+   "x": 218,
+   "y": 308,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/surface/panel/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 338,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/surface/panel-alt/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Panel Alt",
+   "x": 88,
+   "y": 333,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/surface/panel-alt/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#FBF8F1",
+   "x": 88,
+   "y": 352,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/surface/panel-alt/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "surface/panel-alt",
+   "x": 218,
+   "y": 352,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/surface/panel-alt/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 382,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#F1E9CF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/surface/recessed/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Recess",
+   "x": 88,
+   "y": 377,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/surface/recessed/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#F1E9CF",
+   "x": 88,
+   "y": 396,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/surface/recessed/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "surface/recessed",
+   "x": 218,
+   "y": 396,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/surface/recessed/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 426,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#E5E1D8",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/border/hairline/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Hairline",
+   "x": 88,
+   "y": 421,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/border/hairline/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#E5E1D8",
+   "x": 88,
+   "y": 440,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/border/hairline/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "border/hairline",
+   "x": 218,
+   "y": 440,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/border/hairline/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 470,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/100/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 100",
+   "x": 88,
+   "y": 465,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/100/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#FBF3DC",
+   "x": 88,
+   "y": 484,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/100/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/100",
+   "x": 218,
+   "y": 484,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/100/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 514,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#F6E7BE",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/200/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 200",
+   "x": 88,
+   "y": 509,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/200/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#F6E7BE",
+   "x": 88,
+   "y": 528,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/200/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/200",
+   "x": 218,
+   "y": 528,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/200/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 558,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/300/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 300",
+   "x": 88,
+   "y": 553,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/300/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#F0C050",
+   "x": 88,
+   "y": 572,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/300/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/300",
+   "x": 218,
+   "y": 572,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/300/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 602,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#E8B850",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/400/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 400",
+   "x": 88,
+   "y": 597,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/400/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#E8B850",
+   "x": 88,
+   "y": 616,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/400/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/400",
+   "x": 218,
+   "y": 616,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/400/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 646,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#D9A02F",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/500/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 500",
+   "x": 88,
+   "y": 641,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/500/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#D9A02F",
+   "x": 88,
+   "y": 660,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/500/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/500",
+   "x": 218,
+   "y": 660,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/500/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 250,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#C88030",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/600/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 600",
+   "x": 400,
+   "y": 245,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/600/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#C88030",
+   "x": 400,
+   "y": 264,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/600/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/600",
+   "x": 530,
+   "y": 264,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/600/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 294,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#8A5A1C",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/700/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 700",
+   "x": 400,
+   "y": 289,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/700/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#8A5A1C",
+   "x": 400,
+   "y": 308,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/700/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/700",
+   "x": 530,
+   "y": 308,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/700/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 338,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#604818",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/honey/800/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Honey 800",
+   "x": 400,
+   "y": 333,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/honey/800/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#604818",
+   "x": 400,
+   "y": 352,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/honey/800/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "honey/800",
+   "x": 530,
+   "y": 352,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/honey/800/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 382,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/ink/900/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Ink 900",
+   "x": 400,
+   "y": 377,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/ink/900/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#282010",
+   "x": 400,
+   "y": 396,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/ink/900/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink/900",
+   "x": 530,
+   "y": 396,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/ink/900/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 426,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#3F3115",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/ink/800/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Ink 800",
+   "x": 400,
+   "y": 421,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/ink/800/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#3F3115",
+   "x": 400,
+   "y": 440,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/ink/800/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink/800",
+   "x": 530,
+   "y": 440,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/ink/800/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 470,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/ink/700/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Ink 700",
+   "x": 400,
+   "y": 465,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/ink/700/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#4E3A15",
+   "x": 400,
+   "y": 484,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/ink/700/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink/700",
+   "x": 530,
+   "y": 484,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/ink/700/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 514,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#75663F",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/ink/500/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Ink 500",
+   "x": 400,
+   "y": 509,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/ink/500/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#75663F",
+   "x": 400,
+   "y": 528,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/ink/500/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink/500",
+   "x": 530,
+   "y": 528,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/ink/500/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 558,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#B7791F",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/accent/amber/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Amber",
+   "x": 400,
+   "y": 553,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/accent/amber/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#B7791F",
+   "x": 400,
+   "y": 572,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/accent/amber/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "accent/amber",
+   "x": 530,
+   "y": 572,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/accent/amber/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 602,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#B23A2E",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/state/error/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Signal",
+   "x": 400,
+   "y": 597,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/state/error/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#B23A2E",
+   "x": 400,
+   "y": 616,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/state/error/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "state/error",
+   "x": 530,
+   "y": 616,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/state/error/path"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 360,
+   "y": 646,
+   "width": 30,
+   "height": 30,
+   "props": {
+    "fill": "#3F7A55",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1.0,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "swatch/state/success/chip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Verify",
+   "x": 400,
+   "y": 641,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16
+   },
+   "width": 142,
+   "parent": 5,
+   "name": "swatch/state/success/name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#3F7A55",
+   "x": 400,
+   "y": 660,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 82,
+   "parent": 5,
+   "name": "swatch/state/success/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "state/success",
+   "x": 530,
+   "y": 660,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 122,
+   "parent": 5,
+   "name": "swatch/state/success/path"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TYPE SCALE · 8 PRINTED STEPS",
+   "x": 700,
+   "y": 220,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 528,
+   "parent": 5,
+   "name": "sec/type scale · 8 printed s"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p3:111-124",
+   "x": 1242,
+   "y": 220,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/type scale · 8 pri"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 700,
+   "y": 242,
+   "width": 692,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/type scale · 8 printed s"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Aa",
+   "x": 700,
+   "y": 244,
+   "props": {
+    "fontSize": 96,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 100,
+    "letterSpacing": "-3.0%"
+   },
+   "parent": 5,
+   "name": "00/type/display/xxl"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "display/xxl 96/100/-3%",
+   "x": 700,
+   "y": 347,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agent",
+   "x": 700,
+   "y": 365,
+   "props": {
+    "fontSize": 40,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 48,
+    "letterSpacing": "-1.5%"
+   },
+   "parent": 5,
+   "name": "00/type/heading/h1"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "heading/h1 40/48/-1.5%",
+   "x": 700,
+   "y": 416,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Drop a repository into the core hive.",
+   "x": 700,
+   "y": 434,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 28
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "00/type/body/l"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "body/l 17/28/+0%",
+   "x": 700,
+   "y": 465,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "const route = hive.snap(worker, a);",
+   "x": 700,
+   "y": 483,
+   "props": {
+    "fontSize": 13,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 22
+   },
+   "parent": 5,
+   "name": "00/type/mono/code"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "mono/code 13/22/+0%",
+   "x": 700,
+   "y": 508,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind",
+   "x": 1046,
+   "y": 244,
+   "props": {
+    "fontSize": 56,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 60,
+    "letterSpacing": "-2.0%"
+   },
+   "parent": 5,
+   "name": "00/type/display/l"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "display/l 56/60/-2%",
+   "x": 1046,
+   "y": 307,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SuperAgent - Backend",
+   "x": 1046,
+   "y": 325,
+   "props": {
+    "fontSize": 24,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 32,
+    "letterSpacing": "-0.5%"
+   },
+   "parent": 5,
+   "name": "00/type/heading/h3"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "heading/h3 24/32/-0.5%",
+   "x": 1046,
+   "y": 360,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ACTIVE AGENTS",
+   "x": 1046,
+   "y": 378,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 16,
+    "letterSpacing": "8.0%"
+   },
+   "parent": 5,
+   "name": "00/type/label"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "label 12/16/+8%",
+   "x": 1046,
+   "y": 397,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "NODE_SPAWN  ·  NODE_DRAG  ·  NODE_REWIRE",
+   "x": 1046,
+   "y": 415,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 16,
+    "letterSpacing": "8.0%"
+   },
+   "parent": 5,
+   "name": "00/type/mono/meta"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "mono/meta 11/16/+8%",
+   "x": 1046,
+   "y": 434,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Specs read: token  SIZE / LINE / TRACKING.",
+   "x": 1046,
+   "y": 478,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 346,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Tracking is a percentage of the em; larger sizes track tighter (PDF p3:111-124).",
+   "x": 1046,
+   "y": 492,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 346,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "FONT FAMILIES · 3 RESOLVED",
+   "x": 700,
+   "y": 566,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 528,
+   "parent": 5,
+   "name": "sec/font families · 3 resolv"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p3:97-127",
+   "x": 1242,
+   "y": 566,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/font families · 3 "
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 700,
+   "y": 588,
+   "width": 692,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/font families · 3 resolv"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 700,
+   "y": 592,
+   "width": 224,
+   "height": 52,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Aa",
+   "x": 710,
+   "y": 598,
+   "props": {
+    "fontSize": 20,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 24
+   },
+   "width": 36,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Playfair Display",
+   "x": 752,
+   "y": 596,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15
+   },
+   "width": 140,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SemiBold",
+   "x": 752,
+   "y": 612,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 164,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "DISPLAY · brand statements, board titles",
+   "x": 710,
+   "y": 630,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 204,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 932,
+   "y": 592,
+   "width": 224,
+   "height": 52,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Aa",
+   "x": 942,
+   "y": 598,
+   "props": {
+    "fontSize": 20,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 24
+   },
+   "width": 36,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Inter",
+   "x": 984,
+   "y": 596,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15
+   },
+   "width": 140,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SemiBold / Regular",
+   "x": 984,
+   "y": 612,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 164,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "UI / TEXT · controls, cards, tables, body",
+   "x": 942,
+   "y": 630,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 204,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1164,
+   "y": 592,
+   "width": 224,
+   "height": 52,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Aa",
+   "x": 1174,
+   "y": 598,
+   "props": {
+    "fontSize": 20,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 24
+   },
+   "width": 36,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Consolas",
+   "x": 1216,
+   "y": 596,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15
+   },
+   "width": 140,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Regular",
+   "x": 1216,
+   "y": 612,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 164,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "MONO / CODE · code, tokens, hex, events",
+   "x": 1174,
+   "y": 630,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 204,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "RESOLVED HERE: Playfair Display · Inter · Consolas.   NOT INSTALLED: JetBrains Mono.",
+   "x": 700,
+   "y": 660,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 692,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The product self-hosts Instrument Serif (@fontsource); this board machine cannot resolve it — Playfair stands in (PDF p3:127).",
+   "x": 700,
+   "y": 674,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 692,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CONTRAST · WCAG 2.1",
+   "x": 48,
+   "y": 720,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 166,
+   "parent": 5,
+   "name": "sec/contrast · WCAG 2.1"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p2:80-92",
+   "x": 228,
+   "y": 720,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/contrast · WCAG 2."
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 742,
+   "width": 330,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/contrast · WCAG 2.1"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink-900/canvas",
+   "x": 48,
+   "y": 748,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "14.67:1 AAA",
+   "x": 146,
+   "y": 748,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ink-900/honey-400",
+   "x": 48,
+   "y": 772,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "8.74:1 AAA",
+   "x": 146,
+   "y": 772,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "white/ink-800",
+   "x": 48,
+   "y": 796,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "12.64:1 AAA",
+   "x": 146,
+   "y": 796,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "amber/canvas",
+   "x": 214,
+   "y": 748,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3.32:1 AA-LG",
+   "x": 312,
+   "y": 748,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "error/canvas",
+   "x": 214,
+   "y": 772,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "5.41:1 AA",
+   "x": 312,
+   "y": 772,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "verify/canvas",
+   "x": 214,
+   "y": 796,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "4.64:1 AA",
+   "x": 312,
+   "y": 796,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#282010",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 66,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CORRECTED FOR AA · UI-R-03/04/05",
+   "x": 48,
+   "y": 828,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "meta #8A7A52 4.21/3.84 → ink-500 #75663F 5.13",
+   "x": 48,
+   "y": 844,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ring honey-300 1.70/1.55 → ink-700 #4E3A15 9.86",
+   "x": 48,
+   "y": 859,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "amber #B7791F 3.32 → large text only (≥24px)",
+   "x": 48,
+   "y": 874,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SPACING · 4PX BASE",
+   "x": 394,
+   "y": 720,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 166,
+   "parent": 5,
+   "name": "sec/spacing · 4px base"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p4:132-133",
+   "x": 574,
+   "y": 720,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/spacing · 4px base"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 394,
+   "y": 742,
+   "width": 330,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/spacing · 4px base"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 394.0,
+   "y": 849.9166666666666,
+   "width": 20,
+   "height": 8.083333333333332,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "4",
+   "x": 394.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 423.5,
+   "y": 847.8333333333334,
+   "width": 20,
+   "height": 10.166666666666666,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "8",
+   "x": 423.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 453.0,
+   "y": 845.75,
+   "width": 20,
+   "height": 12.25,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "12",
+   "x": 453.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 482.5,
+   "y": 843.6666666666666,
+   "width": 20,
+   "height": 14.333333333333332,
+   "props": {
+    "fill": "#D9A02F",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "16",
+   "x": 482.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 512.0,
+   "y": 841.5833333333334,
+   "width": 20,
+   "height": 16.416666666666668,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "20",
+   "x": 512.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 541.5,
+   "y": 839.5,
+   "width": 20,
+   "height": 18.5,
+   "props": {
+    "fill": "#D9A02F",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "24",
+   "x": 541.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 571.0,
+   "y": 835.3333333333334,
+   "width": 20,
+   "height": 22.666666666666664,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "32",
+   "x": 571.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 600.5,
+   "y": 831.1666666666666,
+   "width": 20,
+   "height": 26.833333333333336,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "40",
+   "x": 600.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 630.0,
+   "y": 827.0,
+   "width": 20,
+   "height": 31.0,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "48",
+   "x": 630.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 659.5,
+   "y": 818.6666666666666,
+   "width": 20,
+   "height": 39.33333333333333,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "64",
+   "x": 659.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 689.0,
+   "y": 810.3333333333334,
+   "width": 20,
+   "height": 47.66666666666667,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "80",
+   "x": 689.0,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 718.5,
+   "y": 802.0,
+   "width": 20,
+   "height": 56.0,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 2
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "96",
+   "x": 718.5,
+   "y": 864,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 26,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "12 stops: 4 8 12 16 20 24 32 40 48 64 80 96",
+   "x": 394,
+   "y": 880,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13
+   },
+   "width": 330,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 394,
+   "y": 898,
+   "width": 330,
+   "height": 62,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SUB-4PX EXCEPTIONS · UI-R-09",
+   "x": 402,
+   "y": 904,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 300,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "border 1.5px · worker bar 3px · progress 5px",
+   "x": 402,
+   "y": 920,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 314,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "focus ring 2px · meta type 9.5px",
+   "x": 402,
+   "y": 934,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 314,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "RADIUS · 7 STOPS",
+   "x": 740,
+   "y": 720,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 136,
+   "parent": 5,
+   "name": "sec/radius · 7 stops"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p4:135",
+   "x": 890,
+   "y": 720,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/radius · 7 stops"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 740,
+   "y": 742,
+   "width": 300,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/radius · 7 stops"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 740,
+   "y": 756,
+   "width": 34,
+   "height": 34,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 4,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "4",
+   "x": 740,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 34,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 782,
+   "y": 756,
+   "width": 34,
+   "height": 34,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 8,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "8",
+   "x": 782,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 34,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 824,
+   "y": 756,
+   "width": 34,
+   "height": 34,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 12,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "12",
+   "x": 824,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 34,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 866,
+   "y": 756,
+   "width": 34,
+   "height": 34,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 16,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "16",
+   "x": 866,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 34,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 908,
+   "y": 750,
+   "width": 40,
+   "height": 40,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 24,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "24",
+   "x": 908,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 40,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 956,
+   "y": 750,
+   "width": 40,
+   "height": 40,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 48,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "48",
+   "x": 956,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 40,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1004,
+   "y": 764,
+   "width": 58,
+   "height": 26,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 26,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "999",
+   "x": 1004,
+   "y": 794,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "center"
+   },
+   "width": 58,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "10 · button (off scale)",
+   "x": 740,
+   "y": 806,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "14 · super card (off scale)",
+   "x": 740,
+   "y": 820,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Printed: seven stops (p4:136). Prose: “six radii” (p4:135). Components add 10 and 14 (p6:224 / p7:240) — R-U14 / K-07.",
+   "x": 740,
+   "y": 838,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 300,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ELEVATION · E1 E2 E3",
+   "x": 1056,
+   "y": 720,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 172,
+   "parent": 5,
+   "name": "sec/elevation · e1 e2 e3"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p4:137-146",
+   "x": 1242,
+   "y": 720,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 5,
+   "name": "secnote/elevation · e1 e2 "
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1056,
+   "y": 742,
+   "width": 336,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/elevation · e1 e2 e3"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1078,
+   "y": 752,
+   "width": 292,
+   "height": 50,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "00/elev/e1 / node/card"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "e1 / node",
+   "x": 1088,
+   "y": 758,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15.5
+   },
+   "parent": 5,
+   "name": "name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "cards resting on canvas",
+   "x": 1088,
+   "y": 774,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#282010 @ 7-13%",
+   "x": 1264,
+   "y": 774,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1078,
+   "y": 814,
+   "width": 292,
+   "height": 50,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "00/elev/e2 / float/card"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "e2 / float",
+   "x": 1088,
+   "y": 820,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15.5
+   },
+   "parent": 5,
+   "name": "name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "chat core, drawers, menus",
+   "x": 1088,
+   "y": 836,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#282010 @ 7-13%",
+   "x": 1264,
+   "y": 836,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1078,
+   "y": 876,
+   "width": 292,
+   "height": 50,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "00/elev/e3 / hive/card"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "e3 / hive",
+   "x": 1088,
+   "y": 882,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 15.5
+   },
+   "parent": 5,
+   "name": "name"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "the hive itself, behind the chat",
+   "x": 1088,
+   "y": 898,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "#282010 @ 7-13%",
+   "x": 1264,
+   "y": 898,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 96,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1056,
+   "y": 938,
+   "width": 336,
+   "height": 24,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 6
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "One printed value for all tiers — do not differentiate (UI-R-10 / K-13).",
+   "x": 1064,
+   "y": 942,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 11
+   },
+   "width": 322,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PRINTED TOTALS DO NOT RECONCILE · PRINTED VALUES ONLY",
+   "x": 48,
+   "y": 976,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 1030,
+   "parent": 5,
+   "name": "sec/printed totals do not re"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "R-U2 / K-11 — declared counts stay UNVERIFIED",
+   "x": 1092,
+   "y": 976,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 5,
+   "name": "secnote/printed totals do "
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 998,
+   "width": 1344,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "secrule/printed totals do not re"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 1002,
+   "width": 318,
+   "height": 96,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "20 / 21",
+   "x": 62,
+   "y": 1010,
+   "props": {
+    "fontSize": 34,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 40,
+    "letterSpacing": "-1%"
+   },
+   "width": 280,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SWATCHES / COLOUR VARIABLES",
+   "x": 62,
+   "y": 1054,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "20 printed swatches (p2:20-79); cover declares 21 colour variables (p1:11).",
+   "x": 62,
+   "y": 1070,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 390,
+   "y": 1002,
+   "width": 318,
+   "height": 96,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "8 / 13",
+   "x": 404,
+   "y": 1010,
+   "props": {
+    "fontSize": 34,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 40,
+    "letterSpacing": "-1%"
+   },
+   "width": 280,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TYPE STYLES",
+   "x": 404,
+   "y": 1054,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "8 printed steps (p3:111-124); cover declares 13 text styles (p1:11).",
+   "x": 404,
+   "y": 1070,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 732,
+   "y": 1002,
+   "width": 318,
+   "height": 96,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "7 / six",
+   "x": 746,
+   "y": 1010,
+   "props": {
+    "fontSize": 34,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 40,
+    "letterSpacing": "-1%"
+   },
+   "width": 280,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "RADIUS STOPS",
+   "x": 746,
+   "y": 1054,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "7 printed stops (p4:136); prose says six (p4:135).",
+   "x": 746,
+   "y": 1070,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1074,
+   "y": 1002,
+   "width": 318,
+   "height": 96,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 5,
+   "name": "rect"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3 / 1",
+   "x": 1088,
+   "y": 1010,
+   "props": {
+    "fontSize": 34,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 40,
+    "letterSpacing": "-1%"
+   },
+   "width": 280,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ELEVATION TIERS / VALUES",
+   "x": 1088,
+   "y": 1054,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3 tiers print one identical shadow value (p4:137-146).",
+   "x": 1088,
+   "y": 1070,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 11
+   },
+   "width": 290,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Rule R-U2: printed totals (21 swatches / 13 text styles / six radii) do not reconcile with the extract (20 / 8 / 7). Only printed values enter the token module; every unreconciled count stays UNVERIFIED.",
+   "x": 48,
+   "y": 1104,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 14
+   },
+   "width": 1344,
+   "parent": 5,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 1150,
+   "width": 1344,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 5,
+   "name": "00/footer-rule"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIVEROUTER  ·  DESIGN SYSTEM / V1.0  ·  00 FOUNDATIONS  ·  FIGCRAFT NATIVE",
+   "x": 48,
+   "y": 1158,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "letterSpacing": "8%"
+   },
+   "width": 900,
+   "parent": 5,
+   "name": "00/footer"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PAGE 1 / 4  ·  PDF p2-p4",
+   "x": 1192,
+   "y": 1158,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 200,
+   "parent": 5,
+   "name": "00/footer-no"
+  }
+ }
+]

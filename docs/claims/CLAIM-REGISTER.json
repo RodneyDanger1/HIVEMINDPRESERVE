@@ -1,0 +1,6 @@
+{
+  "counts": {"total": 8, "verified": 6, "vault_recorded": 0, "read": 2, "unverified": 0, "contradicted": 0},
+  "decision_critical_unverified": [],
+  "cross_document": [],
+  "notes": "Phase 0 register. C-001..C-006 verified by commands observed this session; C-007/C-008 read from the cited file. Register is rebuilt per phase; no VERIFIED without observed evidence."
+}
