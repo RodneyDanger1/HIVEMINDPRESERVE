@@ -244,6 +244,10 @@ try {
         }
     }
 
+    # release paths (single definition; must never be empty)
+    $stagingRel = "dist/HiveMind-" + $effectiveVersion + "-win64"
+    $zipRel = $stagingRel + ".zip"
+
     Step "preflight: toolchain"
     $cargoCandidates = @()
     if ($env:USERPROFILE) { $cargoCandidates += (Join-Path $env:USERPROFILE '.cargo\bin\cargo.exe') }
@@ -422,7 +426,7 @@ try {
         Fail "E_RELEASE_HASH_DRIFT" "build changed artifact bytes but staging version was not bumped; recorded 1.0 hashes must be preserved (-NewStagingVersion required)." 5
     }
     if ($realDrift -and $effectiveVersion -ne $manifestVersion) {
-        Write-Host ("superseding release " + $Version + " -> " + $effectiveVersion + " (old -> new):") -ForegroundColor Yellow
+        Write-Host ("superseding release " + $manifestVersion + " -> " + $effectiveVersion + " (old -> new):") -ForegroundColor Yellow
         foreach ($r in $oldToNew) { Write-Host ("  " + $r.artifact + ": " + $r.old_sha256 + " -> " + $r.new_sha256) }
     }
 
@@ -605,5 +609,6 @@ try {
 finally {
     Pop-Location
 }
+
 
 
