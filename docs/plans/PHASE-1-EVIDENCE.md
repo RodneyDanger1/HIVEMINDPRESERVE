@@ -171,3 +171,56 @@ crate compiles. Per-crate gates for this phase are green (sections 4-6).
 |---|---|
 | release build from pinned lockfile | `cargo build --release --locked` exit 0 after tools compiles |
 | rustls TLS path compiles for provider | `cargo check -p hiverouter-provider` (B-Provider gate) |
+
+## 10. Addendum — embedded web UI serving (integration blocker, added after the Phase 1 gate)
+
+The single Rust binary now serves the built frontend (`web/dist`) from memory via `rust-embed`
+(`backend/crates/hiverouter-core/src/static_ui.rs`): `GET /` → `index.html`, real asset paths → embedded bytes with
+content type, SPA routes (no extension) → `index.html`, unknown API paths → JSON 404, missing assets → 404, and
+path-traversal requests cannot escape `web/dist` (exact archive lookup; the test asserts no file leak).
+
+```
+Running tests\http_boot.rs
+running 5 tests
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.48s
+```
+
+The new test `static_ui_serves_index_assets_and_spa_fallback` asserts `GET /` 200 + `<div id="root">`, a real
+`/assets/index-*.js` 200, SPA fallback 200, missing asset 404, `/api/nope` JSON 404 and traversal safety.
+
+After the disk-wipe rebuild the full core suite (Phases 1-9 + static UI) is:
+
+```
+running 34 tests (lib)          test result: ok. 34 passed; 0 failed
+chat_store 5 / context_switch 2 / graph_authority 7 / handshake 2 / http_boot 5
+kill_restore 2 (+1 ignored helper) / prompt_assets 2 / run_lifecycle 6 / snapshot_history 4 / ws_transport 9
+CORE_TEST_EXIT=0
+```
+
+= 78 passed, 0 failed, 1 ignored helper; contract suite unchanged at 32 passed.
+
+### 10a. Release binary probe (embedded UI + APIs)
+
+`cargo build --release --locked -p hiverouter-core --bin hiverouter` → `Finished release profile ... in 24m 24s`,
+`RELEASE_BUILD_EXIT=0` (that build produced `target/release/hiverouter.exe` = 8,354,816 bytes,
+sha256 `B763B8F0B0FBD612D7DB43DD1B4587C4BF5EA0B65F83ACA3C4DE2FEB476DA714`). The shared workspace release build later
+replaced the artifact; the binary probed below is `target/release/hiverouter.exe` = 9,099,776 bytes,
+sha256 `8C777A786FACE7C586910E8BD854B8C5AADF1C3765FE4DD7D1A11503C8EC3827` (same source tree, shared build).
+
+Started with `--bind 127.0.0.1:8812 --data-dir %TEMP%\hm-release-probe2`, observed (curl, explicit timeouts):
+
+```
+GET /                    -> 200   (body starts "<!doctype html>..." and contains <div id="root"></div>)
+GET /health              -> 200   {"status":"ok","version":"0.1.0","schema":"hiverouter.v1", ... "database":{"schema_version":3,...}}
+GET /api/session         -> 200   {"token":"...","schema":"hiverouter.v1","last_seq":0,"ws":"/ws"}
+GET /api/history/runs    -> 200   {"runs":[]}
+GET /assets/index-_C6E8rly.js -> 200 (669,129 chars of embedded JS served from the binary)
+GET /assets/does-not-exist.js -> 404
+GET /runs/example        -> 200   (SPA fallback serves index.html)
+server stdout: hiverouter 0.1.0 listening on http://127.0.0.1:8812 (db ...\hiverouter.db, schema v3, contract hiverouter.v1)
+```
+
+The UI was served from the binary itself (no separate static server); the release probe closes the static-serving
+integration blocker.
+
+

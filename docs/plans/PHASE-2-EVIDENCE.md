@@ -120,3 +120,13 @@ Full core suite result (lib 19 + graph 7 + http_boot 5 + ws 9 = 40): `CORE_TEST_
 |---|---|
 | browser-origin behaviour against the real Vite dev server | frontend integration run once `web/` exists |
 | TLS provider path | B-Provider Phase 5 gate |
+
+## Addendum (after Phase 4 engine wiring + disk-wipe rebuild)
+
+- The Phase 4 run engine now handles `SUBMIT_PROMPT`/`SPAWN_SUB_HIVE`/`CANCEL_RUN`/`KILL_WORKER` over this transport; the
+  interim-refusal test was replaced by `run_commands_are_handled_by_the_phase4_engine` (missing run → `E_RUN_NOT_FOUND`;
+  Phase 6 commands → typed `E_INTERNAL_ERROR`). The transport suite stays 9/9 green and the full core suite is
+  78 passed / 0 failed / 1 ignored helper (`CORE_TEST_EXIT=0`).
+- The built UI is served by the same binary (`GET /` 200 `<div id="root">`, `/assets/*` embedded, SPA fallback) — see
+  PHASE-1-EVIDENCE §10.
+
