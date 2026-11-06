@@ -19,11 +19,13 @@ cargo build --release --locked
 FINAL RELEASE EXIT: 0
 ```
 
-Artifacts (observed `Get-FileHash -Algorithm SHA256`, identical before and after the incremental rebuild):
+Artifacts (observed `Get-FileHash -Algorithm SHA256`; the server hash was identical before and after the incremental rebuild; the CLI hash changed after a later comment-only source repair + a concurrent workspace rebuild by another owner — the binary content hash is only stable for a fixed source revision + toolchain, so the exit-0 build is the claim, not the literal hash):
 
 ```
 hiverouter.exe      bytes=8384512  sha256=31aea08347ab695beee268828903d9834a5086e8433c4896c55c433eb4d39d05
-hiverouter-cli.exe  bytes=5363712  sha256=9e06311eca12f8e7efb825bef2949f8809030e6927e73526df28400b17b8ccc3
+hiverouter-cli.exe  bytes=5363712  sha256=9e06311eca12f8e7efb825bef2949f8809030e6927e73526df28400b17b8ccc3  (phase-build observation)
+                    sha256=64feb262d061f76f7b4195e8a52c3ab8f9917d44b4322f8a3021ef68ca8074a8  (observed 07:12 after the comment-only repair + concurrent rebuild)
+hiverouter.exe      bytes=8384512  sha256=31aea08347ab695beee268828903d9834a5086e8433c4896c55c433eb4d39d05  (unchanged)
 ```
 
 `hiverouter.exe` is the single localhost server (owner: `hiverouter-core`, B-Core's Phase 12 gate);
