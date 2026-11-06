@@ -1,41 +1,140 @@
-﻿{
-    "artifacts":  [
-                      {
-                          "path":  "target/release/hiverouter.exe",
-                          "sha256":  "b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a",
-                          "bytes":  13253120
-                      },
-                      {
-                          "path":  "target/release/hiverouter-cli.exe",
-                          "sha256":  "49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623",
-                          "bytes":  5373952
-                      },
-                      {
-                          "path":  "dist/HiveMind-1.0.0-win64.zip",
-                          "sha256":  "46305fcb1fe1bee23d3645a94a82635a68ee47fbcd3ce0537df747de3c6105ef",
-                          "bytes":  8444021
-                      }
-                  ],
+{
+    "schema":  "hivemind.release-manifest.v1",
+    "product":  "HiveMind",
+    "version":  "1.1.0",
+    "tag":  "hivemind-1.1.0",
+    "tag_target":  "87079cecf6a4cf2212b9d41e56f4c7643a97c7fe",
+    "tag_behind_commits":  0,
+    "source_commit":  "87079cecf6a4cf2212b9d41e56f4c7643a97c7fe",
+    "source_commit_date":  "2026-11-06T16:39:24-06:00",
+    "source_dirty":  false,
+    "source_describe":  "hivemind-1.1.0",
+    "generated_at":  "2026-11-06T16:42:45-06:00",
+    "toolchain":  {
+                      "rustc":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+                      "cargo":  "cargo 1.99.1 (5f94df478 2026-08-27)",
+                      "node":  "v26.7.0",
+                      "npm":  "11.19.0",
+                      "gcc":  "gcc.exe (GCC) 16.2.0"
+                  },
+    "toolchain_line":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "provider":  {
+                     "endpoint":  "https://api.deepseek.com/chat/completions",
+                     "models":  [
+                                    "deepseek-flash",
+                                    "deepseek-v4-pro"
+                                ],
+                     "max_output_tokens":  393216,
+                     "key_env":  "DEEPSEEK_API_KEY",
+                     "source":  "official DeepSeek docs (api-docs.deepseek.com) + backend/crates/hiverouter-provider/src/dto.rs"
+                 },
+    "web":  {
+                "dir":  "web/dist",
+                "algorithm":  "sha256 per file; tree = sha256 over sorted \"relpath\u003cTAB\u003esha256\u003cTAB\u003ebytes\" lines",
+                "tree_sha256":  "7911b91c71870ec7b4f961a6b0e2d9b064f318cadbc64f8ac5a2a3494a103f10",
+                "files":  [
+                              {
+                                  "path":  "web/dist/assets/index-D8k8-PfA.css",
+                                  "sha256":  "c8ad876fe3d256c6b7f8abc04fc5960d5bc1bd720c2db9bf863244a37c4b2e0d",
+                                  "bytes":  35807
+                              },
+                              {
+                                  "path":  "web/dist/assets/index-DRvC4Qb-.js",
+                                  "sha256":  "10fa03a20d63da822f5650fbce2010831f5743af106d3937114bd5556c32fa69",
+                                  "bytes":  675204
+                              },
+                              {
+                                  "path":  "web/dist/index.html",
+                                  "sha256":  "01f313470177d783e0be1ec42e3e7a41ddd7726cfc28aa0a1f4cff77b35d9e8f",
+                                  "bytes":  774
+                              }
+                          ]
+            },
     "web_dist_algorithm":  "sha256 per file; path+sha256+bytes array",
-    "note":  "Artifacts rebuilt from source_commit; per-file web dist hashes are reproducible.",
-    "artifact_built_at":  "2026-11-06T11:36:51.9585385-06:00",
     "web_dist_files":  [
                            {
-                               "path":  "web/dist/assets/index-6T84PJfk.js",
-                               "sha256":  "b771bc2e22ef406701b6b4f62e65f70c2d599f16f16e44bf3bf59008f6a549bc",
-                               "bytes":  672267
+                               "path":  "web/dist/assets/index-D8k8-PfA.css",
+                               "sha256":  "c8ad876fe3d256c6b7f8abc04fc5960d5bc1bd720c2db9bf863244a37c4b2e0d",
+                               "bytes":  35807
                            },
                            {
-                               "path":  "web/dist/assets/index-BWOl__uM.css",
-                               "sha256":  "96ffa8737f8a6123f364eb2e4f7082d448b470c85fbc7e1a2656a2629443a748",
-                               "bytes":  35753
+                               "path":  "web/dist/assets/index-DRvC4Qb-.js",
+                               "sha256":  "10fa03a20d63da822f5650fbce2010831f5743af106d3937114bd5556c32fa69",
+                               "bytes":  675204
                            },
                            {
                                "path":  "web/dist/index.html",
-                               "sha256":  "8264ae9257f75bf9b7125a21d1ef6c3275ae770126ebae5c2afb2f686dc8776d",
+                               "sha256":  "01f313470177d783e0be1ec42e3e7a41ddd7726cfc28aa0a1f4cff77b35d9e8f",
                                "bytes":  774
                            }
                        ],
-    "toolchain":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
-    "source_commit":  "6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540"
+    "staging_dir":  "dist/HiveMind-1.1.0-win64",
+    "artifacts":  [
+                      {
+                          "name":  "hiverouter.exe",
+                          "path":  "target/release/hiverouter.exe",
+                          "sha256":  "9c3174fb7c118143139ff283c08a3190c8e146a831717fb3ff8e25d6468d7207",
+                          "bytes":  13624320
+                      },
+                      {
+                          "name":  "hiverouter-cli.exe",
+                          "path":  "target/release/hiverouter-cli.exe",
+                          "sha256":  "f757f55833f52f626cff6f962d31cb18d740dab53e314c5ba6048599f09214df",
+                          "bytes":  5372416
+                      }
+                  ],
+    "package":  {
+                    "zip":  "dist/HiveMind-1.1.0-win64.zip",
+                    "zip_sha256":  "af2345f663643f1c0d1dbc18a298511817bf38090351d5f5b4842418f4d63e56",
+                    "zip_bytes":  8613122,
+                    "sidecar":  "dist/HiveMind-1.1.0-win64.zip.sha256",
+                    "sidecar_sha256":  "2db1561b6c78843ba140f91e7a8d50f5e17e676ca618e02974257982a2e9f917",
+                    "checksums":  "dist/HiveMind-1.1.0-win64/CHECKSUMS.txt",
+                    "checksums_sha256":  "0770cfd8e13ba3c5815d09e54811649a2fa089d57eb741349a4a16194f6ea84b",
+                    "contents":  [
+                                     "CHECKSUMS.txt",
+                                     "hiverouter.exe",
+                                     "hiverouter-cli.exe",
+                                     "README.md",
+                                     "RELEASE.md",
+                                     "RUNBOOK.md"
+                                 ]
+                },
+    "supersedes":  [
+                       {
+                           "path":  "target/release/hiverouter.exe",
+                           "sha256":  "b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a",
+                           "bytes":  13253120,
+                           "note":  "SUPERSEDED by 1.1.0"
+                       },
+                       {
+                           "path":  "target/release/hiverouter-cli.exe",
+                           "sha256":  "49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623",
+                           "bytes":  5373952,
+                           "note":  "SUPERSEDED by 1.1.0"
+                       },
+                       {
+                           "path":  "dist/HiveMind-1.0.0-win64.zip",
+                           "sha256":  "46305fcb1fe1bee23d3645a94a82635a68ee47fbcd3ce0537df747de3c6105ef",
+                           "bytes":  8444021,
+                           "note":  "SUPERSEDED by 1.1.0"
+                       }
+                   ],
+    "old_to_new":  [
+                       {
+                           "artifact":  "hiverouter.exe",
+                           "old_sha256":  "b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a",
+                           "new_sha256":  "9c3174fb7c118143139ff283c08a3190c8e146a831717fb3ff8e25d6468d7207",
+                           "old_bytes":  13253120,
+                           "new_bytes":  13624320
+                       },
+                       {
+                           "artifact":  "hiverouter-cli.exe",
+                           "old_sha256":  "49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623",
+                           "new_sha256":  "f757f55833f52f626cff6f962d31cb18d740dab53e314c5ba6048599f09214df",
+                           "old_bytes":  5373952,
+                           "new_bytes":  5372416
+                       }
+                   ],
+    "note":  "Paths are repo-relative. Built by tools/build-release.ps1; verified by zip extract-and-hash. No tag was moved by this script."
 }

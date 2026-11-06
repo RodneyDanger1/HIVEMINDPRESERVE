@@ -11,13 +11,13 @@ import {
 } from '../helpers/live-server';
 
 /**
- * W4 live streaming proof — boots the REAL Rust server on an ephemeral loopback port +
+ * W4 live streaming proof â€” boots the REAL Rust server on an ephemeral loopback port +
  * temp data dir (see helpers/live-server.ts), then drives frozen COMMAND envelopes over
  * a real WebSocket.
  *
  * Test 1 + 2 run today with NO provider key (child env is stripped): they prove boot,
  * embedded UI, server WS hello, and the fail-closed E_KEY_MISSING refusal with zero reply
- * deltas — no paid call is possible.
+ * deltas â€” no paid call is possible.
  *
  * Test 3 is the only paid path: it requires BOTH `LIVE_ONE_PROMPT=1` AND a key; otherwise
  * it is a named skip (never a fake pass). One short prompt is sent.
@@ -136,7 +136,10 @@ test.describe('live streaming (real server, ephemeral process)', () => {
     );
 
     const frames = await probe.frames();
-    const indexOf = (target: ProbeEnvelope): number => frames.indexOf(target);
+    const indexOf = (target: ProbeEnvelope): number =>
+      frames.findIndex(
+        (candidate) => candidate.name === target.name && candidate.seq === target.seq,
+      );
     const deltaIndexes = frames
       .map((frame, index) => ({ frame, index }))
       .filter(({ frame }) => frame.name === 'REPLY_DELTA' && frame.payload?.run_id === runId)
@@ -166,3 +169,4 @@ test.describe('live streaming (real server, ephemeral process)', () => {
     await probe.close();
   });
 });
+
