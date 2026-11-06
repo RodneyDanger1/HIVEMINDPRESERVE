@@ -92,7 +92,7 @@ The browser talks to the binary only over loopback: a session token from `/api/s
 | Source LOC | 36,802 |
 | Total text LOC (incl. docs/data) | 106,840 |
 | Top directories | docs 236, backend 87, runtime-test 82, web 55, e2e 24, tools 16, roots 4, ledgers 2, .cargo 1 |
-| Languages | Rust 79 files/21,669 LOC; TypeScript 40/5,870; TSX 21/1,708; Python 27/6,293; JSON 88/60,049; Markdown 57/4,193 |
+| Languages | Rust 79 files/21,669 LOC; TypeScript 40/5,870; TSX 21/1,708; Python 27/6,293; JSON 88/60,049; Markdown 57/4,193; JavaScript 12/798; CSS 243; PowerShell 198; HTML 17; C 6 (listed subtotal 35,540 + 1,262 = 36,802 source LOC) |
 | Cargo lock packages | 405 |
 | npm lock packages | 147 |
 | Git history | 23 commits, 2 author identities, all dated 2026-11-06 |
