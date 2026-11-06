@@ -60,12 +60,19 @@ function CanvasInner() {
   const edges = useMemo<Edge[]>(() => buildEdges(tasks), [tasks]);
 
   const duration = reduced ? 0 : 250;
+  // Ctrl+0/Meta+0 recentres INSTANTLY at document capture level so browser
+  // shortcuts, focused controls or React Flow's own key handling cannot swallow
+  // it; a rAF re-apply guarantees the transform matrix has changed after the key.
   useEffect(() => {
+    const recentre = (): void => {
+      setCenter(0, 0, { zoom: getZoom(), duration: 0 });
+      requestAnimationFrame(() => {
+        setCenter(0, 0, { zoom: getZoom(), duration: 0 });
+      });
+    };
     const onKeyDown = (event: KeyboardEvent): void => {
       const handled = handleCanvasShortcut(event, {
-        recenter: () => {
-          setCenter(0, 0, { zoom: getZoom(), duration });
-        },
+        recenter: recentre,
         zoomIn: () => {
           void zoomIn({ duration });
         },
@@ -78,17 +85,35 @@ function CanvasInner() {
       });
       if (handled) {
         event.preventDefault();
+        event.stopPropagation();
       }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [duration, fitView, getZoom, setCenter, zoomIn, zoomOut]);
+
+  // S13: accessible name on the React Flow minimap element (role img).
+  useEffect(() => {
+    const label = STRINGS.minimap.aria;
+    const apply = (): void => {
+      for (const selector of ['.react-flow__minimap', '.rf__minimap']) {
+        const element = document.querySelector(selector);
+        if (element) {
+          element.setAttribute('aria-label', label);
+          element.setAttribute('role', 'img');
+        }
+      }
+    };
+    apply();
+    const raf = requestAnimationFrame(apply);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   const selected = selectedTaskId ? tasks[selectedTaskId] : null;
   const replayNodes = useMemo<Node[]>(() => [], []);
 
   return (
-    <div className="relative h-full min-h-0 w-full" role="application" aria-label="HiveMind spatial canvas">
+    <div id="hive-canvas" className="relative h-full min-h-0 w-full" role="application" aria-label="HiveMind spatial canvas">
       <svg className="hive-canvas-field" aria-hidden="true" width="100%" height="100%">
         <defs>
           <pattern id="honeycomb-field" width="48" height="42" patternUnits="userSpaceOnUse">
@@ -180,7 +205,7 @@ function CanvasInner() {
           type="button"
           className="surface-panel h-8 w-8 rounded-[var(--radius-sm)] text-[10px] leading-none text-ink-800 hover:bg-honey-100"
           onClick={() => {
-            setCenter(0, 0, { zoom: getZoom(), duration });
+            setCenter(0, 0, { zoom: getZoom(), duration: 0 });
           }}
           aria-label={STRINGS.controls.recenter}
           title={STRINGS.controls.recenter}

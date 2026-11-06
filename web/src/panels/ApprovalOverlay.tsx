@@ -29,9 +29,13 @@ export function ApprovalOverlay() {
             </dl>
             {approval.nonce === null ? (
               <p className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-amber bg-panel-alt p-2 text-ink-800">
-                {STRINGS.approval.noCommand}
+                {STRINGS.approval.nonceMissing}
               </p>
-            ) : null}
+            ) : (
+              <p className="type-mono-meta mt-2 text-meta">
+                {STRINGS.approval.title}: APPROVAL_RESOLVE · {approval.tool}
+              </p>
+            )}
             <div className="mt-3 flex justify-end gap-2">
               <button
                 type="button"

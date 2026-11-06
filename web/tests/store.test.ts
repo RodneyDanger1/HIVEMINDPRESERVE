@@ -155,6 +155,24 @@ describe('UI store command lifecycle', () => {
     expect(store.getState().refusals).toHaveLength(1);
   });
 
+  it('sends exactly one SETTINGS_STATUS per Settings open (pending guard)', async () => {
+    const { api, store } = await connectedStore();
+    const first = store.getState().probeSettings();
+    const second = store.getState().probeSettings();
+    await Promise.resolve();
+    expect(api.sends).toHaveLength(1);
+    expect(api.sends[0]?.name).toBe('SETTINGS_STATUS');
+    api.resolveNext();
+    await Promise.all([first, second]);
+    expect(store.getState().settings.status).toBe('pending');
+    api.emit({
+      name: 'SETTINGS_STATUS_RESULT',
+      payload: { provider: 'deepseek', model: 'deepseek-flash', key_present: true },
+    });
+    expect(store.getState().settings.status).toBe('ok');
+    expect(store.getState().settings.keyPresent).toBe(true);
+  });
+
   it('keeps graph nodes but distinguishes metadata-less tasks honestly', async () => {
     const { api, store } = await connectedStore();
     api.emit({ name: 'NODE_SPAWN', payload: { task_id: 't-1', state: 'running' } });

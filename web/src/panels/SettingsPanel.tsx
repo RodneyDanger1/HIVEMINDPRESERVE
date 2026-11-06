@@ -48,7 +48,20 @@ export function SettingsPanel() {
           </button>
         </div>
         {settings.status === 'pending' ? <LoadingState /> : null}
-        {settings.status === 'error' ? <ErrorState message={STRINGS.settings.keyUnknown} /> : null}
+        {settings.status === 'error' ? (
+          settings.refusal ? (
+            <div
+              role="alert"
+              className="mt-2 rounded-[var(--radius-sm)] border border-signal bg-panel p-2"
+            >
+              <div className="type-mono-meta text-signal">{settings.refusal.code}</div>
+              <p className="type-body-l mt-1 text-ink-900">{settings.refusal.message}</p>
+              <p className="type-mono-meta mt-1 text-meta">{settings.refusal.how_to_fix}</p>
+            </div>
+          ) : (
+            <ErrorState message={STRINGS.settings.keyUnknown} />
+          )
+        ) : null}
         <dl className="mt-2 grid grid-cols-[140px_1fr] gap-y-1">
           <dt className="type-mono-meta text-meta">{STRINGS.settings.providerLabel}</dt>
           <dd className="type-mono-code text-ink-900">{settings.provider ?? STRINGS.settings.keyUnknown}</dd>

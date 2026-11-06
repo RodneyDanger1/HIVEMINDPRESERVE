@@ -37,6 +37,18 @@ describe('keyboard + zoom gates (R-U7 / G-UI-2)', () => {
     expect(recenter).toHaveBeenCalledOnce();
   });
 
+  it('accepts physical Digit0 code when key differs (automation/layout)', () => {
+    const recenter = vi.fn();
+    const handled = handleCanvasShortcut(event({ ctrlKey: true, key: 'x', code: 'Digit0' }), {
+      recenter,
+      zoomIn: vi.fn(),
+      zoomOut: vi.fn(),
+      fitView: vi.fn(),
+    });
+    expect(handled).toBe(true);
+    expect(recenter).toHaveBeenCalledOnce();
+  });
+
   it('never hijacks typing controls', () => {
     const input = { tagName: 'INPUT', isContentEditable: false } as unknown as HTMLElement;
     const recenter = vi.fn();

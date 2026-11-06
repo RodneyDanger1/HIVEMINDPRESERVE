@@ -128,12 +128,30 @@ nonce it shows a named contract-gap state and disables resolution instead of inv
    unit tests use a fake transport + fake API, not the real socket.
 2. **Node metadata extension**: frozen NODE_* payload = `{task_id,state}` only; kind/label/parent/progress are
    optional extras (forward-compatible). Without them cards are generic — contract-extension request recorded.
-3. **Approval nonce**: `APPROVAL_RESOLVE` requires a nonce but the frozen `APPROVAL_REQUEST` shape does not list
-   one; UI reads an optional `nonce` field and refuses with a named gap when absent (no invented nonce).
+3. **Approval nonce**: the patched `APPROVAL_RESOLVE` command is frozen and implemented in the UI; it requires a
+   server-issued nonce. The UI reads the optional `nonce` field on `APPROVAL_REQUEST` and shows a named gap only
+   when the server omits it (no invented nonce). The previous "no approval-response command" claim was stale and
+   has been removed.
 4. **Fonts**: Playfair/Inter chosen but not bundled (no @fontsource install at W1); fallback stack explicit.
 5. **Bundle size**: 669 kB JS / 213 kB gzip single chunk (warning, not failure) → code-split follow-up.
 6. **No browser e2e / Playwright run** (browser binaries intentionally not installed); no visual screenshot claim.
 7. **AI-proposed-only**: the `motion` animation, `dagre` layout and `partysocket` reconnection are exercised in
    unit tests only at the pure-function level; live reconnect timing is UNVERIFIED.
 8. `web/src/panels/DevGallery.tsx` renders only when `import.meta.env.DEV`; production build returns `null`
-   (verified by the `noHardcoded` scan? no — verified by code inspection and Vite PROD define; live prod check UNVERIFIED).
+   (verified by code inspection + Vite PROD define; live prod check UNVERIFIED).
+
+## 7. Live-e2e fix set (post-audit, 2026-11-06)
+
+Server E2E failures fixed in `web/**`:
+1. **Stale copy removed** — Data panel now describes the frozen `FILE_TREE_LIST`/`FILE_READ` path and its
+   load/preview states; Approval overlay no longer claims "no approval-response command" and instead names only
+   the truthful missing-nonce case (`STRINGS.approval.nonceMissing`).
+2. **Settings single command** — `store.setNav()` no longer auto-probes; `store.probeSettings()` has a
+   synchronous `pending` guard (covers React StrictMode double effect) so one Settings open issues exactly one
+   `SETTINGS_STATUS`; the panel renders ACK/pending/result/typed-refusal from the response.
+3. **Ctrl+0 works on page** — shortcut listener moved to `document` in capture phase, accepts physical
+   `Digit0`/`Numpad0`, ignores input/textarea/contenteditable, calls `setCenter(..., {duration:0})` plus a
+   rAF re-apply so the React Flow transform matrix changes deterministically (unit-tested handler).
+4. **Minimap accessible name** — `aria-label="Mini-map"` + `role="img"` applied to the
+   `.react-flow__minimap`/`.rf__minimap` element (`STRINGS.minimap.aria`), in addition to the component prop.
+

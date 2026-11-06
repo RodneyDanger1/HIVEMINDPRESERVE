@@ -616,9 +616,6 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
 
       setNav(nav: NavSection): void {
         set({ view: { ...get().view, nav } });
-        if (nav === 'settings') {
-          void get().probeSettings();
-        }
         if (nav === 'data' && get().fileTree.status === 'idle') {
           void get().requestFileTree();
         }
@@ -657,13 +654,21 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       },
 
       async probeSettings(): Promise<void> {
+        // Exactly one SETTINGS_STATUS per Settings open: the first call flips
+        // status to 'pending' synchronously, so a second call (React StrictMode
+        // double-effect or a rapid refresh) is a no-op until the response lands.
+        if (get().settings.status === 'pending') {
+          return;
+        }
         set({ settings: { ...get().settings, status: 'pending', refusal: null } });
         const ok = await run('SETTINGS_STATUS', {});
         if (!ok) {
+          const refusal = get().refusals[0]?.refusal ?? null;
           set({
             settings: {
               ...get().settings,
               status: 'error',
+              refusal,
               lastProbe: Date.now(),
             },
           });

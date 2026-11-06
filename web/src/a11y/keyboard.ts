@@ -6,6 +6,8 @@ import { MAX_ZOOM, MIN_ZOOM } from '../api/contract';
 
 export interface KeyLikeEvent {
   readonly key: string;
+  /** Physical key code; robust for layouts/automation where `key` may differ. */
+  readonly code?: string;
   readonly ctrlKey: boolean;
   readonly metaKey: boolean;
   readonly shiftKey: boolean;
@@ -58,7 +60,8 @@ export function handleCanvasShortcut(
   if (event.altKey) {
     return false;
   }
-  if (chord && event.key === '0' && !event.shiftKey) {
+  const isZero = event.key === '0' || event.code === 'Digit0' || event.code === 'Numpad0';
+  if (chord && isZero && !event.shiftKey) {
     handlers.recenter();
     return true;
   }

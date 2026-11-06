@@ -136,7 +136,7 @@ export const STRINGS = {
     empty: 'No run history yet',
   },
   minimap: {
-    aria: 'Canvas minimap',
+    aria: 'Mini-map',
   },
   toast: {
     regionAria: 'Refusals and errors',
@@ -192,7 +192,10 @@ export const STRINGS = {
     agentsEmpty: 'No agents yet — submit a prompt to create the first run.',
     dataTitle: 'Data',
     dataUnavailable:
-      'The v1 server exposes no workspace-file API yet; the file tree is a named gap (Phase 6 tool plane), not a fake tree.',
+      'Workspace files are served by the frozen FILE_TREE_LIST and FILE_READ commands. Load the tree, then select a file to preview it here.',
+    dataError:
+      'The workspace tree could not be loaded; the server returned a named refusal (see the toast) — retry with Refresh.',
+    dataPreviewHint: 'Select a file from the tree to preview it here.',
     modelsTitle: 'Models',
     modelsEmpty: 'Server reports no models.',
     routingTitle: 'Routing',
@@ -208,8 +211,8 @@ export const STRINGS = {
   approval: {
     title: 'Tool approval requested',
     toolLabel: 'Tool',
-    noCommand:
-      'Approval cannot be resolved from this UI: the frozen command set has no approval-response command (recorded contract gap).',
+    nonceMissing:
+      'This APPROVAL_REQUEST did not carry the nonce required by the frozen APPROVAL_RESOLVE command, so it cannot be resolved from the UI. Report the missing nonce; do not invent one.',
   },
   node: {
     hyperAgent: 'HyperAgent',

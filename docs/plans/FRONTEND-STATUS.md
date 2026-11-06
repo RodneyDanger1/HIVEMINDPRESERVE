@@ -89,3 +89,22 @@ Disk free after install: **7.43 GB** (floor 1.2 GB not approached). Node v26.7.0
   approval nonce optional-field gap; fonts chosen but not bundled; single-chunk size warning; no browser e2e.
 - **Next:** wire against the running server once `/ws` + patched commands land, add browser e2e when the Lead
   allows Playwright/Chrome channel, then Phase-12 packaging (asset bundle + code-splitting) and final gates.
+
+## Live-e2e fix set (2026-11-06) — all green
+
+Server E2E failures fixed in `web/**` only:
+1. **Stale copy removed** — Data panel now reflects the frozen `FILE_TREE_LIST`/`FILE_READ` commands (load tree →
+   select file → preview; separate loading/error copy). Approval overlay no longer claims "no approval-response
+   command"; it now names only the truthful missing-nonce case for `APPROVAL_RESOLVE`.
+2. **Settings single command** — `setNav()` auto-probe removed; `probeSettings()` has a synchronous pending guard
+   (covers React StrictMode double-effect), so one Settings open issues exactly one `SETTINGS_STATUS`; the panel
+   renders pending/ACK/result/typed-refusal from the response. Unit test: "sends exactly one SETTINGS_STATUS per
+   Settings open".
+3. **Ctrl+0 fixed on page** — document-level capture listener (ignores input/textarea/contenteditable), accepts
+   key `0` and physical `Digit0`/`Numpad0`, recentres instantly with `setCenter(…, {duration:0})` + rAF re-apply so
+   the React Flow transform matrix changes; unit test covers the code path.
+4. **Minimap accessible name** — `aria-label="Mini-map"` + `role="img"` set on the `.react-flow__minimap` /
+   `.rf__minimap` element (plus the component `ariaLabel` prop).
+
+Final commands: `typecheck` exit 0 · `vitest` **46/46 tests** (8 files) · `build` ✓ (35.75 kB CSS / 670.46 kB JS,
+214.23 kB gzip). Rust release NOT rebuilt (Lead's step).

@@ -20,7 +20,7 @@ export function DataPanel() {
       <section aria-label={STRINGS.panels.dataTitle} className="min-h-0 overflow-y-auto">
         <PanelTitle>{STRINGS.panels.dataTitle}</PanelTitle>
         {fileTree.status === 'loading' ? <LoadingState /> : null}
-        {fileTree.status === 'error' ? <ErrorState message={STRINGS.panels.dataUnavailable} /> : null}
+        {fileTree.status === 'error' ? <ErrorState message={STRINGS.panels.dataError} /> : null}
         {fileTree.status === 'ok' && fileTree.entries.length === 0 ? (
           <EmptyState message={STRINGS.states.empty} />
         ) : null}
@@ -52,7 +52,7 @@ export function DataPanel() {
         {fileTree.contentStatus === 'loading' ? <LoadingState /> : null}
         {fileTree.contentStatus === 'error' ? <ErrorState message={STRINGS.states.unavailable} /> : null}
         {fileTree.content === null && fileTree.contentStatus === 'idle' ? (
-          <EmptyState message={STRINGS.panels.dataUnavailable} />
+          <EmptyState message={STRINGS.panels.dataPreviewHint} />
         ) : null}
         {fileTree.content ? (
           <div className="surface-panel rounded-[var(--radius-md)] p-3">
