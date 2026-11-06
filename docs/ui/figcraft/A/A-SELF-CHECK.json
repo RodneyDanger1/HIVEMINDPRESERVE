@@ -2,9 +2,9 @@
  "schema": "hivemind.figcraft-selfcheck.v1",
  "producer": "FigCraft-A",
  "document": "docs/ui/figcraft/A/A-design.figcraft",
- "document_sha256": "2bb34442bf46a7c5f4099281ba8b1077a02a904f07aa2653c2555461d088eaf2",
+ "document_sha256": "93226ddfc3297274aad2b649852b53a60321d8a2f4ff280de05349858276cd74",
  "figcraft_cli_version": "0.11.2",
- "generated": "2026-11-06T04:40:28-0600",
+ "generated": "2026-11-06T04:46:07-0600",
  "info": {
   "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\A-design.figcraft",
   "name": "HiveMind v1 Design System",
@@ -126,48 +126,48 @@
   },
   {
    "surface_id": "S04",
-   "node_id": 782,
+   "node_id": 740,
    "found": true,
-   "name": "name",
+   "name": "02/row/S04/label",
    "type": "TEXT",
    "bounds": {
     "height": 16.0,
-    "width": 62.0,
+    "width": 95.0,
     "x": 64.0,
-    "y": 1644.0
+    "y": 1440.0
    }
   },
   {
    "surface_id": "S05",
-   "node_id": 782,
+   "node_id": 754,
    "found": true,
-   "name": "name",
+   "name": "02/row/S05/label",
    "type": "TEXT",
    "bounds": {
     "height": 16.0,
-    "width": 62.0,
+    "width": 51.0,
     "x": 64.0,
-    "y": 1644.0
+    "y": 1508.0
    }
   },
   {
    "surface_id": "S06",
-   "node_id": 782,
+   "node_id": 768,
    "found": true,
-   "name": "name",
+   "name": "02/row/S06/label",
    "type": "TEXT",
    "bounds": {
     "height": 16.0,
-    "width": 62.0,
+    "width": 41.0,
     "x": 64.0,
-    "y": 1644.0
+    "y": 1576.0
    }
   },
   {
    "surface_id": "S07",
    "node_id": 782,
    "found": true,
-   "name": "name",
+   "name": "02/row/S07/label",
    "type": "TEXT",
    "bounds": {
     "height": 16.0,
@@ -438,15 +438,15 @@
   },
   {
    "surface_id": "S28",
-   "node_id": 1099,
+   "node_id": 875,
    "found": true,
-   "name": "text",
+   "name": "02/library/project-name",
    "type": "TEXT",
    "bounds": {
-    "height": 12.0,
-    "width": 1344.0,
-    "x": 48.0,
-    "y": 2500.0
+    "height": 16.0,
+    "width": 230.0,
+    "x": 158.0,
+    "y": 1810.0
    }
   }
  ],

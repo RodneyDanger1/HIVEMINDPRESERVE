@@ -1,0 +1,73 @@
+﻿{
+  "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\B\\B-canvas.figcraft",
+  "images": 0,
+  "missingFonts": [],
+  "name": "HiveMind v1 - Canvas (B)",
+  "nodes": 602,
+  "notes": [],
+  "pages": [
+    {
+      "frames": [
+        {
+          "height": 900.0,
+          "id": 5,
+          "name": "b-canvas-default",
+          "type": "FRAME",
+          "width": 1440.0
+        }
+      ],
+      "id": 1,
+      "name": "Canvas / default",
+      "nodes": 223,
+      "topLevel": 1
+    },
+    {
+      "frames": [
+        {
+          "height": 900.0,
+          "id": 6,
+          "name": "b-zoom-states",
+          "type": "FRAME",
+          "width": 1440.0
+        }
+      ],
+      "id": 2,
+      "name": "Canvas / zoom states",
+      "nodes": 94,
+      "topLevel": 1
+    },
+    {
+      "frames": [
+        {
+          "height": 900.0,
+          "id": 7,
+          "name": "b-interaction",
+          "type": "FRAME",
+          "width": 1440.0
+        }
+      ],
+      "id": 3,
+      "name": "Canvas / interaction states",
+      "nodes": 174,
+      "topLevel": 1
+    },
+    {
+      "frames": [
+        {
+          "height": 900.0,
+          "id": 8,
+          "name": "b-hero",
+          "type": "FRAME",
+          "width": 1440.0
+        }
+      ],
+      "id": 4,
+      "name": "Brand hero",
+      "nodes": 107,
+      "topLevel": 1
+    }
+  ],
+  "styles": 0,
+  "variables": 0
+}
+

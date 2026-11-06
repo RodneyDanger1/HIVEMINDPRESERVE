@@ -439,7 +439,8 @@ def buttons_matrix(b):
     for r, (label, variant, g, surf, cmd) in enumerate(rows):
         ry = y + 36 + r * 68
         b.surfaces[surf] = len(b.el)
-        b.name_text(x + 16, ry + 8, label, 12)
+        b.name_text(x + 16, ry + 8, label, 12,
+                    name="02/row/%s/label" % surf)
         b.text(x + 16, ry + 26, cmd, 8, "Consolas", "Regular", C["ink500"],
                width=130, line=11)
         b.text(x + 16, ry + 40, "min 40px · radius 10", 8, "Consolas", "Regular",
@@ -540,7 +541,8 @@ def library_panel(b):
     # project identity (S28)
     g28 = "S28-project"
     b.text(x + 14, y + 14, "Project: HiveMind AI", 12.5, "Inter", "SemiBold",
-           C["ink900"], width=230, line=16, group=g, surface="S28")
+           C["ink900"], width=230, line=16, group=g, surface="S28",
+           name="02/library/project-name")
     b.text(x + 14, y + 32, "AC A. Chen", 9, "Consolas", "Regular", C["ink500"],
            width=150, line=12, group=g)
     b.text(x + 14, y + 48, "project_id from state · never hardcoded", 8, "Consolas",

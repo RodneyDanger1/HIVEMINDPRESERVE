@@ -1,4 +1,4 @@
-//! Approval / consent gate (Phase 6 WPs 6.6/6.11/6.13, CANONICAL C18).
+﻿//! Approval / consent gate (Phase 6 WPs 6.6/6.11/6.13, CANONICAL C18).
 //!
 //! Contract (EXT-R5-04):
 //! - An `approval` row is committed **before any side effect**; the request
@@ -56,6 +56,26 @@ impl ApprovalDecision {
             "allow_session" => Some(ApprovalDecision::AllowSession),
             "deny" => Some(ApprovalDecision::Deny),
             _ => None,
+        }
+    }
+
+    /// Parses the frozen wire decision (`APPROVAL_RESOLVE.decision`:
+    /// `approve` | `deny`; the session grant stays an internal/programmatic
+    /// decision and is not reachable from the wire).
+    ///
+    /// # Errors
+    /// A named refusal for any other value (the contract patch maps this to
+    /// `E_APPROVAL_DECISION_INVALID`; until that variant lands in the contract
+    /// crate the frozen `E_SCHEMA_INVALID` code is used â€” same refusal identity,
+    /// no invented code).
+    pub fn from_wire(decision: &str) -> Result<Self, ToolError> {
+        match decision {
+            "approve" => Ok(ApprovalDecision::AllowOnce),
+            "deny" => Ok(ApprovalDecision::Deny),
+            other => Err(ToolError::new(
+                Refusal::ApprovalDecisionInvalid,
+                format!("approval decision {other:?} is not approve|deny"),
+            )),
         }
     }
 }
@@ -132,7 +152,8 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
             expires_at      TEXT NOT NULL,
             nonce           TEXT NOT NULL UNIQUE,
             decision        TEXT,
-            decided_at      TEXT
+            decided_at      TEXT,
+            reason          TEXT
         );
         CREATE INDEX IF NOT EXISTS approvals_run_pending
             ON approvals (run_id, tool_name, args_sha256, decision);
@@ -291,7 +312,7 @@ pub fn resolve(
 ) -> Result<ApprovalResolution, ToolError> {
     let request = load_request(conn, approval_id)?.ok_or_else(|| {
         ToolError::new(
-            Refusal::ApprovalRequired,
+            Refusal::ApprovalNotFound,
             format!("no approval request with id {approval_id}"),
         )
     })?;
@@ -373,6 +394,122 @@ pub fn session_allowed(
         |row| row.get(0),
     )?;
     Ok(count > 0)
+}
+
+/// Resolves a pending approval via the frozen `APPROVAL_RESOLVE` wire shape:
+/// `approval_id` + one-time `nonce` + `decision` (`approve`/`deny`) + optional
+/// reason.
+///
+/// The nonce binds the decision to exactly one presented request; a mismatched
+/// nonce is refused without revealing anything about the stored request, and a
+/// used nonce can never be replayed.
+///
+/// # Errors
+/// - [`Refusal::ApprovalRequired`] when no approval with that id exists (the
+///   contract patch maps this to `E_APPROVAL_NOT_FOUND` once the variant lands);
+/// - [`Refusal::ApprovalReplay`] for a mismatched/already-used nonce;
+/// - [`Refusal::ApprovalTimeout`] when the request is past its TTL;
+/// - [`Refusal::SchemaInvalid`] for a decision that is not `approve`/`deny`
+///   (contract patch: `E_APPROVAL_DECISION_INVALID`).
+pub fn resolve_with_nonce(
+    conn: &Connection,
+    approval_id: &str,
+    nonce: &str,
+    decision: &str,
+    reason: Option<&str>,
+    now_unix_secs: u64,
+) -> Result<ApprovalResolution, ToolError> {
+    let parsed_decision = ApprovalDecision::from_wire(decision)?;
+    let request = load_request(conn, approval_id)?.ok_or_else(|| {
+        ToolError::new(
+            Refusal::ApprovalNotFound,
+            format!("no approval request with id {approval_id}"),
+        )
+    })?;
+    if request.nonce != nonce {
+        return Err(ToolError::new(
+            Refusal::ApprovalReplay,
+            "the approval nonce does not match the pending request; a decision cannot be replayed \
+             or forged",
+        ));
+    }
+    resolve_with_reason(conn, approval_id, parsed_decision, reason, now_unix_secs)
+}
+
+fn resolve_with_reason(
+    conn: &Connection,
+    approval_id: &str,
+    decision: ApprovalDecision,
+    reason: Option<&str>,
+    now_unix_secs: u64,
+) -> Result<ApprovalResolution, ToolError> {
+    let request = load_request(conn, approval_id)?.ok_or_else(|| {
+        ToolError::new(
+            Refusal::ApprovalNotFound,
+            format!("no approval request with id {approval_id}"),
+        )
+    })?;
+    let existing: Option<Option<String>> = conn
+        .query_row(
+            "SELECT decision FROM approvals WHERE approval_id = ?1",
+            params![approval_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    match existing {
+        Some(Some(_)) => {
+            return Err(ToolError::new(
+                Refusal::ApprovalReplay,
+                "this approval nonce already consumed a decision; replay is refused",
+            ));
+        }
+        Some(None) => {}
+        None => {
+            return Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                format!("no approval request with id {approval_id}"),
+            ));
+        }
+    }
+
+    let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+    if request.is_expired(now_unix_secs) {
+        conn.execute(
+            "UPDATE approvals SET decision = 'expired', decided_at = ?1
+             WHERE approval_id = ?2 AND decision IS NULL",
+            params![decided_at.as_str(), approval_id],
+        )?;
+        return Err(ToolError::new(
+            Refusal::ApprovalTimeout,
+            format!(
+                "approval expired at {} (TTL {} s); no side effect was performed",
+                request.expires_at.as_str(),
+                APPROVAL_TTL_SECS
+            ),
+        ));
+    }
+
+    let changed = conn.execute(
+        "UPDATE approvals SET decision = ?1, decided_at = ?2, reason = ?3
+         WHERE approval_id = ?4 AND decision IS NULL",
+        params![
+            decision.label(),
+            decided_at.as_str(),
+            reason,
+            approval_id
+        ],
+    )?;
+    if changed != 1 {
+        return Err(ToolError::new(
+            Refusal::ApprovalReplay,
+            "another decision already consumed this approval nonce",
+        ));
+    }
+    Ok(ApprovalResolution {
+        request,
+        decision,
+        decided_at,
+    })
 }
 
 /// Pending (undecided) approvals for a run, oldest first.
@@ -483,7 +620,23 @@ impl ApprovalGate {
         decision: ApprovalDecision,
         now_unix_secs: u64,
     ) -> Result<ApprovalResolution, ToolError> {
-        resolve(conn, approval_id, decision, now_unix_secs)
+        resolve_with_reason(conn, approval_id, decision, None, now_unix_secs)
+    }
+
+    /// Resolves via the frozen `APPROVAL_RESOLVE` wire shape (nonce + approve/deny).
+    ///
+    /// # Errors
+    /// See [`resolve_with_nonce`].
+    pub fn resolve_command(
+        &self,
+        conn: &Connection,
+        approval_id: &str,
+        nonce: &str,
+        decision: &str,
+        reason: Option<&str>,
+        now_unix_secs: u64,
+    ) -> Result<ApprovalResolution, ToolError> {
+        resolve_with_nonce(conn, approval_id, nonce, decision, reason, now_unix_secs)
     }
 
     /// Verifies the execution grant for a tool call without performing it.
@@ -707,6 +860,72 @@ mod tests {
     }
 
     #[test]
+    fn wire_approval_resolve_uses_nonce_and_replay_refusal() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let gate = ApprovalGate::default();
+
+        // Wrong nonce: refused, nothing consumed.
+        let error = gate
+            .resolve_command(
+                &conn,
+                &request.approval_id.to_string(),
+                "not-the-nonce",
+                "approve",
+                None,
+                now(),
+            )
+            .expect_err("wrong nonce");
+        assert_eq!(error.code(), "E_APPROVAL_REPLAY");
+
+        // Correct nonce + approve â†’ resolved once.
+        let resolution = gate
+            .resolve_command(
+                &conn,
+                &request.approval_id.to_string(),
+                &request.nonce,
+                "approve",
+                Some("tests approve"),
+                now(),
+            )
+            .expect("resolved");
+        assert_eq!(resolution.decision, ApprovalDecision::AllowOnce);
+
+        // Replay with the same nonce is refused.
+        let error = gate
+            .resolve_command(
+                &conn,
+                &request.approval_id.to_string(),
+                &request.nonce,
+                "approve",
+                None,
+                now(),
+            )
+            .expect_err("replay");
+        assert_eq!(error.code(), "E_APPROVAL_REPLAY");
+
+        // Unknown id is a named refusal.
+        let error = gate
+            .resolve_command(&conn, "no-such-approval", "nonce", "approve", None, now())
+            .expect_err("not found");
+        assert_eq!(error.code(), "E_APPROVAL_NOT_FOUND");
+    }
+
+    #[test]
+    fn wire_approval_decision_is_validated() {
+        assert_eq!(
+            ApprovalDecision::from_wire("approve").expect("approve"),
+            ApprovalDecision::AllowOnce
+        );
+        assert_eq!(
+            ApprovalDecision::from_wire("deny").expect("deny"),
+            ApprovalDecision::Deny
+        );
+        let error = ApprovalDecision::from_wire("allow_session").expect_err("not a wire value");
+        assert_eq!(error.code(), "E_APPROVAL_DECISION_INVALID");
+    }
+
+    #[test]
     fn ledger_row_never_stores_argument_body() {
         let conn = memory_db();
         let secret_content = "TOP-SECRET-ARGUMENT-BODY";
@@ -748,3 +967,4 @@ mod tests {
         assert_eq!(error.code(), "E_INTERNAL_ERROR");
     }
 }
+

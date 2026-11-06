@@ -9,7 +9,7 @@ leave PENDING when its `evidence[]` is non-empty and points at a captured artifa
 
 | File | Role | Current state |
 |---|---|---|
-| `controls.json` | 28 control records × 11 hop slots (initial verdicts) | generated; 28 × 11 all `PENDING` |
+| `controls.json` | 29 control records (28 guide surfaces + supplemental `S-APPROVAL`) × 11 hop slots (initial verdicts) | generated; 29 × 11 all `PENDING` |
 | `traces.json` | append-only captured runs (`TraceRun[]`) | empty (`0 runs`) |
 | `events.json` | emitted/subscribed/delivered parity, payload parity, terminal records | empty arrays; event vocabulary 21 |
 | `terminal-truth.md` | terminal-run truth template (per-run evidence block) | template only, `NOT_COLLECTED` |
@@ -48,7 +48,8 @@ Validate: `node tools/qa/verify-harness.mjs`.
 }
 ```
 
-Rules: 28 controls exactly; each 11 keys exactly; verdict vocabulary below; `evidence[]` entries are
+Rules: 29 controls exactly (28 guide surfaces S01-S28 + supplemental `S-APPROVAL` for `APPROVAL_RESOLVE`); each record
+has 11 keys exactly; verdict vocabulary below; `evidence[]` entries are
 `{"kind":"dom|request|ws-frame|db-row|log|file","pointer":"...","quote":"..."}`; no verdict may be
 `WIRED-AND-WORKS` without evidence for **all** hops that the control exercises.
 

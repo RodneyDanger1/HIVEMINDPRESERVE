@@ -133,19 +133,23 @@ def build_default(frame):
            width=276, size=8, name="s08/tabs-note")
 
     # HUD (S09)
-    b.rect(690, 20, 400, 40, fill=C["paper"], r=999, stroke=C["hairline"],
+    b.rect(690, 20, 440, 40, fill=C["paper"], r=999, stroke=C["hairline"],
            sw=1, name="s09/hud", effect="e2")
     b.text(714, 31, HUD[0], 11, "Inter", "SemiBold", C["ink900"], line=15,
            name="s09/hud/superagents")
-    b.text(818, 31, HUD[1], 11, "Inter", "SemiBold", C["ink900"], line=15,
+    b.text(826, 31, "·", 11, "Inter", "SemiBold", C["ink500"], width=12,
+           align="center", line=15, name="s09/hud/sep1")
+    b.text(842, 31, HUD[1], 11, "Inter", "SemiBold", C["ink900"], line=15,
            name="s09/hud/workers")
-    b.dot(918, 34, 7, "circle", C["verify"], name="s09/hud/green-dot")
-    b.text(930, 31, HUD[2], 11, "Inter", "SemiBold", C["ink900"], line=15,
+    b.text(924, 31, "·", 11, "Inter", "SemiBold", C["ink500"], width=12,
+           align="center", line=15, name="s09/hud/sep2")
+    b.dot(944, 34, 7, "circle", C["verify"], name="s09/hud/green-dot")
+    b.text(956, 31, HUD[2], 11, "Inter", "SemiBold", C["ink900"], line=15,
            name="s09/hud/green")
-    b.pill(1022, 26, 52, 28, C["honey200"], HUD[3], C["ink800"], size=10,
+    b.pill(1058, 26, 52, 28, C["honey200"], HUD[3], C["ink800"], size=10,
            name="s09/hud/delta")
     b.meta(690, 66, "RUN_METRICS · derived aggregate, never hardcoded (R-U13)",
-           width=400, align="center", size=8, name="s09/hud/note")
+           width=440, align="center", size=8, name="s09/hud/note")
 
     b.eyebrow(1160, 20, "S01 · INFINITE CANVAS", width=260, align="right",
               name="s01/right-eyebrow")
@@ -255,8 +259,10 @@ def build_default(frame):
            name="edge/core-broken/warn")
     b.text(1117, 412, "!", 9.5, "Inter", "SemiBold", C["paper"], width=9,
            align="center", line=12, name="edge/core-broken/warn-mark")
-    b.meta(1066, 458, "halted bee · E0421", width=110, align="center",
-           color=C["signal"], size=8.5, name="edge/core-broken/note")
+    b.meta(1080, 452, "halted bee", width=76, align="center",
+           color=C["signal"], size=8, name="edge/core-broken/note")
+    b.meta(1080, 464, "E0421", width=76, align="center",
+           color=C["signal"], size=8, name="edge/core-broken/note2")
 
     # ------------------------------------------------- hive chat core (S02)
     b.rect(742, 286, 336, 330, fill=C["paper"], r=24, stroke=C["hairline"],
@@ -350,7 +356,7 @@ def build_default(frame):
              name="s10/play-icon")
     b.text(748, 804, SCRUB[0], 11.5, "Consolas", "Regular", C["ink900"],
            width=110, line=14, name="s10/time")
-    b.meta(900, 806, SCRUB[1], width=168, align="right", size=9,
+    b.meta(900, 806, "· " + SCRUB[1], width=168, align="right", size=9,
            name="s10/state-label")
     b.rect(748, 838, 312, 2, fill=C["hairline"], name="s10/track")
     b.rect(748, 838, 98, 2, fill=C["honey500"], name="s10/progress")

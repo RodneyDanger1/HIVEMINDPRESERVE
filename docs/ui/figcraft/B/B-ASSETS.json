@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-assets.v1",
  "producer": "FigCraft-B (delegate) - canvas, zoom states, interaction states, brand hero",
- "generated_at": "2026-11-06T04:27:37-0600",
+ "generated_at": "2026-11-06T04:52:55-0600",
  "tool": {
   "name": "figcraft-cli",
   "version": "0.11.2",
@@ -10,7 +10,7 @@
  },
  "design_file": {
   "path": "B\\B-canvas.figcraft",
-  "sha256": "6e2d05ef4b4dbae991493ca4c55bb85d10d31e946501e092ea207c39a7c1b24d",
+  "sha256": "dae6068926e30c99e89a43a1b15257ff8f16b1fd6c943ae990a4f383c0418288",
   "pages": [
    {
     "code": "00",
@@ -58,17 +58,77 @@
    }
   ],
   "built_pages": [
-   "00"
+   "00",
+   "01",
+   "02",
+   "03"
   ]
  },
  "exports": {
   "b-canvas-default": {
    "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
    "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
-   "sha256_svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-   "sha256_png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba",
-   "svg_bytes": 1223210,
-   "png_bytes": 1028183,
+   "sha256_svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+   "sha256_png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694",
+   "svg_bytes": 1223908,
+   "png_bytes": 1027268,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "b-zoom-states": {
+   "svg": "docs/ui/figcraft/ASSETS/b-zoom-states.svg",
+   "png": "docs/ui/figcraft/ASSETS/b-zoom-states.png",
+   "sha256_svg": "ab1ee97ae2b9d042b9d8b78ef22f10f1d4b594041fbc51acd27c32112a9493ae",
+   "sha256_png": "a02cb4a1963a8c3588ae3cc66fa74c0f7d415e1a46e95089d191794d4f79141c",
+   "svg_bytes": 966005,
+   "png_bytes": 1114713,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "b-interaction": {
+   "svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+   "png": "docs/ui/figcraft/ASSETS/b-interaction.png",
+   "sha256_svg": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+   "sha256_png": "de50112439898e88b8bbf334dd8427f0f8af2fa2fbcc6bed338334f34f0d00a4",
+   "svg_bytes": 1665849,
+   "png_bytes": 1025547,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "b-hero": {
+   "svg": "docs/ui/figcraft/ASSETS/b-hero.svg",
+   "png": "docs/ui/figcraft/ASSETS/b-hero.png",
+   "sha256_svg": "2bf8d20facba986b2c148702a774187538886658c680f7d323aa0e785a678477",
+   "sha256_png": "719a28be8de4926612ecfe5537ec7bdb98e04eac5338d34fcc6efbb62b54834e",
+   "svg_bytes": 780682,
+   "png_bytes": 941929,
    "dimensions": {
     "board": [
      1440,
@@ -96,8 +156,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -122,14 +182,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s10/scrubber",
-   "node_id": 208,
+   "node_id": 211,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -154,14 +214,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s13/minimap",
-   "node_id": 218,
+   "node_id": 221,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -192,8 +252,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -218,14 +278,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s20/zoom-control",
-   "node_id": 202,
+   "node_id": 205,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -244,20 +304,84 @@
    "required_by_brief_b": true
   },
   {
+   "surface_id": "S24",
+   "name": "Elevation e1/e2/e3",
+   "page": "Canvas / interaction states",
+   "frame": "b-interaction",
+   "frame_id": 7,
+   "node_name": "s24/elevation-panel",
+   "node_id": 435,
+   "exports": {
+    "svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+    "png": "docs/ui/figcraft/ASSETS/b-interaction.png"
+   },
+   "sha256": {
+    "svg": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+    "png": "de50112439898e88b8bbf334dd8427f0f8af2fa2fbcc6bed338334f34f0d00a4"
+   },
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "pdf_lines": "PDF:137-146",
+   "wiring": "CSS elevation tokens; printed value unreconciled",
+   "status": "present",
+   "required_by_brief_b": true
+  },
+  {
+   "surface_id": "S25",
+   "name": "Code-diff review modal (decision-gated)",
+   "page": "Canvas / interaction states",
+   "frame": "b-interaction",
+   "frame_id": 7,
+   "node_name": "s25/diff-modal",
+   "node_id": 448,
+   "exports": {
+    "svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+    "png": "docs/ui/figcraft/ASSETS/b-interaction.png"
+   },
+   "sha256": {
+    "svg": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+    "png": "de50112439898e88b8bbf334dd8427f0f8af2fa2fbcc6bed338334f34f0d00a4"
+   },
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "pdf_lines": "U3 G-03; UI-COMMANDS-v1 §2",
+   "wiring": "DIFF_* NOT FROZEN - do not implement",
+   "status": "present",
+   "required_by_brief_b": true
+  },
+  {
    "surface_id": "S02",
    "name": "HyperAgent hive chat core (pinned)",
    "page": "Canvas / default",
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s02/chat-core",
-   "node_id": 171,
+   "node_id": 174,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -282,14 +406,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s03/composer",
-   "node_id": 183,
+   "node_id": 186,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -314,14 +438,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s04/button-bg",
-   "node_id": 191,
+   "node_id": 194,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -346,14 +470,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s05/button-bg",
-   "node_id": 193,
+   "node_id": 196,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -378,14 +502,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s06/button-bg",
-   "node_id": 195,
+   "node_id": 198,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -410,14 +534,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s07/button-bg",
-   "node_id": 197,
+   "node_id": 200,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -448,8 +572,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -480,8 +604,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -512,8 +636,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -544,8 +668,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -564,20 +688,52 @@
    "required_by_brief_b": false
   },
   {
+   "surface_id": "S14",
+   "name": "Refusal toast",
+   "page": "Canvas / interaction states",
+   "frame": "b-interaction",
+   "frame_id": 7,
+   "node_name": "s14/toast",
+   "node_id": 393,
+   "exports": {
+    "svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+    "png": "docs/ui/figcraft/ASSETS/b-interaction.png"
+   },
+   "sha256": {
+    "svg": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+    "png": "de50112439898e88b8bbf334dd8427f0f8af2fa2fbcc6bed338334f34f0d00a4"
+   },
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "pdf_lines": "PDF:269-273",
+   "wiring": "ERROR frame -> toast + log + ledger",
+   "status": "present",
+   "required_by_brief_b": false
+  },
+  {
    "surface_id": "S15",
    "name": "SuperAgent sub-hive card",
    "page": "Canvas / default",
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s15/subhive-name",
-   "node_id": 127,
+   "node_id": 129,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -602,14 +758,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s16/worker-name",
-   "node_id": 137,
+   "node_id": 139,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -634,14 +790,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s17/tool-name",
-   "node_id": 144,
+   "node_id": 146,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -666,14 +822,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s18/broken-card",
-   "node_id": 155,
+   "node_id": 157,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -704,8 +860,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -736,8 +892,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -768,8 +924,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -794,14 +950,14 @@
    "frame": "b-canvas-default",
    "frame_id": 5,
    "node_name": "s02/msg-reply",
-   "node_id": 178,
+   "node_id": 181,
    "exports": {
     "svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -832,8 +988,8 @@
     "png": "docs/ui/figcraft/ASSETS/b-canvas-default.png"
    },
    "sha256": {
-    "svg": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
-    "png": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba"
+    "svg": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+    "png": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694"
    },
    "dimensions": {
     "board": [
@@ -852,22 +1008,21 @@
    "required_by_brief_b": false
   }
  ],
- "pending_surfaces": [
-  "S24",
-  "S25"
- ],
+ "pending_surfaces": [],
  "totals": {
-  "exports": 1,
-  "surfaces_present": 24,
+  "exports": 4,
+  "surfaces_present": 27,
   "required_present": [
    "S01",
    "S10",
    "S13",
    "S19",
-   "S20"
+   "S20",
+   "S24",
+   "S25"
   ],
-  "command_count": 259,
-  "stages": 4
+  "command_count": 690,
+  "stages": 7
  },
  "evidence": {
   "pdf": "hivemind-blueprint/evidence/pdf/pages.txt",

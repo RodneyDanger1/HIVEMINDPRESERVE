@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-episodes.v1",
  "producer": "FigCraft-A",
- "generated": "2026-11-06T04:40:28-0600",
+ "generated": "2026-11-06T04:46:07-0600",
  "command_ids_used": [
   "effect.add",
   "effect.set",
@@ -75,7 +75,7 @@
   },
   {
    "path": "docs/ui/figcraft/A/build/pages_components.py",
-   "sha256": "47a7266e65370f270fb7c73984b88b2c938e7a10b38de33d2b1fc0e77e7421da"
+   "sha256": "a7c29f01351a150962481d3d5a5d4aeb4a2e2398c1ee34c200ac1a1062f70ccf"
   },
   {
    "path": "docs/ui/figcraft/A/build/pages_specimens.py",
@@ -83,11 +83,11 @@
   },
   {
    "path": "docs/ui/figcraft/A/build/gen_build.py",
-   "sha256": "a1fa3e0d644793a5b259b0dfcd1929bf8887edd70158ae25ac5fe7852b995462"
+   "sha256": "156cc41465354353d3400e30e98900dfa30eb5877820c524bc0e4dc96065230c"
   },
   {
    "path": "docs/ui/figcraft/A/build/gen_manifest.py",
-   "sha256": "7a0e571ff9a3800635281e2f66791993fcdbe52ecd4db73af4438769b72d7634"
+   "sha256": "4cb245cf90784d759b73cc3b9e182b23c7705b63175ff3b9161ade02983d18d4"
   }
  ],
  "self_check": "docs/ui/figcraft/A/A-SELF-CHECK.json"

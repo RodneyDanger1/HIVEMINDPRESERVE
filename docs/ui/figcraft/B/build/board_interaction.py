@@ -22,10 +22,10 @@ def build_interaction(frame):
                       "UI-COMMANDS-v1 §2 / R-U3 / R-U9", name="ix/eyebrow")
     b.text(48, 42, "Interaction states", 40, "Playfair Display", "SemiBold",
            C["ink900"], width=760, line=48, tracking=-1.5, name="ix/title")
-    b.body(48, 98, "Every mutating control shows ACK or a named refusal before UI "
-                   "state changes. Focus is visible at >=3:1, refusals are never "
-                   "silent, and the code-diff surface stays DECISION-GATED.", 820,
-           size=12.5, line=18, name="ix/intro")
+    b.body(48, 96, "Every mutating control shows ACK or a named refusal before "
+                   "UI state changes · focus >=3:1 · refusals never silent · "
+                   "diff DECISION-GATED", 900, size=12.5, line=17,
+           name="ix/intro")
     b.eyebrow(1160, 26, "1440 x 900 · 9 PANELS + DIFF", width=232,
               align="right", size=8, name="ix/right-eyebrow")
     b.meta(1160, 44, "PDF:237,269-273 · UI-ADD-04", width=232, align="right",
@@ -313,14 +313,14 @@ def build_interaction(frame):
              "cancelled", "killed", "planning", "thinking", "streaming",
              "awaiting_approval", "reconnecting", "replay", "empty", "loading"]
     for i, st in enumerate(order):
-        row, col = divmod(i, 5)
-        cx = 944 + col * 90
-        cy = 770 + row * 24
+        row, col = divmod(i, 4)
+        cx = 944 + col * 108
+        cy = 768 + row * 21
         b.dot(cx, cy, 7, STATE_SHAPE[st], STATE_COLOR[st],
               name="s19/legend/%s" % st)
         b.text(cx + 11, cy - 1, st, 8, "Consolas", "Regular", C["ink700"],
                width=80, line=11, tracking=2, name="s19/legend/%s/label" % st)
-    b.meta(944, 848, "colour is never the only channel; unknown metric -> NULL / "
+    b.meta(944, 852, "colour is never the only channel; unknown metric -> NULL / "
                      "\"—\", never 0", width=432, size=8,
            name="s19/legend-note")
 

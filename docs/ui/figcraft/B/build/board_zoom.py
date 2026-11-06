@@ -56,9 +56,9 @@ def build_zoom(frame):
                     "@xyflow/react defaults (0.5 / 2.0) are overridden; anything "
                     "outside 0.1-3.0 is refused with E_ZOOM_RANGE.", 820,
            size=13, line=19, name="zoom/intro")
-    b.eyebrow(1160, 30, "1440 x 900 · 3 FRAMES · PDF p8:303-305", width=232,
+    b.eyebrow(1160, 30, "3 FRAMES · PDF p8:303-305", width=232,
               align="right", name="zoom/right-eyebrow")
-    b.meta(1160, 48, "S20 · VIEWPORT_SET / VIEWPORT_RECENTER", width=232,
+    b.meta(1160, 48, "1440 x 900 · S20 · VIEWPORT_SET", width=232,
            align="right", size=8.5, name="zoom/right-note")
 
     # ------------------------------------------------------- frame 1: 0.1x
@@ -139,37 +139,37 @@ def build_zoom(frame):
     b.vector(honeycomb_path(x + 8, 190, x + 408, 640, r=26), 0, 0,
              stroke=C["honey500"], sw=0.8, opacity=0.14, name="zoom/p3/lattice")
     # 3.0x crop of the WorkerAgent card (lower half: role, progress, meta)
-    b.rect(x + 16, 220, 384, 356, fill=C["paper"], r=8, stroke=C["hairline"],
+    b.rect(x + 8, 220, 400, 356, fill=C["paper"], r=8, stroke=C["hairline"],
            sw=1, name="zoom/p3/crop-3x")
-    b.rect(x + 16, 220, 384, 1, fill=C["honey400"], name="zoom/p3/crop-rule")
-    b.text(x + 48, 240, "WORKER · react/vite", 28.5, "Consolas", "Regular",
-           C["ink500"], width=300, line=34, tracking=8, name="zoom/p3/role")
-    b.text(x + 292, 240, "55%", 33, "Consolas", "Regular", C["ink700"],
-           width=84, align="right", line=38, name="zoom/p3/pct")
-    b.rect(x + 48, 322, 288, 15, fill=C["recess"], r=999,
+    b.rect(x + 8, 220, 400, 1, fill=C["honey400"], name="zoom/p3/crop-rule")
+    b.text(x + 40, 238, "WORKER · react/vite", 28.5, "Consolas", "Regular",
+           C["ink500"], width=368, line=34, tracking=8, name="zoom/p3/role")
+    b.text(x + 40, 288, "55%", 33, "Consolas", "Regular", C["ink700"],
+           width=140, line=38, name="zoom/p3/pct")
+    b.rect(x + 40, 344, 320, 15, fill=C["recess"], r=999,
            name="zoom/p3/track")
-    b.rect(x + 48, 325, 149, 9, fill=C["honey500"], r=999,
+    b.rect(x + 40, 347, 176, 9, fill=C["honey500"], r=999,
            name="zoom/p3/bar")
-    b.text(x + 48, 358, "progress 0-100 from real metric", 25.5, "Consolas",
-           "Regular", C["ink500"], width=288, line=30, tracking=2,
+    b.text(x + 40, 382, "progress 0-100 from real metric", 25.5, "Consolas",
+           "Regular", C["ink500"], width=320, line=30, tracking=2,
            name="zoom/p3/metric")
-    b.rect(x + 48, 430, 288, 1.5, fill=C["hairline"], name="zoom/p3/rule")
-    b.text(x + 48, 448, "tailwind-builder", 43.5, "Inter", "SemiBold",
-           C["ink900"], width=330, line=48, name="zoom/p3/name")
+    b.rect(x + 40, 466, 320, 1.5, fill=C["hairline"], name="zoom/p3/rule")
+    b.text(x + 40, 482, "tailwind-builder", 43.5, "Inter", "SemiBold",
+           C["ink900"], width=368, line=48, name="zoom/p3/name")
     b.pill(x + 16, 194, 82, 26, C["ink900"], "3.0x", C["paper"], size=10,
            name="zoom/p3/badge")
-    b.meta(x + 24, 600, "crop rule: this is the lower half of the WorkerAgent "
-                        "card at 300%", width=376, size=8.5,
-           name="zoom/p3/note")
-    b.meta(x + 24, 616, "role mono 9.5 -> 28.5 px · track 5 -> 15 px · worker "
-                        "bar 3 -> 9 px · name 14.5 -> 43.5 px", width=376, size=8,
-           name="zoom/p3/note2")
-    b.meta(x + 24, 632, "radius 12 -> 36 px · padding 16 -> 48 px (PDF p6:218-226)",
+    b.meta(x + 24, 588, "crop rule: lower half of the WorkerAgent card at 300%",
+           width=376, size=8.5, name="zoom/p3/note")
+    b.meta(x + 24, 604, "role 9.5 -> 28.5 · pct 11 -> 33 · track 5 -> 15 · bar 3 -> 9",
+           width=376, size=8, name="zoom/p3/note2")
+    b.meta(x + 24, 620, "metric mono 9.5 -> 28.5 px at 3.0x", width=376, size=8,
+           name="zoom/p3/note2b")
+    b.meta(x + 24, 636, "name 14.5 -> 43.5 · radius 12 -> 36 · padding 16 -> 48",
            width=376, size=8, name="zoom/p3/note3")
-    b.meta(x + 24, 648, "panning at 3.0x keeps the core hive pinned (S02)",
+    b.meta(x + 24, 652, "all sizes are exactly 3x the 1.0x card (PDF p6:218-226)",
            width=376, size=8, name="zoom/p3/note4")
-    b.meta(x + 24, 664, "Ctrl+0 animates back to 1.0x on the core hive", width=376,
-           size=8, name="zoom/p3/note5")
+    b.meta(x + 24, 668, "panning at 3.0x keeps the core hive pinned (S02)",
+           width=376, size=8, name="zoom/p3/note5")
 
     # ------------------------------------------------------- bottom strip
     b.rect(48, 756, 1344, 1, fill=C["hairline"], name="zoom/footer-rule")
@@ -193,9 +193,8 @@ def build_zoom(frame):
     b.meta(48, 850, "VIEWPORT_RECENTER · PDF board prints Cmd+0; the Windows "
                     "build binds Ctrl+0 (R-U7)", width=420, size=8,
            name="zoom/ctrl0-note")
-    b.meta(1160, 766, "third frame is a real 3.0x vector crop, not a scaled "
-                      "bitmap", width=232, align="right", size=8,
-           name="zoom/vector-note")
+    b.meta(1160, 766, "3.0x frame is a real vector crop, not a bitmap",
+           width=232, align="right", size=8, name="zoom/vector-note")
     b.meta(1160, 782, "S20 · Zoom controls + shortcut hint", width=232,
            align="right", size=8.5, name="zoom/surface-note")
     b.meta(48, 878, "CANVAS / ZOOM STATES · 1440x900 · frames labelled 0.1x / "

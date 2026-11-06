@@ -1,0 +1,268 @@
+{
+ "overall": "PASS-WITH-NOTES",
+ "allow_frontend": true,
+ "checked_at": "2026-11-06T04:54:33.224146-06:00",
+ "auditor": "ui-watchdog (read-only)",
+ "scope": "A+B FigCraft artifacts vs A-ASSETS.json/B-ASSETS.json",
+ "artifacts": [
+  {
+   "file": "docs/ui/figcraft/A/A-design.figcraft",
+   "sha256": "93226DDFC3297274AAD2B649852B53A60321D8A2F4FF280DE05349858276CD74",
+   "bytes": 126928,
+   "verdict": "PASS-WITH-NOTES",
+   "issues": [
+    "off-token colour(s): {\"#D9D9D9\": [\"03/load/spinner\"]}"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/A/A-ASSETS.json",
+   "sha256": "011D5AC08C1B6E2875F2E5CF643DB6624E211B9B0AA9556A0CFAB5868057C1B3",
+   "bytes": 18534,
+   "verdict": "PASS",
+   "issues": [
+    "28/28 rows verified: file exists, sha256 and dimensions match manifest; document_sha256 matches A-design"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-brand.png",
+   "sha256": "47680984AA5DACB1BF6A3576B42A11B01864C646068F33E5CA4ACFE124F4A918",
+   "bytes": 628963,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-brand.svg",
+   "sha256": "94CF946703C14355601813367F9A5FA11105D4E744990DD66AC7B0E5AD0A9522",
+   "bytes": 940908,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-components.png",
+   "sha256": "BC71B15999593B6081FDBD2087432D9C80DFAA2C1430CA5A8DD4173BDA786C58",
+   "bytes": 2044181,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-components.svg",
+   "sha256": "553E64308A50162F95F22F29C16DDB5555AD543CAC426E248A95D1ADAA53D0CE",
+   "bytes": 3706375,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-foundations.png",
+   "sha256": "E49B788A812E8A4962A29A926D25970B0A39218ADE8DD34EE9C8C7079BDC53BC",
+   "bytes": 1054806,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-foundations.svg",
+   "sha256": "24536354E6FFE9BA4DDA2C9682B526BB44BEDEA6AEA7F1D21FD4E3AEB75E551A",
+   "bytes": 1768930,
+   "verdict": "PASS",
+   "issues": [
+    "export bytes non-zero; sha256/dimensions verified vs manifest"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-specimens.png",
+   "sha256": "99321E1FDEB2446CA2457BABF865D6353FCC693C3AB3E29361A5D8E4D1027FE7",
+   "bytes": 886753,
+   "verdict": "PASS-WITH-NOTES",
+   "issues": [
+    "carries off-token #D9D9D9 loading spinner from 03/load/spinner; replace with ink-500 #75663F or hairline #E5E1D8 before A close"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+   "sha256": "D8128E43D7726A39D3BE07CF5D579A050FE50945296098E717D2BF346AF61563",
+   "bytes": 1800816,
+   "verdict": "PASS-WITH-NOTES",
+   "issues": [
+    "carries off-token #D9D9D9 loading spinner from 03/load/spinner; replace with ink-500 #75663F or hairline #E5E1D8 before A close"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/B/B-canvas.figcraft",
+   "sha256": "DAE6068926E30C99E89A43A1B15257FF8F16B1FD6C943AE990A4F383C0418288",
+   "bytes": 226734,
+   "verdict": "PASS",
+   "issues": [
+    "27 surface ids (>=24 OK); pending=[]; built_pages=['00', '01', '02', '03']; 4/4 board export pairs verified sha256+size; info parses; pages=['Canvas / default', 'Canvas / zoom states', 'Canvas / interaction states', 'Brand hero']"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/B/B-ASSETS.json",
+   "sha256": "C8D9C3DBD156FF81663D9D6EEBCE670CCA2D81BF5BAA776357380BDFDB673F92",
+   "bytes": 26423,
+   "verdict": "PASS",
+   "issues": [
+    "design_file sha matches B-canvas; 27 rows; 4 export pairs sha verified; 0 pending"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+   "sha256": "AA6066D38F73D391B45C623C62E285BDD19D541F3443DB984279627F2DF7A694",
+   "bytes": 1027268,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+   "sha256": "B5A5A824145A85848247A10A663FAB2D4783CC120D04DE51FB93316A9EE33D9F",
+   "bytes": 1223908,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-hero.png",
+   "sha256": "719A28BE8DE4926612ECFE5537EC7BDB98E04EAC5338D34FCC6EFBB62B54834E",
+   "bytes": 941929,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-hero.svg",
+   "sha256": "2BF8D20FACBA986B2C148702A774187538886658C680F7D323AA0E785A678477",
+   "bytes": 780682,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-interaction.png",
+   "sha256": "DE50112439898E88B8BBF334DD8427F0F8AF2FA2FBCC6BED338334F34F0D00A4",
+   "bytes": 1025547,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+   "sha256": "927514772AC5321C3771ED7293AE72B67E53526CB544222B21AF408550A2E945",
+   "bytes": 1665849,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-zoom-states.png",
+   "sha256": "A02CB4A1963A8C3588AE3CC66FA74C0F7D415E1A46E95089D191794D4F79141C",
+   "bytes": 1114713,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  },
+  {
+   "file": "docs/ui/figcraft/ASSETS/b-zoom-states.svg",
+   "sha256": "AB1EE97AE2B9D042B9D8B78EF22F10F1D4B594041FBC51ACD27C32112A9493AE",
+   "bytes": 966005,
+   "verdict": "PASS",
+   "issues": [
+    "bytes non-zero; sha256 vs manifest verified; dimensions 1440x900 board / 2880x1800 PNG @2x"
+   ]
+  }
+ ],
+ "checks": {
+  "A_surfaces": {
+   "count": 28,
+   "unique": 28,
+   "ok": true
+  },
+  "B_surfaces": {
+   "count": 27,
+   "min_required": 24,
+   "ok": true,
+   "pending": []
+  },
+  "A_tokens": {
+   "expected": 20,
+   "actual": 20,
+   "exact_match": true,
+   "mismatches": []
+  },
+  "A_off_token_colors": {
+   "#D9D9D9": [
+    "03/load/spinner"
+   ]
+  },
+  "A_pages": [
+   [
+    "00 Foundations",
+    1440.0,
+    1200.0
+   ],
+   [
+    "01 Brand",
+    1440.0,
+    900.0
+   ],
+   [
+    "02 Components",
+    1440.0,
+    2580.0
+   ],
+   [
+    "03 Specimens",
+    1440.0,
+    1400.0
+   ]
+  ],
+  "B_pages": [
+   [
+    "Canvas / default",
+    1440.0,
+    900.0,
+    223
+   ],
+   [
+    "Canvas / zoom states",
+    1440.0,
+    900.0,
+    94
+   ],
+   [
+    "Canvas / interaction states",
+    1440.0,
+    900.0,
+    174
+   ],
+   [
+    "Brand hero",
+    1440.0,
+    900.0,
+    107
+   ]
+  ],
+  "figcraft_info_parses": {
+   "A": true,
+   "B": true
+  }
+ },
+ "blueprint_hashes_ok": true,
+ "blueprint_hashes_note": "all 11 recorded sha256 in hivemind-blueprint/blueprint/BUILD-CHECKS.json match (incl. source of record 7B85760E...D713) re-verified 04:53",
+ "known_gaps": "full pixel-level visual audit only partially performed (A component bands + all 4 A pages + B default visually checked; B zoom/interaction/hero spot-checked via text+lattice inventory). Marked UNVERIFIED, not a FAIL."
+}

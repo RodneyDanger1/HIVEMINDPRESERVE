@@ -36,7 +36,7 @@
     "ok": true,
     "steps": 231
    },
-   "duration_ms": 505
+   "duration_ms": 3656
   }
  ],
  "artifacts": [
@@ -47,7 +47,7 @@
   },
   {
    "path": "docs/ui/figcraft/A/build/page03.figcraft",
-   "sha256": "e635330c00a9ce42d8546b9134128c1e1b3b62efbe6b0ba4fe82e9941ce608cb",
+   "sha256": "0de803bbbade922d26f62c7715210bf303390d57b78fcbb7455edb8cf7794bc1",
    "kind": "figcraft"
   }
  ],
@@ -63,6 +63,6 @@
  "failures": [],
  "cost": {
   "model_tokens": 0,
-  "wall_s": 0.51
+  "wall_s": 3.66
  }
 }

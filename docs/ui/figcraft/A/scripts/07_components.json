@@ -5126,7 +5126,7 @@
     "lineHeight": 16
    },
    "parent": 7,
-   "name": "name"
+   "name": "02/row/S04/label"
   }
  },
  {
@@ -5369,7 +5369,7 @@
     "lineHeight": 16
    },
    "parent": 7,
-   "name": "name"
+   "name": "02/row/S05/label"
   }
  },
  {
@@ -5621,7 +5621,7 @@
     "lineHeight": 16
    },
    "parent": 7,
-   "name": "name"
+   "name": "02/row/S06/label"
   }
  },
  {
@@ -5873,7 +5873,7 @@
     "lineHeight": 16
    },
    "parent": 7,
-   "name": "name"
+   "name": "02/row/S07/label"
   }
  },
  {
@@ -7494,7 +7494,7 @@
    },
    "width": 230,
    "parent": 7,
-   "name": "text"
+   "name": "02/library/project-name"
   }
  },
  {

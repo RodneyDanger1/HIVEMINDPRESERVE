@@ -2,7 +2,7 @@
 
 **Status: HARNESS BUILT + STATIC CHECKS RUNNING; BROWSER EXECUTION BLOCKED (wired UI not delivered).**
 No pass is claimed for any UI control. Every browser spec skips with `APP_NOT_BUILT` until the wired app
-boots; the static harness (24/24 checks) validates the 28-surface matrix against the frozen contract.
+boots; the static harness (27/27 checks) validates the 28-surface matrix against the frozen contract.
 
 ## 1. Role & scope
 
@@ -38,7 +38,7 @@ boots; the static harness (24/24 checks) validates the 28-surface matrix against
 
 | Area | State |
 |---|---|
-| `web/` | `package.json`, `vite.config.ts` (dev `127.0.0.1:5173` strictPort; preview `:4173`; prod bundle served by Rust core at `:8080`), `node_modules/` installed, `package-lock.json`; `src/` = 9 files across `a11y, api, chat, flow, panels, state, styles, tokens`; `App.tsx` self-describes as **milestone-1 chrome only** ("the wired 28-surface implementation lands next") |
+| `web/` | `package.json`, `vite.config.ts` (dev `127.0.0.1:5173` strictPort; preview `:4173`; prod bundle served by Rust core at `:8080`), `node_modules/` installed, `package-lock.json`; `src/` grew **9 → 41 files** during this audit (dirs `a11y, api, chat, flow, panels, state, styles, tokens`); `App.tsx` self-described as **milestone-1 chrome only** at 04:26 ("the wired 28-surface implementation lands next"); frontend was still writing at 04:55 — no dev server or browser run by QA |
 | `backend/` | 4 crates (`hiverouter-contract/core/provider/tools`); core routes `GET /health`, `GET /api/session`, `GET /ws`; loopback-only bind default `127.0.0.1:8080`; WS session token + Origin allowlist implemented in source |
 | Playwright | `@playwright/test` **not installed** (no root/web/e2e `node_modules` copy); `npx playwright --version` = 1.62.1 (cache) vs blueprint pin **1.65.0** |
 | Browser channels | Chrome 156.0.8078.75 (`C:\Program Files\Google\Chrome\Application\chrome.exe`); Edge 156.0.4314.58 (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`) — used via Playwright `channel`, no download |
@@ -66,7 +66,7 @@ e2e/
   specs/a11y-gates.spec.ts     G-UI-1..12 (static contrast math runnable; DOM blocked)
   specs/trace-hops.spec.ts     11-hop capture per surface (blocked)
 tools/qa/
-  verify-harness.mjs           static validator: matrix ↔ frozen contract ↔ trace seeds (RUNS NOW, 24/24)
+  verify-harness.mjs           static validator: matrix ↔ frozen contract ↔ trace seeds (RUNS NOW, 27/27)
   build-trace-seeds.mjs        regenerates docs/trace/{controls,traces,events}.json (RUNS NOW)
   figcraft-assets.mjs          exact FigCraft export inventory + manifest/A-design presence (RUNS NOW)
   check-env.ps1                host/toolchain/pin/browser/disk/project evidence (RUNS NOW)
@@ -75,7 +75,7 @@ docs/trace/
   QA-HARNESS.md                this plan
   TRACE-SCHEMA.md              11-hop data contract (controls/traces/events/terminal-truth)
   A11Y-CONTRAST-PLAN.md        G-UI-1..12 plan + recomputed contrast table
-  controls.json                28 controls × 11 hop slots, all PENDING (generated)
+  controls.json                29 controls × 11 hop slots, all PENDING (generated)
   traces.json                 empty (0 runs) — no fabricated traces
   events.json                 event-parity skeleton, delivered=[] (not collected)
   terminal-truth.md           terminal-run truth template (NOT_COLLECTED)
@@ -116,7 +116,7 @@ Verdicts: `WIRED-AND-WORKS | WIRED-BUT-DEAD | MISSING | REFUSED-BY-NAME | UNVERI
 Evidence kinds: `dom | request | ws-frame | db-row | log | file` with pointer+quote. Event evidence additionally
 requires emitted==subscribed==delivered parity, live-vs-persisted payload shape equality, terminal-record truth and
 NULL-not-zero usage for failed/budget runs (`docs/trace/events.json` parity_rules; `terminal-truth.md` template).
-Seeds generated: `node tools/qa/build-trace-seeds.mjs` → 28 controls × 11 PENDING hops; `traces.json` 0 runs.
+Seeds generated: `node tools/qa/build-trace-seeds.mjs` → 29 controls × 11 PENDING hops; `traces.json` 0 runs.
 
 ## 7. A11y/contrast plan
 
@@ -128,8 +128,9 @@ are planned per gate with commands/fixtures and are blocked on the wired UI; no 
 
 ## 8. FigCraft evidence (verified files; read-only)
 
-`docs/ui/figcraft/ASSETS/` currently holds **10 exports** (PNG+SVG pairs); hashes from `tools/qa/figcraft-assets.mjs`
-run 2026-11-06T10:24:57Z:
+`docs/ui/figcraft/ASSETS/` holds **16 exports** (8 boards × PNG+SVG); hashes are **point-in-time 2026-11-06T04:55**
+from `node tools/qa/figcraft-assets.mjs`. A/B agents were still writing during this audit (the b-* boards were re-exported
+several times: 04:24, 04:46, 04:55) — re-run the inventory after FigCraft settles:
 
 | File | Bytes | SHA-256 |
 |---|---|---|
@@ -139,15 +140,32 @@ run 2026-11-06T10:24:57Z:
 | a-components.svg | 3,706,375 | `553E64308A50162F95F22F29C16DDB5555AD543CAC426E248A95D1ADAA53D0CE` |
 | a-foundations.png | 1,054,806 | `E49B788A812E8A4962A29A926D25970B0A39218ADE8DD34EE9C8C7079BDC53BC` |
 | a-foundations.svg | 1,768,930 | `24536354E6FFE9BA4DDA2C9682B526BB44BEDEA6AEA7F1D21FD4E3AEB75E551A` |
-| a-specimens.png | 894,483 | `109CB256A8D8C0F26D0717EEDC495C3829ED619EFCA968B61CE1469D2FDEC32F` |
-| a-specimens.svg | 1,802,175 | `2A75F9BE19816D9BD2E742CE14B2841E5ADC17DF4975F6C732316B3F1DF65D16` |
-| b-canvas-default.png | 1,028,183 | `CCA6B5E2726475B7928D6DC5A83B788F707A69C9AB0BD7E0C3F95E501F8898BA` |
-| b-canvas-default.svg | 1,223,210 | `FEA7E5CC208DBE57E12D01E909D1DD8315CBBE7BB6D9FD07785476822360FBA3` |
+| a-specimens.png | 886,753 | `99321E1FDEB2446CA2457BABF865D6353FCC693C3AB3E29361A5D8E4D1027FE7` |
+| a-specimens.svg | 1,800,816 | `D8128E43D7726A39D3BE07CF5D579A050FE50945296098E717D2BF346AF61563` |
+| b-canvas-default.png | 1,027,268 | `AA6066D38F73D391B45C623C62E285BDD19D541F3443DB984279627F2DF7A694` |
+| b-canvas-default.svg | 1,223,908 | `B5A5A824145A85848247A10A663FAB2D4783CC120D04DE51FB93316A9EE33D9F` |
+| b-hero.png | 941,929 | `719A28BE8DE4926612ECFE5537EC7BDB98E04EAC5338D34FCC6EFBB62B54834E` |
+| b-hero.svg | 780,682 | `2BF8D20FACBA986B2C148702A774187538886658C680F7D323AA0E785A678477` |
+| b-interaction.png | 1,025,547 | `DE50112439898E88B8BBF334DD8427F0F8AF2FA2FBCC6BED338334F34F0D00A4` |
+| b-interaction.svg | 1,665,849 | `927514772AC5321C3771ED7293AE72B67E53526CB544222B21AF408550A2E945` |
+| b-zoom-states.png | 1,114,713 | `A02CB4A1963A8C3588AE3CC66FA74C0F7D415E1A46E95089D191794D4F79141C` |
+| b-zoom-states.svg | 966,005 | `AB1EE97AE2B9D042B9D8B78EF22F10F1D4B594041FBC51ACD27C32112A9493AE` |
 
-- **A manifest (`docs/ui/figcraft/ASSETS-INDEX.json`) is ABSENT** — asset→surface (S01-S28) mapping blocked; watch this path.
-- **`A-design.figcraft` is ABSENT** (searched `docs/ui/figcraft/{,A,build}`) — `figcraft-cli info` cannot be re-run on it.
-- `C:\Program Files\FigCraft\figcraft-cli.exe` present (81,590,128 B); **not invoked** (no A-design file; GUI-class binary
-  produced no stdout on `--help`). No FigCraft file was modified by QA.
+- **`A-design.figcraft` is PRESENT** (`docs/ui/figcraft/A/A-design.figcraft`, 126,928 B as of 04:45:49,
+  sha256 `93226DDFC3297274AAD2B649852B53A60321D8A2F4FF280DE05349858276CD74`). QA re-ran
+  `figcraft-cli info` (exit 0, stderr 0 bytes; output quoted in `docs/audit/QA-ENV.md`): "HiveMind v1 Design System
+  (1368 nodes, 31 styles, 20 variables, 0 images)"; pages 00 Foundations (253 nodes), 01 Brand (176), 02 Components
+  (690), 03 Specimens (245). This is CLI output, not a QA conformance verdict.
+- **A manifest:** canonical `docs/ui/figcraft/ASSETS-INDEX.json` is **still ABSENT**, but
+  `docs/ui/figcraft/A/A-ASSETS.json` **exists** (18,534 B, sha256 `011D5AC08C1B6E2875F2E5CF643DB6624E211B9B0AA9556A0CFAB5868057C1B3`;
+  schema `hivemind.ui-assets.v1`, `document_sha256` matching the design, `figcraft_cli_version 0.11.2`, 28 assets mapped
+  S01-S28 with export sha256/dimensions/PDF provenance). Also present: `A-SELF-CHECK.json` (`B538C427…471E`; self-reported
+  `ok: true`, `surfaces.expected 28 / mapped 28 / missing []`) and `A-EPISODES.json` (`BB3A7AFD…47C6`; command-id
+  usage/episodes). **Lead acceptance or a copy/alias to the canonical path is required** before treating it as the
+  delivered manifest; QA does not edit FigCraft assets.
+- `C:\Program Files\FigCraft\figcraft-cli.exe` present (81,590,128 B); used for `info` only; no FigCraft file modified by QA.
+- A-SELF-CHECK `ok:true` is **self-reported by FigCraft-A**, not independently verified by QA; the UI-watchdog/Lead must
+  audit it against the PDF/UI requirements.
 
 ## 9. What can run now (verified today) vs blocked
 
@@ -155,9 +173,9 @@ run 2026-11-06T10:24:57Z:
 
 | Command | Observed result |
 |---|---|
-| `node tools/qa/verify-harness.mjs` | 24 checks, 24 PASS, 0 FAIL; WARN `ASSETS-INDEX.json absent`; exit 0 |
-| `node tools/qa/build-trace-seeds.mjs` | wrote controls.json (28×11 PENDING), traces.json (0 runs), events.json (18 event vocabulary) |
-| `node tools/qa/figcraft-assets.mjs` | 10 exports hashed; manifest/A-design absent; status BLOCKED_PARTIAL |
+| `node tools/qa/verify-harness.mjs` | 27 checks, 27 PASS, 0 FAIL; WARN canonical `ASSETS-INDEX.json` absent (candidate `A/A-ASSETS.json` present); exit 0 |
+| `node tools/qa/build-trace-seeds.mjs` | wrote controls.json (29×11 PENDING), traces.json (0 runs), events.json (21 event vocabulary) |
+| `node tools/qa/figcraft-assets.mjs` | 16 exports hashed; `A-design.figcraft` present; canonical `ASSETS-INDEX.json` absent but `A/A-ASSETS.json` candidate present (28 surfaces mapped); status `PARTIAL_MANIFEST_CANDIDATE` |
 | `powershell -File tools/qa/check-env.ps1` | node/npm/browsers/pins/project state/disk printed; pins match; exit 0 |
 | node WCAG recompute (one-liner; recorded §7) | six rows + four failures reproduce within ±0.01 |
 
@@ -167,7 +185,7 @@ run 2026-11-06T10:24:57Z:
 |---|---|---|
 | Wired UI not delivered | `App.tsx` milestone-1 chrome; 28 surfaces not implemented | Frontend milestone 2 |
 | Browser tests not executable | `@playwright/test` absent; npx cache 1.62.1 ≠ pin 1.65.0 | Lead approval for one package install (`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`; no browser download) |
-| FigCraft asset manifest/`A-design.figcraft` absent | ASSETS-INDEX not delivered; no design master to `info` | FigCraft-A owner; re-run `tools/qa/figcraft-assets.mjs` when they land |
+| FigCraft manifest path | canonical `ASSETS-INDEX.json` absent; `A/A-ASSETS.json` candidate present with S01-S28 mapping and matching design sha | Lead accepts candidate or FigCraft-A copies/aliases to `docs/ui/figcraft/ASSETS-INDEX.json`; then re-run `tools/qa/figcraft-assets.mjs` |
 | Axe integration decision | `@axe-core/playwright` not pinned; jest-axe is unit-test-only | Lead decision (inject axe-core 4.14.0 or add pinned dep) |
 | G-UI-9 mock-provider fixture for browser | no browser-visible mock mode agreed | Backend/Lead; must not use live paid API |
 | Dev-origin allowlist for Vite :5173 | backend allowlist targets :8080 origin; dev-mode cross-origin may be refused | Backend owner confirms `http://127.0.0.1:5173` allowlist or e2e runs against prod-shaped :8080 |
@@ -182,21 +200,26 @@ run 2026-11-06T10:24:57Z:
 2. **Bundled fonts:** `tokens.css:30-32` names "Playfair Display Variable"/"Inter Variable", but `web/package.json`
    has no `@fontsource/*` dependency and no `@font-face` source is visible in the 9 current files — font fidelity
    (K-09/R-U12) at risk; frontend owner to bundle or document fallback.
-3. **S03 envelope drift** and **S22 missing command** recorded in §5 — contract owner to reconcile.
+3. **S03 envelope drift** recorded in §5 — contract owner to reconcile the guide wording with the frozen envelope.
 4. **Playwright pin drift:** local npx cache 1.62.1 vs blueprint 1.65.0 — install must use `@playwright/test@1.65.0`.
+5. **Manifest path/self-report:** `A-SELF-CHECK.json` says `ok: true` and `A-ASSETS.json` maps 28/28 surfaces, but this is
+   FigCraft-A self-report; canonical `ASSETS-INDEX.json` (EXECUTION-PROMPT §6 path) is still missing. UI-watchdog/Lead
+   must independently audit A assets and accept/alias the manifest before the frontend consumes the mapping.
 
 ## 11. Next steps when the wired app lands
 
 1. Install Playwright package only (Lead approval; `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`), verify `npx playwright --version` = 1.65.0.
 2. Boot app (prod-shaped `http://127.0.0.1:8080` preferred; dev :5173 only after Origin allowlist).
-3. `E2E_APP_READY=1 npm run e2e:chrome`; capture failures as defects, never as passes.
-4. Fill `docs/trace/controls.json` verdicts only from `traces.json` evidence; run events parity + terminal truth.
-5. Update `e2e/README.md`/this doc with measured status; report Done/Not done/Unverified to Lead.
+3. Lead accepts `A/A-ASSETS.json` as the FigCraft-A manifest (or FigCraft-A copies it to `docs/ui/figcraft/ASSETS-INDEX.json`); re-run `tools/qa/figcraft-assets.mjs`.
+4. `E2E_APP_READY=1 npm run e2e:chrome`; capture failures as defects, never as passes.
+5. Fill `docs/trace/controls.json` verdicts only from `traces.json` evidence; run events parity + terminal truth.
+6. Update `e2e/README.md`/this doc with measured status; report Done/Not done/Unverified to Lead.
 
 ## 12. Unverified (honest limits)
 
-- No UI control has been exercised; all 28×11 hop verdicts are PENDING/UNVERIFIED.
+- No UI control has been exercised; all 28 guide ×11 hop verdicts (+1 supplemental control) are PENDING/UNVERIFIED.
 - No Playwright run exists; no screenshots/traces exist; no G-UI gate has been executed.
 - No `/api/session` token was captured from a running server.
-- FigCraft asset→surface mapping is unknown until `ASSETS-INDEX.json` lands; pixel-level visual fidelity remains UNVERIFIED.
+- FigCraft asset→surface mapping is candidate-only until the Lead accepts/aliases `A/A-ASSETS.json`; pixel-level visual
+  fidelity and the A-SELF-CHECK `ok:true` claim remain UNVERIFIED (self-report).
 - Disk/time budget claims are dynamic measurements, not guarantees; the Lead's ~4.1 GB figure was not reproducible later (measured 7.5-8.8 GB).

@@ -11,7 +11,6 @@
  */
 import {
   EVENT_NAMES,
-  isAgentState,
   SCHEMA_VERSION,
   type CommandPayloads,
   type DecodedEvent,
@@ -21,6 +20,7 @@ import {
   type Refusal,
   type ServerCommandName,
 } from './contract';
+import { isAgentState } from '../state/agentState';
 import { nowIso, uuidv7 } from './ids';
 import { RefusalError, clientRefusal } from './refusals';
 import type {
@@ -155,7 +155,7 @@ export class MockApiClient implements UiApi {
     });
     const chunks = ['Certainly! ', 'Here is ', 'the code', '...'];
     chunks.forEach((chunk, index) => {
-      window.setTimeout(() => {
+      globalThis.setTimeout(() => {
         this.emit('REPLY_DELTA', { run_id: runId, text_delta: chunk });
         if (index === chunks.length - 1) {
           this.emit('REPLY_DONE', {
@@ -175,7 +175,7 @@ export class MockApiClient implements UiApi {
       }, 40 + index * 40);
     });
     if (text.startsWith('!approval')) {
-      window.setTimeout(() => {
+      globalThis.setTimeout(() => {
         this.emit('APPROVAL_REQUEST', {
           approval_id: uuidv7(),
           tool: 'file.patch',

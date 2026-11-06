@@ -1,7 +1,7 @@
-//! `/health` and `/diagnose` endpoints (Phase 11 WPs 11.6/11.13).
+﻿//! `/health` and `/diagnose` endpoints (Phase 11 WPs 11.6/11.13).
 //!
 //! Local-only observability: one axum router the core server merges; no second
-//! server, no collector. Sampling uses `sysinfo 0.40.1` and keeps the V1–V6
+//! server, no collector. Sampling uses `sysinfo 0.40.1` and keeps the V1â€“V6
 //! null-vs-zero rule: an unavailable sample is `null`, a measured zero is `0`
 //! (`children: 0` is a real zero, never `null`).
 //!
@@ -35,7 +35,7 @@ pub const HEALTH_PATH: &str = "/health";
 /// Path of the diagnosis route.
 pub const DIAGNOSE_PATH: &str = "/diagnose";
 
-/// One health sample (V1–V6 honest nulls).
+/// One health sample (V1â€“V6 honest nulls).
 #[derive(Debug, Clone, Serialize)]
 pub struct HealthReport {
     /// Payload schema id.
@@ -308,6 +308,7 @@ pub fn ready_state(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tool::ToolId;
     use std::time::Duration;
 
     async fn serve(state: SharedState) -> String {
@@ -405,3 +406,4 @@ mod tests {
         assert_eq!(response.status().as_u16(), 404);
     }
 }
+

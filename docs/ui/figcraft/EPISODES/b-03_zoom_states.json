@@ -1,0 +1,62 @@
+{
+ "episode_id": "eb092b18-b0f6-4c22-97d4-8fb9c1eacd7e",
+ "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
+ "task_family": "ui_canvas_boards",
+ "apps": [
+  {
+   "name": "figcraft-cli",
+   "version": "0.11.2"
+  }
+ ],
+ "rights": {
+  "source": "supplied FigCraft PDF artboards + project tokens; no third-party assets",
+  "licence": "project-internal"
+ },
+ "plan": {
+  "stage": "03_zoom_states.json",
+  "note": "content: Canvas / zoom states",
+  "command_ids": [
+   "shape.rectangle",
+   "text.create",
+   "vector.create"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli run",
+   "params": {
+    "script": "docs/ui/figcraft/B/scripts/03_zoom_states.json",
+    "in": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\B\\build\\tmp\\board00.figcraft",
+    "out": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\B\\build\\tmp\\board01.figcraft"
+   },
+   "result": {
+    "exit": 0,
+    "commands_ok": 93,
+    "rolledBack": false
+   },
+   "duration_ms": 976
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/B/build/tmp/board01.figcraft",
+   "sha256": "30b82b71dfcb74f9eaa7f7057dd6e44a59d933b736ed0c3277bcc844f453a41f",
+   "format": "figcraft"
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "transactional_run": "ok",
+   "rollback": "not triggered (all steps ok)"
+  },
+  "human": null
+ },
+ "outcome": "stage-ok",
+ "failure_code": null,
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0.98
+ }
+}

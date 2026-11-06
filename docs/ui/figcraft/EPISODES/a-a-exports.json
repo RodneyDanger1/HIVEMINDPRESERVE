@@ -95,12 +95,12 @@
  "artifacts": [
   {
    "path": "docs/ui/figcraft/A/A-design.figcraft",
-   "sha256": "2bb34442bf46a7c5f4099281ba8b1077a02a904f07aa2653c2555461d088eaf2",
+   "sha256": "93226ddfc3297274aad2b649852b53a60321d8a2f4ff280de05349858276cd74",
    "kind": "figcraft"
   },
   {
    "path": "docs/ui/figcraft/A/A-ASSETS.json",
-   "sha256": "a6c9a38902d506cb7c0d454f2bbf8db59b14663b64147d5df8dd8468177f6577",
+   "sha256": "011d5ac08c1b6e2875f2e5cf643db6624e211b9b0aa9556a0cfab5868057c1b3",
    "kind": "manifest"
   },
   {
@@ -322,48 +322,48 @@
     },
     {
      "surface_id": "S04",
-     "node_id": 782,
+     "node_id": 740,
      "found": true,
-     "name": "name",
+     "name": "02/row/S04/label",
      "type": "TEXT",
      "bounds": {
       "height": 16.0,
-      "width": 62.0,
+      "width": 95.0,
       "x": 64.0,
-      "y": 1644.0
+      "y": 1440.0
      }
     },
     {
      "surface_id": "S05",
-     "node_id": 782,
+     "node_id": 754,
      "found": true,
-     "name": "name",
+     "name": "02/row/S05/label",
      "type": "TEXT",
      "bounds": {
       "height": 16.0,
-      "width": 62.0,
+      "width": 51.0,
       "x": 64.0,
-      "y": 1644.0
+      "y": 1508.0
      }
     },
     {
      "surface_id": "S06",
-     "node_id": 782,
+     "node_id": 768,
      "found": true,
-     "name": "name",
+     "name": "02/row/S06/label",
      "type": "TEXT",
      "bounds": {
       "height": 16.0,
-      "width": 62.0,
+      "width": 41.0,
       "x": 64.0,
-      "y": 1644.0
+      "y": 1576.0
      }
     },
     {
      "surface_id": "S07",
      "node_id": 782,
      "found": true,
-     "name": "name",
+     "name": "02/row/S07/label",
      "type": "TEXT",
      "bounds": {
       "height": 16.0,
@@ -634,15 +634,15 @@
     },
     {
      "surface_id": "S28",
-     "node_id": 1099,
+     "node_id": 875,
      "found": true,
-     "name": "text",
+     "name": "02/library/project-name",
      "type": "TEXT",
      "bounds": {
-      "height": 12.0,
-      "width": 1344.0,
-      "x": 48.0,
-      "y": 2500.0
+      "height": 16.0,
+      "width": 230.0,
+      "x": 158.0,
+      "y": 1810.0
      }
     }
    ],

@@ -87,7 +87,7 @@
  {
   "command": "text.create",
   "params": {
-   "text": "1440 x 900 · 3 FRAMES · PDF p8:303-305",
+   "text": "3 FRAMES · PDF p8:303-305",
    "x": 1160,
    "y": 30,
    "props": {
@@ -107,7 +107,7 @@
  {
   "command": "text.create",
   "params": {
-   "text": "S20 · VIEWPORT_SET / VIEWPORT_RECENTER",
+   "text": "1440 x 900 · S20 · VIEWPORT_SET",
    "x": 1160,
    "y": 48,
    "props": {
@@ -1095,9 +1095,9 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 992,
+   "x": 984,
    "y": 220,
-   "width": 384,
+   "width": 400,
    "height": 356,
    "props": {
     "fill": "#FFFFFF",
@@ -1113,9 +1113,9 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 992,
+   "x": 984,
    "y": 220,
-   "width": 384,
+   "width": 400,
    "height": 1,
    "props": {
     "fill": "#E8B850"
@@ -1128,8 +1128,8 @@
   "command": "text.create",
   "params": {
    "text": "WORKER · react/vite",
-   "x": 1024,
-   "y": 240,
+   "x": 1016,
+   "y": 238,
    "props": {
     "fontSize": 28.5,
     "fontFamily": "Consolas",
@@ -1138,7 +1138,7 @@
     "lineHeight": 34,
     "letterSpacing": "8%"
    },
-   "width": 300,
+   "width": 368,
    "parent": 6,
    "name": "zoom/p3/role"
   }
@@ -1147,17 +1147,16 @@
   "command": "text.create",
   "params": {
    "text": "55%",
-   "x": 1268,
-   "y": 240,
+   "x": 1016,
+   "y": 288,
    "props": {
     "fontSize": 33,
     "fontFamily": "Consolas",
     "fontStyle": "Regular",
     "fill": "#4E3A15",
-    "lineHeight": 38,
-    "textAlign": "right"
+    "lineHeight": 38
    },
-   "width": 84,
+   "width": 140,
    "parent": 6,
    "name": "zoom/p3/pct"
   }
@@ -1165,9 +1164,9 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1024,
-   "y": 322,
-   "width": 288,
+   "x": 1016,
+   "y": 344,
+   "width": 320,
    "height": 15,
    "props": {
     "fill": "#F1E9CF",
@@ -1180,9 +1179,9 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1024,
-   "y": 325,
-   "width": 149,
+   "x": 1016,
+   "y": 347,
+   "width": 176,
    "height": 9,
    "props": {
     "fill": "#D9A02F",
@@ -1196,8 +1195,8 @@
   "command": "text.create",
   "params": {
    "text": "progress 0-100 from real metric",
-   "x": 1024,
-   "y": 358,
+   "x": 1016,
+   "y": 382,
    "props": {
     "fontSize": 25.5,
     "fontFamily": "Consolas",
@@ -1206,7 +1205,7 @@
     "lineHeight": 30,
     "letterSpacing": "2%"
    },
-   "width": 288,
+   "width": 320,
    "parent": 6,
    "name": "zoom/p3/metric"
   }
@@ -1214,9 +1213,9 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1024,
-   "y": 430,
-   "width": 288,
+   "x": 1016,
+   "y": 466,
+   "width": 320,
    "height": 1.5,
    "props": {
     "fill": "#E5E1D8"
@@ -1229,8 +1228,8 @@
   "command": "text.create",
   "params": {
    "text": "tailwind-builder",
-   "x": 1024,
-   "y": 448,
+   "x": 1016,
+   "y": 482,
    "props": {
     "fontSize": 43.5,
     "fontFamily": "Inter",
@@ -1238,7 +1237,7 @@
     "fill": "#282010",
     "lineHeight": 48
    },
-   "width": 330,
+   "width": 368,
    "parent": 6,
    "name": "zoom/p3/name"
   }
@@ -1281,9 +1280,9 @@
  {
   "command": "text.create",
   "params": {
-   "text": "crop rule: this is the lower half of the WorkerAgent card at 300%",
+   "text": "crop rule: lower half of the WorkerAgent card at 300%",
    "x": 1000,
-   "y": 600,
+   "y": 588,
    "props": {
     "fontSize": 8.5,
     "fontFamily": "Consolas",
@@ -1300,9 +1299,9 @@
  {
   "command": "text.create",
   "params": {
-   "text": "role mono 9.5 -> 28.5 px · track 5 -> 15 px · worker bar 3 -> 9 px · name 14.5 -> 43.5 px",
+   "text": "role 9.5 -> 28.5 · pct 11 -> 33 · track 5 -> 15 · bar 3 -> 9",
    "x": 1000,
-   "y": 616,
+   "y": 604,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -1319,9 +1318,28 @@
  {
   "command": "text.create",
   "params": {
-   "text": "radius 12 -> 36 px · padding 16 -> 48 px (PDF p6:218-226)",
+   "text": "metric mono 9.5 -> 28.5 px at 3.0x",
    "x": 1000,
-   "y": 632,
+   "y": 620,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "letterSpacing": "2%"
+   },
+   "width": 376,
+   "parent": 6,
+   "name": "zoom/p3/note2b"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "name 14.5 -> 43.5 · radius 12 -> 36 · padding 16 -> 48",
+   "x": 1000,
+   "y": 636,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -1338,9 +1356,9 @@
  {
   "command": "text.create",
   "params": {
-   "text": "panning at 3.0x keeps the core hive pinned (S02)",
+   "text": "all sizes are exactly 3x the 1.0x card (PDF p6:218-226)",
    "x": 1000,
-   "y": 648,
+   "y": 652,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -1357,9 +1375,9 @@
  {
   "command": "text.create",
   "params": {
-   "text": "Ctrl+0 animates back to 1.0x on the core hive",
+   "text": "panning at 3.0x keeps the core hive pinned (S02)",
    "x": 1000,
-   "y": 664,
+   "y": 668,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -1559,7 +1577,7 @@
  {
   "command": "text.create",
   "params": {
-   "text": "third frame is a real 3.0x vector crop, not a scaled bitmap",
+   "text": "3.0x frame is a real vector crop, not a bitmap",
    "x": 1160,
    "y": 766,
    "props": {

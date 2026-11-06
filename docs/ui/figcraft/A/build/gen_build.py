@@ -217,10 +217,10 @@ def main():
             "page": board.title, "frame_id": board.frame,
             "elements": len(board.el), "groups": len(board.groups),
             "surfaces": list(board.surfaces.keys()),
+            "surface_indices": dict(board.surfaces),
             "group_ids": board.group_ids,
-            "element_names": dict((el["name"], el["id"]) for el in board.el),
-            "element_surface": dict((sid, board.el[i]["name"])
-                                    for sid, i in board.surfaces.items()),
+            "element_by_idx": dict((str(i), {"name": el["name"], "id": el["id"]})
+                                   for i, el in enumerate(board.el)),
         }
 
         # export after the last requested page

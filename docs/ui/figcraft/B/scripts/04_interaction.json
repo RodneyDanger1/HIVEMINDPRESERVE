@@ -69,17 +69,17 @@
  {
   "command": "text.create",
   "params": {
-   "text": "Every mutating control shows ACK or a named refusal before UI state changes. Focus is visible at >=3:1, refusals are never silent, and the code-diff surface stays DECISION-GATED.",
+   "text": "Every mutating control shows ACK or a named refusal before UI state changes · focus >=3:1 · refusals never silent · diff DECISION-GATED",
    "x": 48,
-   "y": 98,
+   "y": 96,
    "props": {
     "fontSize": 12.5,
     "fontFamily": "Inter",
     "fontStyle": "Regular",
     "fill": "#4E3A15",
-    "lineHeight": 18
+    "lineHeight": 17
    },
-   "width": 820,
+   "width": 900,
    "parent": 7,
    "name": "ix/intro"
   }
@@ -2501,7 +2501,7 @@
   "command": "shape.ellipse",
   "params": {
    "x": 944,
-   "y": 770,
+   "y": 768,
    "width": 7,
    "height": 7,
    "props": {
@@ -2516,7 +2516,7 @@
   "params": {
    "text": "healthy",
    "x": 955,
-   "y": 769,
+   "y": 767,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2533,8 +2533,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1034,
-   "y": 770,
+   "x": 1052,
+   "y": 768,
    "width": 7,
    "height": 7,
    "props": {
@@ -2548,8 +2548,8 @@
   "command": "text.create",
   "params": {
    "text": "running",
-   "x": 1045,
-   "y": 769,
+   "x": 1063,
+   "y": 767,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2566,8 +2566,8 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1124,
-   "y": 770.7,
+   "x": 1160,
+   "y": 768.7,
    "width": 7,
    "height": 5.6000000000000005,
    "props": {
@@ -2582,8 +2582,8 @@
   "command": "text.create",
   "params": {
    "text": "queued",
-   "x": 1135,
-   "y": 769,
+   "x": 1171,
+   "y": 767,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2600,8 +2600,8 @@
  {
   "command": "shape.polygon",
   "params": {
-   "x": 1214,
-   "y": 770,
+   "x": 1268,
+   "y": 768,
    "width": 7,
    "height": 7,
    "props": {
@@ -2617,8 +2617,8 @@
   "command": "text.create",
   "params": {
    "text": "failed",
-   "x": 1225,
-   "y": 769,
+   "x": 1279,
+   "y": 767,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2635,8 +2635,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1304,
-   "y": 770,
+   "x": 944,
+   "y": 789,
    "width": 7,
    "height": 7,
    "props": {
@@ -2650,8 +2650,8 @@
   "command": "text.create",
   "params": {
    "text": "completed",
-   "x": 1315,
-   "y": 769,
+   "x": 955,
+   "y": 788,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2668,8 +2668,8 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 944,
-   "y": 794.7,
+   "x": 1052,
+   "y": 789.7,
    "width": 7,
    "height": 5.6000000000000005,
    "props": {
@@ -2684,8 +2684,8 @@
   "command": "text.create",
   "params": {
    "text": "cancelled",
-   "x": 955,
-   "y": 793,
+   "x": 1063,
+   "y": 788,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2702,8 +2702,8 @@
  {
   "command": "shape.polygon",
   "params": {
-   "x": 1034,
-   "y": 794,
+   "x": 1160,
+   "y": 789,
    "width": 7,
    "height": 7,
    "props": {
@@ -2719,8 +2719,8 @@
   "command": "text.create",
   "params": {
    "text": "killed",
-   "x": 1045,
-   "y": 793,
+   "x": 1171,
+   "y": 788,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2737,8 +2737,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1124,
-   "y": 794,
+   "x": 1268,
+   "y": 789,
    "width": 7,
    "height": 7,
    "props": {
@@ -2752,8 +2752,8 @@
   "command": "text.create",
   "params": {
    "text": "planning",
-   "x": 1135,
-   "y": 793,
+   "x": 1279,
+   "y": 788,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2770,8 +2770,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1214,
-   "y": 794,
+   "x": 944,
+   "y": 810,
    "width": 7,
    "height": 7,
    "props": {
@@ -2785,8 +2785,8 @@
   "command": "text.create",
   "params": {
    "text": "thinking",
-   "x": 1225,
-   "y": 793,
+   "x": 955,
+   "y": 809,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2803,8 +2803,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1304,
-   "y": 794,
+   "x": 1052,
+   "y": 810,
    "width": 7,
    "height": 7,
    "props": {
@@ -2818,8 +2818,8 @@
   "command": "text.create",
   "params": {
    "text": "streaming",
-   "x": 1315,
-   "y": 793,
+   "x": 1063,
+   "y": 809,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2836,8 +2836,8 @@
  {
   "command": "shape.polygon",
   "params": {
-   "x": 944,
-   "y": 818,
+   "x": 1160,
+   "y": 810,
    "width": 7,
    "height": 7,
    "props": {
@@ -2853,8 +2853,8 @@
   "command": "text.create",
   "params": {
    "text": "awaiting_approval",
-   "x": 955,
-   "y": 817,
+   "x": 1171,
+   "y": 809,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2871,8 +2871,8 @@
  {
   "command": "shape.polygon",
   "params": {
-   "x": 1034,
-   "y": 818,
+   "x": 1268,
+   "y": 810,
    "width": 7,
    "height": 7,
    "props": {
@@ -2888,8 +2888,8 @@
   "command": "text.create",
   "params": {
    "text": "reconnecting",
-   "x": 1045,
-   "y": 817,
+   "x": 1279,
+   "y": 809,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2906,8 +2906,8 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1124,
-   "y": 818.7,
+   "x": 944,
+   "y": 831.7,
    "width": 7,
    "height": 5.6000000000000005,
    "props": {
@@ -2922,8 +2922,8 @@
   "command": "text.create",
   "params": {
    "text": "replay",
-   "x": 1135,
-   "y": 817,
+   "x": 955,
+   "y": 830,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2940,8 +2940,8 @@
  {
   "command": "shape.rectangle",
   "params": {
-   "x": 1214,
-   "y": 818.7,
+   "x": 1052,
+   "y": 831.7,
    "width": 7,
    "height": 5.6000000000000005,
    "props": {
@@ -2956,8 +2956,8 @@
   "command": "text.create",
   "params": {
    "text": "empty",
-   "x": 1225,
-   "y": 817,
+   "x": 1063,
+   "y": 830,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -2974,8 +2974,8 @@
  {
   "command": "shape.ellipse",
   "params": {
-   "x": 1304,
-   "y": 818,
+   "x": 1160,
+   "y": 831,
    "width": 7,
    "height": 7,
    "props": {
@@ -2989,8 +2989,8 @@
   "command": "text.create",
   "params": {
    "text": "loading",
-   "x": 1315,
-   "y": 817,
+   "x": 1171,
+   "y": 830,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",
@@ -3009,7 +3009,7 @@
   "params": {
    "text": "colour is never the only channel; unknown metric -> NULL / \"—\", never 0",
    "x": 944,
-   "y": 848,
+   "y": 852,
    "props": {
     "fontSize": 8,
     "fontFamily": "Consolas",

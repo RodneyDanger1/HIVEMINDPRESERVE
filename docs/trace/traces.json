@@ -3,7 +3,7 @@
     "schema": "hiverouter.trace.runs/v1",
     "status": "NO_RUNS",
     "note": "Appended by e2e/helpers/trace.ts when a Playwright run captures evidence; empty means nothing has been executed.",
-    "generated_at": "2026-11-06T10:43:02.537Z"
+    "generated_at": "2026-11-06T10:56:04.256Z"
   },
   "traces": []
 }

@@ -1,14 +1,14 @@
-//! Windows workspace jail (Phase 6 WPs 6.8/6.12/6.14, CANONICAL C18).
+﻿//! Windows workspace jail (Phase 6 WPs 6.8/6.12/6.14, CANONICAL C18).
 //!
 //! One containment owner: a canonicalised workspace root plus refusal of every
-//! escape vector — **refused, never clamped** (a clamped path is a silent
+//! escape vector â€” **refused, never clamped** (a clamped path is a silent
 //! reinterpretation of agent input):
 //! 1. `..` parent traversal;
 //! 2. absolute paths / drive-qualified paths (`C:\...`, `D:file`);
 //! 3. symlink / junction targets that canonicalise outside the root;
 //! 4. UNC / device prefixes (`\\server\share`, `\\?\C:\...`);
 //! 5. drive changes;
-//! 6. 8.3 short-name aliases (`PROGRA~1`) — conservatively refused because they
+//! 6. 8.3 short-name aliases (`PROGRA~1`) â€” conservatively refused because they
 //!    resolve to a different lexical path.
 //!
 //! `cap-std 4.0.3` is SPIKE-GATED and not adopted (FACT F10): this module is the
@@ -24,8 +24,12 @@ use serde::Serialize;
 
 use crate::error::ToolError;
 
-/// Maximum bytes a single `file_read` may return (stdout/file cap policy).
-pub const MAX_READ_BYTES: u64 = 8 * 1024 * 1024;
+/// Maximum bytes a single `file_read` may return.
+///
+/// The Lead's UI-COMMANDS contract patch fixes the `FILE_READ` cap at 1 MiB
+/// (`E_FILE_TOO_LARGE`); this constant is the single cap for both the command
+/// surface and the jail helper.
+pub const MAX_READ_BYTES: u64 = 1024 * 1024;
 
 /// A symlink/junction-resolved path outside the workspace.
 #[must_use]
@@ -45,14 +49,14 @@ impl WorkspaceJail {
     /// Opens (creating when missing) the canonical workspace root.
     ///
     /// # Errors
-    /// [`Refusal::JailEscape`] when `root` is not an absolute path;
+    /// [`Refusal::PathOutsideJail`] when `root` is not an absolute path;
     /// [`Refusal::InternalError`] when the directory cannot be created or
     /// canonicalised.
     pub fn open(root: impl AsRef<Path>) -> Result<Self, ToolError> {
         let root = root.as_ref();
         if !root.is_absolute() {
             return Err(ToolError::new(
-                Refusal::JailEscape,
+                Refusal::PathOutsideJail,
                 "workspace root must be an absolute path",
             ));
         }
@@ -84,7 +88,7 @@ impl WorkspaceJail {
     /// the nearest existing ancestor is checked.
     ///
     /// # Errors
-    /// [`Refusal::JailEscape`] for every escape vector (no silent clamping).
+    /// [`Refusal::PathOutsideJail`] for every escape vector (no silent clamping).
     pub fn resolve(&self, requested: &str) -> Result<PathBuf, ToolError> {
         if requested.contains('\0') {
             return Err(escape("path contains a NUL byte"));
@@ -142,7 +146,7 @@ impl WorkspaceJail {
             if probe.exists() {
                 let canonical = fs::canonicalize(probe).map_err(|error| {
                     ToolError::new(
-                        Refusal::JailEscape,
+                        Refusal::PathOutsideJail,
                         format!("cannot resolve the path for containment check: {error}"),
                     )
                 })?;
@@ -174,7 +178,7 @@ impl WorkspaceJail {
     /// Reads a workspace file.
     ///
     /// # Errors
-    /// [`Refusal::JailEscape`] for escapes; [`Refusal::ToolSchema`] when the
+    /// [`Refusal::PathOutsideJail`] for escapes; [`Refusal::ToolSchema`] when the
     /// file exceeds [`MAX_READ_BYTES`]; [`Refusal::InternalError`] for I/O.
     pub fn read(&self, requested: &str) -> Result<Vec<u8>, ToolError> {
         let path = self.resolve(requested)?;
@@ -192,7 +196,7 @@ impl WorkspaceJail {
         }
         if metadata.len() > MAX_READ_BYTES {
             return Err(ToolError::new(
-                Refusal::ToolSchema,
+                Refusal::FileTooLarge,
                 format!(
                     "{requested:?} is {} bytes; the read cap is {MAX_READ_BYTES} bytes",
                     metadata.len()
@@ -213,7 +217,7 @@ impl WorkspaceJail {
     /// reachable through an approved `file_write`.
     ///
     /// # Errors
-    /// [`Refusal::JailEscape`] for escapes; [`Refusal::InternalError`] for I/O.
+    /// [`Refusal::PathOutsideJail`] for escapes; [`Refusal::InternalError`] for I/O.
     pub fn write(&self, requested: &str, bytes: &[u8]) -> Result<PathBuf, ToolError> {
         let path = self.resolve(requested)?;
         if let Some(parent) = path.parent() {
@@ -239,13 +243,13 @@ impl WorkspaceJail {
     /// Lists a workspace directory (root by default).
     ///
     /// # Errors
-    /// [`Refusal::JailEscape`] for escapes; [`Refusal::ToolSchema`] when the
+    /// [`Refusal::PathOutsideJail`] for escapes; [`Refusal::ToolSchema`] when the
     /// path is not a directory.
     pub fn list(&self, requested: Option<&str>) -> Result<Vec<DirEntryInfo>, ToolError> {
         let path = self.resolve(requested.unwrap_or(""))?;
         let metadata = fs::metadata(&path).map_err(|error| {
             ToolError::new(
-                Refusal::ToolSchema,
+                Refusal::PathNotFound,
                 format!("cannot list {}: {error}", requested.unwrap_or("<root>")),
             )
         })?;
@@ -290,7 +294,7 @@ pub struct DirEntryInfo {
 }
 
 fn escape(detail: &str) -> ToolError {
-    ToolError::new(Refusal::JailEscape, detail)
+    ToolError::new(Refusal::PathOutsideJail, detail)
 }
 
 #[cfg(test)]
@@ -321,7 +325,7 @@ mod tests {
         let (_temp, jail) = jail();
         for attempt in ["..", "../escape.txt", "a/../../escape.txt", "docs/../../../x"] {
             let error = jail.resolve(attempt).expect_err(attempt);
-            assert_eq!(error.code(), "E_JAIL_ESCAPE", "vector: {attempt}");
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
     }
 
@@ -335,7 +339,7 @@ mod tests {
             "/etc/passwd",
         ] {
             let error = jail.resolve(attempt).expect_err(attempt);
-            assert_eq!(error.code(), "E_JAIL_ESCAPE", "vector: {attempt}");
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
     }
 
@@ -348,7 +352,7 @@ mod tests {
             r"\\.\PhysicalDrive0",
         ] {
             let error = jail.resolve(attempt).expect_err(attempt);
-            assert_eq!(error.code(), "E_JAIL_ESCAPE", "vector: {attempt}");
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
     }
 
@@ -357,7 +361,7 @@ mod tests {
         let (_temp, jail) = jail();
         for attempt in ["D:\\data\\x.txt", "D:relative.txt", "E:/other/file"] {
             let error = jail.resolve(attempt).expect_err(attempt);
-            assert_eq!(error.code(), "E_JAIL_ESCAPE", "vector: {attempt}");
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
     }
 
@@ -366,7 +370,7 @@ mod tests {
         let (_temp, jail) = jail();
         for attempt in ["PROGRA~1\\evil.txt", "docs\\FILE~1.TXT", "a~b.txt"] {
             let error = jail.resolve(attempt).expect_err(attempt);
-            assert_eq!(error.code(), "E_JAIL_ESCAPE", "vector: {attempt}");
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
     }
 
@@ -404,9 +408,9 @@ mod tests {
         let error = jail
             .resolve("link/secret.txt")
             .expect_err("symlink escape refused");
-        assert_eq!(error.code(), "E_JAIL_ESCAPE");
+        assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL");
         let error = jail.read("link/secret.txt").expect_err("read refused");
-        assert_eq!(error.code(), "E_JAIL_ESCAPE");
+        assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL");
         // The escaped content must never be returned.
         assert!(!format!("{error}").contains("outside the jail"));
     }
@@ -417,7 +421,7 @@ mod tests {
         let bytes = vec![b'x'; usize::try_from(MAX_READ_BYTES).expect("fits") + 1];
         jail.write("big.bin", &bytes).expect("write");
         let error = jail.read("big.bin").expect_err("too large");
-        assert_eq!(error.code(), "E_TOOL_SCHEMA");
+        assert_eq!(error.code(), "E_FILE_TOO_LARGE");
     }
 
     #[test]
@@ -429,3 +433,6 @@ mod tests {
         assert_eq!(fs::read(path).expect("read back"), b"ok");
     }
 }
+
+
+

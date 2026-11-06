@@ -1,5 +1,5 @@
 {
- "episode_id": "1efb9131-25db-4b67-aad0-1e600a4d8225",
+ "episode_id": "5891a1da-fd57-406b-b2ea-05cf0212e5b6",
  "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
  "task_family": "ui_canvas_exports",
  "apps": [
@@ -29,7 +29,7 @@
    },
    "result": {
     "exit": 0,
-    "exports": 1
+    "exports": 4
    },
    "duration_ms": 0
   }
@@ -37,7 +37,34 @@
  "artifacts": [
   {
    "path": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
-   "sha256": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
+   "sha256": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+   "format": "svg",
+   "dimensions": [
+    1440,
+    900
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-zoom-states.svg",
+   "sha256": "ab1ee97ae2b9d042b9d8b78ef22f10f1d4b594041fbc51acd27c32112a9493ae",
+   "format": "svg",
+   "dimensions": [
+    1440,
+    900
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+   "sha256": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+   "format": "svg",
+   "dimensions": [
+    1440,
+    900
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-hero.svg",
+   "sha256": "2bf8d20facba986b2c148702a774187538886658c680f7d323aa0e785a678477",
    "format": "svg",
    "dimensions": [
     1440,
@@ -46,7 +73,34 @@
   },
   {
    "path": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
-   "sha256": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba",
+   "sha256": "aa6066d38f73d391b45c623c62e285bdd19d541f3443db984279627f2df7a694",
+   "format": "png",
+   "dimensions": [
+    2880,
+    1800
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-zoom-states.png",
+   "sha256": "a02cb4a1963a8c3588ae3cc66fa74c0f7d415e1a46e95089d191794d4f79141c",
+   "format": "png",
+   "dimensions": [
+    2880,
+    1800
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-interaction.png",
+   "sha256": "de50112439898e88b8bbf334dd8427f0f8af2fa2fbcc6bed338334f34f0d00a4",
+   "format": "png",
+   "dimensions": [
+    2880,
+    1800
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-hero.png",
+   "sha256": "719a28be8de4926612ecfe5537ec7bdb98e04eac5338d34fcc6efbb62b54834e",
    "format": "png",
    "dimensions": [
     2880,
@@ -62,11 +116,11 @@
    "sha256_recorded": "ok"
   }
  },
- "outcome": "partial-built",
+ "outcome": "verified",
  "failure_code": null,
  "cost": {
   "model_tokens": 0,
   "wall_s": 0
  },
- "note": "partial: boards ['00'] built; pending surfaces ['S24', 'S25']"
+ "note": "partial: boards ['00', '01', '02', '03'] built; pending surfaces []"
 }

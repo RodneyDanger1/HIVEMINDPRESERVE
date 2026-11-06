@@ -60,13 +60,13 @@ def surface_entries(state):
             missing.append(sid)
             continue
         code, b = found
-        el_name = b["element_surface"][sid]
-        el_id = b["element_names"][el_name]
+        idx = b["surface_indices"][sid]
+        el = b["element_by_idx"][str(idx)]
+        el_name, el_id = el["name"], el["id"]
         group = None
         for gname, gid in b["group_ids"].items():
             if gname.startswith(sid):
-                # element is inside that group only if the surface was assigned to a
-                # group member; the group id is the stable manifest node.
+                # the surface node is the named group when one starts with the id
                 group = (gname, gid)
                 break
         if group:

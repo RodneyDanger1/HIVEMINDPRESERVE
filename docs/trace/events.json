@@ -10,7 +10,7 @@
       "terminal run: run row status/error, terminal event payload, usage/cost/tokens must agree",
       "failed/budget terminal runs: runs.cost_usd/prompt_tokens/completion_tokens must be NULL/incomplete, never 0"
     ],
-    "generated_at": "2026-11-06T10:43:02.537Z"
+    "generated_at": "2026-11-06T10:56:04.256Z"
   },
   "emitted": [],
   "subscribed": [],

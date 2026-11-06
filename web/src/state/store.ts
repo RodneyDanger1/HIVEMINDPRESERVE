@@ -128,6 +128,7 @@ export interface UiState {
   readonly fileTree: FileTreeState;
   readonly project: { readonly id: string; readonly name: string; readonly owner: string };
   readonly reducedMotionOverride: boolean;
+  readonly diffOpen: boolean;
 
   init(): Promise<void>;
   dispose(): void;
@@ -144,6 +145,9 @@ export interface UiState {
   setTab(tab: TabId): void;
   setViewport(viewport: ViewportState): void;
   selectTask(taskId: string | null): void;
+  setChatVisible(visible: boolean): void;
+  openDiffModal(): void;
+  closeDiffModal(): void;
   dismissRefusal(id: string): void;
   setReducedMotionOverride(value: boolean): void;
   probeSettings(): Promise<void>;
@@ -455,6 +459,7 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       fileTree: initialFileTree(),
       project: baseProject(),
       reducedMotionOverride: false,
+      diffOpen: false,
 
       async init(): Promise<void> {
         if (get().initialized) {
@@ -629,6 +634,18 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
 
       selectTask(taskId: string | null): void {
         set({ selectedTaskId: taskId });
+      },
+
+      setChatVisible(visible: boolean): void {
+        set({ chat: { ...get().chat, visible } });
+      },
+
+      openDiffModal(): void {
+        set({ diffOpen: true });
+      },
+
+      closeDiffModal(): void {
+        set({ diffOpen: false });
       },
 
       dismissRefusal(id: string): void {

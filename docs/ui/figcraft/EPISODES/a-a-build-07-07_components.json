@@ -36,18 +36,18 @@
     "ok": true,
     "steps": 667
    },
-   "duration_ms": 862
+   "duration_ms": 2150
   }
  ],
  "artifacts": [
   {
    "path": "docs/ui/figcraft/A/scripts/07_components.json",
-   "sha256": "086ceb85b51b8ece43b90dd9f9ccbb0e68fe73fb61d48fa6bc1c09940fa8734e",
+   "sha256": "5af8528ab52736bd2e3d7f20fc7093087d9b3e3e62b6b3e93f0f4eebb2f250bf",
    "kind": "script"
   },
   {
    "path": "docs/ui/figcraft/A/build/page02.figcraft",
-   "sha256": "46d2dc343a081f74c047dcf3d5609a6a2b4c63fe9c2dfb922716c3fc15573019",
+   "sha256": "67f9d2ef0c66764eff4d3f772332c1a14cc398b5dc35ee2f86f9a6b9fc49f5a9",
    "kind": "figcraft"
   }
  ],
@@ -63,6 +63,6 @@
  "failures": [],
  "cost": {
   "model_tokens": 0,
-  "wall_s": 0.86
+  "wall_s": 2.15
  }
 }

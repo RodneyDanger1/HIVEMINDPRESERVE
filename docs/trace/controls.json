@@ -4,7 +4,7 @@
     "source": "e2e/data/control-matrix.json",
     "status": "PENDING_APP_NOT_BUILT",
     "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
-    "generated_at": "2026-11-06T10:43:02.537Z"
+    "generated_at": "2026-11-06T10:56:04.256Z"
   },
   "controls": [
     {

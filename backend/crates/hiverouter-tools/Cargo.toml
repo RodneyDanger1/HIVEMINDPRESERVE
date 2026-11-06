@@ -11,7 +11,7 @@ name = "hiverouter_tools"
 path = "src/lib.rs"
 
 [[bin]]
-name = "hiverouter"
+name = "hiverouter-cli"
 path = "src/bin/hiverouter.rs"
 
 [[bench]]
@@ -39,6 +39,7 @@ async-trait.workspace = true
 rusqlite.workspace = true
 tokio-util.workspace = true
 notify.workspace = true
+reqwest.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 win32job.workspace = true
@@ -46,5 +47,4 @@ win32job.workspace = true
 [dev-dependencies]
 tempfile.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "net", "process", "io-util"] }
-reqwest.workspace = true
 criterion = "=0.8.2"
