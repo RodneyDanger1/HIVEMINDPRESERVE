@@ -2,14 +2,15 @@
 
 Owner: QA / trace engineer (`docs/trace/**`). Sources: skill `trace` (11-hop ladder, event/payload/terminal
 trace), `blueprint/UI-WIRING-GUIDE.md` §1-§3, `docs/contracts/UI-COMMANDS-v1.md`, EXECUTION-PROMPT §7.
-**Status: SCHEMA ONLY — no run captured.** Every seed value is `PENDING`/`UNVERIFIED`; a verdict may only
-leave PENDING when its `evidence[]` is non-empty and points at a captured artifact.
+**Status: LIVE CAPTURE APPLIED (2026-11-06 15:03Z).** Captured evidence-backed verdicts are applied to
+`controls.json` (43 WIRED-AND-WORKS hops, 260 UNVERIFIED, 5 MISSING, 0 WIRED-BUT-DEAD; 23 controls partially
+verified); a verdict may only leave PENDING when its `evidence[]` is non-empty and points at a captured artifact.
 
 ## 1. Files
 
 | File | Role | Current state |
 |---|---|---|
-| `controls.json` | 29 control records (28 guide surfaces + supplemental `S-APPROVAL`) × 11 hop slots (initial verdicts) | generated; 29 × 11 all `PENDING` |
+| `controls.json` | 29 control records (28 guide surfaces + supplemental `S-APPROVAL`) × 11 hop slots (initial verdicts) | live capture applied: 23 `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT` (node cards S15-S19 + S-APPROVAL); 48 hop verdicts evidence-backed |
 | `traces.json` | append-only captured runs (`TraceRun[]`) | empty (`0 runs`) |
 | `events.json` | emitted/subscribed/delivered parity, payload parity, terminal records | empty arrays; event vocabulary 21 |
 | `terminal-truth.md` | terminal-run truth template (per-run evidence block) | template only, `NOT_COLLECTED` |

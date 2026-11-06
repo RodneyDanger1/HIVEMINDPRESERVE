@@ -1,12 +1,14 @@
-# QA HARNESS — HiveMind v1 (QA / trace engineer)
+﻿# QA HARNESS — HiveMind v1 (QA / trace engineer)
 
-**Status: HARNESS LIVE AGAINST THE SERVER (updated 2026-11-06 08:0x).**
+**Status: HARNESS LIVE — FINAL RUN 79 PASSED / 0 FAILED / 14 SKIPPED (exit 0, 2026-11-06 09:21).**
 Playwright **1.65.0** is installed in `e2e/` (package only; installed Chrome channel — no browser download).
-The embedded UI at `http://127.0.0.1:8799` is exercised for real: first full run = **75 passed, 2 failed, 14 skipped**
-(91 tests, run log `e2e/test-results/run-live-2.log`, HTML report `e2e/playwright-report/index.html`).
-The 2 failures are app/contract defects (SETTINGS_STATUS `E_INTERNAL_ERROR`; stale Data/Approval copy), not harness
-skips. Live evidence lives in `docs/trace/live/` (see `docs/trace/live/README.md`); static harness still 27/27.
-Every skipped/fixme test is explicitly **not** a pass; node-card and streaming surfaces stay UNVERIFIED (no run).
+Full Chrome suite against `http://127.0.0.1:8799` (binary `184D51A7…C9A9`, asset `index-Cbfm1IuM.js`, PID 33580): **93 tests =
+79 passed, 0 failed, 14 skipped** (run log `e2e/test-results/run-live-FINAL-artifact.log`, HTML report
+`e2e/playwright-report/index.html`). Earlier pre-fix failures (SETTINGS_STATUS E_INTERNAL_ERROR, stale
+Data/Approval copy, FILE_TREE_RESULT rendering) were fixed by the build owners and re-verified. Live evidence:
+`docs/trace/live/` (see `docs/trace/live/README.md`); trace capture refreshed 15:03Z and evidence-backed verdicts
+applied to `controls.json` (43 WIRED-AND-WORKS hops, 260 UNVERIFIED, 5 MISSING). Static harness still 27/27.
+Skipped/fixme tests are explicitly **not** passes; node-card and streaming surfaces stay UNVERIFIED (no run).
 
 ## 1. Role & scope
 

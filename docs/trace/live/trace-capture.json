@@ -1,6 +1,6 @@
 {
   "schema": "hiverouter.trace.live-capture/v1",
-  "generated_at": "2026-11-06T13:57:03.882Z",
+  "generated_at": "2026-11-06T15:24:24.056Z",
   "base_url": "http://127.0.0.1:8799",
   "rule": "Only hops with captured DOM/interaction/frame evidence are WIRED-AND-WORKS; all others UNVERIFIED. No fabricated pass.",
   "surfaces": [
@@ -481,9 +481,9 @@
       "surface": "Settings / key status",
       "selector": "main",
       "present": true,
-      "evidence": "settings panel rendered; \"Provider key status\" present=true",
+      "evidence": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true",
       "interactions": [
-        "clicked Settings nav"
+        "clicked Settings nav (SETTINGS_STATUS sent)"
       ],
       "hops": {
         "1_render": "WIRED-AND-WORKS",
@@ -494,12 +494,12 @@
         "6_service": "UNVERIFIED",
         "7_store": "UNVERIFIED",
         "8_provider": "UNVERIFIED",
-        "9_response": "WIRED-BUT-DEAD",
+        "9_response": "WIRED-AND-WORKS",
         "10_render_back": "UNVERIFIED",
         "11_reentry": "UNVERIFIED"
       },
       "notes": [
-        "SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong."
+        "Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values."
       ]
     },
     {
@@ -507,25 +507,25 @@
       "surface": "File/code hierarchy viewer",
       "selector": "main",
       "present": true,
-      "evidence": "Data panel rendered; named-gap copy present=true",
+      "evidence": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true",
       "interactions": [
-        "clicked Data nav"
+        "clicked Data nav (FILE_TREE_LIST sent)"
       ],
       "hops": {
         "1_render": "WIRED-AND-WORKS",
         "2_handler": "WIRED-AND-WORKS",
-        "3_client_call": "UNVERIFIED",
-        "4_request": "UNVERIFIED",
-        "5_route": "MISSING",
-        "6_service": "MISSING",
+        "3_client_call": "WIRED-AND-WORKS",
+        "4_request": "WIRED-AND-WORKS",
+        "5_route": "WIRED-AND-WORKS",
+        "6_service": "UNVERIFIED",
         "7_store": "UNVERIFIED",
         "8_provider": "UNVERIFIED",
-        "9_response": "UNVERIFIED",
-        "10_render_back": "UNVERIFIED",
+        "9_response": "WIRED-AND-WORKS",
+        "10_render_back": "WIRED-AND-WORKS",
         "11_reentry": "UNVERIFIED"
       },
       "notes": [
-        "FILE_TREE_LIST/FILE_READ are frozen in the contract but the UI/server exposes no file API; panel shows a named gap (honest, not fake)."
+        "Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries."
       ]
     },
     {

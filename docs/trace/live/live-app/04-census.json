@@ -23,7 +23,7 @@
   ],
   "minimap": {
     "testid": "rf__minimap",
-    "ariaLabel": null
+    "ariaLabel": "Mini-map"
   },
   "zoomButtons": [
     "Zoom in",

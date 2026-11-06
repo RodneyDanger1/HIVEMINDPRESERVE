@@ -2,12 +2,12 @@
   "before": "true",
   "command": {
     "name": "CHAT_PIN",
-    "id": "01a1b124-a4f9-7723-b221-476a95df5d81",
-    "correlation_id": "01a1b124-a4f8-7c91-8da8-7fcf8ef85921"
+    "id": "01a1b174-e6e3-79ee-9f84-e792fbb1a45f",
+    "correlation_id": "01a1b174-e6e3-7ea5-b0a6-ae8b2c602fcb"
   },
   "ack": {
     "name": "ACK",
-    "correlation_id": "01a1b124-a4f8-7c91-8da8-7fcf8ef85921"
+    "correlation_id": "01a1b174-e6e3-7ea5-b0a6-ae8b2c602fcb"
   },
   "ackMatchesCommandCorrelation": true,
   "after": "false"

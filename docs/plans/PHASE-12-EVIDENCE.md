@@ -132,3 +132,12 @@ this file.
   this host; the named-refusal path is verified by clearing PATH (observed above), the full fresh-machine run is
   UNVERIFIED.
 - `npm`/web gates are the frontend owner's evidence; the CLI does not shell out to npm.
+
+## Final shipped artifact (frozen 2026-11-06)
+
+- Binary: `target/release/hiverouter.exe` 9,329,152 B, sha256 `184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9`.
+- Deployment zip: `dist/HiveMind-v1-win64.zip` 4,065,104 B, sha256 `9B2ED5A7B785F1E8422A79BD26672DF176325F982DB9BC68778C7050EBC2B144`.
+- Exact-artifact browser e2e: 93 tests = **79 passed / 0 failed / 14 explicit fixme skips**, exit 0 (`e2e/test-results/run-live-FINAL-artifact.log`).
+- Backend final gate: **233 passed / 0 failed / 1 ignored** (`docs/audit/evidence/final-gate-tests.log`).
+- Live probes: `/health` 200, `/diagnose` 200 (`hiverouter.diagnose.v1`), `/api/session` 200, `/` 200 embedded UI, assets 200, unknown traversal 404.
+- Clean-extraction smoke: `--version` OK, `/health` 200, `/` 200, `/diagnose` 200.

@@ -1,13 +1,13 @@
 # e2e — HiveMind v1 Playwright QA harness
 
-**Status: LIVE — browser tests execute against the running server (`http://127.0.0.1:8799`).**
-Playwright **1.65.0** is installed in `e2e/` (package only, installed Chrome channel — no browser download).
-First full run on the live embedded UI: **75 passed, 2 failed, 14 skipped** (91 tests; run log
-`test-results/run-live-2.log`, HTML report `playwright-report/index.html`, evidence `docs/trace/live/`).
-The 2 failures are app/contract defects, not harness skips: `SETTINGS_STATUS` returns `E_INTERNAL_ERROR` (expected
-ACK + `SETTINGS_STATUS_RESULT`), and the shipped Data/Approval copy still claims contract gaps that were frozen
-(`FILE_TREE_LIST`/`FILE_READ`/`APPROVAL_RESOLVE`). Node-card (S15-S19) and streaming (S27) traces remain
-UNVERIFIED because no paid run was started. The static harness (`tools/qa/verify-harness.mjs`) still passes 27/27.
+**Status: LIVE — FINAL CHROME RUN 79 PASSED / 0 FAILED / 14 SKIPPED (exit 0).**
+Playwright **1.65.0** installed in `e2e/` (package only, installed Chrome channel — no browser download).
+Run against the **shipped binary** `184D51A7…C9A9` serving `index-Cbfm1IuM.js` at `http://127.0.0.1:8799`:
+**93 tests = 79 passed, 0 failed, 14 skipped** (run log `test-results/run-live-FINAL-artifact.log`, HTML report
+`playwright-report/index.html`, evidence `docs/trace/live/`). The 14 skips are explicit `test.fixme`/UNDONE
+(12 a11y DOM gates, 2 WS stubs) — not passes. Node cards S15-S19, streaming S27 and terminal-run truth remain
+UNVERIFIED because no paid run was started. Static harness (`tools/qa/verify-harness.mjs`) passes 27/27; trace
+capture refreshed and applied to `docs/trace/controls.json`.
 
 ## Hard rules
 
@@ -16,85 +16,64 @@ UNVERIFIED because no paid run was started. The static harness (`tools/qa/verify
    `PLAYWRIGHT_BROWSERS_PATH` at a downloaded tree. NOTE: `%LOCALAPPDATA%\ms-playwright`
    already contains cached Chromium builds from unrelated tools — do **not** use them for e2e.
 2. **No live paid API.** Never set `DEEPSEEK_API_KEY` for e2e. Provider paths are exercised with
-   the backend's wiremock/mock provider only; a live call needs explicit user approval + budget.
-3. **No fabricated evidence.** A skipped test is `SKIP`, not `PASS`. Trace data starts at
-   `PENDING`/`UNVERIFIED` and is filled only from captured requests, DOM state, DB rows or logs.
+   mock/wiremock only; a live call needs explicit user approval + budget.
+3. **No fabricated evidence.** A skipped test is `SKIP`, not `PASS`. Trace data is filled only from
+   captured requests, DOM state, DB rows or logs; UNVERIFIED stays UNVERIFIED.
 4. **Frozen contract first.** Command/event/refusal names come from
    `docs/contracts/UI-COMMANDS-v1.md`; the matrix is `e2e/data/control-matrix.json`
-   (28 surfaces from `blueprint/UI-WIRING-GUIDE.md` S01-S28).
+   (28 surfaces from `blueprint/UI-WIRING-GUIDE.md` S01-S28 + supplemental `S-APPROVAL`).
 
-## Prerequisites (verified on this host, 2026-11-06)
+## Prerequisites (verified on this host)
 
 | Item | Value | Evidence |
 |---|---|---|
 | Node | v26.7.0 (>=22.12.0 floor) | `node --version` |
 | npm | 11.19.0 | `cmd /c npm --version` |
-| Playwright CLI (npx cache) | 1.62.1 | `npx --yes playwright --version` |
-| `@playwright/test` installed? | **NO** — not in root, `web/` or `e2e/`; pinned dep is **1.65.0** (blueprint EXT-R4-06) | directory probes |
-| Installed Chrome | 156.0.8078.75 at `C:\Program Files\Google\Chrome\Application\chrome.exe` | file version |
-| Installed Edge | 156.0.4314.58 at `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe` | file version |
-| App reachability | not running (no dev server; `web/src` shell only) | process/port probe not attempted while wiring in progress |
-| Disk free | ~7.5 GB measured 2026-11-06 04:27 (varies with active builds) | `Get-PSDrive C` |
+| Playwright | **1.65.0** installed in `e2e/` (blueprint pin) | `node -e require('./node_modules/@playwright/test/package.json').version` |
+| Browsers | installed Chrome 156.0.8078.75 / Edge 156.0.4314.58 via `channel` — no download | file versions |
+| App target | shipped binary `tools/bin/hiverouter.exe` on `127.0.0.1:8799` (embedded UI) | `/health`, `/api/session`, `/diagnose` 200 |
 
-Install **without** browser download (needs Lead approval first — no install has been run):
+Install (already done, package only):
 
 ```powershell
-cd C:\Users\Riley\Desktop\hiverouter-v1\e2e
+cd e2e
 $env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = '1'
 npm install
 ```
 
-## Run (once the wired app exists)
+## Run
 
 ```powershell
-# Production-shaped target (Rust core serves embedded web build on loopback:8080 — backend default)
-cd C:\Users\Riley\Desktop\hiverouter-v1
-cargo run -p hiverouter-core
-
-# Dev-shaped target (Vite 5173 + Rust core 8080; the UI needs VITE_API_BASE, and the
-# backend Origin allowlist must include http://127.0.0.1:5173 — verify before relying on it):
-cd web; npm run dev
-
-# Then:
-cd ..\e2e
-$env:E2E_BASE_URL = 'http://127.0.0.1:8080'   # production-shaped (default)
-# $env:E2E_BASE_URL = 'http://127.0.0.1:5173' # dev-shaped once Origin/CORS is configured
-$env:E2E_APP_READY = '1'                       # opt in only after /health and /api/session answer
-npm run e2e:chrome                             # installed Chrome channel
-npm run e2e:msedge                             # optional installed Edge channel
+cd e2e
+$env:E2E_BASE_URL='http://127.0.0.1:8799'; $env:E2E_APP_READY='1'
+npx playwright test --project=chrome --reporter=list,html
+# expects: 93 tests = 79 passed, 0 failed, 14 skipped (exit 0)
 ```
 
-Expected first-run behaviour before the app exists: tests **skip** with
-`APP_NOT_BUILT: the wired 28-surface app is not delivered / no dev server` — never red-as-pass.
+No `webServer` is configured: the release binary is started by the build/Lead, not by Playwright.
 
 ## Specs
 
-| File | Covers | Runs now? |
+| File | Covers | Result on shipped binary |
 |---|---|---|
-| `specs/control-matrix.spec.ts` | Matrix integrity (28 unique surfaces, frozen commands/refusals, ACK rule) + 28 per-surface probe skeletons | Static part needs Playwright installed only; browser part blocked |
-| `specs/ws-contract.spec.ts` | Origin refusal (`E_ORIGIN_REJECTED`), session token, `hello{last_seq}`, ACK-before-mutation, `E_RESYNC_REQUIRED`, no fake success | Blocked (needs server) |
-| `specs/a11y-gates.spec.ts` | G-UI-1..12 — static contrast math runs now; DOM gates blocked | Static math runs under Playwright |
-| `specs/trace-hops.spec.ts` | 11-hop render→re-entry capture into `docs/trace/*` | Blocked (needs app) |
+| `specs/live-app.spec.ts` | boot/root/title/skip link, surface census (nav 6, tabs 4, chat, composer, 4 controls, HUD, scrubber, library, minimap, zoom), tabs + 6 nav views render-back, zoom/Ctrl+0, CHAT_PIN ACK-before-mutation, empty-prompt refusal (no SUBMIT_PROMPT), WS hello token, token colours/contrast, SETTINGS_STATUS ACK+result, Data/Approval copy, FILE_TREE tree render, unknown-size `—` (never `0 B`) | 15/15 pass |
+| `specs/trace-hops.spec.ts` | real 28-surface 11-hop capture → `docs/trace/live/trace-capture.json` | 28/28 pass |
+| `specs/control-matrix.spec.ts` | matrix integrity + 29 boot probes | pass |
+| `specs/a11y-gates.spec.ts` | static contrast math (real) + 12 DOM gates | 2 pass, 12 fixme |
+| `specs/ws-contract.spec.ts` | health/session (real) + 2 stubs | 1 pass, 2 fixme |
 
 ## Trace evidence output
 
-- `docs/trace/controls.json` — 29 controls seeded (28 guide surfaces + `S-APPROVAL`), 11 hop verdicts `PENDING` (generated by
-  `tools/qa/build-trace-seeds.mjs` from the matrix).
-- `docs/trace/traces.json` — empty (`0 runs`); appended only by `e2e/helpers/trace.ts` with evidence.
-- `docs/trace/events.json` — event parity skeleton; `delivered: []` until captured.
-- `docs/trace/terminal-truth.md` — terminal-run truth template (UNVERIFIED placeholders).
-- Full plan/schema: `docs/trace/QA-HARNESS.md`, `docs/trace/TRACE-SCHEMA.md`,
-  `docs/trace/A11Y-CONTRAST-PLAN.md`.
+- `docs/trace/live/trace-capture.json` — refreshed from the shipped-artifact run (28 surfaces; 43 WIRED-AND-WORKS /
+  260 UNVERIFIED / 5 MISSING hops; 23 surfaces present).
+- `docs/trace/controls.json` — evidence-backed verdicts applied (`node ../tools/qa/apply-live-trace.mjs`);
+  23 `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT`, 48 evidence-backed hop verdicts.
+- `docs/trace/live/live-app/*.json` — per-test evidence (incl. `15-data-size.json`: `README.md—`, `note.txt—`,
+  `"0 B"` absent, shipped bundle has the `—` fallback).
+- `docs/trace/live/README.md` — full evidence summary + run history.
 
-## Unknowns / blockers (recorded, not hidden)
+## Known UNVERIFIED / open (honest)
 
-- Playwright install not approved/performed; npx cache 1.62.1 ≠ pinned 1.65.0.
-- The wired UI is a milestone-1 shell; the 28 surfaces are not implemented yet.
-- S03 guide wording (`type:"SUBMIT_PROMPT"`) vs frozen envelope (`type:"COMMAND"`, `name:"SUBMIT_PROMPT"`)
-  must be reconciled by the Lead; the harness asserts the frozen envelope.
-- S22 file/code hierarchy has **no frozen command** in UI-COMMANDS-v1 (contract gap; recorded, no name invented).
-- S25 code-diff modal is DECISION-GATED; `DIFF_*` stay unfrozen.
-- FigCraft: `A-design.figcraft` is now present and `figcraft-cli info` was re-run by QA (1368 nodes, 31 styles,
-  20 variables, 4 pages); 16 asset exports exist. The canonical `docs/ui/figcraft/ASSETS-INDEX.json` is still
-  absent, but `docs/ui/figcraft/A/A-ASSETS.json` is a manifest candidate with S01-S28 mapping — Lead acceptance or a
-  copy/alias is required before the frontend consumes it. `A-SELF-CHECK.json` is a FigCraft self-report, not a QA verdict.
+- Node cards S15-S19, streaming S27, terminal-run truth, provider/run lifecycle: no paid run started.
+- G-UI-1..12 DOM gates (12 `test.fixme`) and synthetic foreign-Origin refusal / duplicate hello-ACK stubs (2 fixme).
+- FigCraft canonical manifest `ASSETS-INDEX.json` still absent; `A/A-ASSETS.json` candidate needs Lead acceptance.

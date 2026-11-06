@@ -679,9 +679,22 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
         }
         const path = readString(candidate, 'path');
         const entryName = readString(candidate, 'name');
-        const kind = candidate.kind;
+        const kindRaw = candidate.kind;
+        const isDir = candidate.is_dir;
+        const kind: FileTreeEntryKind =
+          kindRaw === 'file' || kindRaw === 'dir'
+            ? kindRaw
+            : typeof isDir === 'boolean'
+              ? isDir
+                ? 'dir'
+                : 'file'
+              : 'file';
         const size = candidate.size_bytes;
-        if (!path || !entryName || (kind !== 'file' && kind !== 'dir')) {
+        if (
+          !path ||
+          !entryName ||
+          (kindRaw !== undefined && kindRaw !== 'file' && kindRaw !== 'dir' && typeof isDir !== 'boolean')
+        ) {
           return invalid('FILE_TREE_RESULT entry');
         }
         entries.push({

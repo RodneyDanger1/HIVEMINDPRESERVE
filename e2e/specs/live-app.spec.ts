@@ -117,7 +117,7 @@ test.describe('live app — safe interactions & render-back', () => {
     const nav = page.locator('nav[aria-label="Primary navigation"]');
     const expectations: Record<string, string> = {
       Agents: 'No agents yet — submit a prompt to create the first run.',
-      Data: 'The v1 server exposes no workspace-file API yet; the file tree is a named gap (Phase 6 tool plane), not a fake tree.',
+      Data: 'Select a file from the tree to preview it here.',
       Models: 'The server has not reported provider/model yet (run SETTINGS_STATUS in Settings).',
       Routing: 'No edges in the current graph.',
       Settings: 'Provider key status',
@@ -262,5 +262,73 @@ test.describe('live app — contract wiring', () => {
     });
     expect(staleDataClaim, 'Data panel still claims no workspace-file API although FILE_TREE_LIST/FILE_READ are frozen').toBe(false);
     expect(staleApprovalClaim, 'approval overlay still claims no approval-response command although APPROVAL_RESOLVE is frozen').toBe(false);
+  });
+
+  test('Data panel renders FILE_TREE_RESULT entries from the workspace', async ({ page }) => {
+    test.skip(appMissing(), skipReason());
+    const frames = captureFrames(page).frames;
+    await gotoApp(page);
+    await waitForFrame(frames, (j) => j.name === 'SERVER_HELLO');
+    const start = frames.length;
+    await page.getByRole('button', { name: 'Data', exact: true }).first().click();
+    let result: Record<string, unknown> | null = null;
+    try {
+      result = await waitForFrame(frames.slice(start), (j) => j.name === 'FILE_TREE_RESULT', 6000);
+    } catch {
+      result = null;
+    }
+    await page.waitForTimeout(1500);
+    const mainText = await page.locator('main').innerText();
+    const noteVisible = await page.getByText('note.txt', { exact: false }).count();
+    const readmeVisible = await page.getByText('README.md', { exact: false }).count();
+    writeEvidence('14-file-tree.json', {
+      resultReceived: Boolean(result),
+      entries: (result?.payload as { entries?: unknown } | undefined)?.entries ?? null,
+      noteVisible,
+      readmeVisible,
+      mainText: mainText.slice(0, 500),
+    });
+    expect(result, 'FILE_TREE_RESULT must be received from the server').toBeTruthy();
+    expect(noteVisible + readmeVisible, 'workspace tree entries (note.txt/README.md) must render in the Data panel').toBeGreaterThan(0);
+  });
+
+  test('Data panel shows — (not 0 B) for unknown entry sizes', async ({ page }) => {
+    test.skip(appMissing(), skipReason());
+    const frames = captureFrames(page).frames;
+    await gotoApp(page);
+    await waitForFrame(frames, (j) => j.name === 'SERVER_HELLO');
+    const start = frames.length;
+    await page.getByRole('button', { name: 'Data', exact: true }).first().click();
+    try {
+      await waitForFrame(frames.slice(start), (j) => j.name === 'FILE_TREE_RESULT', 6000);
+    } catch {
+      // evidence below records the missing frame; the DOM assertions still run
+    }
+    await expect(page.getByText('note.txt')).toBeVisible();
+    await page.waitForTimeout(600);
+    const mainText = await page.locator('main').innerText();
+    const zeroB = /\b0 B\b/.test(mainText);
+    const readmeUnknown = /README\.md\s*—/.test(mainText);
+    const noteUnknown = /note\.txt\s*—/.test(mainText);
+    const bundle = await page.evaluate(async () => {
+      const script = document.querySelector('script[type=module]') as HTMLScriptElement | null;
+      if (!script) return '';
+      return (await fetch(script.src)).text();
+    });
+    // The server's FILE_TREE_RESULT entries currently carry no size_bytes, so both
+    // entries are "unknown size" and must render the em dash placeholder.
+    writeEvidence('15-data-size.json', {
+      mainText: mainText.slice(0, 700),
+      sizePlaceholders: { readmeUnknown, noteUnknown, zeroB },
+      sourceEvidence: 'web/src/panels/DataPanel.tsx:44 — entry.kind === "dir" ? "/" : entry.size_bytes === null ? "—" : `${entry.size_bytes} B`',
+      bundleHasEmDash: bundle.includes('—'),
+      bundleHasZeroBFallback: bundle.includes('0 B'),
+      note: 'live server FILE_TREE_RESULT entries have no size_bytes field, so the panel exercises the unknown-size path',
+    });
+    expect(readmeUnknown, 'README.md must show the unknown-size — placeholder').toBe(true);
+    expect(noteUnknown, 'note.txt must show the unknown-size — placeholder').toBe(true);
+    expect(zeroB, 'unknown sizes must never render as 0 B').toBe(false);
+    expect(bundle.includes('—'), 'shipped bundle contains the — fallback').toBe(true);
+    expect(bundle.includes('0 B'), 'shipped bundle must not contain a 0 B size fallback').toBe(false);
   });
 });

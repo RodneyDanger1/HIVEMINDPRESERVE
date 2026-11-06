@@ -1,0 +1,6 @@
+﻿HiveMind v1 — localhost build (win64, GNU)
+binary: hiverouter.exe (sha256 184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9)
+build: cargo build --release --locked (backend/Cargo.toml); web built into the binary via rust-embed
+run:   hiverouter.exe --bind 127.0.0.1:8080 --data-dir data [--workspace-root <dir>]
+open:  http://127.0.0.1:8080/
+notes: loopback only; one DeepSeek key via DEEPSEEK_API_KEY for live model calls; no Python/Docker/cloud required.

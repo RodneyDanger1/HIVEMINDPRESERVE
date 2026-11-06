@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { appMissing, skipReason } from '../helpers/matrix';
-import { ensureLiveDirs, LIVE_DIR } from '../helpers/evidence';
+import { ensureLiveDirs, LIVE_DIR, captureFrames, waitForFrame } from '../helpers/evidence';
 
 /**
  * Real per-surface trace capture (replaces the placeholder PENDING matrix).
@@ -89,6 +89,7 @@ test.describe('live per-surface trace capture', () => {
   for (const surface of SURFACES) {
     test(`capture ${surface.id} ${surface.surface}`, async ({ page }) => {
       test.skip(appMissing(), skipReason());
+      const wsFrames = captureFrames(page).frames;
       await page.goto(`${BASE}/`, { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForTimeout(350);
       const record: SurfaceRecord = {
@@ -112,18 +113,29 @@ test.describe('live per-surface trace capture', () => {
       }
 
       if (surface.kind === 'settings') {
+        const start = wsFrames.length;
         await page.getByRole('button', { name: 'Settings', exact: true }).first().click();
-        await page.waitForTimeout(1200);
+        let result: Record<string, unknown> | null = null;
+        try {
+          result = await waitForFrame(wsFrames.slice(start), (j) => j.name === 'SETTINGS_STATUS_RESULT' || j.name === 'ERROR', 6000);
+        } catch {
+          result = null;
+        }
+        await page.waitForTimeout(800);
+        const acked = wsFrames.slice(start).some((f) => { try { return (JSON.parse(f.payload) as { name?: string }).name === 'ACK'; } catch { return false; } });
         record.present = (await page.getByText('Provider key status').count()) > 0;
-        record.evidence = `settings panel rendered; "Provider key status" present=${record.present}`;
-        record.interactions.push('clicked Settings nav');
+        const resultOk = Boolean(result) && !('code' in (result as object));
+        record.evidence = `settings panel rendered=${record.present}; ACK=${acked}; SETTINGS_STATUS_RESULT received=${resultOk}`;
+        record.interactions.push('clicked Settings nav (SETTINGS_STATUS sent)');
         record.hops = hopBase(record.present);
         record.hops['2_handler'] = 'WIRED-AND-WORKS';
         record.hops['3_client_call'] = 'WIRED-AND-WORKS';
         record.hops['4_request'] = 'WIRED-AND-WORKS';
         record.hops['5_route'] = 'WIRED-AND-WORKS';
-        record.hops['9_response'] = 'WIRED-BUT-DEAD';
-        record.notes.push('SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong.');
+        record.hops['9_response'] = resultOk ? 'WIRED-AND-WORKS' : 'WIRED-BUT-DEAD';
+        record.notes.push(resultOk
+          ? 'Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values.'
+          : 'SETTINGS_STATUS did not return a result in this build (see live-app.spec.ts 12).');
         records.push(record);
         expect(record.present).toBe(true);
         return;
@@ -146,16 +158,32 @@ test.describe('live per-surface trace capture', () => {
       }
 
       if (surface.kind === 'data') {
+        const frames = wsFrames;
+        const start = frames.length;
         await page.getByRole('button', { name: 'Data', exact: true }).first().click();
+        let result: Record<string, unknown> | null = null;
+        try {
+          result = await waitForFrame(frames.slice(start), (j) => j.name === 'FILE_TREE_RESULT' || j.name === 'ERROR', 6000);
+        } catch {
+          result = null;
+        }
+        await page.waitForTimeout(1200);
         const text = await page.locator('main').innerText();
+        const treeRendered = /note\.txt|README\.md/.test(text);
+        const resultReceived = Boolean(result);
         record.present = text.includes('Data');
-        record.evidence = `Data panel rendered; named-gap copy present=${/no workspace-file API yet/i.test(text)}`;
-        record.interactions.push('clicked Data nav');
+        record.evidence = `Data panel rendered=${record.present}; FILE_TREE_RESULT received=${resultReceived}; tree entries rendered=${treeRendered}`;
+        record.interactions.push('clicked Data nav (FILE_TREE_LIST sent)');
         record.hops = hopBase(record.present);
         record.hops['2_handler'] = 'WIRED-AND-WORKS';
-        record.hops['5_route'] = 'MISSING';
-        record.hops['6_service'] = 'MISSING';
-        record.notes.push('FILE_TREE_LIST/FILE_READ are frozen in the contract but the UI/server exposes no file API; panel shows a named gap (honest, not fake).');
+        record.hops['3_client_call'] = 'WIRED-AND-WORKS';
+        record.hops['4_request'] = 'WIRED-AND-WORKS';
+        record.hops['5_route'] = 'WIRED-AND-WORKS';
+        record.hops['9_response'] = resultReceived ? 'WIRED-AND-WORKS' : 'WIRED-BUT-DEAD';
+        record.hops['10_render_back'] = treeRendered ? 'WIRED-AND-WORKS' : 'WIRED-BUT-DEAD';
+        record.notes.push(resultReceived && treeRendered
+          ? 'Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries.'
+          : 'FILE_TREE_RESULT/tree rendering incomplete in this build (see live-app.spec.ts 14).');
         records.push(record);
         expect(record.present).toBe(true);
         return;

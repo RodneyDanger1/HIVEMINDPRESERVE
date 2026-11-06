@@ -1,0 +1,223 @@
+{
+  "generated_at": "2026-11-06T15:14:33.957Z",
+  "base": "http://127.0.0.1:8799",
+  "browser": "chrome 156.0.8078.75",
+  "page": {
+    "status": 200,
+    "title": "HiveMind — Spatial Execution Environment",
+    "root": 1,
+    "buttons": 26,
+    "navItems": 6,
+    "tabs": 4
+  },
+  "network": {
+    "cdp4xx5xx": []
+  },
+  "console": [],
+  "ws": {
+    "session": {
+      "schema": "hiverouter.v1",
+      "token_present": true,
+      "ws": "/ws"
+    },
+    "hello": "SERVER_HELLO",
+    "roundtrips": [
+      {
+        "command": "SETTINGS_STATUS",
+        "frames": [
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "SETTINGS_STATUS_RESULT",
+            "code": null
+          }
+        ]
+      },
+      {
+        "command": "FILE_TREE_LIST",
+        "frames": [
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "FILE_TREE_RESULT",
+            "code": null
+          }
+        ]
+      },
+      {
+        "command": "FILE_READ",
+        "frames": [
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "FILE_CONTENT",
+            "code": null
+          }
+        ]
+      },
+      {
+        "command": "FILE_READ",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_PATH_OUTSIDE_JAIL"
+          }
+        ]
+      },
+      {
+        "command": "APPROVAL_RESOLVE",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_APPROVAL_NOT_FOUND"
+          }
+        ]
+      },
+      {
+        "command": "SUBMIT_PROMPT",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_PROMPT_EMPTY"
+          }
+        ]
+      },
+      {
+        "command": "SUBMIT_PROMPT",
+        "frames": [
+          {
+            "name": "RUN_CREATED",
+            "code": null
+          },
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "RUN_STATUS",
+            "code": null
+          }
+        ]
+      },
+      {
+        "command": "SPAWN_SUB_HIVE",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_TASK_NOT_FOUND"
+          }
+        ]
+      },
+      {
+        "command": "REWIRE_TASK",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_TASK_NOT_FOUND"
+          }
+        ]
+      },
+      {
+        "command": "CANCEL_RUN",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_RUN_NOT_FOUND"
+          },
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "FILE_TREE_RESULT",
+            "code": null
+          },
+          {
+            "name": "ACK",
+            "code": null
+          },
+          {
+            "name": "SETTINGS_STATUS_RESULT",
+            "code": null
+          }
+        ]
+      },
+      {
+        "command": "KILL_WORKER",
+        "frames": [
+          {
+            "name": "ERROR",
+            "code": "E_TASK_NOT_FOUND"
+          }
+        ]
+      },
+      {
+        "command": "CHAT_PIN",
+        "frames": [
+          {
+            "name": "ACK",
+            "code": null
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "ui": {
+    "dataPanelText": "Skip to canvas\nHM\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nWORKSPACE\nSWARM\nROUTING\nHISTORY\n—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS\nPROJECT\nHiveMind AI · You\nCONNECTED\nData\nREADME.md—\nnote.txt—\n\nSelect a file from the tree to preview it here.\n\nPROJECT\nHiveMind AI\n01A1B16D\nACTIVE AGENTS · 0\n\nNO ACTIVE AGENTS\n\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\n\nFIGCRAFT A+B EXPORTS ACCEPTED BY UI WATCHDOG (PASS-WITH-NOTES, FAIL 0). VALUES COME FROM THE TOKEN MODULE, NEVER SAMPLED PIXELS; PIXEL-LAYOUT FIDELITY REMAINS UNVERIFIED.\n\nDRAG A WORKER ONTO ANOTHER SUPER-AGENT TO RE-ROUTE ITS CONTEXT STREAM LIVE.",
+    "settingsText": "Skip to canvas\nHM\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nWORKSPACE\nSWARM\nROUTING\nHISTORY\n—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS\nPROJECT\nHiveMind AI · You\nCONNECTED\nSettings\nPROVIDER KEY STATUS\nREFRESH\nPROVIDER\ndeepseek\nMODEL\ndeepseek-flash\nPROVIDER KEY STATUS\nKey missing\n\nSUBMIT A PROMPT TO SURFACE E_KEY_MISSING IF NO KEY IS CONFIGURED.\n\nSERVER HEALTH\nRE-CHECK HEALTH\nok\nRUSTC:OK\nNODE:OK\nReplay (read-only) · reduced motion override\nCODE-DIFF REVIEW\nPROJECT\nHiveMind AI\n01A1B16D\nACTIVE AGENTS · 0\n\nNO ACTIVE AGENTS\n\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\n\nFIGCRAFT A+B EXPORTS ACCEPTED BY UI WATCHDOG (PASS-WITH-NOTES, FAIL 0). VALUES COME FROM THE TOKEN MODULE, NEVER SAMPLED PIXELS; PIXEL-LAYOUT FIDELITY REMAINS UNVERIFIED.\n\nDRAG A WORKER ONTO ANOTHER SUPER-AGENT TO RE-ROUTE ITS CONTEXT STREAM LIVE.",
+    "dataShowsReadme": true,
+    "dataShowsNote": true,
+    "settingsShowsKey": true
+  },
+  "ok": true,
+  "newCommandFrames": [
+    {
+      "cmd": "SETTINGS_STATUS",
+      "name": "ACK",
+      "code": null
+    },
+    {
+      "cmd": "SETTINGS_STATUS",
+      "name": "SETTINGS_STATUS_RESULT",
+      "code": null
+    },
+    {
+      "cmd": "FILE_TREE_LIST",
+      "name": "ACK",
+      "code": null
+    },
+    {
+      "cmd": "FILE_TREE_LIST",
+      "name": "FILE_TREE_RESULT",
+      "code": null
+    },
+    {
+      "cmd": "FILE_READ",
+      "name": "ACK",
+      "code": null
+    },
+    {
+      "cmd": "FILE_READ",
+      "name": "FILE_CONTENT",
+      "code": null
+    },
+    {
+      "cmd": "FILE_READ",
+      "name": "ERROR",
+      "code": "E_PATH_OUTSIDE_JAIL"
+    },
+    {
+      "cmd": "APPROVAL_RESOLVE",
+      "name": "ERROR",
+      "code": "E_APPROVAL_NOT_FOUND"
+    }
+  ],
+  "anyInternalError": false
+}

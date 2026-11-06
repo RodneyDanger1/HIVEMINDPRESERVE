@@ -1,5 +1,12 @@
 {
-  "counts": {"total": 79, "verified": 70, "vault_recorded": 0, "read": 8, "unverified": 1, "contradicted": 0},
+  "counts": {
+    "total": 79,
+    "verified": 70,
+    "vault_recorded": 0,
+    "read": 8,
+    "unverified": 1,
+    "contradicted": 0
+  },
   "decision_critical_unverified": [
     {
       "claim_id": "C-026",
@@ -8,15 +15,73 @@
     }
   ],
   "cross_document": [
-    {"claim_id": "C-009", "locations": ["docs/plans/TOOLCHAIN.md", "docs/audit/BASELINE-VERIFICATION.md"]},
-    {"claim_id": "C-014", "locations": ["docs/ui/figcraft/A/A-ASSETS.json", "docs/ui/figcraft/B/B-ASSETS.json", "docs/ui/figcraft/WATCHDOG-BRIEF.md"]},
-    {"claim_id": "C-018", "locations": ["web/package.json", "docs/plans/PHASE-7-8-10-EVIDENCE.md"]},
-    {"claim_id": "C-025", "locations": ["web/src/assets/manifest.ts", "ledgers/ui-watchdog.json", "docs/ui/figcraft/ASSETS-INDEX.json"]},
-    {"claim_id": "C-320", "locations": ["docs/plans/PHASE-1-EVIDENCE.md", "docs/plans/PHASE-3-EVIDENCE.md", "docs/plans/PHASE-4-EVIDENCE.md", "docs/plans/PHASE-9-EVIDENCE.md"]},
-    {"claim_id": "C-325", "locations": ["backend/crates/hiverouter-core/src/http.rs", "docs/plans/PHASE-1-EVIDENCE.md"]},
-    {"claim_id": "C-329", "locations": ["docs/plans/PHASE-1-EVIDENCE.md", "tools/runbook.md"]},
-    {"claim_id": "C-330", "locations": ["docs/plans/D2-D3-WIRING-EVIDENCE.md", "backend/crates/hiverouter-tools/src/commands.rs"]},
-    {"claim_id": "C-331", "locations": ["docs/plans/D2-D3-WIRING-EVIDENCE.md", "backend/crates/hiverouter-tools/src/health.rs"]}
+    {
+      "claim_id": "C-009",
+      "locations": [
+        "docs/plans/TOOLCHAIN.md",
+        "docs/audit/BASELINE-VERIFICATION.md"
+      ]
+    },
+    {
+      "claim_id": "C-014",
+      "locations": [
+        "docs/ui/figcraft/A/A-ASSETS.json",
+        "docs/ui/figcraft/B/B-ASSETS.json",
+        "docs/ui/figcraft/WATCHDOG-BRIEF.md"
+      ]
+    },
+    {
+      "claim_id": "C-018",
+      "locations": [
+        "web/package.json",
+        "docs/plans/PHASE-7-8-10-EVIDENCE.md"
+      ]
+    },
+    {
+      "claim_id": "C-025",
+      "locations": [
+        "web/src/assets/manifest.ts",
+        "ledgers/ui-watchdog.json",
+        "docs/ui/figcraft/ASSETS-INDEX.json"
+      ]
+    },
+    {
+      "claim_id": "C-320",
+      "locations": [
+        "docs/plans/PHASE-1-EVIDENCE.md",
+        "docs/plans/PHASE-3-EVIDENCE.md",
+        "docs/plans/PHASE-4-EVIDENCE.md",
+        "docs/plans/PHASE-9-EVIDENCE.md"
+      ]
+    },
+    {
+      "claim_id": "C-325",
+      "locations": [
+        "backend/crates/hiverouter-core/src/http.rs",
+        "docs/plans/PHASE-1-EVIDENCE.md"
+      ]
+    },
+    {
+      "claim_id": "C-329",
+      "locations": [
+        "docs/plans/PHASE-1-EVIDENCE.md",
+        "tools/runbook.md"
+      ]
+    },
+    {
+      "claim_id": "C-330",
+      "locations": [
+        "docs/plans/D2-D3-WIRING-EVIDENCE.md",
+        "backend/crates/hiverouter-tools/src/commands.rs"
+      ]
+    },
+    {
+      "claim_id": "C-331",
+      "locations": [
+        "docs/plans/D2-D3-WIRING-EVIDENCE.md",
+        "backend/crates/hiverouter-tools/src/health.rs"
+      ]
+    }
   ],
   "notes": "B-Core backend claims are C-301..C-335 with quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md and docs/plans/D2-D3-WIRING-EVIDENCE.md. VERIFIED at this checkpoint: contract 32 passed exit 0; core 83 passed / 0 failed / 1 ignored helper; tools 78 passed; release build exit 0 with hiverouter.exe sha256 DE676AFB...; live WS probe of the four patched commands + /diagnose + CLI diagnose green. C-026 (browser e2e) remains the only open UNVERIFIED item. No VERIFIED without observed command evidence."
 }

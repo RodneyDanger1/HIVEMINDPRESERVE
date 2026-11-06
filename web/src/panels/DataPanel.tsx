@@ -41,7 +41,7 @@ export function DataPanel() {
               >
                 {entry.name}
                 <span className="type-mono-meta ml-2 text-meta">
-                  {entry.kind === 'dir' ? '/' : `${entry.size_bytes ?? 0} B`}
+                  {entry.kind === 'dir' ? '/' : entry.size_bytes === null ? '—' : `${entry.size_bytes} B`}
                 </span>
               </button>
             </li>

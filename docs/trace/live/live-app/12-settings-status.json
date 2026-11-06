@@ -1,15 +1,13 @@
 {
-  "settingsCommandsSent": 2,
+  "settingsCommandsSent": 1,
   "responses": [
     {
-      "name": "ERROR",
-      "code": "E_INTERNAL_ERROR",
-      "correlation_id": "01a1b124-c9f2-777d-856d-4ddf4d281f66"
+      "name": "ACK",
+      "correlation_id": "01a1b175-0cbe-7d25-a25b-7e3c76dab55a"
     },
     {
-      "name": "ERROR",
-      "code": "E_INTERNAL_ERROR",
-      "correlation_id": "01a1b124-c9f8-7046-b12f-d70ac0e6473a"
+      "name": "SETTINGS_STATUS_RESULT",
+      "correlation_id": "01a1b175-0cbe-7d25-a25b-7e3c76dab55a"
     }
   ]
 }

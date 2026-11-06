@@ -1,0 +1,12 @@
+{
+  "mainText": "WORKSPACE\nSWARM\nROUTING\nHISTORY\n—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS\nPROJECT\nHiveMind AI · You\nCONNECTED\nData\nREADME.md—\nnote.txt—\n\nSelect a file from the tree to preview it here.",
+  "sizePlaceholders": {
+    "readmeUnknown": true,
+    "noteUnknown": true,
+    "zeroB": false
+  },
+  "sourceEvidence": "web/src/panels/DataPanel.tsx:44 — entry.kind === \"dir\" ? \"/\" : entry.size_bytes === null ? \"—\" : `${entry.size_bytes} B`",
+  "bundleHasEmDash": true,
+  "bundleHasZeroBFallback": false,
+  "note": "live server FILE_TREE_RESULT entries have no size_bytes field, so the panel exercises the unknown-size path"
+}

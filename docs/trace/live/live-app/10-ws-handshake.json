@@ -2,7 +2,7 @@
   "wsUrlTokenMatchesSession": true,
   "sentHello": {
     "type": "hello",
-    "last_seq": 35
+    "last_seq": 75
   },
   "serverHello": {
     "name": "SERVER_HELLO",

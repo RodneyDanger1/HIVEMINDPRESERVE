@@ -1,0 +1,18 @@
+{
+  "resultReceived": true,
+  "entries": [
+    {
+      "path": "README.md",
+      "name": "README.md",
+      "is_dir": false
+    },
+    {
+      "path": "note.txt",
+      "name": "note.txt",
+      "is_dir": false
+    }
+  ],
+  "noteVisible": 1,
+  "readmeVisible": 1,
+  "mainText": "WORKSPACE\nSWARM\nROUTING\nHISTORY\n—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS\nPROJECT\nHiveMind AI · You\nCONNECTED\nData\nREADME.md—\nnote.txt—\n\nSelect a file from the tree to preview it here."
+}
