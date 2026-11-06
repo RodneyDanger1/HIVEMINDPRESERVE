@@ -102,6 +102,52 @@ E_APPROVAL_DECISION_INVALID), `SETTINGS_STATUS` (boolean `key_present`, never th
 `backend/crates/hiverouter-tools/src/{tool,approval,jail,shell,cancel,ledger,sha256,commands,settings,error,lib}.rs`,
 `backend/crates/hiverouter-tools/tests/audit_jsonl.rs`, `docs/contracts/ADAPTERS.md` (donor adapter records A2–A4, A8).
 
+## Final-gate defect found and fixed (2026-11-06 08:4x): timeout test PATH shadowing
+
+Symptom (reproduced on the Lead's request): `cargo test -p hiverouter-tools --lib
+shell::tests::timeout_terminates_the_child` FAILED deterministically:
+
+```
+thread 'shell::tests::timeout_terminates_the_child' panicked at crates\hiverouter-tools\src\shell.rs:413:14:
+timeout: ShellOutput { program: "cmd.exe", args: ["/C", "ping -n 4 127.0.0.1 > nul"], exit_code: Some(1),
+success: false, stdout: "", stderr: "BusyBox v1.39.0.git-6354-g5f09fb446 ... Usage: ping [OPTIONS] HOST
+... -c CNT ...", truncated: false, duration_ms: 87 }
+```
+
+Root cause (environment, not product logic): `where.exe ping` on the build PATH returns
+
+```
+C:\Users\Riley\Desktop\hiverouter-v1\tools\w64devkit\bin\ping.exe     <- BusyBox applet, first
+C:\Windows\System32\PING.EXE                                          <- Windows ping, second
+```
+
+The BusyBox `ping` rejects the Windows `-n <count>` flag and exits in ~87 ms with a usage error, so the child
+finished *before* the 300 ms timeout and the test asserted the wrong path. The product's timeout/cancel logic
+was never exercised by that invocation.
+
+Fix (minimal, test-only): run the **Windows system** ping by absolute path inside `cmd.exe`
+(`%SystemRoot%\System32\PING.EXE -n <count> 127.0.0.1 > nul`) in both the timeout and cancellation tests via a
+`system_ping_command` helper with the root cause documented. The allowlist still applies to the outer program
+(`cmd.exe`); no production code path changed.
+
+After fix (observed):
+
+```
+cargo test -p hiverouter-tools --lib shell::tests
+test shell::tests::allowlist_accepts_bare_names_only ... ok
+test shell::tests::non_allowlisted_program_is_refused_by_name ... ok
+test shell::tests::allowlisted_command_runs_and_captures_stdout ... ok
+test shell::tests::stdout_cap_truncates_without_deadlock ... ok
+test shell::tests::cancellation_returns_named_refusal ... ok
+test shell::tests::timeout_terminates_the_child ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 0.37s
+SHELL MODULE EXIT: 0
+
+cargo test -p hiverouter-tools
+test result: ok. 77 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.26s   (lib)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s    (tests/audit_jsonl.rs)
+TOOLS SUITE EXIT: 0
+```
 ## Not done / UNVERIFIED (honest list)
 
 - **Core wiring pending**: `hiverouter-core` must call `hiverouter_tools::migrate_approvals(&Connection)`,

@@ -404,10 +404,7 @@ mod tests {
     async fn timeout_terminates_the_child() {
         let (_temp, jail) = jail();
         let policy = ShellPolicy::conservative_default().with_timeout(Duration::from_millis(300));
-        let request = ShellRequest::new(
-            "cmd.exe",
-            vec!["/C".into(), "ping -n 4 127.0.0.1 > nul".into()],
-        );
+        let request = ShellRequest::new("cmd.exe", vec!["/C".into(), system_ping_command(4)]);
         let error = execute(&jail, &policy, &request, None)
             .await
             .expect_err("timeout");
@@ -435,10 +432,7 @@ mod tests {
     async fn cancellation_returns_named_refusal() {
         let (_temp, jail) = jail();
         let policy = ShellPolicy::conservative_default().with_timeout(Duration::from_secs(30));
-        let request = ShellRequest::new(
-            "cmd.exe",
-            vec!["/C".into(), "ping -n 10 127.0.0.1 > nul".into()],
-        );
+        let request = ShellRequest::new("cmd.exe", vec!["/C".into(), system_ping_command(10)]);
         let token = CancellationToken::new();
         let cancel = token.clone();
         tokio::spawn(async move {
@@ -449,5 +443,21 @@ mod tests {
             .await
             .expect_err("cancelled");
         assert_eq!(error.code(), "E_TOOL_CANCELLED");
+    }
+
+    /// Builds a `cmd.exe` command line that runs the **Windows system** ping by
+    /// absolute path.
+    ///
+    /// Root cause of the former flake: the test environment puts
+    /// `tools/w64devkit/bin` on `PATH`, which ships a BusyBox `ping` that rejects
+    /// the Windows `-n <count>` flag and exits in ~90 ms with a usage error. The
+    /// child then finished *before* the 300 ms timeout and the test asserted the
+    /// wrong path. Using `%SystemRoot%\System32\PING.EXE` makes the duration
+    /// deterministic and independent of PATH shadowing; the allowlist still
+    /// applies to the outer program (`cmd.exe`) only.
+    #[cfg(windows)]
+    fn system_ping_command(count: u32) -> String {
+        let system_root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_owned());
+        format!("{system_root}\\System32\\PING.EXE -n {count} 127.0.0.1 > nul")
     }
 }
