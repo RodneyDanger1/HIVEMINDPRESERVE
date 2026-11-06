@@ -33,6 +33,7 @@ pub mod census;
 pub mod cli;
 pub mod cli_support;
 pub mod commands;
+pub mod env_safety;
 pub mod error;
 pub mod health;
 pub mod jail;

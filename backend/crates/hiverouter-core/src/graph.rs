@@ -267,6 +267,20 @@ impl GraphAuthority {
             .ok_or(Refusal::TaskNotFound)
     }
 
+    /// Current lifecycle state of a task (read-only; used for truthful events).
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` for an unknown task; `E_INTERNAL_ERROR` if the graph
+    /// lock is poisoned.
+    pub fn state_of(&self, task_id: TaskId) -> Result<AgentState, Refusal> {
+        let state = self.lock()?;
+        state
+            .nodes
+            .get(&task_id)
+            .map(|node| node.state)
+            .ok_or(Refusal::TaskNotFound)
+    }
+
     /// Rebuilds the whole graph from a persisted snapshot (kill-restore path).
     ///
     /// # Errors
@@ -348,6 +362,19 @@ mod tests {
         let graph = GraphAuthority::new();
         assert_eq!(
             graph.add_task(TaskId::new(), Some(TaskId::new())),
+            Err(Refusal::TaskNotFound)
+        );
+    }
+
+    #[test]
+    fn state_of_returns_the_real_state_and_refuses_unknown_tasks() {
+        let graph = GraphAuthority::new();
+        let task = TaskId::new();
+        graph.add_task(task, None).expect("task");
+        graph.set_state(task, AgentState::Thinking).expect("set");
+        assert_eq!(graph.state_of(task).expect("state"), AgentState::Thinking);
+        assert_eq!(
+            graph.state_of(TaskId::new()),
             Err(Refusal::TaskNotFound)
         );
     }

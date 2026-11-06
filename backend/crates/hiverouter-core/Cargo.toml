@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "hiverouter-core"
 version = "1.0.0"
 edition = "2021"
@@ -38,4 +38,5 @@ rust-embed = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+wiremock = { workspace = true }
 

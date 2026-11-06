@@ -1,4 +1,4 @@
-//! Localhost WebSocket transport.
+﻿//! Localhost WebSocket transport.
 //!
 //! One axum `/ws` endpoint (blueprint Phase 2, WP 2.5/2.6/2.8): loopback-only,
 //! Origin allowlist + per-session token gate before the upgrade, `hello{last_seq}`
@@ -340,8 +340,14 @@ async fn handle_client_text(
                 .rewire(payload.task_id, payload.new_parent_id, payload.expected_rev)
             {
                 Ok(()) => {
+                    let state_value = match state.graph.state_of(payload.task_id) {
+                        Ok(state_value) => state_value,
+                        Err(refusal) => {
+                            publish_error(state, refusal, Some(correlation));
+                            return Ok(());
+                        }
+                    };
                     publish_ack(state, CommandName::RewireTask, correlation);
-                    let state_value = AgentStateForEvent::running();
                     publish_node_event(
                         state,
                         EventName::NodeRewire,
@@ -480,15 +486,6 @@ async fn handle_client_text(
     }
 }
 
-#[derive(Clone, Copy)]
-struct AgentStateForEvent;
-
-impl AgentStateForEvent {
-    fn running() -> hiverouter_contract::AgentState {
-        hiverouter_contract::AgentState::Running
-    }
-}
-
 fn error_payload(refusal: Refusal) -> ErrorPayload {
     ErrorPayload::from_refusal(&refusal)
 }
@@ -570,3 +567,4 @@ pub async fn send_sequenced(
 ) -> Result<(), ()> {
     send_envelope(socket, &sequenced.envelope).await
 }
+

@@ -200,13 +200,13 @@ pub async fn execute(
     let started = Instant::now();
     let mut command = Command::new(&request.program);
     command
-        .env_remove(hiverouter_provider::API_KEY_ENV)
         .args(&request.args)
         .current_dir(&cwd)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .kill_on_drop(true);
+    crate::env_safety::sanitize_tokio(&mut command);
 
     let mut child = command.spawn().map_err(|error| {
         ToolError::new(

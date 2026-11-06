@@ -4,6 +4,8 @@
 **Subject of record:** `C:\Users\Riley\Desktop\hiverouter-v1`, git `HEAD 3988622`, tag `v1.0.0` (clean tree).
 **Evidence basis:** `audit/inventory/FILE-MANIFEST.csv` (sha256 per tracked file), seat records in `audit/parts/<seat>/`, and the frozen blueprint hashes in `C:\Users\Riley\Desktop\hivemind-blueprint\blueprint\BUILD-CHECKS.json`.
 
+> **Post-release supersession (2026-11-06).** This paper is the audit snapshot at `HEAD 3988622` / tagged `v1.0.0`. Its headline P0 findings are historical: **A-F01 (provider not wired), A-F02 (replay dead) and A-F03 (16-vs-15 state parity) were fixed and live-proven after this audit** at sealed source `6a2b1c6` and released under tag `hivemind-1.0.0`. The current release record is `docs/RELEASE-EVIDENCE.md`; the executed plan is `plans/HIVEMIND-1.0-EXECUTION-PLAN.md`. The body below is retained unchanged as the dated audit evidence, not a statement about the current HEAD.
+
 ---
 
 ## Abstract
