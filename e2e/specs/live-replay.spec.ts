@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import {
   openWsProbe,
@@ -9,6 +12,16 @@ import {
   type LiveServer,
   type ProbeEnvelope,
 } from '../helpers/live-server';
+
+const CAPTURE_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../docs/trace/live/captures/w11',
+);
+
+function writeCapture(name: string, value: unknown): void {
+  mkdirSync(CAPTURE_DIR, { recursive: true });
+  writeFileSync(resolve(CAPTURE_DIR, name), `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
 
 /**
  * W4 live replay proof — real Rust server, real WebSocket, real snapshot store.
@@ -124,6 +137,15 @@ test.describe('live replay (real server, ephemeral process)', () => {
     await expect(page.locator('.react-flow__node')).toHaveCount(chosen?.nodes ?? 0, { timeout: 15_000 });
     await expect(page.locator('.react-flow__node.draggable')).toHaveCount(0);
     await expect(page.locator('.react-flow__node.selectable')).toHaveCount(0);
+    writeCapture('live-replay.json', {
+      captured_at: new Date().toISOString(),
+      release_binary: process.env.E2E_SERVER_BIN ?? null,
+      run_id: runId,
+      observed,
+      chosen,
+      revision_count: history.revision_count,
+      frames: JSON.parse(redactSecrets(JSON.stringify(await probe.frames()))) as unknown,
+    });
     await probe.close();
   });
 });

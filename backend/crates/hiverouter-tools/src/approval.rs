@@ -20,7 +20,7 @@ use uuid::Uuid;
 
 use crate::error::ToolError;
 use crate::sha256::sha256_hex;
-use crate::tool::{PermissionClass, ToolId};
+use crate::tool::{PermissionClass, ToolId, ToolRegistry};
 
 /// Approval time-to-live in seconds (PROPOSED-POLICY, blueprint WP 6.13).
 pub const APPROVAL_TTL_SECS: u64 = 120;
@@ -711,6 +711,65 @@ impl ApprovalGate {
     }
 }
 
+/// Commits a model-originated side-effect approval request (W12 tool loop).
+///
+/// Maps the wire tool name to its [`ToolId`] and registered permission class,
+/// then delegates to [`ApprovalGate::request`], which fills the single-use
+/// `nonce`, the `args_sha256` binding via [`hash_args`], the creation time and
+/// the `expires_at` value from the gate TTL, and inserts the row **before any
+/// side effect**. Only `mutate` / `execute` / `network` tools can request
+/// approval; read-only tools are refused by the gate itself.
+///
+/// # Errors
+/// - [`Refusal::ToolNotFound`] for a name outside the frozen tool vocabulary;
+/// - [`Refusal::SchemaInvalid`] for an empty `tool_call_id` (the event contract
+///   requires the provider call id);
+/// - [`Refusal::InternalError`] when the tool has no registered permission class
+///   or is read-only (no approval is needed or permitted);
+/// - [`Refusal::ApprovalReplay`] when the generated nonce/approval id collides.
+pub fn request_tool_approval(
+    gate: &ApprovalGate,
+    conn: &Connection,
+    run_id: RunId,
+    task_id: TaskId,
+    tool_call_id: &str,
+    tool: &str,
+    args: &serde_json::Value,
+    now_unix_secs: u64,
+) -> Result<ApprovalRequest, ToolError> {
+    if tool_call_id.trim().is_empty() {
+        return Err(ToolError::new(
+            Refusal::SchemaInvalid,
+            "an approval request must carry the provider tool_call_id (empty id refused)",
+        ));
+    }
+    let id = ToolId::from_id(tool).ok_or_else(|| {
+        ToolError::new(
+            Refusal::ToolNotFound,
+            format!("tool {tool:?} is not in the frozen tool vocabulary"),
+        )
+    })?;
+    let permission_class = ToolRegistry::standard()
+        .contract(id)
+        .map(|contract| contract.permission_class)
+        .ok_or_else(|| {
+            ToolError::new(
+                Refusal::InternalError,
+                format!("tool {} has no registered permission class", id.id()),
+            )
+        })?;
+    gate.request(
+        conn,
+        run_id,
+        task_id,
+        tool_call_id.to_owned(),
+        id,
+        permission_class,
+        args,
+        now_unix_secs,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1004,6 +1063,110 @@ mod tests {
             )
             .expect_err("read needs no approval");
         assert_eq!(error.code(), "E_INTERNAL_ERROR");
+    }
+
+    #[test]
+    fn request_tool_approval_fills_all_six_fields_and_commits_the_row() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let run = RunId::new();
+        let task = TaskId::new();
+        let args = serde_json::json!({"path": "notes.txt", "content": "hello", "expected_sha256": null});
+
+        let request = request_tool_approval(
+            &gate, &conn, run, task, "call-approval-1", "file_write", &args, now(),
+        )
+        .expect("approval request committed");
+
+        assert_eq!(request.run_id, run);
+        assert_eq!(request.task_id, task);
+        assert_eq!(request.tool_call_id, "call-approval-1");
+        assert_eq!(request.tool, ToolId::FileWrite);
+        assert_eq!(request.permission_class, PermissionClass::Mutate);
+        assert_eq!(request.args_sha256, hash_args(&args));
+        assert_eq!(request.args_sha256.len(), 64);
+        assert!(!request.args_sha256.is_empty());
+        assert_eq!(
+            request.created_at.unix_secs().expect("created"),
+            now(),
+            "created_at uses the supplied clock"
+        );
+        assert_eq!(
+            request.expires_at.unix_secs().expect("expires"),
+            now() + APPROVAL_TTL_SECS,
+            "expires_at = created_at + TTL"
+        );
+        assert_eq!(request.nonce.len(), 36, "uuid v7 nonce");
+        assert_ne!(request.nonce, request.approval_id.to_string());
+
+        // The row is committed before any side effect; pending until resolved.
+        let pending = pending_for_run(&conn, run).expect("pending");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0], request);
+        let decision: Option<String> = conn
+            .query_row("SELECT decision FROM approvals WHERE approval_id = ?1", [request.approval_id.to_string()], |row| row.get(0))
+            .expect("row");
+        assert!(decision.is_none(), "new request is undecided");
+
+        // A second request for the same call is a different nonce (single-use rows).
+        let second = request_tool_approval(
+            &gate, &conn, run, task, "call-approval-2", "shell_exec",
+            &serde_json::json!({"program": "cmd.exe", "args": []}), now(),
+        )
+        .expect("second approval");
+        assert_eq!(second.permission_class, PermissionClass::Execute);
+        assert_ne!(second.nonce, request.nonce);
+        assert_ne!(second.approval_id, request.approval_id);
+    }
+
+    #[test]
+    fn request_tool_approval_refuses_unknown_read_only_and_empty_ids() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let run = RunId::new();
+        let task = TaskId::new();
+
+        let unknown = request_tool_approval(
+            &gate, &conn, run, task, "call-x", "rm_rf", &serde_json::json!({}), now(),
+        )
+        .expect_err("unknown tool");
+        assert_eq!(unknown.code(), "E_TOOL_NOT_FOUND");
+
+        let read_only = request_tool_approval(
+            &gate, &conn, run, task, "call-y", "file_read",
+            &serde_json::json!({"path": "note.txt"}), now(),
+        )
+        .expect_err("read-only tools never request approval");
+        assert_eq!(read_only.code(), "E_INTERNAL_ERROR");
+
+        let empty = request_tool_approval(
+            &gate, &conn, run, task, "   ", "file_write",
+            &serde_json::json!({"path": "a.txt", "content": "x"}), now(),
+        )
+        .expect_err("empty tool_call_id");
+        assert_eq!(empty.code(), "E_SCHEMA_INVALID");
+
+        // Nothing was inserted by the refused calls.
+        let pending = pending_for_run(&conn, run).expect("pending");
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn request_tool_approval_binds_arguments_without_storing_them() {
+        let conn = memory_db();
+        let secret = "TOP-SECRET-APPROVAL-BODY";
+        let args = serde_json::json!({"path": "a.txt", "content": secret});
+        let request = request_tool_approval(
+            &ApprovalGate::default(), &conn, RunId::new(), TaskId::new(),
+            "call-secret", "file_write", &args, now(),
+        )
+        .expect("committed");
+        assert_eq!(request.args_sha256, hash_args(&args));
+        let stored: String = conn
+            .query_row("SELECT args_sha256 FROM approvals WHERE approval_id = ?1", [request.approval_id.to_string()], |row| row.get(0))
+            .expect("row");
+        assert_eq!(stored, request.args_sha256);
+        assert!(!stored.contains(secret));
     }
 }
 

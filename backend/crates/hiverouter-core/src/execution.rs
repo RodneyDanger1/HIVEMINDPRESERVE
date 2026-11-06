@@ -1,4 +1,4 @@
-//! Run lifecycle engine: prompt -> run row -> plan -> dispatch -> streamed reply
+﻿//! Run lifecycle engine: prompt -> run row -> plan -> dispatch -> streamed reply
 //! (blueprint Phase 4, WP 4.5/4.6/4.7/4.8).
 //!
 //! Guarantees:
@@ -17,19 +17,24 @@ use async_trait::async_trait;
 use hiverouter_contract::event::{
     NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunStatusPayload,
 };
-use hiverouter_contract::{AgentState, Event, Refusal, RunId, TaskId, Usage};
+use hiverouter_contract::{AgentState, Event, Refusal, RunId, TaskId, Timestamp, Usage};
+use hiverouter_provider::tool_assembler::AssembledToolCall;
+use hiverouter_tools::{
+    execute_read_only, AgentTier, ExecutedTool, PermissionClass, ToolRegistry, WorkspaceJail,
+};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::bus::EventBus;
 use crate::caps::Caps;
 use crate::context::ContextStore;
-use crate::db::Database;
+use crate::db::{Database, ToolTurnRecord};
 use crate::entities::{ChatRole, Run, TaskRecord};
 use crate::graph::GraphAuthority;
 use crate::planner::Plan;
 use crate::prompts::TemplateRegistry;
 use crate::store::RunStore;
+use crate::tool_loop::{self, ToolCallPlan, ToolExecution};
 
 /// Template used for the one planning call; the raw prompt is used when the
 /// registry has no such template.
@@ -71,6 +76,30 @@ pub trait ProviderExecutor: Send + Sync {
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal>;
 
+    /// Continues the conversation after read-only tool results (1.2 follow-up
+    /// tool turn).
+    ///
+    /// `transcript` is the cumulative per-turn history: each entry holds that
+    /// turn's visible assistant text and its planned calls + bounded results.
+    /// The implementor replays every entry as one assistant tool-call message
+    /// followed by its `role=tool` messages and offers the WorkerAgent tool
+    /// specs again. Streaming executors invoke `on_delta` exactly as in
+    /// [`Self::execute`].
+    ///
+    /// The default refuses with `E_PROVIDER_INVALID_RESPONSE`: test doubles that
+    /// never emit tool calls keep the pre-1.2 behaviour and stay unchanged.
+    async fn continue_with_tools(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+        _transcript: &[ToolTurnTranscript],
+    ) -> Result<StreamedReply, Refusal> {
+        Err(Refusal::ProviderInvalidResponse)
+    }
+
     /// Releases any per-run provider state after the run reaches a terminal
     /// status. The default is a no-op for stateless/test executors.
     async fn finish_run(&self, _run_id: RunId) {}
@@ -81,12 +110,14 @@ pub trait ProviderExecutor: Send + Sync {
 /// `deltas` holds the reply fragments. A streaming executor invokes the
 /// [`DeltaSink`] with the same fragments and returns their concatenation here;
 /// this field is the persistence source (`text()`), not a second event source.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct StreamedReply {
     /// Reply fragments used to persist the assistant message (`text()`).
     pub deltas: Vec<String>,
     /// Provider usage for the reply; absent counters stay absent.
     pub usage: Usage,
+    /// Assembled tool calls from this assistant turn (empty for plain replies).
+    pub tool_calls: Vec<hiverouter_provider::tool_assembler::AssembledToolCall>,
 }
 
 impl StreamedReply {
@@ -97,8 +128,34 @@ impl StreamedReply {
     }
 }
 
+/// One assistant tool turn replayed to the provider on continuation (1.2).
+///
+/// The engine accumulates one entry per follow-up turn so a multi-turn tool
+/// conversation keeps every prior assistant tool call and its bounded result
+/// instead of sending only the latest turn.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ToolTurnTranscript {
+    /// Visible assistant text of the turn that requested the tools.
+    pub assistant_text: String,
+    /// Planned calls and their bounded results/refusals, provider order.
+    pub results: Vec<(ToolCallPlan, ToolExecution)>,
+}
+
+/// One executed tool turn of a task (engine-internal follow-up loop data).
+struct ToolTurnResult {
+    /// True when the persisted tool-turn cap refused the calls (nothing ran).
+    cap_reached: bool,
+    /// True when the per-run provider-call budget refused at least one call.
+    /// Distinguishes an honest budget stop from malformed provider calls.
+    budget_refused: bool,
+    /// Planned results in provider order, refusals included; fed back to the
+    /// model. Unplannable calls (malformed id/args) are not representable in a
+    /// provider assistant tool-call message and are therefore absent here.
+    executed: Vec<(ToolCallPlan, ToolExecution)>,
+}
+
 /// Production default when no provider is configured: refuses by name with
-/// `E_KEY_MISSING` — never fabricates a reply.
+/// `E_KEY_MISSING` â€” never fabricates a reply.
 #[derive(Debug, Default)]
 pub struct UnconfiguredExecutor;
 
@@ -218,6 +275,13 @@ pub struct RunEngine {
     /// Durable snapshot store; when present a snapshot is written after every
     /// terminal run state.
     pub snapshots: Option<Arc<crate::snapshot::SnapshotStore>>,
+    /// Workspace jail used by read-only model tool execution. `None` refuses
+    /// tool execution by name (`E_FILE_TREE_UNAVAILABLE`); the engine never
+    /// reads the filesystem without it.
+    tool_workspace: Option<WorkspaceJail>,
+    /// Frozen tool registry used to validate model-originated calls
+    /// (tier allowlists + argument schemas).
+    tool_registry: ToolRegistry,
     active_run: Mutex<Option<RunId>>,
 }
 
@@ -226,6 +290,7 @@ impl std::fmt::Debug for RunEngine {
         f.debug_struct("RunEngine")
             .field("active_run", &self.active_run())
             .field("caps", &self.caps)
+            .field("tool_workspace", &self.tool_workspace.is_some())
             .finish()
     }
 }
@@ -251,6 +316,8 @@ impl RunEngine {
             templates,
             caps: Caps::default(),
             snapshots: None,
+            tool_workspace: None,
+            tool_registry: ToolRegistry::standard(),
             active_run: Mutex::new(None),
         }
     }
@@ -262,6 +329,17 @@ impl RunEngine {
         snapshots: Arc<crate::snapshot::SnapshotStore>,
     ) -> Self {
         self.snapshots = Some(snapshots);
+        self
+    }
+
+    /// Attaches the workspace jail used by read-only model tool execution.
+    ///
+    /// This is optional by design: without a jail, model tool calls are refused
+    /// with `E_FILE_TREE_UNAVAILABLE` and nothing executes; plain replies are
+    /// completely unchanged.
+    #[must_use]
+    pub fn with_tool_workspace(mut self, workspace: WorkspaceJail) -> Self {
+        self.tool_workspace = Some(workspace);
         self
     }
 
@@ -288,6 +366,8 @@ impl RunEngine {
             templates,
             caps,
             snapshots: None,
+            tool_workspace: None,
+            tool_registry: ToolRegistry::standard(),
             active_run: Mutex::new(None),
         }
     }
@@ -588,25 +668,149 @@ impl RunEngine {
         run.prompt.clone()
     }
 
-    async fn execute_task(
+    /// Executes the read-only tool calls returned in one assistant turn and
+    /// returns the planned results for the follow-up model turn.
+    ///
+    /// Order per call (W12 interface): persisted turn/call budget check ->
+    /// [`tool_loop::plan_call`] -> WorkerAgent tier/registry validation ->
+    /// publish `TOOL_CALL` -> read-only execution through the configured
+    /// [`WorkspaceJail`] -> publish `TOOL_RESULT` -> durable `tool_turns` row.
+    /// Non-read-only tools, missing jail, invalid plans and exhausted budgets
+    /// produce a named `TOOL_RESULT` refusal and execute nothing.
+    fn execute_tool_turn(
         &self,
         run: &Run,
         task: &TaskRecord,
+        reply: &StreamedReply,
         token: &CancellationToken,
-    ) -> Result<(), Refusal> {
-        self.caps.check_calls(1)?;
-        self.store
-            .update_task_state(task.id, AgentState::Running)?;
-        let _ = self.graph.set_state(task.id, AgentState::Running);
-        self.publish_node(run.id, task.id, AgentState::Running);
+    ) -> Result<ToolTurnResult, Refusal> {
+        if reply.tool_calls.is_empty() {
+            return Ok(ToolTurnResult {
+                cap_reached: false,
+                budget_refused: false,
+                executed: Vec::new(),
+            });
+        }
+        let (completed_turns, used_calls) = self
+            .db
+            .run_tool_counters(run.id)
+            .map_err(|error| error.refusal())?;
 
-        // Real-time delta publishing: the sink is invoked from the provider
-        // read loop, so REPLY_DELTA events are emitted while chunks arrive.
-        let streamed_deltas = Arc::new(AtomicUsize::new(0));
+        let turn = match tool_loop::next_turn(completed_turns) {
+            Ok(turn) => turn,
+            Err(refusal) => {
+                // The turn cap is already reached: every call is refused by
+                // name, nothing executes, and the counters do not advance.
+                for call in &reply.tool_calls {
+                    if token.is_cancelled() {
+                        return Err(Refusal::ToolCancelled);
+                    }
+                    let execution = ToolExecution::refused(
+                        call.id.clone(),
+                        refusal.code(),
+                        format!(
+                            "tool turn budget exhausted ({completed_turns} completed of {}); nothing executed",
+                            tool_loop::MAX_TOOL_TURNS
+                        ),
+                    );
+                    self.finish_tool_call(
+                        run,
+                        task,
+                        call,
+                        &execution,
+                        completed_turns.saturating_add(1),
+                    )?;
+                }
+                return Ok(ToolTurnResult {
+                    cap_reached: true,
+                    budget_refused: false,
+                    executed: Vec::new(),
+                });
+            }
+        };
+
+        let mut executed: Vec<(ToolCallPlan, ToolExecution)> = Vec::new();
+        let mut calls_in_turn: u32 = 0;
+        let mut budget_refused = false;
+        for (index, call) in reply.tool_calls.iter().enumerate() {
+            if token.is_cancelled() {
+                return Err(Refusal::ToolCancelled);
+            }
+            let index = u32::try_from(index).map_err(|_| Refusal::InternalError)?;
+            // Count every attempted call, including refusals, so a model cannot
+            // loop for free on rejected calls.
+            let used_before = used_calls.saturating_add(index);
+            let execution = match tool_loop::check_call_budget(used_before) {
+                Err(refusal) => {
+                    budget_refused = true;
+                    ToolExecution::refused(
+                        call.id.clone(),
+                        refusal.code(),
+                        format!(
+                            "per-run tool call budget exhausted ({used_before} used of {}); nothing executed",
+                            tool_loop::MAX_CALLS_PER_RUN
+                        ),
+                    )
+                }
+                Ok(()) => match tool_loop::plan_call(call, turn) {
+                    Err(refusal) => ToolExecution::refused(
+                        call.id.clone(),
+                        refusal.code(),
+                        format!(
+                            "tool call refused before planning: {}",
+                            refusal.message()
+                        ),
+                    ),
+                    Ok(plan) => {
+                        let execution = match tool_loop::validate_plan(
+                            &self.tool_registry,
+                            AgentTier::WorkerAgent,
+                            &plan,
+                        ) {
+                            Err(refusal) => ToolExecution::refused(
+                                plan.tool_call_id.clone(),
+                                refusal.code(),
+                                format!(
+                                    "tool {:?} refused by the WorkerAgent tier allowlist: {}",
+                                    plan.tool,
+                                    refusal.message()
+                                ),
+                            ),
+                            Ok(()) => {
+                                self.publish_tool_call(run, task, &plan);
+                                self.execute_tool_plan(&plan)
+                            }
+                        };
+                        executed.push((plan, execution.clone()));
+                        execution
+                    }
+                },
+            };
+            calls_in_turn = calls_in_turn.saturating_add(1);
+            self.finish_tool_call(run, task, call, &execution, turn)?;
+        }
+        if calls_in_turn > 0 {
+            self.db
+                .increment_run_tool_counters(run.id, 1, calls_in_turn)
+                .map_err(|error| error.refusal())?;
+        }
+        Ok(ToolTurnResult {
+            cap_reached: false,
+            budget_refused,
+            executed,
+        })
+    }
+
+    /// Builds the per-provider-call delta sink and its invocation counter.
+    ///
+    /// A fresh sink per turn keeps the "publish returned deltas only when the
+    /// sink was never used" rule exact, so a streamed fragment is never emitted
+    /// twice across follow-up turns.
+    fn reply_delta_sink(&self, run_id: RunId) -> (DeltaSink, Arc<AtomicUsize>) {
+        let streamed = Arc::new(AtomicUsize::new(0));
         let sink: DeltaSink = {
             let bus = Arc::clone(&self.bus);
-            let run_id = run.id;
-            let counter = Arc::clone(&streamed_deltas);
+            let counter = Arc::clone(&streamed);
             Arc::new(move |delta: &str| {
                 if delta.is_empty() {
                     return;
@@ -627,44 +831,277 @@ impl RunEngine {
                 }
             })
         };
+        (sink, streamed)
+    }
+
+    /// Publishes an executor's returned fragments only when its sink was unused.
+    fn publish_returned_deltas(
+        &self,
+        run_id: RunId,
+        reply: &StreamedReply,
+        streamed: &Arc<AtomicUsize>,
+    ) {
+        if streamed.load(Ordering::SeqCst) > 0 {
+            return;
+        }
+        for delta in &reply.deltas {
+            if delta.is_empty() {
+                continue;
+            }
+            self.publish(
+                Event::ReplyDelta(ReplyDelta {
+                    run_id,
+                    text_delta: delta.clone(),
+                }),
+                Some(run_id),
+                None,
+            );
+        }
+    }
+
+    /// Marks the task terminal for a failed/cancelled turn (store+graph+event).
+    fn fail_task(&self, run: &Run, task: &TaskRecord, state: AgentState) -> Result<(), Refusal> {
+        self.store.update_task_state(task.id, state)?;
+        let _ = self.graph.set_state(task.id, state);
+        self.publish_node(run.id, task.id, state);
+        Ok(())
+    }
+
+    /// Routes one validated plan to the single read-only executor.
+    ///
+    /// Read-only is a property of the frozen registry contract: a non-read tool
+    /// is refused here and never reaches the executor or the jail. Without a
+    /// configured jail a read call is refused as `E_FILE_TREE_UNAVAILABLE`.
+    fn execute_tool_plan(&self, plan: &ToolCallPlan) -> ToolExecution {
+        if tool_loop::permission_for(&self.tool_registry, &plan.tool)
+            != Some(PermissionClass::Read)
+        {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolNotAllowed.code(),
+                format!(
+                    "tool {:?} is not read-only; side-effecting calls stay \
+                     approval/loop-owned and did not execute",
+                    plan.tool
+                ),
+            );
+        }
+        let Some(workspace) = self.tool_workspace.as_ref() else {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::FileTreeUnavailable.code(),
+                "no workspace jail is configured; the read-only tool did not execute".to_owned(),
+            );
+        };
+        match execute_read_only(
+            workspace,
+            &self.tool_registry,
+            AgentTier::WorkerAgent,
+            &plan.tool,
+            &plan.args,
+        ) {
+            Ok(ExecutedTool::Ok { text }) => ToolExecution::ok(
+                plan.tool_call_id.clone(),
+                tool_loop::bounded_tool_text(&text),
+            ),
+            Ok(ExecutedTool::Refused { code, detail }) => {
+                ToolExecution::refused(plan.tool_call_id.clone(), code, detail)
+            }
+            Err(error) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                error.code(),
+                error.detail().to_owned(),
+            ),
+        }
+    }
+
+    /// Publishes `TOOL_CALL` for a validated plan (event errors are logged).
+    fn publish_tool_call(&self, run: &Run, task: &TaskRecord, plan: &ToolCallPlan) {
+        let payload = tool_loop::call_payload(plan, run.id, task.id);
+        if let Err(error) = self
+            .bus
+            .publish_for_run(Event::ToolCall(payload), Some(run.id), None)
+        {
+            tracing::error!(code = error.code(), "failed to publish TOOL_CALL");
+        }
+    }
+
+    /// Publishes `TOOL_RESULT` and persists the durable `tool_turns` row.
+    fn finish_tool_call(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        execution: &ToolExecution,
+        turn: u32,
+    ) -> Result<(), Refusal> {
+        if let Err(error) = self.bus.publish_for_run(
+            Event::ToolResult(execution.payload(run.id, task.id)),
+            Some(run.id),
+            None,
+        ) {
+            tracing::error!(code = error.code(), "failed to publish TOOL_RESULT");
+        }
+        let record = ToolTurnRecord {
+            id: Uuid::now_v7().to_string(),
+            run_id: run.id,
+            task_id: task.id,
+            tool_call_id: execution.tool_call_id.clone(),
+            tool: call.name.clone(),
+            args_sha256: hiverouter_tools::hash_args(&call.arguments),
+            outcome: execution.outcome,
+            code: execution.code.clone(),
+            bytes: execution.bytes,
+            sha256: execution.sha256.clone(),
+            turn,
+            created_at: Timestamp::now(),
+        };
+        self.db
+            .record_tool_turn(&record)
+            .map_err(|error| error.refusal())
+    }
+
+    async fn execute_task(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        token: &CancellationToken,
+    ) -> Result<(), Refusal> {
+        if let Err(refusal) = self.caps.check_calls(1) {
+            self.fail_task(run, task, AgentState::Failed)?;
+            return Err(refusal);
+        }
+        self.store
+            .update_task_state(task.id, AgentState::Running)?;
+        let _ = self.graph.set_state(task.id, AgentState::Running);
+        self.publish_node(run.id, task.id, AgentState::Running);
+
+        // Real-time delta publishing: a fresh sink per provider call keeps the
+        // streaming/no-duplicate bookkeeping exact across follow-up tool turns.
+        let (sink, streamed_deltas) = self.reply_delta_sink(run.id);
 
         let reply = match tokio::select! {
             _ = token.cancelled() => {
-                self.store.update_task_state(task.id, AgentState::Cancelled)?;
-                let _ = self.graph.set_state(task.id, AgentState::Cancelled);
-                self.publish_node(run.id, task.id, AgentState::Cancelled);
+                self.fail_task(run, task, AgentState::Cancelled)?;
                 return Err(Refusal::ToolCancelled);
             }
             result = self.executor.execute(run.id, task, &run.prompt, token, &sink) => result,
         } {
             Ok(reply) => reply,
             Err(refusal) => {
-                self.store.update_task_state(task.id, AgentState::Failed)?;
-                let _ = self.graph.set_state(task.id, AgentState::Failed);
-                self.publish_node(run.id, task.id, AgentState::Failed);
+                let state = if refusal == Refusal::ToolCancelled {
+                    AgentState::Cancelled
+                } else {
+                    AgentState::Failed
+                };
+                self.fail_task(run, task, state)?;
                 return Err(refusal);
             }
         };
 
-        // A streaming executor already published every fragment through the
-        // sink; replaying `reply.deltas` would duplicate user-visible text.
-        // Non-streaming executors (and tests) that never invoked the sink have
-        // their returned fragments published here.
-        if streamed_deltas.load(Ordering::SeqCst) == 0 {
-            for delta in &reply.deltas {
-                if delta.is_empty() {
-                    continue;
-                }
-                self.publish(
-                    Event::ReplyDelta(ReplyDelta {
-                        run_id: run.id,
-                        text_delta: delta.clone(),
-                    }),
-                    Some(run.id),
-                    None,
-                );
+        self.publish_returned_deltas(run.id, &reply, &streamed_deltas);
+        // Follow-up tool turns (1.2): feed the bounded read-only results back to
+        // the model and continue until it answers, the persisted caps stop the
+        // loop, or a provider/tool refusal fails the run. Only the final reply
+        // text is persisted, exactly once.
+        let mut final_reply = reply;
+        let mut transcript: Vec<ToolTurnTranscript> = Vec::new();
+        loop {
+            if final_reply.tool_calls.is_empty() {
+                break;
             }
+            if token.is_cancelled() {
+                self.fail_task(run, task, AgentState::Cancelled)?;
+                return Err(Refusal::ToolCancelled);
+            }
+            let turn = match self.execute_tool_turn(run, task, &final_reply, token) {
+                Ok(turn) => turn,
+                Err(refusal) => {
+                    // A persistence/budget error while the task is Running must
+                    // not leave it non-terminal when the run fails; a cancelled
+                    // turn keeps its cancelled state instead of becoming failed.
+                    let state = if refusal == Refusal::ToolCancelled {
+                        AgentState::Cancelled
+                    } else {
+                        AgentState::Failed
+                    };
+                    self.fail_task(run, task, state)?;
+                    return Err(refusal);
+                }
+            };
+            if turn.cap_reached {
+                // The persisted turn cap refused the calls; the loop cannot
+                // continue honestly, so the run fails by name (no fake reply).
+                self.fail_task(run, task, AgentState::Failed)?;
+                return Err(Refusal::BudgetExceeded);
+            }
+            if turn.executed.is_empty() {
+                if turn.budget_refused {
+                    // The provider-call budget stopped the loop before any new
+                    // plan existed; this is an honest E_CALL_LIMIT, not a
+                    // malformed-provider response.
+                    self.fail_task(run, task, AgentState::Failed)?;
+                    return Err(Refusal::CallLimit);
+                }
+                // Nothing could be planned (malformed calls), so there is no
+                // provider transcript to continue with; fail honestly.
+                self.fail_task(run, task, AgentState::Failed)?;
+                return Err(Refusal::ProviderInvalidResponse);
+            }
+            transcript.push(ToolTurnTranscript {
+                assistant_text: final_reply.text(),
+                results: turn.executed,
+            });
+            let (continuation_sink, continuation_streamed) = self.reply_delta_sink(run.id);
+            let continuation = match tokio::select! {
+                _ = token.cancelled() => {
+                    self.fail_task(run, task, AgentState::Cancelled)?;
+                    return Err(Refusal::ToolCancelled);
+                }
+                result = self.executor.continue_with_tools(
+                    run.id,
+                    task,
+                    &run.prompt,
+                    token,
+                    &continuation_sink,
+                    &transcript,
+                ) => result,
+            } {
+                Ok(reply) => reply,
+                Err(refusal) => {
+                    let state = if refusal == Refusal::ToolCancelled {
+                        AgentState::Cancelled
+                    } else {
+                        AgentState::Failed
+                    };
+                    self.fail_task(run, task, state)?;
+                    return Err(refusal);
+                }
+            };
+            self.publish_returned_deltas(run.id, &continuation, &continuation_streamed);
+            final_reply = continuation;
         }
+
+        if let Err(refusal) = self.complete_task(run, task, &final_reply) {
+            let state = if refusal == Refusal::ToolCancelled {
+                AgentState::Cancelled
+            } else {
+                AgentState::Failed
+            };
+            self.fail_task(run, task, state)?;
+            return Err(refusal);
+        }
+        Ok(())
+    }
+
+    /// Persists the final assistant reply once, publishes one `REPLY_DONE` and
+    /// marks the task completed.
+    fn complete_task(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        reply: &StreamedReply,
+    ) -> Result<(), Refusal> {
         let text = reply.text();
         if !text.is_empty() {
             self.store
@@ -685,3 +1122,4 @@ impl RunEngine {
         Ok(())
     }
 }
+

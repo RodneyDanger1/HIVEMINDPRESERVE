@@ -18,6 +18,7 @@ use std::sync::Mutex;
 use hiverouter_contract::{Refusal, RunId, TaskId, Timestamp};
 use serde::{Deserialize, Serialize};
 
+use crate::approval::{ApprovalDecision, ApprovalResolution};
 use crate::error::ToolError;
 use crate::tool::{PermissionClass, ToolId};
 
@@ -137,6 +138,10 @@ pub struct RunLedger {
 impl RunLedger {
     /// Opens (creating parents and file when missing) the ledger at `path`.
     ///
+    /// The per-file sequence continues from the rows already present, so a
+    /// restarted process never rewrites `seq` 0 over an existing ledger. (The
+    /// file is append-only; reopening must not reset its monotonic sequence.)
+    ///
     /// # Errors
     /// [`Refusal::InternalError`] for I/O failures.
     pub fn open(path: impl Into<PathBuf>) -> Result<Self, ToolError> {
@@ -159,10 +164,31 @@ impl RunLedger {
                     format!("cannot open the run ledger: {error}"),
                 )
             })?;
+        let seq = Self::existing_row_count(&path)?;
         Ok(Self {
             path,
             write_lock: Mutex::new(()),
-            seq: AtomicU64::new(0),
+            seq: AtomicU64::new(seq),
+        })
+    }
+
+    /// Counts non-blank JSONL rows already in an existing ledger file.
+    fn existing_row_count(path: &Path) -> Result<u64, ToolError> {
+        let bytes = std::fs::read(path).map_err(|error| {
+            ToolError::new(
+                Refusal::InternalError,
+                format!("cannot read the existing run ledger: {error}"),
+            )
+        })?;
+        let rows = bytes
+            .split(|byte| *byte == b'\n')
+            .filter(|line| line.iter().any(|byte| !byte.is_ascii_whitespace()))
+            .count();
+        u64::try_from(rows).map_err(|_| {
+            ToolError::new(
+                Refusal::InternalError,
+                "existing run ledger has too many rows to continue its sequence",
+            )
         })
     }
 
@@ -293,10 +319,46 @@ fn validate_sha256(digest: &str) -> Result<(), ToolError> {
     }
 }
 
+/// Appends the ledger row for one resolved approval decision (W12 tool loop).
+///
+/// `allow_once` / `allow_session` record [`LedgerOutcome::Allowed`]; `deny`
+/// records [`LedgerOutcome::Denied`] carrying the named
+/// `E_APPROVAL_REQUIRED` refusal (the side effect must not happen, and the
+/// ledger rejects a denied row without a refusal code). The binding is copied
+/// from the committed [`ApprovalResolution`], so exactly the approved
+/// `args_sha256` is recorded — never the argument body.
+///
+/// # Errors
+/// [`Refusal::InternalError`] when the ledger rejects the row (invalid digest or
+/// missing refusal code) or an I/O failure occurs.
+pub fn append_approval_decision(
+    ledger: &RunLedger,
+    resolution: &ApprovalResolution,
+) -> Result<LedgerRow, ToolError> {
+    let (outcome, refusal) = match resolution.decision {
+        ApprovalDecision::AllowOnce | ApprovalDecision::AllowSession => {
+            (LedgerOutcome::Allowed, None)
+        }
+        ApprovalDecision::Deny => (LedgerOutcome::Denied, Some(Refusal::ApprovalRequired)),
+    };
+    ledger.record(LedgerRecord {
+        run_id: resolution.request.run_id,
+        task_id: Some(resolution.request.task_id),
+        tool_call_id: &resolution.request.tool_call_id,
+        tool: resolution.request.tool,
+        permission_class: resolution.request.permission_class,
+        args_sha256: &resolution.request.args_sha256,
+        outcome,
+        refusal,
+        partial_verdict: None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::approval::hash_args;
+    use crate::approval::{hash_args, migrate, ApprovalDecision, ApprovalGate};
+    use crate::tool::{PermissionClass, ToolId};
 
     fn ledger() -> (tempfile::TempDir, RunLedger) {
         let temp = tempfile::tempdir().expect("tempdir");
@@ -393,5 +455,75 @@ mod tests {
         let reopened = RunLedger::open_in(temp.path()).expect("reopen");
         let rows = reopened.read_all().expect("read");
         assert_eq!(rows.len(), 1);
+        let next = reopened
+            .record(record(run, &hash_args(&serde_json::json!({"path": "y"})), LedgerOutcome::Executed, None))
+            .expect("row after reopen");
+        assert_eq!(next.seq, 1, "seq continues after reopen; it never restarts at 0");
+    }
+
+    fn resolved(decision: ApprovalDecision, now: u64) -> (rusqlite::Connection, ApprovalResolution) {
+        let conn = rusqlite::Connection::open_in_memory().expect("db");
+        migrate(&conn).expect("migrate");
+        let gate = ApprovalGate::default();
+        let args = serde_json::json!({"path": "notes.txt", "content": "SECRET-BODY"});
+        let request = gate
+            .request(
+                &conn,
+                RunId::new(),
+                TaskId::new(),
+                "call-ledger-1",
+                ToolId::FileWrite,
+                PermissionClass::Mutate,
+                &args,
+                now,
+            )
+            .expect("request");
+        let resolution = gate
+            .decide(&conn, &request.approval_id.to_string(), decision, now)
+            .expect("decision");
+        (conn, resolution)
+    }
+
+    #[test]
+    fn append_approval_decision_records_allowed_row_without_args_body() {
+        let (_temp, ledger) = ledger();
+        let (_conn, resolution) =
+            resolved(ApprovalDecision::AllowOnce, 1_800_000_000);
+        let row = append_approval_decision(&ledger, &resolution).expect("appended");
+        assert_eq!(row.outcome, LedgerOutcome::Allowed);
+        assert!(row.refusal_code.is_none());
+        assert_eq!(row.tool, "file_write");
+        assert_eq!(row.permission_class, "mutate");
+        assert_eq!(row.tool_call_id, "call-ledger-1");
+        assert_eq!(row.args_sha256, hash_args(&serde_json::json!({"path": "notes.txt", "content": "SECRET-BODY"})));
+        assert_eq!(row.seq, 0);
+        assert!(!row.ts.is_empty());
+        assert_eq!(row.task_id, Some(resolution.request.task_id.to_string()));
+
+        let raw = std::fs::read_to_string(ledger.path()).expect("raw");
+        assert!(!raw.contains("SECRET-BODY"), "argument bodies are never ledgered");
+        let rows = ledger.read_all().expect("read back");
+        assert_eq!(rows, vec![row]);
+    }
+
+    #[test]
+    fn append_approval_decision_allow_session_is_allowed() {
+        let (_temp, ledger) = ledger();
+        let (_conn, resolution) =
+            resolved(ApprovalDecision::AllowSession, 1_800_000_000);
+        let row = append_approval_decision(&ledger, &resolution).expect("appended");
+        assert_eq!(row.outcome, LedgerOutcome::Allowed);
+        assert!(row.refusal_code.is_none());
+    }
+
+    #[test]
+    fn append_approval_decision_deny_carries_named_refusal() {
+        let (_temp, ledger) = ledger();
+        let (_conn, resolution) = resolved(ApprovalDecision::Deny, 1_800_000_000);
+        let row = append_approval_decision(&ledger, &resolution).expect("appended");
+        assert_eq!(row.outcome, LedgerOutcome::Denied);
+        assert_eq!(row.refusal_code.as_deref(), Some("E_APPROVAL_REQUIRED"));
+        assert_eq!(row.tool, "file_write");
+        assert_eq!(row.args_sha256.len(), 64);
     }
 }

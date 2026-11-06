@@ -1,14 +1,27 @@
-/** S15-S19 agent registry (read/derived): one card per task, single state vocabulary. */
+/**
+ * S15-S19 agent registry (read/derived): one card per task, single state vocabulary.
+ *
+ * W12: the agents surface also hosts the tool-activity region. The store owns
+ * `toolActivity`/`approvals` (server frames only); this panel passes the entries
+ * to the panel owner's `ToolActivityPanel` and exposes a labelled region so
+ * keyboard/screen-reader users find the activity list. No optimistic rows are
+ * created here and this panel performs no store writes.
+ */
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS } from '../state/agentState';
 import { STRINGS, formatPercent } from '../state/strings';
 import { StateGlyph } from '../flow/nodes';
 import { PanelTitle, EmptyState } from './StatePack';
+import { ToolActivityPanel, type ToolActivityEntry } from './ToolActivityPanel';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
   const selectTask = useUiStore((state) => state.selectTask);
   const selectedTaskId = useUiStore((state) => state.selectedTaskId);
+  // Structural reconciliation: the store's ToolActivityRecord is assignable to
+  // the panel's ToolActivityEntry (same id/tool/hash/turn/outcome fields); the
+  // store stays the single writer and this panel only reads.
+  const toolActivity: readonly ToolActivityEntry[] = useUiStore((state) => state.toolActivity);
   const list = Object.values(tasks);
 
   return (
@@ -42,6 +55,14 @@ export function AgentsPanel() {
           </li>
         ))}
       </ul>
+      <div
+        role="region"
+        aria-label={STRINGS.toolActivity.regionAria}
+        data-testid="agents-tool-activity"
+        className="mt-4 border-t border-hairline pt-4"
+      >
+        <ToolActivityPanel entries={toolActivity} />
+      </div>
     </div>
   );
 }

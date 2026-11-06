@@ -1,13 +1,30 @@
 # HiveMind release evidence
 
-Current release line: **1.1.0**. The **authoritative exact-hash registry is `tools/release-manifest.json`**, written
-by `tools/build-release.ps1` for a sealed build. This file is the human-readable evidence record; it never invents
-artifact hashes. Exact 1.1.0 artifact hashes appear here only after the sealed 1.1.0 build runs.
+**Current source line: `1.2.0-dev` (pre-release in the working tree; unsealed, no 1.2 artifacts committed).** The
+**authoritative exact-hash registry for released artifacts remains `tools/release-manifest.json` (sealed 1.1.0 build)**;
+this file never invents hashes. The 1.2.0-dev bump changes version strings only (four crate manifests +
+`backend/Cargo.lock` workspace package entries + `web/package.json` / `web/package-lock.json` root) — **no
+runtime/tool-loop claim is made for 1.2**, no 1.2 build was run, and `hivemind-1.1.0` (`87079ce`) remains the build
+source that produced the released artifacts. HEAD `57d5157` is ahead of that tag (post-release evidence commits +
+uncommitted W11/W12 work).
 
-## Current: HiveMind 1.1.0
+> **OLD → NEW (2026-11-06, W12 Wave 2):** `1.1.0` → `1.2.0-dev` in the four `backend/crates/*/Cargo.toml` manifests,
+> the four matching `backend/Cargo.lock` package entries, and the `web/package.json` + `web/package-lock.json` root
+> versions. No dependency version, contract schema version (`hiverouter.v1`), git tag, or release-manifest hash changed.
+> **Post-version truth (Wave 3):** `tools/qa/check-docs-truth.mjs` now derives the sealed release from
+> `tools/release-manifest.json` (version/source/tag), asserts this file states the current source line **and** preserves
+> the sealed artifact hashes below, and rejects a pre-release tree presented as the released version. `run-gates.ps1
+> -Release` accepts this documented pre-release tree (manifest still `1.1.0`, tag target `87079ce` == source, source is
+> an ancestor of HEAD) only with an explicit **PRE-RELEASE** result (exit 3), never a release PASS. In accepted
+> pre-release mode `G7` keeps the sealed tag/source and package zip/sidecar/CHECKSUMS strict while reporting workspace
+> artifact/web-dist drift from the sealed manifest as pre-release drift warnings (dev builds are expected to differ; no
+> release claim). `README.md` and `docs/RELEASE.md` remain sealed-release docs; they must not claim `1.2.0-dev` as released.
 
-- Version `1.1.0` declared in `web/package.json` and all four `backend/crates/*/Cargo.toml` (verified by
-  `node tools/qa/check-docs-truth.mjs`).
+## Current released artifacts: HiveMind 1.1.0 (authoritative)
+
+- Released 1.1.0 was declared in `web/package.json` and all four `backend/crates/*/Cargo.toml` at seal time; the
+  working tree now declares `1.2.0-dev` (pre-release, see above) — the 1.1.0 values in this section remain the
+  authoritative release record.
 - **Streaming:** true SSE streaming is implemented — the provider adapter forwards ordered text fragments to the
   delta sink (`backend/crates/hiverouter-core/src/provider_executor.rs` `stream_reply`), usage settles from the
   documented final chunk, malformed/incomplete streams refuse by name. Offline matrix:
@@ -18,7 +35,7 @@ artifact hashes. Exact 1.1.0 artifact hashes appear here only after the sealed 1
 - **Artifact hashes (sealed 1.1.0 build):** `hiverouter.exe` `9c3174fb7c118143139ff283c08a3190c8e146a831717fb3ff8e25d6468d7207` (13,624,320 B); `hiverouter-cli.exe` `f757f55833f52f626cff6f962d31cb18d740dab53e314c5ba6048599f09214df` (5,372,416 B); `dist/HiveMind-1.1.0-win64.zip` `af2345f663643f1c0d1dbc18a298511817bf38090351d5f5b4842418f4d63e56` (8,613,122 B). Authoritative registry: `tools/release-manifest.json` (`version=1.1.0`, source `87079cecf6a4cf2212b9d41e56f4c7643a97c7fe`, tag `hivemind-1.1.0`). Zip extraction verified 6 members + CHECKSUMS.
 - **Live paid-provider streaming smoke on the sealed release binary:** `target/release/hiverouter.exe` via the live e2e harness with `LIVE_ONE_PROMPT=1` and `E2E_SERVER_BIN=target/release/hiverouter.exe`; `live-streaming.spec.ts` **3 passed** (boot, no-key fail-closed, paid ordered `REPLY_DELTA -> REPLY_DONE -> RUN_STATUS completed`), and `live-replay.spec.ts` **2 passed** (unknown-run refusal, paid `HISTORY_SNAPSHOT` >=2 nodes with read-only UI). Raw evidence: `docs/evidence/live-1.1-paid.log` (5 passed, exit 0), `docs/trace/live/captures/w11/live-streaming.json` (10 frames), `docs/trace/live/captures/w11/live-replay.json` (12 frames, revision 0, 2 nodes). No key material was written to evidence.
 
-## Test evidence at the 1.1 baseline
+## Test evidence at the sealed 1.1.0 baseline (no 1.2 run yet)
 
 - Backend 1.1 gate: **286 passed / 0 failed / 2 ignored** (`docs/evidence/1.1-backend-final.log`; includes the
   truncation, provider-error, prompt-asset and streaming suites).

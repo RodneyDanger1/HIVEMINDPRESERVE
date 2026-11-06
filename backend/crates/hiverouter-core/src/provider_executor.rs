@@ -11,13 +11,16 @@ use hiverouter_provider::{
     BudgetLimits, CallEstimate, ChatMessage, ChatRequest, ClientConfig, Completion, DeepSeekClient,
     RunBudget, StreamEvent,
 };
-use hiverouter_provider::dto::ResponseFormat;
+use hiverouter_provider::dto::{ResponseFormat, ToolCall, ToolChoice};
+use hiverouter_provider::tool_assembler::ToolCallAssembler;
+use hiverouter_tools::{AgentTier, ToolRegistry};
 use tokio_util::sync::CancellationToken;
 
 use crate::config::ProviderSettings;
 use crate::entities::TaskRecord;
-use crate::execution::{DeltaSink, ProviderExecutor, StreamedReply};
+use crate::execution::{DeltaSink, ProviderExecutor, StreamedReply, ToolTurnTranscript};
 use crate::planner::{Plan, PlanNode};
+use crate::tool_loop;
 
 const PLANNER_SYSTEM: &str = "You are the HiveMind planner. Return ONE JSON object only, \
 no markdown fences, no prose. Schema: {\"nodes\":[{\"id\":\"n1\",\"role\":\"worker\",\
@@ -132,6 +135,7 @@ impl ProviderExecutorAdapter {
 
         let mut text = String::new();
         let mut tool_calls_seen = false;
+        let mut assembler = ToolCallAssembler::new();
         let (usage, finish_reason) = loop {
             let next = tokio::select! {
                 _ = cancel.cancelled() => {
@@ -168,8 +172,24 @@ impl ProviderExecutorAdapter {
                     text.push_str(&content);
                     on_delta(&content);
                 }
-                Some(Ok(StreamEvent::ToolCallDelta { .. })) => {
+                Some(Ok(StreamEvent::ToolCallDelta {
+                    index,
+                    id,
+                    name,
+                    arguments,
+                })) => {
                     tool_calls_seen = true;
+                    assembler
+                        .push_fragment(index, id.as_deref(), name.as_deref(), arguments.as_deref())
+                        .map_err(|error| {
+                            tracing::warn!(
+                                code = error.code(),
+                                detail = %error,
+                                run_id = %run_id,
+                                "tool-call fragments failed to assemble"
+                            );
+                            error.refusal()
+                        })?;
                 }
                 Some(Ok(StreamEvent::Finished {
                     usage: reported,
@@ -200,18 +220,28 @@ impl ProviderExecutorAdapter {
             );
             return Err(Refusal::ProviderIncomplete);
         }
-        if text.is_empty() {
+        let tool_calls = assembler.finish().map_err(|error| {
+            tracing::warn!(
+                code = error.code(),
+                detail = %error,
+                run_id = %run_id,
+                "assembled tool calls were incomplete"
+            );
+            error.refusal()
+        })?;
+        if text.is_empty() && tool_calls.is_empty() {
             tracing::warn!(
                 finish_reason = ?finish_reason,
                 tool_calls_seen,
                 run_id = %run_id,
-                "provider stream produced no visible text"
+                "provider stream produced no visible text or tool call"
             );
             return Err(Refusal::ProviderInvalidResponse);
         }
         Ok(StreamedReply {
             deltas: vec![text],
             usage: usage.unwrap_or_default(),
+            tool_calls,
         })
     }
 }
@@ -255,16 +285,11 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
-        let task_prompt = format!(
-            "Original user prompt:\n{prompt}\n\nAssigned role: {}\nSpawn depth: {}\n\
-             Return the final answer for this task only.",
-            task.role, task.depth
-        );
         let request = ChatRequest::new(
             self.settings.model,
             vec![
                 ChatMessage::system(TASK_SYSTEM),
-                ChatMessage::user(task_prompt),
+                ChatMessage::user(task_prompt(prompt, task)),
             ],
         )
         .with_thinking(self.settings.leaf_thinking)
@@ -279,9 +304,91 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         .await
     }
 
+    /// Continues the tool conversation after read-only results.
+    ///
+    /// Replays the cumulative transcript: each prior turn becomes one assistant
+    /// tool-call message (with that turn's visible text) followed by one
+    /// `role=tool` message per bounded result, so a multi-turn tool loop never
+    /// loses earlier rounds. The WorkerAgent tool specs are offered again and
+    /// the model either calls another tool or produces the final answer.
+    async fn continue_with_tools(
+        &self,
+        run_id: RunId,
+        task: &TaskRecord,
+        prompt: &str,
+        cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+        transcript: &[ToolTurnTranscript],
+    ) -> Result<StreamedReply, Refusal> {
+        if transcript.is_empty() {
+            return Err(Refusal::ProviderInvalidResponse);
+        }
+        let mut messages = vec![
+            ChatMessage::system(TASK_SYSTEM),
+            ChatMessage::user(task_prompt(prompt, task)),
+        ];
+        let mut replayed_turns = 0usize;
+        for turn in transcript {
+            if turn.results.is_empty() {
+                continue;
+            }
+            replayed_turns += 1;
+            let mut tool_calls = Vec::with_capacity(turn.results.len());
+            for (plan, _) in &turn.results {
+                let arguments =
+                    serde_json::to_string(&plan.args).map_err(|_| Refusal::InternalError)?;
+                tool_calls.push(ToolCall::function(
+                    plan.tool_call_id.clone(),
+                    plan.tool.clone(),
+                    arguments,
+                ));
+            }
+            messages.push(if turn.assistant_text.trim().is_empty() {
+                ChatMessage::assistant_tool_calls(tool_calls)
+            } else {
+                ChatMessage::assistant_tool_calls_with_content(
+                    &turn.assistant_text,
+                    tool_calls,
+                )
+            });
+            for (_, execution) in &turn.results {
+                messages.push(ChatMessage::tool_result(
+                    execution.tool_call_id.clone(),
+                    execution.text.clone(),
+                ));
+            }
+        }
+        if replayed_turns == 0 {
+            return Err(Refusal::ProviderInvalidResponse);
+        }
+        let registry = ToolRegistry::standard();
+        let tools = tool_loop::tool_specs_for_tier(&registry, AgentTier::WorkerAgent);
+        let request = ChatRequest::new(self.settings.model, messages)
+            .with_thinking(self.settings.leaf_thinking)
+            .with_max_tokens(self.settings.leaf_max_tokens)
+            .with_tools(tools)
+            .with_tool_choice(ToolChoice::Auto);
+        self.stream_reply(
+            run_id,
+            &request,
+            self.settings.leaf_max_tokens,
+            cancel,
+            on_delta,
+        )
+        .await
+    }
+
     async fn finish_run(&self, run_id: RunId) {
         self.budgets.lock().await.remove(&run_id);
     }
+}
+
+fn task_prompt(prompt: &str, task: &TaskRecord) -> String {
+    format!(
+        "Original user prompt:\n{prompt}\n\nAssigned role: {}\nSpawn depth: {}\n\
+         Return the final answer for this task only.",
+        task.role, task.depth
+    )
 }
 
 fn message_text(completion: &Completion) -> Result<String, Refusal> {

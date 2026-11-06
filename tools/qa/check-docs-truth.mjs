@@ -3,11 +3,16 @@
  * docs-truth checker for HiveMind release documentation.
  *
  * Enforces that current-facing docs agree with the product truth:
- *   VERSION   web/package.json == every backend crate version; README/RELEASE state that version.
+ *   VERSION   web/package.json == every backend crate version (current source line); release-facing docs
+ *             (README/RELEASE) state the sealed release version from tools/release-manifest.json, and a
+ *             pre-release working tree (e.g. 1.2.0-dev) is never presented as the released version.
+ *   SEALED    RELEASE-EVIDENCE keeps the sealed artifact hashes from tools/release-manifest.json and (when the
+ *             tree is a pre-release) marks the working tree as pre-release.
  *   STREAMING current docs claim real SSE/token streaming (not the retired one-delta behavior).
  *   HASHES    superseded 1.0 artifact hashes never appear as current; RELEASE-EVIDENCE points at
- *             tools/release-manifest.json as the exact-hash authority (no invented 1.1 hashes).
+ *             tools/release-manifest.json as the exact-hash authority (no invented hashes).
  *   STATE     the retired "15 states" claim never appears as current.
+ *   DOCS      UI-COMMANDS-v1 lists every contract event (23) and agent state (16) derived from source.
  *   CLAIMS    claim-register rows/notes carry stale behavior/hashes only when marked historical.
  *
  * Historical content is legitimate and is masked by:
@@ -42,7 +47,6 @@ const STALE_STREAMING_RE = /\b(one|single)\s+(?:`?REPLY_DELTA`?\s+)?delta\b|\bno
 const STREAMING_POSITIVE_RE = /\bSSE\b|server-sent|token[- ]by[- ]token|stream(?:s|ing|ed)?\s+(?:as|while|chunk|token|real|implemented|now|live)|REPLY_DELTA\s+(?:frames?|as\s+they|arriv)/i;
 const STALE_STATE_RE = /\b15[ -]states?\b|\bfifteen\s+states\b|\b15\s+of\s+16\b/i;
 const STALE_VERSION_RE = /\bHiveMind\s+1\.0(?:\.0)?\b|\bHiveMind\s+v1\.0\b/i;
-const REQUIRED_VERSION_RE = /\b1\.1\.0\b/;
 const MANIFEST_POINTER_RE = /tools\/release-manifest\.json/;
 
 const args = process.argv.slice(2);
@@ -126,6 +130,18 @@ const currentVersion = pkg.version;
 if (typeof currentVersion !== 'string' || !/^\d+\.\d+\.\d+/.test(currentVersion)) {
   fileError('web/package.json has no semver version');
 }
+// The sealed release record is the authority for release-facing docs/artifacts; the working tree may be a
+// pre-release (e.g. 1.2.0-dev) only while the sealed version/source/tag remain documented and unchanged.
+const releaseManifest = readJson('tools/release-manifest.json');
+const sealedVersion = String(releaseManifest.version || '');
+const sealedSource = String(releaseManifest.source_commit || '');
+const sealedTag = String(releaseManifest.tag || '');
+if (!/^\d+\.\d+\.\d+/.test(sealedVersion)) fileError('tools/release-manifest.json has no semver version');
+if (!sealedSource || !sealedTag) fileError('tools/release-manifest.json must record source_commit and tag');
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const sourceVersionRe = new RegExp(`\\b${escapeRe(currentVersion)}\\b`);
+const sealedVersionRe = new RegExp(`\\b${escapeRe(sealedVersion)}\\b`);
+const preRelease = currentVersion !== sealedVersion;
 const crateDir = path.join(root, 'backend', 'crates');
 if (!existsSync(crateDir)) fileError('backend/crates missing');
 const crateVersions = [];
@@ -145,14 +161,20 @@ if (badCrates.length > 0) {
 const currentDocs = ['README.md', 'docs/RELEASE.md'];
 for (const doc of currentDocs) {
   const { text, mask } = checkLines(doc, [
-    { id: 'STREAMING', re: STALE_STREAMING_RE, message: 'retired one-delta/non-streaming claim in current-facing docs (1.1.0 streams via SSE)' },
+    { id: 'STREAMING', re: STALE_STREAMING_RE, message: 'retired one-delta/non-streaming claim in current-facing docs (SSE streaming is current)' },
     { id: 'HASHES', re: OLD_HASH_RE, message: 'superseded 1.0 artifact hash presented in current-facing docs (move to a historical section)' },
     { id: 'STATE', re: STALE_STATE_RE, message: 'retired 15-state claim in current-facing docs (current truth is 16 states)' },
-    { id: 'VERSION', re: STALE_VERSION_RE, message: 'stale 1.0 release identity in current-facing docs (current version is 1.1.0)' },
+    { id: 'VERSION', re: STALE_VERSION_RE, message: 'stale 1.0 release identity in current-facing docs' },
   ]);
   const live = unmaskedText(text, mask);
-  check(`VERSION: ${doc} states ${currentVersion}`, REQUIRED_VERSION_RE.test(live), `missing "${currentVersion}" in current text`);
-  if (!REQUIRED_VERSION_RE.test(live)) fail(doc, 1, 'VERSION', `current-facing doc must state version ${currentVersion}`);
+  // Release-facing docs describe the sealed release; the working tree version is documented in RELEASE-EVIDENCE.
+  check(`VERSION: ${doc} states sealed release ${sealedVersion}`, sealedVersionRe.test(live), `missing sealed release "${sealedVersion}"`);
+  if (!sealedVersionRe.test(live)) fail(doc, 1, 'VERSION', `release-facing doc must state the sealed release version ${sealedVersion}`);
+  if (preRelease) {
+    const claimsUnreleased = live.includes(currentVersion);
+    check(`VERSION: ${doc} does not present unreleased ${currentVersion}`, !claimsUnreleased, `must not present the pre-release ${currentVersion} as the released version`);
+    if (claimsUnreleased) fail(doc, 1, 'VERSION', `${doc} must not present the unreleased ${currentVersion} as the released version`);
+  }
   check(`STREAMING: ${doc} claims real streaming`, STREAMING_POSITIVE_RE.test(live), 'missing positive SSE/streaming claim');
   if (!STREAMING_POSITIVE_RE.test(live)) fail(doc, 1, 'STREAMING', 'current-facing doc must state real SSE/token streaming');
 }
@@ -166,12 +188,71 @@ for (const doc of currentDocs) {
     { id: 'VERSION', re: STALE_VERSION_RE, message: 'stale 1.0 release identity outside historical section' },
   ]);
   const live = unmaskedText(text, mask);
-  check(`VERSION: RELEASE-EVIDENCE states ${currentVersion}`, REQUIRED_VERSION_RE.test(live), 'missing current version in the current section');
-  if (!REQUIRED_VERSION_RE.test(live)) fail('docs/RELEASE-EVIDENCE.md', 1, 'VERSION', `current section must state ${currentVersion}`);
+  check(`VERSION: RELEASE-EVIDENCE states current source version ${currentVersion}`, sourceVersionRe.test(live), `missing current source version "${currentVersion}"`);
+  if (!sourceVersionRe.test(live)) fail('docs/RELEASE-EVIDENCE.md', 1, 'VERSION', `current source section must state ${currentVersion}`);
+  check(`VERSION: RELEASE-EVIDENCE documents sealed release ${sealedVersion}`, sealedVersionRe.test(live), `missing sealed release "${sealedVersion}"`);
+  if (!sealedVersionRe.test(live)) fail('docs/RELEASE-EVIDENCE.md', 1, 'VERSION', `documentation must keep the sealed release record ${sealedVersion}`);
+  const sealedHashEntries = [];
+  for (const a of (Array.isArray(releaseManifest.artifacts) ? releaseManifest.artifacts : [])) {
+    if (a && a.sha256) sealedHashEntries.push({ name: String(a.path || a.name || 'artifact'), sha256: String(a.sha256) });
+  }
+  const sealedPackage = releaseManifest.package && typeof releaseManifest.package === 'object' ? releaseManifest.package : {};
+  if (sealedPackage.zip_sha256) sealedHashEntries.push({ name: String(sealedPackage.zip || 'package zip'), sha256: String(sealedPackage.zip_sha256) });
+  const missingSealedHashes = sealedHashEntries.filter((e) => !text.includes(e.sha256));
+  check('SEALED: RELEASE-EVIDENCE preserves sealed artifact hashes',
+    sealedHashEntries.length > 0 && missingSealedHashes.length === 0,
+    `sealed hashes checked=${sealedHashEntries.length} missing=${missingSealedHashes.length}`);
+  if (sealedHashEntries.length === 0 || missingSealedHashes.length > 0) {
+    fail('docs/RELEASE-EVIDENCE.md', 1, 'SEALED', `sealed artifact/package hash(es) must remain in release evidence (missing ${missingSealedHashes.map((e) => e.name).join(', ') || '(none parsed)'})`);
+  }
+  const sealedTagSourceDocumented = Boolean(sealedTag) && Boolean(sealedSource) && text.includes(sealedTag) && text.includes(sealedSource.slice(0, 8));
+  check('SEALED: RELEASE-EVIDENCE records the sealed tag and source', sealedTagSourceDocumented, `sealed tag/source must be cited (${sealedTag} @ ${sealedSource.slice(0, 8)})`);
+  if (!sealedTagSourceDocumented) {
+    fail('docs/RELEASE-EVIDENCE.md', 1, 'SEALED', `release evidence must cite sealed tag ${sealedTag} and sealed source ${sealedSource.slice(0, 8)}`);
+  }
+  if (preRelease) {
+    check('SEALED: RELEASE-EVIDENCE marks the working tree pre-release', /pre[- ]release/i.test(live), 'pre-release tree must be labelled in release evidence');
+    if (!/pre[- ]release/i.test(live)) fail('docs/RELEASE-EVIDENCE.md', 1, 'SEALED', 'working tree must be labelled pre-release, not released');
+  }
   check('HASHES: RELEASE-EVIDENCE points at tools/release-manifest.json', MANIFEST_POINTER_RE.test(live), 'missing authoritative-manifest pointer');
   if (!MANIFEST_POINTER_RE.test(live)) fail('docs/RELEASE-EVIDENCE.md', 1, 'HASHES', 'current section must point at tools/release-manifest.json as the exact-hash authority');
   check('HISTORY: RELEASE-EVIDENCE keeps a masked 1.0.0 historical record', mask.some(Boolean), 'no historical section found');
   if (!mask.some(Boolean)) fail('docs/RELEASE-EVIDENCE.md', 1, 'HISTORY', 'historical 1.0.0 record must be preserved under a historical section');
+}
+
+// ---------------------------------------------------------------- UI-COMMANDS (frozen contract doc)
+{
+  const rel = 'docs/contracts/UI-COMMANDS-v1.md';
+  const doc = read(rel);
+  const eventSrc = read('backend/crates/hiverouter-contract/src/event.rs');
+  const expectedEvents = [...new Set(
+    [...eventSrc.matchAll(/EventName::\w+\s*=>\s*"([A-Z][A-Z0-9_]*)"/g)].map((m) => m[1]),
+  )];
+  const eventsSection = (doc.match(/^## 3\. Events[^\n]*\n([\s\S]*?)(?=^## 4\.)/m) || ['', ''])[1];
+  const listedEvents = [...new Set([...eventsSection.matchAll(/`([A-Z][A-Z0-9_]+)`/g)].map((m) => m[1]))];
+  const missingEvents = expectedEvents.filter((e) => !listedEvents.includes(e));
+  check('DOCS: UI-COMMANDS-v1 lists every contract event',
+    expectedEvents.length > 0 && missingEvents.length === 0,
+    `contract=${expectedEvents.length} listed=${listedEvents.length} missing=${missingEvents.join('|') || 'none'}`);
+  if (expectedEvents.length === 0 || missingEvents.length > 0) {
+    fail(rel, 1, 'DOCS-EVENTS', `UI-COMMANDS-v1 must list all ${expectedEvents.length} contract events; missing ${missingEvents.join(', ') || '(none parsed)'}`);
+  }
+  const stateSrc = read('web/src/state/agentState.ts');
+  const expectedStates = [...new Set(
+    [...stateSrc.matchAll(/^\s+'([a-z_]+)',$/gm)].map((m) => m[1]),
+  )];
+  const statesSection = (doc.match(/^## 4\. Single agent-state enum[^\n]*\n([\s\S]*?)(?=^## 5\.)/m) || ['', ''])[1];
+  const stateListPart = statesSection.split(/The PDF's/)[0];
+  const listedStates = [...new Set(
+    stateListPart.replace(/`/g, '').split(/[\n,]/).map((s) => s.trim().replace(/[.,;:]+$/, '')).filter((s) => /^[a-z_]+$/.test(s)),
+  )];
+  const missingStates = expectedStates.filter((s) => !listedStates.includes(s));
+  check('DOCS: UI-COMMANDS-v1 lists every agent state',
+    expectedStates.length > 0 && missingStates.length === 0 && listedStates.length === expectedStates.length,
+    `states=${expectedStates.length} listed=${listedStates.length} missing=${missingStates.join('|') || 'none'}`);
+  if (expectedStates.length === 0 || missingStates.length > 0 || listedStates.length !== expectedStates.length) {
+    fail(rel, 1, 'DOCS-STATES', `UI-COMMANDS-v1 must list exactly ${expectedStates.length} states; missing ${missingStates.join(', ') || '(none parsed)'} listed=${listedStates.length}`);
+  }
 }
 
 // ---------------------------------------------------------------- claims (JSON)
@@ -196,8 +277,8 @@ for (const doc of currentDocs) {
   walk(registry, '$');
   const notes = String(registry.notes || '');
   const notesMarked = /supersed|historical|1\.0\.0\s+(release|record|artifact)/i.test(notes);
-  check('CLAIMS: JSON notes state current 1.1.0 truth', notes.includes(currentVersion), `notes must mention ${currentVersion}`);
-  if (!notes.includes(currentVersion)) fail(rel, 1, 'VERSION', `registry notes must state current version ${currentVersion}`);
+  check(`CLAIMS: JSON notes state sealed release ${sealedVersion}`, notes.includes(sealedVersion), `notes must mention sealed release ${sealedVersion}`);
+  if (!notes.includes(sealedVersion)) fail(rel, 1, 'VERSION', `registry notes must state sealed release ${sealedVersion}`);
   if (!notesMarked && OLD_HASH_RE.test(notes)) fail(rel, 1, 'HASHES', 'notes present 1.0 hashes without a superseded/historical marker');
   if (STALE_STREAMING_RE.test(notes) && !notesMarked) fail(rel, 1, 'STREAMING', 'notes present a stale one-delta claim');
   if (STALE_STATE_RE.test(notes) && !notesMarked) fail(rel, 1, 'STATE', 'notes present a retired 15-state claim');
@@ -219,15 +300,16 @@ for (const doc of currentDocs) {
     if (STALE_STATE_RE.test(row)) fail(rel, i + 1, 'STATE', 'retired 15-state claim in a current claim row');
   }
   check('CLAIMS: CSV header and rows parsed', header.length >= 8, `columns=${header.length}`);
-  check('CLAIMS: CSV records current version', text.includes(currentVersion), `missing ${currentVersion} in claims CSV`);
-  if (!text.includes(currentVersion)) fail(rel, 1, 'VERSION', `claims CSV must record current version ${currentVersion}`);
+  check(`CLAIMS: CSV records sealed release ${sealedVersion}`, text.includes(sealedVersion), `missing sealed release ${sealedVersion} in claims CSV`);
+  if (!text.includes(sealedVersion)) fail(rel, 1, 'VERSION', `claims CSV must record the sealed release ${sealedVersion}`);
 }
 
 // ---------------------------------------------------------------- summary
 if (!quiet) {
   console.log('');
   console.log(`root: ${root}`);
-  console.log(`current version: ${currentVersion}`);
+  console.log(`current source version: ${currentVersion}`);
+  console.log(`sealed release version: ${sealedVersion}${preRelease ? ' (pre-release working tree)' : ''}`);
   console.log(`checks: ${checks.filter((c) => c.ok).length}/${checks.length} pass; violations: ${violations.length}`);
   for (const v of violations) console.log(`VIOLATION ${v.file}:${v.line} [${v.rule}] ${v.message}`);
 }

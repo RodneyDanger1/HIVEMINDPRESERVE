@@ -14,6 +14,8 @@
 //! - [`budget`] — B1–B12 pre-send enforcement, retry policy, in-flight limiter
 //! - [`accounting`] — V1–V6 Decimal cost/token accounting; NULL usage ⇒ INCOMPLETE
 //! - [`client`] — the one non-streaming + streaming DeepSeek client
+//! - [`tool_assembler`] — index-keyed assembly of streamed tool-call fragments
+//!   (validated, deterministic, no execution)
 //!
 //! # Money rule
 //! `f64` is prohibited on every cost path (deny lint below); prices and totals
@@ -30,6 +32,7 @@ pub mod dto;
 pub mod error;
 pub mod pricing;
 pub mod secret;
+pub mod tool_assembler;
 
 pub use accounting::{CallCost, CostReport, CostStatus, Provenance, RunAccounting};
 pub use budget::{
@@ -48,6 +51,10 @@ pub use dto::{
 pub use error::ProviderError;
 pub use pricing::{peak_at_unix, Peak, PricingTable};
 pub use secret::{ApiKey, API_KEY_ENV};
+pub use tool_assembler::{
+    AssembledToolCall, ToolCallAssembler, ToolCallAssemblyError, MAX_ARGUMENTS_BYTES,
+    MAX_IDENTIFIER_BYTES, MAX_TOOL_CALLS_PER_MESSAGE,
+};
 
 /// Crate version from the workspace manifest.
 pub const PROVIDER_VERSION: &str = env!("CARGO_PKG_VERSION");

@@ -11,6 +11,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
+use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
 use tokio::net::TcpListener;
 use uuid::Uuid;
@@ -56,7 +57,7 @@ pub struct AppState {
     /// `None` means the planner template registry loaded from the binary's
     /// embedded assets. `Some(refusal)` means the boot path is serving with a
     /// required-and-failed `prompt_assets` check: `/health` reports 503 and the
-    /// error code, and planner renders refuse by name — never a fake success.
+    /// error code, and planner renders refuse by name â€” never a fake success.
     pub prompt_assets_error: Option<Refusal>,
 }
 
@@ -132,6 +133,36 @@ fn build_executor(config: &Config) -> Arc<dyn ProviderExecutor> {
     }
 }
 
+
+/// Builds the shared engine, wiring the production workspace jail when the
+/// configured root is usable. A missing/invalid root leaves the jail absent so
+/// read-only tool calls refuse E_FILE_TREE_UNAVAILABLE instead of touching disk.
+fn build_engine(
+    db: Arc<Database>,
+    bus: Arc<EventBus>,
+    graph: Arc<GraphAuthority>,
+    config: &Config,
+    templates: Arc<TemplateRegistry>,
+    snapshots: Arc<SnapshotStore>,
+    wire_workspace_jail: bool,
+) -> Arc<RunEngine> {
+    let mut engine = RunEngine::new(db, bus, graph, build_executor(config), templates)
+        .with_snapshot_store(snapshots);
+    if wire_workspace_jail {
+        match WorkspaceJail::open(&config.workspace_root) {
+            Ok(jail) => engine = engine.with_tool_workspace(jail),
+            Err(error) => {
+                tracing::warn!(
+                    workspace_root = %config.workspace_root.display(),
+                    code = error.code(),
+                    "workspace jail unavailable; read-only model tool calls will refuse E_FILE_TREE_UNAVAILABLE"
+                );
+            }
+        }
+    }
+    Arc::new(engine)
+}
+
 impl AppState {
     /// Builds state for a running server with a fresh event bus, graph and
     /// session token derived from the configuration.
@@ -149,16 +180,7 @@ impl AppState {
         let graph = Arc::new(GraphAuthority::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let engine = Arc::new(
-            RunEngine::new(
-                db.clone(),
-                bus.clone(),
-                graph.clone(),
-                build_executor(&config),
-                templates,
-            )
-            .with_snapshot_store(snapshots.clone()),
-        );
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
         Self {
@@ -195,16 +217,7 @@ impl AppState {
         let bus = Arc::new(EventBus::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let engine = Arc::new(
-            RunEngine::new(
-                db.clone(),
-                bus.clone(),
-                graph.clone(),
-                build_executor(&config),
-                templates,
-            )
-            .with_snapshot_store(snapshots.clone()),
-        );
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
         Self {
@@ -238,16 +251,7 @@ impl AppState {
         session: Arc<SessionAuth>,
     ) -> Self {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
-        let engine = Arc::new(
-            RunEngine::new(
-                db.clone(),
-                bus.clone(),
-                graph.clone(),
-                build_executor(&config),
-                Arc::new(TemplateRegistry::default()),
-            )
-            .with_snapshot_store(snapshots.clone()),
-        );
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), snapshots.clone(), false);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
         Self {
@@ -340,7 +344,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .with_state(state)
 }
 
-/// `GET /diagnose` — tools-owned derived diagnostics (no secrets).
+/// `GET /diagnose` â€” tools-owned derived diagnostics (no secrets).
 async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
     match state.tools.diagnostics() {
         Ok(value) => (StatusCode::OK, Json(value)).into_response(),
@@ -536,3 +540,4 @@ pub async fn serve(
 pub fn is_loopback(ip: IpAddr) -> bool {
     ip.is_loopback()
 }
+

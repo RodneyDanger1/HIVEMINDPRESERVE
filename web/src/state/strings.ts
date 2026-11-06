@@ -207,6 +207,35 @@ export const STRINGS = {
     historyTitle: 'History',
     historyEmpty: 'No revisions yet.',
   },
+  /**
+   * W12 tool activity (S15/S16). Consumed by `ToolActivityPanel` (heading, empty,
+   * list/section labels, outcome labels) and by the agents-surface region wrapper.
+   * Copy is PROPOSED-ADDITION (PDF carries no tool-activity heading).
+   */
+  toolActivity: {
+    heading: 'Tool activity',
+    sectionAria: 'Tool activity',
+    regionAria: 'Tool activity and approvals for the current run',
+    listAria: 'Tool calls',
+    empty: 'No tool activity yet — tool calls appear here when the model invokes a tool.',
+    /** One label per declared `ToolOutcome` plus the neutral fallback. */
+    outcomes: {
+      pending: 'Pending',
+      ok: 'OK',
+      refused: 'Refused',
+      denied: 'Denied',
+      timeout: 'Timed out',
+      cancelled: 'Cancelled',
+      unknown: 'Unknown',
+    },
+    labels: {
+      argsSha256: 'args_sha256',
+      turn: 'turn',
+      toolCallId: 'tool_call_id',
+      code: 'code',
+    },
+    unknownValue: '—',
+  },
   diff: {
     title: 'Code-diff review',
     decisionRequired:
@@ -215,6 +244,24 @@ export const STRINGS = {
   approval: {
     title: 'Tool approval requested',
     toolLabel: 'Tool',
+    resolving: 'Resolving approval…',
+    resolveHint: 'APPROVAL_RESOLVE',
+    /** Evidence labels keep the frozen wire field names (args_sha256, run_id, …). */
+    fields: {
+      argsSha256: 'args_sha256',
+      runId: 'run_id',
+      taskId: 'task_id',
+      toolCallId: 'tool_call_id',
+      approvalId: 'approval_id',
+      expires: 'expires',
+    },
+    /** Honest TTL display: unknown stays unknown, past stays expired. */
+    expiry: {
+      unknown: 'unknown',
+      expired: 'expired',
+      expiresIn: 'expires in',
+    },
+    unknownValue: '—',
     nonceMissing:
       'This APPROVAL_REQUEST did not carry the nonce required by the frozen APPROVAL_RESOLVE command, so it cannot be resolved from the UI. Report the missing nonce; do not invent one.',
   },

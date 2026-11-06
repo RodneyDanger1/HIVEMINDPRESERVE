@@ -3,6 +3,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Page, WebSocketRoute } from '@playwright/test';
+import {
+  TOOL_OUTCOMES,
+  type ApprovalRequestPayload,
+  type ToolCallPayload,
+  type ToolResultPayload,
+} from '../../web/src/api/contract';
 
 /**
  * W4 deterministic replay harness.
@@ -124,6 +130,154 @@ export function eventFrame(name: string, payload: unknown, seq: number): string 
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* W12 tool-loop / approval helpers (reusable by every mocked-WS spec) */
+/* ------------------------------------------------------------------ */
+
+/** One COMMAND frame captured from the page through the mocked socket. */
+export interface MockSentCommand {
+  readonly name: string;
+  /** Parsed payload when the frame is a well-formed COMMAND with object payload. */
+  readonly payload: Record<string, unknown> | null;
+  readonly raw: string;
+  readonly at: string;
+  readonly correlationId: string | null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function assertNonEmptyString(field: string, value: unknown): asserts value is string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new TypeError(`replay-harness: ${field} must be a non-empty string`);
+  }
+}
+
+function assertSha256(field: string, value: unknown): asserts value is string {
+  assertNonEmptyString(field, value);
+  if (!/^[0-9a-f]{64}$/i.test(value)) {
+    throw new TypeError(`replay-harness: ${field} must be a 64-char hex SHA-256`);
+  }
+}
+
+function assertTurn(value: unknown): asserts value is number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
+    throw new TypeError('replay-harness: TOOL_CALL.turn must be an integer >= 1');
+  }
+}
+
+function assertOutcome(value: unknown): void {
+  if (typeof value !== 'string' || !(TOOL_OUTCOMES as readonly string[]).includes(value)) {
+    throw new TypeError(
+      `replay-harness: TOOL_RESULT.outcome must be one of ${TOOL_OUTCOMES.join('|')}`,
+    );
+  }
+}
+
+/**
+ * Builds a valid `TOOL_CALL` EVENT frame (W12 contract: run_id, task_id,
+ * tool_call_id, tool, args_sha256, turn). Throws on any missing/ill-typed field so a
+ * spec cannot accidentally send the production decoder an invalid payload.
+ */
+export function toolCallFrame(payload: ToolCallPayload, seq: number): string {
+  assertNonEmptyString('TOOL_CALL.run_id', payload.run_id);
+  assertNonEmptyString('TOOL_CALL.task_id', payload.task_id);
+  assertNonEmptyString('TOOL_CALL.tool_call_id', payload.tool_call_id);
+  assertNonEmptyString('TOOL_CALL.tool', payload.tool);
+  assertSha256('TOOL_CALL.args_sha256', payload.args_sha256);
+  assertTurn(payload.turn);
+  return eventFrame('TOOL_CALL', payload, seq);
+}
+
+/**
+ * Builds a valid `TOOL_RESULT` EVENT frame. `outcome` is restricted to the frozen
+ * vocabulary; optional `code`/`bytes`/`sha256` are validated when present.
+ */
+export function toolResultFrame(payload: ToolResultPayload, seq: number): string {
+  assertNonEmptyString('TOOL_RESULT.run_id', payload.run_id);
+  assertNonEmptyString('TOOL_RESULT.task_id', payload.task_id);
+  assertNonEmptyString('TOOL_RESULT.tool_call_id', payload.tool_call_id);
+  assertOutcome(payload.outcome);
+  if (payload.code !== undefined && payload.code !== null) {
+    assertNonEmptyString('TOOL_RESULT.code', payload.code);
+  }
+  if (payload.bytes !== undefined && payload.bytes !== null) {
+    if (!Number.isInteger(payload.bytes) || payload.bytes < 0) {
+      throw new TypeError('replay-harness: TOOL_RESULT.bytes must be a non-negative integer');
+    }
+  }
+  if (payload.sha256 !== undefined && payload.sha256 !== null) {
+    assertSha256('TOOL_RESULT.sha256', payload.sha256);
+  }
+  return eventFrame('TOOL_RESULT', payload, seq);
+}
+
+/**
+ * Builds a valid `APPROVAL_REQUEST` EVENT frame. `approval_id`/`tool` are required;
+ * the six 1.2 fields are validated when present and never fabricated when absent.
+ */
+export function approvalRequestFrame(payload: ApprovalRequestPayload, seq: number): string {
+  assertNonEmptyString('APPROVAL_REQUEST.approval_id', payload.approval_id);
+  assertNonEmptyString('APPROVAL_REQUEST.tool', payload.tool);
+  if (payload.decision !== undefined && payload.decision !== null) {
+    assertNonEmptyString('APPROVAL_REQUEST.decision', payload.decision);
+  }
+  for (const field of ['nonce', 'run_id', 'task_id', 'tool_call_id'] as const) {
+    const value = payload[field];
+    if (value !== undefined && value !== null) {
+      assertNonEmptyString(`APPROVAL_REQUEST.${field}`, value);
+    }
+  }
+  if (payload.args_sha256 !== undefined && payload.args_sha256 !== null) {
+    assertSha256('APPROVAL_REQUEST.args_sha256', payload.args_sha256);
+  }
+  if (payload.expires_at !== undefined && payload.expires_at !== null) {
+    assertNonEmptyString('APPROVAL_REQUEST.expires_at', payload.expires_at);
+    if (Number.isNaN(Date.parse(payload.expires_at))) {
+      throw new TypeError('replay-harness: APPROVAL_REQUEST.expires_at must be an ISO-8601 date');
+    }
+  }
+  return eventFrame('APPROVAL_REQUEST', payload, seq);
+}
+
+/** Sends a validated `TOOL_CALL` frame through the mocked socket. */
+export function sendToolCall(ws: MockWsHarness, payload: ToolCallPayload, seq: number): void {
+  ws.route().send(toolCallFrame(payload, seq));
+}
+
+/** Sends a validated `TOOL_RESULT` frame through the mocked socket. */
+export function sendToolResult(ws: MockWsHarness, payload: ToolResultPayload, seq: number): void {
+  ws.route().send(toolResultFrame(payload, seq));
+}
+
+/** Sends a validated `APPROVAL_REQUEST` frame through the mocked socket. */
+export function sendApprovalRequest(
+  ws: MockWsHarness,
+  payload: ApprovalRequestPayload,
+  seq: number,
+): void {
+  ws.route().send(approvalRequestFrame(payload, seq));
+}
+
+/** Sends arbitrary raw bytes (invalid JSON, non-EVENT, truncated frame) for refusal tests. */
+export function sendMalformedFrame(ws: MockWsHarness, raw: string): void {
+  ws.route().send(raw);
+}
+
+/**
+ * Sends a syntactically valid EVENT envelope with an intentionally invalid payload,
+ * for decoder-refusal tests (`E_SCHEMA_INVALID`) without hand-building the envelope.
+ */
+export function sendMalformedEvent(
+  ws: MockWsHarness,
+  name: string,
+  payload: unknown,
+  seq: number,
+): void {
+  ws.route().send(eventFrame(name, payload, seq));
+}
+
 export interface MockWsHarness {
   /** The routed page-side socket; test code pushes events through it. */
   route(): WebSocketRoute;
@@ -131,6 +285,23 @@ export interface MockWsHarness {
   commands: string[];
   /** Raw frames the page sent (control hello + COMMAND envelopes), for diagnostics only. */
   sent: string[];
+  /** Parsed COMMAND frames in arrival order (name/payload/raw/correlation/at). */
+  readonly sentCommands: readonly MockSentCommand[];
+  /** COMMAND frames with the given name, in arrival order. */
+  commandPayloads(name: string): MockSentCommand[];
+  /** `APPROVAL_RESOLVE` COMMAND frames captured so far. */
+  approvalResolveCommands(): MockSentCommand[];
+  /**
+   * Waits until a COMMAND with `name` (and optional predicate) is captured.
+   * Throws with captured command names on timeout — never a silent pass.
+   */
+  waitForCommand(
+    name: string,
+    predicate?: (command: MockSentCommand) => boolean,
+    timeoutMs?: number,
+  ): Promise<MockSentCommand>;
+  /** Sends raw server→client bytes through the mocked socket (malformed-frame tests). */
+  sendRaw(raw: string): void;
 }
 
 /**
@@ -142,6 +313,17 @@ export async function installMockWs(page: Page): Promise<MockWsHarness> {
   let current: WebSocketRoute | null = null;
   const commands: string[] = [];
   const sent: string[] = [];
+  const sentCommands: MockSentCommand[] = [];
+
+  const requireRoute = (): WebSocketRoute => {
+    if (current === null) {
+      throw new Error('replay harness: WebSocket route was not established by the app');
+    }
+    return current;
+  };
+  const findCommands = (name: string): MockSentCommand[] =>
+    sentCommands.filter((command) => command.name === name);
+
   await page.routeWebSocket(/\/ws(\?.*)?$/, (route) => {
     current = route;
     route.onMessage((message) => {
@@ -150,9 +332,22 @@ export async function installMockWs(page: Page): Promise<MockWsHarness> {
       }
       sent.push(message);
       try {
-        const parsed = JSON.parse(message) as { type?: string; name?: string };
+        const parsed = JSON.parse(message) as {
+          type?: unknown;
+          name?: unknown;
+          payload?: unknown;
+          correlation_id?: unknown;
+        };
         if (parsed.type === 'COMMAND' && typeof parsed.name === 'string') {
           commands.push(parsed.name);
+          sentCommands.push({
+            name: parsed.name,
+            payload: isRecord(parsed.payload) ? parsed.payload : null,
+            raw: message,
+            at: new Date().toISOString(),
+            correlationId:
+              typeof parsed.correlation_id === 'string' ? parsed.correlation_id : null,
+          });
         }
       } catch {
         // Raw control frame (hello): not a COMMAND.
@@ -184,18 +379,43 @@ export async function installMockWs(page: Page): Promise<MockWsHarness> {
           );
         }
       } catch {
-        // Raw control frame (`{type:"hello"}`) or unknown bytes: not needed by this spec.
+        // Raw control frame (`{type:"hello"}`) or malformed bytes: no ACK is fabricated.
       }
     });
   });
-  return {
+
+  const harness: MockWsHarness = {
     commands,
     sent,
-    route(): WebSocketRoute {
-      if (current === null) {
-        throw new Error('replay harness: WebSocket route was not established by the app');
+    sentCommands,
+    route: requireRoute,
+    commandPayloads: findCommands,
+    approvalResolveCommands: () => findCommands('APPROVAL_RESOLVE'),
+    async waitForCommand(
+      name: string,
+      predicate?: (command: MockSentCommand) => boolean,
+      timeoutMs = 5_000,
+    ): Promise<MockSentCommand> {
+      const deadline = Date.now() + timeoutMs;
+      for (;;) {
+        const match = findCommands(name).find((command) =>
+          predicate === undefined ? true : predicate(command),
+        );
+        if (match) {
+          return match;
+        }
+        if (Date.now() >= deadline) {
+          throw new Error(
+            `replay harness: no ${name} COMMAND captured within ${timeoutMs}ms; ` +
+              `captured=[${sentCommands.map((command) => command.name).join(', ')}]`,
+          );
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
       }
-      return current;
+    },
+    sendRaw(raw: string): void {
+      requireRoute().send(raw);
     },
   };
+  return harness;
 }

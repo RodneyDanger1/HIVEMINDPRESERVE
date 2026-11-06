@@ -629,7 +629,7 @@ async fn pump_stream(
                                 if let Some(reason) = &choice.finish_reason {
                                     finish_reason = Some(reason.clone());
                                 }
-                                if let Some(event) = delta_event(&choice.delta) {
+                                for event in delta_event(&choice.delta) {
                                     if sender.send(Ok(event)).await.is_err() {
                                         return;
                                     }
@@ -667,38 +667,54 @@ async fn pump_stream(
         .await;
 }
 
-fn delta_event(delta: &Delta) -> Option<StreamEvent> {
+/// Parses every documented delta field into ordered stream events.
+///
+/// A delta can carry a text fragment, reasoning content and one or more
+/// tool-call fragments. Every `tool_calls` entry is emitted as its own
+/// [`StreamEvent::ToolCallDelta`] in ascending `index` order (the sort is
+/// stable, so equal indices keep the provider's array order); a single-entry
+/// delta therefore keeps the original one-event behavior.
+fn delta_event(delta: &Delta) -> Vec<StreamEvent> {
+    let mut events = Vec::new();
+
     if let Some(content) = &delta.content {
         if !content.is_empty() {
-            return Some(StreamEvent::Delta {
+            events.push(StreamEvent::Delta {
                 content: content.clone(),
                 reasoning_content: delta.reasoning_content.clone(),
             });
         }
     }
+
     if let Some(tool_calls) = &delta.tool_calls {
-        if let Some(first) = tool_calls.first() {
-            let (name, arguments) = match &first.function {
+        let mut ordered = tool_calls.iter().collect::<Vec<_>>();
+        ordered.sort_by_key(|call| call.index);
+        for call in ordered {
+            let (name, arguments) = match &call.function {
                 Some(function) => (function.name.clone(), function.arguments.clone()),
                 None => (None, None),
             };
-            return Some(StreamEvent::ToolCallDelta {
-                index: first.index,
-                id: first.id.clone(),
+            events.push(StreamEvent::ToolCallDelta {
+                index: call.index,
+                id: call.id.clone(),
                 name,
                 arguments,
             });
         }
     }
-    if let Some(reasoning) = &delta.reasoning_content {
-        if !reasoning.is_empty() {
-            return Some(StreamEvent::Delta {
-                content: String::new(),
-                reasoning_content: Some(reasoning.clone()),
-            });
+
+    if events.is_empty() {
+        if let Some(reasoning) = &delta.reasoning_content {
+            if !reasoning.is_empty() {
+                events.push(StreamEvent::Delta {
+                    content: String::new(),
+                    reasoning_content: Some(reasoning.clone()),
+                });
+            }
         }
     }
-    None
+
+    events
 }
 
 /// Maps transport failures to the frozen refusal table.

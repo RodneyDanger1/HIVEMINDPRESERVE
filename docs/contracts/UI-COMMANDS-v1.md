@@ -4,6 +4,16 @@ Freeze date: 2026-11-06. Source: `blueprint/HIVEMIND-BLUEPRINT-v1.md` Phase 1 (M
 `blueprint/UI-WIRING-GUIDE.md` S01-S28 / §2 wiring ladder. This document is the single vocabulary for backend, frontend and
 FigCraft surface work. Changing a name here requires a `CHANGE-LEDGER-IMPL.md` row and re-running the command matrix test.
 
+> **1.2 additive update — 2026-11-06 (W12 interface freeze). OLD → NEW:**
+> **21 → 23 events** (adds `TOOL_CALL`, `TOOL_RESULT`) and **15 → 16 agent states** (adds `interrupted`).
+> `APPROVAL_REQUEST` gains **optional** `nonce`, `run_id`, `task_id`, `tool_call_id`, `args_sha256`, `expires_at`;
+> a producer must populate all six for model-originated side effects, but the fields stay optional on the wire in this
+> wave. No command or refusal code is added (14 frozen commands, 65 refusal codes; `CommandName::ALL` = 17 including the
+> 3 decision-gated `DIFF_*` names). Sources of truth: `backend/crates/hiverouter-contract/src/event.rs`
+> (`EventName::ALL` = 23), `src/state.rs` (`AgentState` = 16), pinned by `tests/schema_roundtrip.rs` and
+> `web/tests/contract.test.ts`; the "21 events / 15 states" wording in the freeze paragraph above and in historical
+> evidence docs is retained only as history.
+
 ## 1. Envelope
 
 ```json
@@ -44,14 +54,23 @@ schema mismatch → `E_SCHEMA_INVALID`; refusal is a typed `Error` event, never 
 `RUN_METRICS` (`superagents`, `workers`, `green_pct`, `delta`) · `APPROVAL_REQUEST` / `APPROVAL_RESOLVED`
 (`approval_id`, `tool`, `decision`) · `SETTINGS_STATUS_RESULT` (`provider`, `model`, `key_present`) ·
 `FILE_TREE_RESULT` (`entries[]`, `root`) · `FILE_CONTENT` (`path`, `sha256`, `bytes`, `text`) ·
-`HISTORY_SNAPSHOT` (`run_id`, `revision`, `graph`) · `PING` / `PONG`.
+`HISTORY_SNAPSHOT` (`run_id`, `revision`, `graph`) ·
+`TOOL_CALL` (`run_id`, `task_id`, `tool_call_id`, `tool`, `args_sha256`, `turn`) ·
+`TOOL_RESULT` (`run_id`, `task_id`, `tool_call_id`, `outcome` = `ok`/`refused`/`denied`/`timeout`/`cancelled`, `code?`, `bytes?`, `sha256?`) ·
+`PING` / `PONG`.
 
-## 4. Single agent-state enum (>=13; superset allowed)
+Event count: **23** (`EventName::ALL`). `APPROVAL_REQUEST` carries the optional 1.2 fields `nonce`, `run_id`,
+`task_id`, `tool_call_id`, `args_sha256`, `expires_at` (producer populates for model-originated approvals; optional on
+the wire during the coding waves). E2E/model-tool tests: `web/tests/contract.test.ts` (`TOOL_CALL`/`TOOL_RESULT`
+decode) and `backend/crates/hiverouter-contract/tests/common/mod.rs` (wire samples).
+
+## 4. Single agent-state enum (16; frozen minimum 15 + `interrupted` superset)
 
 `healthy, running, queued, failed, completed, cancelled, killed, planning, thinking, awaiting_approval, streaming,
-reconnecting, replay, empty, loading`.
-The PDF's four dots map: healthy→healthy, running→running, failed→failed, queued→queued; every other value renders with
-shape/text cue as well as colour (`UI-WIRING-GUIDE R-U4`).
+reconnecting, replay, empty, loading, interrupted`.
+**Count: 16** — backend `backend/crates/hiverouter-contract/src/state.rs` (`AgentState`) and web
+`web/src/state/agentState.ts` agree 16/16 in 1.2. The PDF's four dots map: healthy→healthy, running→running,
+failed→failed, queued→queued; every other value renders with shape/text cue as well as colour (`UI-WIRING-GUIDE R-U4`).
 
 ## 5. Refusal codes (Phase 1 table; UI must display code + how_to_fix)
 

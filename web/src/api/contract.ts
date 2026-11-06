@@ -226,11 +226,49 @@ export interface ApprovalRequestPayload {
   readonly decision?: string | null;
   /** Patched contract: nonce arrives with the pending approval (optional for back-compat). */
   readonly nonce?: string | null;
+  /** 1.2 additive: run the gated tool call belongs to (optional for back-compat). */
+  readonly run_id?: string | null;
+  /** 1.2 additive: task that issued the gated tool call. */
+  readonly task_id?: string | null;
+  /** 1.2 additive: provider tool-call id the approval gates. */
+  readonly tool_call_id?: string | null;
+  /** 1.2 additive: SHA-256 of the canonical tool arguments the nonce binds. */
+  readonly args_sha256?: string | null;
+  /** 1.2 additive: ISO-8601 approval expiry (TTL countdown). */
+  readonly expires_at?: string | null;
 }
 export interface ApprovalResolvedPayload {
   readonly approval_id: string;
   readonly tool: string;
   readonly decision: string;
+}
+
+/** 1.2 additive: tool-call outcome vocabulary (wire values are snake_case). */
+export const TOOL_OUTCOMES = ['ok', 'refused', 'denied', 'timeout', 'cancelled'] as const;
+export type ToolOutcome = (typeof TOOL_OUTCOMES)[number];
+export function isToolOutcome(value: unknown): value is ToolOutcome {
+  return typeof value === 'string' && (TOOL_OUTCOMES as readonly string[]).includes(value);
+}
+
+/** 1.2 additive: identity of one model-issued tool call. */
+export interface ToolCallPayload {
+  readonly run_id: string;
+  readonly task_id: string;
+  readonly tool_call_id: string;
+  readonly tool: string;
+  readonly args_sha256: string;
+  readonly turn: number;
+}
+
+/** 1.2 additive: outcome summary of a tool call (never the tool body). */
+export interface ToolResultPayload {
+  readonly run_id: string;
+  readonly task_id: string;
+  readonly tool_call_id: string;
+  readonly outcome: ToolOutcome;
+  readonly code?: string | null;
+  readonly bytes?: number | null;
+  readonly sha256?: string | null;
 }
 export interface HistorySnapshotPayload {
   readonly run_id: string;
@@ -287,6 +325,8 @@ export interface EventPayloads {
   readonly HISTORY_SNAPSHOT: HistorySnapshotPayload;
   readonly PING: EmptyPayload;
   readonly PONG: EmptyPayload;
+  readonly TOOL_CALL: ToolCallPayload;
+  readonly TOOL_RESULT: ToolResultPayload;
 }
 
 export type EventName = keyof EventPayloads;
@@ -313,6 +353,8 @@ export const EVENT_NAMES = [
   'HISTORY_SNAPSHOT',
   'PING',
   'PONG',
+  'TOOL_CALL',
+  'TOOL_RESULT',
 ] as const satisfies readonly EventName[];
 
 export function isEventName(value: unknown): value is EventName {
@@ -508,7 +550,9 @@ export type DecodedEvent =
   | { readonly name: 'FILE_CONTENT'; readonly payload: FileContentPayload }
   | { readonly name: 'HISTORY_SNAPSHOT'; readonly payload: HistorySnapshotPayload }
   | { readonly name: 'PING'; readonly payload: EmptyPayload }
-  | { readonly name: 'PONG'; readonly payload: EmptyPayload };
+  | { readonly name: 'PONG'; readonly payload: EmptyPayload }
+  | { readonly name: 'TOOL_CALL'; readonly payload: ToolCallPayload }
+  | { readonly name: 'TOOL_RESULT'; readonly payload: ToolResultPayload };
 
 function invalid(detail: string): { ok: false; code: string; detail: string } {
   return { ok: false, code: 'E_SCHEMA_INVALID', detail };
@@ -654,6 +698,11 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
       }
       const decision = payload.decision;
       const nonce = typeof payload.nonce === 'string' ? payload.nonce : null;
+      const runId = typeof payload.run_id === 'string' ? payload.run_id : null;
+      const taskId = typeof payload.task_id === 'string' ? payload.task_id : null;
+      const toolCallId = typeof payload.tool_call_id === 'string' ? payload.tool_call_id : null;
+      const argsSha = typeof payload.args_sha256 === 'string' ? payload.args_sha256 : null;
+      const expiresAt = typeof payload.expires_at === 'string' ? payload.expires_at : null;
       return {
         ok: true,
         value: {
@@ -663,6 +712,11 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
             tool,
             decision: typeof decision === 'string' ? decision : null,
             nonce,
+            run_id: runId,
+            task_id: taskId,
+            tool_call_id: toolCallId,
+            args_sha256: argsSha,
+            expires_at: expiresAt,
           },
         },
       };
@@ -761,6 +815,69 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
     case 'PING':
     case 'PONG':
       return { ok: true, value: { name, payload: {} } };
+    case 'TOOL_CALL': {
+      const runId = readString(payload, 'run_id');
+      const taskId = readString(payload, 'task_id');
+      const toolCallId = readString(payload, 'tool_call_id');
+      const tool = readString(payload, 'tool');
+      const argsSha = readString(payload, 'args_sha256');
+      const turn = readNumber(payload, 'turn');
+      if (
+        !runId ||
+        !taskId ||
+        !toolCallId ||
+        !tool ||
+        !argsSha ||
+        turn === null ||
+        !Number.isInteger(turn) ||
+        turn < 1
+      ) {
+        return invalid('TOOL_CALL payload');
+      }
+      return {
+        ok: true,
+        value: {
+          name,
+          payload: {
+            run_id: runId,
+            task_id: taskId,
+            tool_call_id: toolCallId,
+            tool,
+            args_sha256: argsSha,
+            turn,
+          },
+        },
+      };
+    }
+    case 'TOOL_RESULT': {
+      const runId = readString(payload, 'run_id');
+      const taskId = readString(payload, 'task_id');
+      const toolCallId = readString(payload, 'tool_call_id');
+      const outcomeRaw = payload.outcome;
+      if (!runId || !taskId || !toolCallId || !isToolOutcome(outcomeRaw)) {
+        return invalid('TOOL_RESULT payload');
+      }
+      const code = typeof payload.code === 'string' ? payload.code : null;
+      const bytes = typeof payload.bytes === 'number' && Number.isFinite(payload.bytes)
+        ? payload.bytes
+        : null;
+      const sha256 = typeof payload.sha256 === 'string' ? payload.sha256 : null;
+      return {
+        ok: true,
+        value: {
+          name,
+          payload: {
+            run_id: runId,
+            task_id: taskId,
+            tool_call_id: toolCallId,
+            outcome: outcomeRaw,
+            code,
+            bytes,
+            sha256,
+          },
+        },
+      };
+    }
   }
 }
 

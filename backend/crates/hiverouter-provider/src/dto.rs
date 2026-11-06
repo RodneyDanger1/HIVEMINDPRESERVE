@@ -145,6 +145,63 @@ impl ChatMessage {
         }
     }
 
+    /// Assistant message that requests one or more documented function calls.
+    ///
+    /// The text content is absent: the docs describe an assistant tool-call-only
+    /// message as carrying no text (`content` null semantics), so the field is
+    /// omitted from the serialized message rather than fabricated as `""`.
+    /// Use [`Self::assistant_tool_calls_with_content`] when the model produced
+    /// visible text for the same turn.
+    #[must_use]
+    pub fn assistant_tool_calls(tool_calls: Vec<ToolCall>) -> Self {
+        Self {
+            role: Role::Assistant,
+            content: None,
+            name: None,
+            tool_calls: Some(tool_calls),
+            tool_call_id: None,
+            reasoning_content: None,
+        }
+    }
+
+    /// Assistant message carrying visible text plus one or more documented
+    /// function calls (the normal shape when a streaming turn produced both).
+    #[must_use]
+    pub fn assistant_tool_calls_with_content(
+        content: impl Into<String>,
+        tool_calls: Vec<ToolCall>,
+    ) -> Self {
+        Self {
+            role: Role::Assistant,
+            content: Some(content.into()),
+            name: None,
+            tool_calls: Some(tool_calls),
+            tool_call_id: None,
+            reasoning_content: None,
+        }
+    }
+
+    /// Sets the documented `reasoning_content` pass-back field.
+    ///
+    /// The docs require the previous assistant turn's `reasoning_content` to be
+    /// passed back when `tools` are present and thinking mode is enabled;
+    /// otherwise the request is rejected with HTTP 400. It is optional for every
+    /// other message shape.
+    #[must_use]
+    pub fn with_reasoning_content(mut self, reasoning_content: impl Into<String>) -> Self {
+        self.reasoning_content = Some(reasoning_content.into());
+        self
+    }
+
+    /// Tool result message answering `tool_call_id`.
+    ///
+    /// Same documented shape as [`Self::tool`], with the parameter order matching
+    /// the docs (`tool_call_id` then `content`) for tool-turn construction.
+    #[must_use]
+    pub fn tool_result(tool_call_id: impl Into<String>, content: impl Into<String>) -> Self {
+        Self::tool(content, tool_call_id)
+    }
+
     /// Tool result message answering `tool_call_id`.
     #[must_use]
     pub fn tool(content: impl Into<String>, tool_call_id: impl Into<String>) -> Self {
@@ -276,6 +333,31 @@ pub struct ToolCall {
     pub function: FunctionCall,
 }
 
+impl ToolCall {
+    /// Builds one documented function tool call for an assistant message.
+    ///
+    /// `arguments` is the JSON-encoded argument **string** (for example
+    /// `r#"{"path":"a.txt"}"#`), exactly as the model returns it and exactly as
+    /// the docs require when a tool call is passed back in the conversation. It
+    /// must not be replaced by a JSON object: the wire contract for
+    /// `function.arguments` is a string.
+    #[must_use]
+    pub fn function(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        arguments: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            kind: ToolType::Function,
+            function: FunctionCall {
+                name: name.into(),
+                arguments: arguments.into(),
+            },
+        }
+    }
+}
+
 /// A function definition sent in a request.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FunctionDefinition {
@@ -398,10 +480,51 @@ impl ChatRequest {
         self
     }
 
-    /// Sets the function tools.
+    /// Sets the function tools offered to the model.
+    ///
+    /// With [`Self::with_tool_choice`] this is the documented `tools` array for
+    /// a tool turn; pair it with [`ChatMessage::assistant_tool_calls`] /
+    /// [`ChatMessage::tool_result`] messages in `messages`.
     #[must_use]
     pub fn with_tools(mut self, tools: Vec<ToolSpec>) -> Self {
         self.tools = Some(tools);
+        self
+    }
+
+    /// Appends one documented tool turn (the second-turn continuation shape).
+    ///
+    /// Appends an assistant message carrying `tool_calls` (with no text content,
+    /// as the docs describe for a tool-call-only assistant message) followed by
+    /// exactly one `tool` result message per call, in call order. Use it after
+    /// the model requested tools and the executor produced their results; call
+    /// [`Self::with_tools`] with the same specs so the model can continue the
+    /// loop.
+    ///
+    /// `reasoning_content` is optional: the docs require the previous assistant
+    /// turn's `reasoning_content` to be passed back when `tools` are present and
+    /// thinking mode is enabled (otherwise HTTP 400). Pass `Some` when the
+    /// configured mode produced reasoning; `None` leaves the field absent.
+    ///
+    /// `tool_results` entries are `(tool_call_id, content)` and must match the
+    /// calls one-for-one; the builder does not fabricate missing results or
+    /// reorder them. Mismatched ids are a caller defect and are rejected by the
+    /// provider API, not silently repaired here.
+    #[must_use]
+    pub fn with_tool_turn(
+        mut self,
+        tool_calls: Vec<ToolCall>,
+        tool_results: Vec<(String, String)>,
+        reasoning_content: Option<String>,
+    ) -> Self {
+        let mut assistant = ChatMessage::assistant_tool_calls(tool_calls);
+        if let Some(reasoning_content) = reasoning_content {
+            assistant = assistant.with_reasoning_content(reasoning_content);
+        }
+        self.messages.push(assistant);
+        for (tool_call_id, content) in tool_results {
+            self.messages
+                .push(ChatMessage::tool_result(tool_call_id, content));
+        }
         self
     }
 

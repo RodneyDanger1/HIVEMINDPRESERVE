@@ -8,6 +8,8 @@
 //! - [`commands`] — handlers for the patched frozen commands (`APPROVAL_RESOLVE`,
 //!   `SETTINGS_STATUS`, `FILE_TREE_LIST`, `FILE_READ`);
 //! - [`jail`] — the single Windows workspace jail (six escape vectors refused);
+//! - [`executor`] — the read-only tool executor (only `file_read`/`file_list`;
+//!   every other tool is a named `E_TOOL_NOT_ALLOWED` policy refusal);
 //! - [`shell`] — allowlisted child execution with stdout caps, timeout and a
 //!   kill-on-close Job Object;
 //! - [`cancel`] — per-run cancellation registry and kill enforcement;
@@ -35,6 +37,7 @@ pub mod cli_support;
 pub mod commands;
 pub mod env_safety;
 pub mod error;
+pub mod executor;
 pub mod health;
 pub mod jail;
 pub mod ledger;
@@ -45,8 +48,9 @@ pub mod tool;
 pub mod watcher;
 
 pub use approval::{
-    hash_args, migrate as migrate_approvals, resolve_with_nonce, session_allowed,
-    ApprovalDecision, ApprovalGate, ApprovalRequest, ApprovalResolution, APPROVAL_TTL_SECS,
+    hash_args, migrate as migrate_approvals, request_tool_approval, resolve_with_nonce,
+    session_allowed, ApprovalDecision, ApprovalGate, ApprovalRequest, ApprovalResolution,
+    APPROVAL_TTL_SECS,
 };
 pub use audit::{
     init_json_audit, probe_audit_dir, probe_audit_file, read_audit_rows, record_refusal,
@@ -61,12 +65,15 @@ pub use commands::{
     approval_resolve, file_read as file_read_jailed, file_tree_list, settings_status_command,
 };
 pub use error::ToolError;
+pub use executor::{execute_read_only, ExecutedTool};
 pub use health::{
     diagnostics, health_report, ready_state, router as health_router, DiagnoseReport, HealthReport,
     ServiceState,
 };
 pub use jail::{DirEntryInfo, WorkspaceJail, MAX_READ_BYTES};
-pub use ledger::{LedgerOutcome, LedgerRecord, LedgerRow, RunLedger, LEDGER_FILE_NAME};
+pub use ledger::{
+    append_approval_decision, LedgerOutcome, LedgerRecord, LedgerRow, RunLedger, LEDGER_FILE_NAME,
+};
 pub use sha256::sha256_hex;
 pub use shell::{
     execute as execute_shell, ShellOutput, ShellPolicy, ShellRequest, DEFAULT_MAX_STDERR_BYTES,

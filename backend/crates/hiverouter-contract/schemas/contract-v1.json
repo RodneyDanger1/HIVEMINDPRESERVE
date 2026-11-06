@@ -1436,6 +1436,60 @@
             "null"
           ],
           "default": null
+        },
+        "nonce": {
+          "description": "Single-use nonce required by `APPROVAL_RESOLVE` (1.2 additive).\n\nOptional for wire compatibility: pre-1.2 frames carry no nonce; a frame\nwithout it cannot be resolved from the UI (the existing honest gap).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "run_id": {
+          "description": "Run the tool call belongs to (1.2 additive).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RunId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "task_id": {
+          "description": "Task that issued the tool call (1.2 additive).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_call_id": {
+          "description": "Provider tool-call id this approval gates (1.2 additive).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "args_sha256": {
+          "description": "SHA-256 of the canonical tool arguments the nonce is bound to (1.2 additive).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expires_at": {
+          "description": "Approval expiry (TTL) so the UI can show a countdown (1.2 additive).",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Timestamp"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1446,6 +1500,18 @@
         "ApprovalId": {
           "type": "string",
           "format": "uuid"
+        },
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "Timestamp": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1642,6 +1708,151 @@
       "title": "EmptyPayload",
       "description": "Payload for events that carry no fields (`PING` / `PONG`).",
       "type": "object"
+    },
+    "TOOL_CALL": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ToolCallPayload",
+      "description": "`TOOL_CALL` payload (1.2 additive): identity of one model-issued tool call.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run the tool call belongs to.",
+          "$ref": "#/$defs/RunId"
+        },
+        "task_id": {
+          "description": "Task that issued the tool call.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "tool_call_id": {
+          "description": "Provider tool-call id (stable across the call and its result).",
+          "type": "string"
+        },
+        "tool": {
+          "description": "Tool id from the frozen tool registry (`file_read`, `shell_exec`, ...).",
+          "type": "string"
+        },
+        "args_sha256": {
+          "description": "SHA-256 (lowercase hex) of the canonical JSON arguments.",
+          "type": "string"
+        },
+        "turn": {
+          "description": "Loop turn (1-based) the call belongs to.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "run_id",
+        "task_id",
+        "tool_call_id",
+        "tool",
+        "args_sha256",
+        "turn"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "TOOL_RESULT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ToolResultPayload",
+      "description": "`TOOL_RESULT` payload (1.2 additive): outcome summary, never the tool body.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run the tool call belongs to.",
+          "$ref": "#/$defs/RunId"
+        },
+        "task_id": {
+          "description": "Task that issued the tool call.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "tool_call_id": {
+          "description": "Provider tool-call id this result answers.",
+          "type": "string"
+        },
+        "outcome": {
+          "description": "Outcome vocabulary value.",
+          "$ref": "#/$defs/ToolOutcome"
+        },
+        "code": {
+          "description": "Named refusal code when the outcome is `refused` (and optionally others).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bytes": {
+          "description": "Result size in bytes when known; absent stays absent (never fabricated 0).",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "sha256": {
+          "description": "SHA-256 of the result body when known (redaction-safe fingerprint).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "run_id",
+        "task_id",
+        "tool_call_id",
+        "outcome"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "ToolOutcome": {
+          "description": "Tool-call outcome vocabulary (1.2 additive; wire values are snake_case).",
+          "oneOf": [
+            {
+              "description": "The tool executed and produced a successful result.",
+              "type": "string",
+              "const": "ok"
+            },
+            {
+              "description": "The tool refused by name (validation/jail/limit).",
+              "type": "string",
+              "const": "refused"
+            },
+            {
+              "description": "The operator denied the approval request; nothing executed.",
+              "type": "string",
+              "const": "denied"
+            },
+            {
+              "description": "The call exceeded its time bound; no side effect is claimed.",
+              "type": "string",
+              "const": "timeout"
+            },
+            {
+              "description": "The run/task was cancelled before or during the call.",
+              "type": "string",
+              "const": "cancelled"
+            }
+          ]
+        }
+      }
     }
   }
 }

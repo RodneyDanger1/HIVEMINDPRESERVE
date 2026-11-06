@@ -140,6 +140,8 @@ pub fn event_payload_schema(name: EventName) -> Option<Result<Value, Refusal>> {
         EventName::FileContent => to_schema_value::<crate::event::FileContent>(),
         EventName::HistorySnapshot => to_schema_value::<crate::event::HistorySnapshot>(),
         EventName::Ping | EventName::Pong => to_schema_value::<crate::event::EmptyPayload>(),
+        EventName::ToolCall => to_schema_value::<crate::event::ToolCallPayload>(),
+        EventName::ToolResult => to_schema_value::<crate::event::ToolResultPayload>(),
     };
     Some(schema)
 }

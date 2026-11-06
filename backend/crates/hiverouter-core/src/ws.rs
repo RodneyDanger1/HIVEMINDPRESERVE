@@ -1,4 +1,4 @@
-﻿//! Localhost WebSocket transport.
+//! Localhost WebSocket transport.
 //!
 //! One axum `/ws` endpoint (blueprint Phase 2, WP 2.5/2.6/2.8): loopback-only,
 //! Origin allowlist + per-session token gate before the upgrade, `hello{last_seq}`
@@ -463,7 +463,14 @@ async fn handle_client_text(
             Ok(())
         }
         Command::ApprovalResolve(payload) => {
-            match state.tools.resolve_approval(&payload) {
+            // One wiring point owns the decision evidence: the gate consumes the
+            // nonce once, then exactly one ledger row is appended for the committed
+            // decision (refusals return before any ledger write). A ledger failure
+            // surfaces as ERROR, never as a fake ACK/APPROVAL_RESOLVED.
+            let ledger_dir = crate::tools_bridge::ToolsBridge::approval_ledger_dir(
+                &state.config.data_dir,
+            );
+            match state.tools.resolve_approval_ledgered(&payload, &ledger_dir) {
                 Ok(resolution) => {
                     let resolved =
                         crate::tools_bridge::ToolsBridge::approval_resolved_event(&resolution);

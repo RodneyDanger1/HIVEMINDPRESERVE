@@ -58,6 +58,10 @@ pub enum EventName {
     Ping,
     /// Keepalive reply.
     Pong,
+    /// A model-issued tool call started (1.2 additive; no execution implied).
+    ToolCall,
+    /// A tool call finished with its outcome (1.2 additive).
+    ToolResult,
 }
 
 impl EventName {
@@ -84,6 +88,8 @@ impl EventName {
         EventName::HistorySnapshot,
         EventName::Ping,
         EventName::Pong,
+        EventName::ToolCall,
+        EventName::ToolResult,
     ];
 
     /// Stable wire name (SCREAMING_SNAKE_CASE).
@@ -111,6 +117,8 @@ impl EventName {
             EventName::HistorySnapshot => "HISTORY_SNAPSHOT",
             EventName::Ping => "PING",
             EventName::Pong => "PONG",
+            EventName::ToolCall => "TOOL_CALL",
+            EventName::ToolResult => "TOOL_RESULT",
         }
     }
 
@@ -249,6 +257,109 @@ pub struct ApprovalRequest {
     /// Pending decision; absent while the request is open.
     #[serde(default)]
     pub decision: Option<String>,
+    /// Single-use nonce required by `APPROVAL_RESOLVE` (1.2 additive).
+    ///
+    /// Optional for wire compatibility: pre-1.2 frames carry no nonce; a frame
+    /// without it cannot be resolved from the UI (the existing honest gap).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
+    /// Run the tool call belongs to (1.2 additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<RunId>,
+    /// Task that issued the tool call (1.2 additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<TaskId>,
+    /// Provider tool-call id this approval gates (1.2 additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    /// SHA-256 of the canonical tool arguments the nonce is bound to (1.2 additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub args_sha256: Option<String>,
+    /// Approval expiry (TTL) so the UI can show a countdown (1.2 additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<crate::timestamp::Timestamp>,
+}
+
+/// Tool-call outcome vocabulary (1.2 additive; wire values are snake_case).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolOutcome {
+    /// The tool executed and produced a successful result.
+    Ok,
+    /// The tool refused by name (validation/jail/limit).
+    Refused,
+    /// The operator denied the approval request; nothing executed.
+    Denied,
+    /// The call exceeded its time bound; no side effect is claimed.
+    Timeout,
+    /// The run/task was cancelled before or during the call.
+    Cancelled,
+}
+
+impl ToolOutcome {
+    /// Stable wire label.
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ToolOutcome::Ok => "ok",
+            ToolOutcome::Refused => "refused",
+            ToolOutcome::Denied => "denied",
+            ToolOutcome::Timeout => "timeout",
+            ToolOutcome::Cancelled => "cancelled",
+        }
+    }
+
+    /// Parses a wire label.
+    #[must_use]
+    pub fn from_str(label: &str) -> Option<ToolOutcome> {
+        match label {
+            "ok" => Some(ToolOutcome::Ok),
+            "refused" => Some(ToolOutcome::Refused),
+            "denied" => Some(ToolOutcome::Denied),
+            "timeout" => Some(ToolOutcome::Timeout),
+            "cancelled" => Some(ToolOutcome::Cancelled),
+            _ => None,
+        }
+    }
+}
+
+/// `TOOL_CALL` payload (1.2 additive): identity of one model-issued tool call.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ToolCallPayload {
+    /// Run the tool call belongs to.
+    pub run_id: RunId,
+    /// Task that issued the tool call.
+    pub task_id: TaskId,
+    /// Provider tool-call id (stable across the call and its result).
+    pub tool_call_id: String,
+    /// Tool id from the frozen tool registry (`file_read`, `shell_exec`, ...).
+    pub tool: String,
+    /// SHA-256 (lowercase hex) of the canonical JSON arguments.
+    pub args_sha256: String,
+    /// Loop turn (1-based) the call belongs to.
+    pub turn: u32,
+}
+
+/// `TOOL_RESULT` payload (1.2 additive): outcome summary, never the tool body.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ToolResultPayload {
+    /// Run the tool call belongs to.
+    pub run_id: RunId,
+    /// Task that issued the tool call.
+    pub task_id: TaskId,
+    /// Provider tool-call id this result answers.
+    pub tool_call_id: String,
+    /// Outcome vocabulary value.
+    pub outcome: ToolOutcome,
+    /// Named refusal code when the outcome is `refused` (and optionally others).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    /// Result size in bytes when known; absent stays absent (never fabricated 0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
+    /// SHA-256 of the result body when known (redaction-safe fingerprint).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
 }
 
 /// `APPROVAL_RESOLVED` payload.
@@ -372,6 +483,10 @@ pub enum Event {
     Ping(EmptyPayload),
     /// Keepalive reply.
     Pong(EmptyPayload),
+    /// See [`ToolCallPayload`].
+    ToolCall(ToolCallPayload),
+    /// See [`ToolResultPayload`].
+    ToolResult(ToolResultPayload),
 }
 
 impl Event {
@@ -400,6 +515,8 @@ impl Event {
             Event::HistorySnapshot(_) => EventName::HistorySnapshot,
             Event::Ping(_) => EventName::Ping,
             Event::Pong(_) => EventName::Pong,
+            Event::ToolCall(_) => EventName::ToolCall,
+            Event::ToolResult(_) => EventName::ToolResult,
         }
     }
 
@@ -437,6 +554,8 @@ impl Event {
             EventName::HistorySnapshot => Event::HistorySnapshot(envelope.decode_payload()?),
             EventName::Ping => Event::Ping(envelope.decode_payload()?),
             EventName::Pong => Event::Pong(envelope.decode_payload()?),
+            EventName::ToolCall => Event::ToolCall(envelope.decode_payload()?),
+            EventName::ToolResult => Event::ToolResult(envelope.decode_payload()?),
         };
         Ok(event)
     }
@@ -468,6 +587,8 @@ impl Event {
             Event::HistorySnapshot(payload) => serde_json::to_value(payload),
             Event::Ping(payload) => serde_json::to_value(payload),
             Event::Pong(payload) => serde_json::to_value(payload),
+            Event::ToolCall(payload) => serde_json::to_value(payload),
+            Event::ToolResult(payload) => serde_json::to_value(payload),
         };
         value.map_err(|_| Refusal::SchemaInvalid)
     }
@@ -510,6 +631,8 @@ mod tests {
             "HISTORY_SNAPSHOT",
             "PING",
             "PONG",
+            "TOOL_CALL",
+            "TOOL_RESULT",
         ];
         assert_eq!(EventName::ALL.len(), frozen.len());
         for (name, expected) in EventName::ALL.iter().zip(frozen) {

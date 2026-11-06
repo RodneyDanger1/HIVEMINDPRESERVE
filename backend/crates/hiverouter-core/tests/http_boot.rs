@@ -1,4 +1,4 @@
-//! Boot + HTTP acceptance tests for Phase 1: the binary boots on loopback, serves
+﻿//! Boot + HTTP acceptance tests for Phase 1: the binary boots on loopback, serves
 //! `GET /health`, returns an honest 404, and refuses a non-loopback bind by name.
 
 use std::net::SocketAddr;
@@ -98,7 +98,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 3);
+    assert_eq!(health["database"]["schema_version"], 4);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -230,3 +230,4 @@ async fn diagnose_route_returns_tools_json() {
     assert!(!body.contains("DEEPSEEK_API_KEY"));
     assert!(!body.contains("sk-"));
 }
+

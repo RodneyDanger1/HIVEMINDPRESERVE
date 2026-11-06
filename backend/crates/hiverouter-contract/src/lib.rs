@@ -35,7 +35,7 @@ pub use command::{
     TemplateInsert, ViewportRecenter, ViewportSet,
 };
 pub use envelope::{Envelope, FrameKind};
-pub use event::{Event, EventName};
+pub use event::{Event, EventName, ToolCallPayload, ToolOutcome, ToolResultPayload};
 pub use ids::{ApprovalId, RunId, TaskId};
 pub use refusal::Refusal;
 pub use schema::{

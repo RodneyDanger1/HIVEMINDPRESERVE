@@ -12,6 +12,7 @@ import type {
   Refusal,
   RunMetricsPayload,
   ServerCommandName,
+  ToolOutcome,
 } from '../api/contract';
 import {
   isRunActive,
@@ -19,7 +20,12 @@ import {
   type AgentState,
   type NodeKindLabel,
 } from './agentState';
-import { isNodeKind, validatePromptText, validateWorkspacePath } from '../api/contract';
+import {
+  isNodeKind,
+  isToolOutcome,
+  validatePromptText,
+  validateWorkspacePath,
+} from '../api/contract';
 import { shortId, uuidv7 } from '../api/ids';
 import { RefusalError, clientRefusal } from '../api/refusals';
 import type { ConnectionStatus, SessionInfo, UiApi } from '../api/client';
@@ -58,6 +64,37 @@ export interface ApprovalRecord {
   readonly nonce: string | null;
   readonly decision: string | null;
   readonly requestedAt: number;
+  /* 1.2 additive fields: present as null when the server omits them. */
+  readonly runId: string | null;
+  readonly taskId: string | null;
+  readonly toolCallId: string | null;
+  readonly argsSha256: string | null;
+  readonly expiresAt: string | null;
+}
+
+/** One model-issued tool call: identity + args hash + exactly one terminal outcome. */
+export interface ToolActivityRecord {
+  readonly toolCallId: string;
+  readonly tool: string;
+  readonly argsSha256: string;
+  readonly turn: number;
+  readonly outcome: 'pending' | ToolOutcome;
+  readonly code?: string;
+  readonly text?: string;
+}
+
+/**
+ * Deterministic policy constant for out-of-order TOOL_RESULT frames: at most this many
+ * results can wait for their TOOL_CALL (FIFO overflow drops the oldest, never rendered).
+ */
+export const MAX_BUFFERED_TOOL_RESULTS = 16;
+
+/** Buffered terminal outcome waiting for its TOOL_CALL (never part of the rendered rows). */
+interface BufferedToolResult {
+  readonly toolCallId: string;
+  readonly runId: string;
+  readonly outcome: ToolOutcome;
+  readonly code?: string;
 }
 
 export interface RunRecord {
@@ -121,6 +158,10 @@ export interface UiState {
     readonly replayGraph: ReplayGraph | null;
   };
   readonly approvals: readonly ApprovalRecord[];
+  /** Approval ids with an in-flight APPROVAL_RESOLVE command (double-submit guard). */
+  readonly resolvingApprovals: readonly string[];
+  /** Server-reported tool calls in arrival order; outcomes transition pending -> terminal once. */
+  readonly toolActivity: readonly ToolActivityRecord[];
   readonly refusals: readonly ToastRefusal[];
   readonly pendingCommands: Readonly<Record<string, PendingCommand>>;
   readonly view: { readonly nav: NavSection; readonly tab: TabId };
@@ -199,6 +240,47 @@ function initialFileTree(): FileTreeState {
 
 export function createUiStore(api: UiApi): StoreApi<UiState> {
   const unsubscribes: Array<() => void> = [];
+  // Out-of-order TOOL_RESULTs wait here until their TOOL_CALL arrives. The buffer is
+  // intentionally closure-local: it is never rendered and never leaves the store.
+  const bufferedToolResults: BufferedToolResult[] = [];
+
+  const bufferToolResult = (payload: {
+    readonly tool_call_id: string;
+    readonly run_id: string;
+    readonly outcome: ToolOutcome;
+    readonly code?: string | null;
+  }): void => {
+    if (bufferedToolResults.some((entry) => entry.toolCallId === payload.tool_call_id)) {
+      return; // dedupe: the first result per tool-call id wins
+    }
+    const code = payload.code ?? undefined;
+    bufferedToolResults.push({
+      toolCallId: payload.tool_call_id,
+      runId: payload.run_id,
+      outcome: payload.outcome,
+      ...(code === undefined ? {} : { code }),
+    });
+    if (bufferedToolResults.length > MAX_BUFFERED_TOOL_RESULTS) {
+      bufferedToolResults.shift(); // bounded: oldest orphan is dropped, never rendered
+    }
+  };
+
+  const takeBufferedToolResult = (toolCallId: string): BufferedToolResult | null => {
+    const index = bufferedToolResults.findIndex((entry) => entry.toolCallId === toolCallId);
+    if (index === -1) {
+      return null;
+    }
+    const [entry] = bufferedToolResults.splice(index, 1);
+    return entry ?? null;
+  };
+
+  const dropBufferedToolResultsForRun = (runId: string): void => {
+    for (let index = bufferedToolResults.length - 1; index >= 0; index -= 1) {
+      if (bufferedToolResults[index]?.runId === runId) {
+        bufferedToolResults.splice(index, 1);
+      }
+    }
+  };
 
   return createStore<UiState>()((set, get) => {
     const pushRefusal = (refusal: Refusal): void => {
@@ -241,6 +323,11 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           return;
         }
         case 'RUN_STATUS': {
+          // Deterministic cleanup: once a run is terminal, an orphan TOOL_RESULT for it
+          // can never be replayed by a later TOOL_CALL, so drop the buffered entry.
+          if (isTerminal(event.payload.status)) {
+            dropBufferedToolResultsForRun(event.payload.run_id);
+          }
           const run = get().run;
           if (!run || run.id !== event.payload.run_id) {
             return;
@@ -322,6 +409,78 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           set({ metrics: event.payload });
           return;
         }
+        case 'TOOL_CALL': {
+          const payload = event.payload;
+          // Dedupe by provider tool-call id: the first identity wins and arrival order
+          // is preserved; a replay must not duplicate the activity row.
+          const existing = get().toolActivity.find(
+            (record) => record.toolCallId === payload.tool_call_id,
+          );
+          if (existing) {
+            return;
+          }
+          // A terminal result may have arrived before this call (fan-out ordering):
+          // create the row directly in its terminal state and consume the buffer entry.
+          const buffered = takeBufferedToolResult(payload.tool_call_id);
+          const record: ToolActivityRecord = buffered
+            ? {
+                toolCallId: payload.tool_call_id,
+                tool: payload.tool,
+                argsSha256: payload.args_sha256,
+                turn: payload.turn,
+                outcome: buffered.outcome,
+                ...(buffered.code === undefined ? {} : { code: buffered.code }),
+              }
+            : {
+                toolCallId: payload.tool_call_id,
+                tool: payload.tool,
+                argsSha256: payload.args_sha256,
+                turn: payload.turn,
+                outcome: 'pending',
+              };
+          set({ toolActivity: [...get().toolActivity, record] });
+          return;
+        }
+        case 'TOOL_RESULT': {
+          const payload = event.payload;
+          // A malformed/unknown outcome never transitions activity (no fabricated state).
+          if (!isToolOutcome(payload.outcome)) {
+            return;
+          }
+          const existing = get().toolActivity.find(
+            (record) => record.toolCallId === payload.tool_call_id,
+          );
+          if (!existing) {
+            // Stale late result: the current run already reached a terminal state, so a
+            // later TOOL_CALL cannot belong to a live execution. Drop it instead of
+            // buffering a terminal outcome that must never be replayed.
+            const currentRun = get().run;
+            if (
+              currentRun !== null &&
+              currentRun.id === payload.run_id &&
+              isTerminal(currentRun.status)
+            ) {
+              return;
+            }
+            // Out-of-order result: buffer it (bounded/deduped) and replay on the late
+            // TOOL_CALL. Never fabricate a row from a result alone.
+            bufferToolResult(payload);
+            return;
+          }
+          // Terminal outcome is immutable: the first result wins, later results are ignored.
+          if (existing.outcome !== 'pending') {
+            return;
+          }
+          const code = payload.code ?? undefined;
+          set({
+            toolActivity: get().toolActivity.map((record) =>
+              record.toolCallId === payload.tool_call_id
+                ? { ...record, outcome: payload.outcome, ...(code === undefined ? {} : { code }) }
+                : record,
+            ),
+          });
+          return;
+        }
         case 'APPROVAL_REQUEST': {
           const approval: ApprovalRecord = {
             approvalId: event.payload.approval_id,
@@ -329,6 +488,11 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
             nonce: event.payload.nonce ?? null,
             decision: event.payload.decision ?? null,
             requestedAt: Date.now(),
+            runId: event.payload.run_id ?? null,
+            taskId: event.payload.task_id ?? null,
+            toolCallId: event.payload.tool_call_id ?? null,
+            argsSha256: event.payload.args_sha256 ?? null,
+            expiresAt: event.payload.expires_at ?? null,
           };
           set({
             approvals: [...get().approvals.filter((a) => a.approvalId !== approval.approvalId), approval],
@@ -456,6 +620,8 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       metrics: null,
       history: { latest: 0, selected: 0, replayGraph: null },
       approvals: [],
+      resolvingApprovals: [],
+      toolActivity: [],
       refusals: [],
       pendingCommands: {},
       view: { nav: 'workspace', tab: 'workspace' },
@@ -575,6 +741,11 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
         decision: 'approve' | 'deny',
         reason?: string,
       ): Promise<void> {
+        // In-flight guard: a second approve/deny gesture must not send a second
+        // command while the first is awaiting ACK/refusal.
+        if (get().resolvingApprovals.includes(approvalId)) {
+          return;
+        }
         const approval = get().approvals.find((candidate) => candidate.approvalId === approvalId);
         if (!approval) {
           pushRefusal(clientRefusal('E_APPROVAL_NOT_FOUND'));
@@ -588,12 +759,21 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           );
           return;
         }
-        await run('APPROVAL_RESOLVE', {
-          approval_id: approvalId,
-          nonce: approval.nonce,
-          decision,
-          ...(reason === undefined ? {} : { reason }),
-        });
+        // No optimistic approve/deny: the approval stays untouched until the server's
+        // APPROVAL_RESOLVED event arrives.
+        set({ resolvingApprovals: [...get().resolvingApprovals, approvalId] });
+        try {
+          await run('APPROVAL_RESOLVE', {
+            approval_id: approvalId,
+            nonce: approval.nonce,
+            decision,
+            ...(reason === undefined ? {} : { reason }),
+          });
+        } finally {
+          set({
+            resolvingApprovals: get().resolvingApprovals.filter((id) => id !== approvalId),
+          });
+        }
       },
 
       async pinChat(pinned: boolean): Promise<void> {

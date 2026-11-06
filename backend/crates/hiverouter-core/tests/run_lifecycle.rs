@@ -112,6 +112,7 @@ impl ProviderExecutor for MockExecutor {
                 total_tokens: Some(3),
                 ..Usage::default()
             },
+            tool_calls: Vec::new(),
         })
     }
 }

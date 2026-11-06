@@ -1,7 +1,7 @@
 {
   "name": "hiverouter-web",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0-dev",
   "type": "module",
   "description": "HiveMind spatial execution environment \u00e2\u20ac\u201d React 19 + Vite 8 localhost UI for the verified blueprint.",
   "engines": {

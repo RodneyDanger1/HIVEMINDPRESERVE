@@ -21,9 +21,11 @@ pub mod planner;
 pub mod prompts;
 pub mod provider_executor;
 pub mod recovery;
+pub mod run_state;
 pub mod snapshot;
 pub mod static_ui;
 pub mod store;
+pub mod tool_loop;
 pub mod tools_bridge;
 pub mod ws;
 
@@ -32,9 +34,11 @@ pub use caps::Caps;
 pub use checks::{run_checks, Check};
 pub use config::{Config, ConfigError};
 pub use context::{ContextStore, ScopedContext};
-pub use db::{Database, DbError, Migration, MIGRATIONS};
+pub use db::{Database, DbError, Migration, ToolTurnRecord, MIGRATIONS};
 pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
-pub use execution::{DeltaSink, ProviderExecutor, RunEngine, RunRegistry, StreamedReply};
+pub use execution::{
+    DeltaSink, ProviderExecutor, RunEngine, RunRegistry, StreamedReply, ToolTurnTranscript,
+};
 pub use graph::{GraphAuthority, GraphSnapshot, TaskNode};
 pub use handshake::{HandshakeFrame, HandshakeLog, HandshakeOutcome};
 pub use history::{HistoryReadModel, TimeTravel};
@@ -43,7 +47,16 @@ pub use planner::{Plan, PlanNode};
 pub use prompts::{Persona, TemplateRegistry};
 pub use provider_executor::ProviderExecutorAdapter;
 pub use recovery::{recover_on_boot, RecoveryReport};
+pub use run_state::{
+    apply_run, apply_task, can_apply_run, can_apply_task, Effect, RunStateError, RunTransition,
+    Scope, StateEvent, TaskTransition,
+};
 pub use snapshot::{SnapshotEnvelope, SnapshotStore};
 pub use store::RunStore;
+pub use tool_loop::{
+    bounded_tool_text, call_payload, check_call_budget, next_turn, permission_for, plan_call,
+    requires_approval, tool_specs_for_tier, validate_plan, ToolCallPlan, ToolExecution,
+    MAX_CALLS_PER_RUN, MAX_TOOL_RESULT_BYTES, MAX_TOOL_TURNS,
+};
 pub use tools_bridge::ToolsBridge;
 pub use ws::SessionAuth;

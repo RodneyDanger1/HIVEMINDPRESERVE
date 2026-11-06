@@ -1,4 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import {
   openWsProbe,
@@ -9,6 +12,16 @@ import {
   type LiveServer,
   type ProbeEnvelope,
 } from '../helpers/live-server';
+
+const CAPTURE_DIR = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../docs/trace/live/captures/w11',
+);
+
+function writeCapture(name: string, value: unknown): void {
+  mkdirSync(CAPTURE_DIR, { recursive: true });
+  writeFileSync(resolve(CAPTURE_DIR, name), `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
 
 /**
  * W4 live streaming proof â€” boots the REAL Rust server on an ephemeral loopback port +
@@ -166,6 +179,14 @@ test.describe('live streaming (real server, ephemeral process)', () => {
       (frame) => frame.name === 'RUN_STATUS' && frame.payload?.run_id === runId && frame.payload?.status === 'failed',
     );
     expect(failed).toEqual([]);
+    writeCapture('live-streaming.json', {
+      captured_at: new Date().toISOString(),
+      release_binary: process.env.E2E_SERVER_BIN ?? null,
+      run_id: runId,
+      reply_text: deltas.map((delta) => String(delta.payload?.text_delta)).join(''),
+      usage: done.payload?.usage ?? null,
+      frames: JSON.parse(redactSecrets(JSON.stringify(frames))) as unknown,
+    });
     await probe.close();
   });
 });

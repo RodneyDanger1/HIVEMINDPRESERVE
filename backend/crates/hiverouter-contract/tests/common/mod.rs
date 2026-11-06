@@ -13,12 +13,12 @@ use hiverouter_contract::event::{
     Ack, ApprovalRequest, ApprovalResolved, EmptyPayload, ErrorPayload, Event, FileContent,
     FileTreeEntry, FileTreeResult, HistorySnapshot, NodeEvent, ReplyDelta, ReplyDone,
     ResyncRequiredPayload, RunCreated, RunMetrics, RunStatusPayload, ServerHello,
-    SettingsStatusResult,
+    SettingsStatusResult, ToolCallPayload, ToolOutcome, ToolResultPayload,
 };
 use hiverouter_contract::ids::{ApprovalId, RunId, TaskId};
 use hiverouter_contract::state::AgentState;
 use hiverouter_contract::usage::Usage;
-use hiverouter_contract::Refusal;
+use hiverouter_contract::{Refusal, Timestamp};
 
 /// One representative value for every frozen command (the decision-gated names
 /// are covered by their refusal samples instead).
@@ -139,8 +139,18 @@ pub fn event_samples() -> Vec<Event> {
         }),
         Event::ApprovalRequest(ApprovalRequest {
             approval_id,
-            tool: "shell.run".to_owned(),
+            tool: "file_write".to_owned(),
             decision: None,
+            // 1.2 additive fields: a model-originated approval carries the
+            // nonce/args binding that APPROVAL_RESOLVE requires.
+            nonce: Some("nonce-1".to_owned()),
+            run_id: Some(run_id),
+            task_id: Some(task_id),
+            tool_call_id: Some("call_01".to_owned()),
+            args_sha256: Some(
+                "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08".to_owned(),
+            ),
+            expires_at: Some(Timestamp::parse("2026-11-06T09:20:00Z").expect("valid expiry")),
         }),
         Event::ApprovalResolved(ApprovalResolved {
             approval_id,
@@ -182,6 +192,23 @@ pub fn event_samples() -> Vec<Event> {
         }),
         Event::Ping(EmptyPayload {}),
         Event::Pong(EmptyPayload {}),
+        Event::ToolCall(ToolCallPayload {
+            run_id,
+            task_id,
+            tool_call_id: "call_01".to_owned(),
+            tool: "file_read".to_owned(),
+            args_sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08".to_owned(),
+            turn: 1,
+        }),
+        Event::ToolResult(ToolResultPayload {
+            run_id,
+            task_id,
+            tool_call_id: "call_01".to_owned(),
+            outcome: ToolOutcome::Refused,
+            code: Some(Refusal::ToolNotAllowed.code().to_owned()),
+            bytes: Some(0),
+            sha256: None,
+        }),
     ]
 }
 

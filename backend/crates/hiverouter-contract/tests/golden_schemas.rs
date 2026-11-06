@@ -103,4 +103,17 @@ fn event_payloads_validate_against_their_generated_schemas() {
         schema::validate_event_payload(EventName::Ack, &json!({"command": "NOPE"})),
         Err(hiverouter_contract::Refusal::SchemaInvalid)
     );
+    // 1.2 additive: an undocumented tool-call outcome is refused by the schema.
+    assert_eq!(
+        schema::validate_event_payload(
+            EventName::ToolResult,
+            &json!({
+                "run_id": "019a0d5c-1111-7abc-8def-0123456789ab",
+                "task_id": "019a0d5c-1111-7abc-8def-0123456789ac",
+                "tool_call_id": "call_01",
+                "outcome": "exploded",
+            }),
+        ),
+        Err(hiverouter_contract::Refusal::SchemaInvalid)
+    );
 }
