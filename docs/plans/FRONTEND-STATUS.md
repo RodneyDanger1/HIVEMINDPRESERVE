@@ -1,5 +1,7 @@
 # FRONTEND STATUS — HiveMind v1 web (owned `web/**`)
 
+> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** This is a historical frontend status snapshot. The UI state vocabulary is now **16 states including `interrupted`** (was 15 in the milestone-1/2 snapshot; `web/src/state/agentState.ts`, verified count 16), and the frozen contract has since been patched to **14 commands / 21 events / 65 refusal codes** (current sources: `web/src/api/contract.ts`, `backend/crates/hiverouter-contract`). The 15-state references below (incl. line 73) are retained as dated evidence, not current description.
+
 Updated: 2026-11-06 04:27 CST · Owner: FRONTEND seat · Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 
 ## What exists now (milestone 1 — foundation)

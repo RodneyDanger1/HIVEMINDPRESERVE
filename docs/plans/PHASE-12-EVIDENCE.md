@@ -1,5 +1,7 @@
 # PHASE 12 EVIDENCE — Packaging, Release & Runbook
 
+> **Superseded for current release state — dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** The "Final shipped artifact" block (`:136-143`) is the pre-1.0.0 phase snapshot. Current 1.0.0 artifacts: server `target/release/hiverouter.exe` 13,253,120 B sha256 `b17eb3d6…062a9a`; CLI `49f46e2b…386623` 5,373,952 B; package `dist/HiveMind-1.0.0-win64.zip` 8,444,021 B sha256 `46305fcb…6105ef`; backend gate **237 passed / 0 failed / 2 ignored**; web 46/46. Historical binary `184D51A7…`, zip `9B2ED5A7… / 4,065,104 B` and 233-test count are retained below as dated evidence only. Current record: `docs/RELEASE-EVIDENCE.md`.
+
 Owner: B-Provider. Date: 2026-11-06 (CST). Blueprint card: Phase 12 (WPs 12.1–12.4).
 Truthful packaging statement: **v1 = localhost server + browser UI.** No installer, no Tauri/WebView2 desktop
 shell, no service registration is built or claimed (blueprint D3/CF-04). Tauri remains optional/UNVERIFIED.

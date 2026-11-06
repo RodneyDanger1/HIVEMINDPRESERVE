@@ -5,13 +5,13 @@
 //! This test exercises the same `ProviderExecutorAdapter` the server uses:
 //! planner call -> validated plan -> one leaf call -> truthful usage.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use hiverouter_contract::{AgentState, RunId, TaskId, Usage};
+use hiverouter_contract::{AgentState, RunId};
 use hiverouter_core::config::ProviderSettings;
 use hiverouter_core::entities::TaskRecord;
-use hiverouter_core::execution::ProviderExecutor;
+use hiverouter_core::execution::{DeltaSink, ProviderExecutor};
 use hiverouter_core::provider_executor::ProviderExecutorAdapter;
 use tokio_util::sync::CancellationToken;
 
@@ -54,9 +54,24 @@ async fn live_plan_and_leaf_are_real() {
         state: AgentState::Running,
         rev: 0,
     };
+    let streamed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+    let sink: DeltaSink = {
+        let streamed = Arc::clone(&streamed);
+        Arc::new(move |delta: &str| {
+            if let Ok(mut fragments) = streamed.lock() {
+                fragments.push(delta.to_owned());
+            }
+        })
+    };
     let reply = tokio::time::timeout(
         Duration::from_secs(180),
-        adapter.execute(run_id, &task, "Reply with exactly HIVE-PROVIDER-OK", &cancel),
+        adapter.execute(
+            run_id,
+            &task,
+            "Reply with exactly HIVE-PROVIDER-OK",
+            &cancel,
+            &sink,
+        ),
     )
     .await
     .expect("leaf timeout")
@@ -65,6 +80,14 @@ async fn live_plan_and_leaf_are_real() {
     let text = reply.text();
     assert!(!text.trim().is_empty(), "provider returned empty content");
     assert!(reply.usage.prompt_tokens.is_some(), "usage must be measured");
+    let fragments = streamed.lock().expect("streamed fragments");
+    assert!(!fragments.is_empty(), "the live reply must stream at least one fragment");
+    assert_eq!(
+        fragments.concat(),
+        text,
+        "streamed fragments concatenate to the persisted reply text"
+    );
+    drop(fragments);
     println!("reply={text}");
     println!("usage={:?}", reply.usage);
 }

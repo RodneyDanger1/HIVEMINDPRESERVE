@@ -23,14 +23,14 @@ Started `target/release/hiverouter.exe` on `127.0.0.1:8800` with a fresh data di
 - `HISTORY_REVISION_SET` revision 0 → `HISTORY_SNAPSHOT` with **2 graph nodes** (real snapshot; not fabricated).
 - The key never appeared in the server log, settings payload, or evidence.
 - Child-process isolation: shell/tool spawns remove `DEEPSEEK_API_KEY` before execution (`shell.rs`, `cli_support.rs`), pinned by the new `child_process_does_not_inherit_the_provider_key` test.
-- Source commit for this build: `6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540`; manifest: `tools/release-manifest.json`; web dist hash `86a1c088dc912517b7abf135f71f0b18526d36bc4e0bde8aa160972353673844`.
+- Source commit for this build: `6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540`; manifest: `tools/release-manifest.json`; web-dist hashes are recorded **per file** in the manifest (`web_dist_files`: `index.html` `8264ae92…8776d`, `index-6T84PJfk.js` `b771bc2e…49bc`, `index-BWOl__uM.css` `96ffa873…3a748`; the former opaque aggregate `86a1c088…` was retired by release commit `87dada4`).
 
 ## Test evidence at integration baseline
 
 - Rust workspace on sealed commit `6a2b1c6`: **237 passed / 0 failed / 2 ignored** (`docs/evidence/final-gate-tests.log`, includes HEAD/command/exit); the ignored tests are the explicit live-provider test and one live-gated test.
 - Web: **46/46** unit tests, typecheck 0 errors, Vite production build green (`docs/evidence/final-web-tests.log`, `final-web-build.log`).
 - Live provider adapter: planner node + `HIVE-PROVIDER-OK`, usage 99 tokens (`docs/evidence/live-provider-smoke.md` has the server-level run).
-- Key scan over the non-vendor tree: 0 occurrences of a `sk-...` credential; tracked-tree child spawns remove the key.
+- Key scan: strict credential pattern (`sk-[A-Za-z0-9]{32,}`) = **0 occurrences across 677 tracked non-vendor files**; literal `sk-` substrings exist only as obvious unit-test fixtures (`provider/src/client.rs`, `secret.rs`, `tests/refusal_matrix.rs`, `tools/src/shell.rs`) and embedded binary strings — no key material. Tracked-tree child spawns remove the key.
 
 ## Known limits (also in `docs/RELEASE.md`)
 

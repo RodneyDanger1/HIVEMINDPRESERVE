@@ -11,7 +11,7 @@ use hiverouter_contract::event::EventName;
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Usage};
 use hiverouter_core::bus::{EventBus, SequencedEvent};
 use hiverouter_core::db::Database;
-use hiverouter_core::execution::{ProviderExecutor, RunEngine, StreamedReply};
+use hiverouter_core::execution::{DeltaSink, ProviderExecutor, RunEngine, StreamedReply};
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
 use hiverouter_core::prompts::TemplateRegistry;
@@ -85,6 +85,7 @@ impl ProviderExecutor for MockExecutor {
         task: &hiverouter_core::entities::TaskRecord,
         _prompt: &str,
         cancel: &CancellationToken,
+        on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         let index = self.executed.fetch_add(1, Ordering::SeqCst);
         if self.slow {
@@ -96,8 +97,15 @@ impl ProviderExecutor for MockExecutor {
         if self.fail_on_execute == Some(index) {
             return Err(Refusal::LlmRateLimit);
         }
+        // Emulate a streaming provider: fragments reach the engine through the
+        // sink before execute returns, and their concatenation is also returned
+        // for persistence.
+        let deltas = vec![format!("task {} ", task.id), "done".to_owned()];
+        for delta in &deltas {
+            on_delta(delta);
+        }
         Ok(StreamedReply {
-            deltas: vec![format!("task {} ", task.id), "done".to_owned()],
+            deltas,
             usage: Usage {
                 prompt_tokens: Some(1),
                 completion_tokens: Some(2),
@@ -330,5 +338,48 @@ async fn spawn_sub_hive_unknown_parent_is_refused() {
     assert_eq!(
         harness.engine.spawn_sub_hive(TaskId::new(), "worker"),
         Err(Refusal::TaskNotFound)
+    );
+}
+
+#[tokio::test]
+async fn streamed_deltas_are_published_before_done_and_not_duplicated() {
+    let harness = test_engine(MockExecutor::new(leaf_plan(1, 1)));
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("stream one task", "p", Uuid::now_v7())
+        .expect("submit");
+
+    let mut fragments: Vec<String> = Vec::new();
+    loop {
+        let event = wait_for(&mut receiver, |_| true).await;
+        match event_name(&event) {
+            "REPLY_DELTA" => fragments.push(
+                event.envelope.payload["text_delta"]
+                    .as_str()
+                    .expect("text_delta string")
+                    .to_owned(),
+            ),
+            "REPLY_DONE" => break,
+            _ => {}
+        }
+    }
+    assert_eq!(
+        fragments.len(),
+        2,
+        "one REPLY_DELTA per sink fragment; the returned StreamedReply deltas are not replayed"
+    );
+    assert!(fragments[0].starts_with("task "), "first fragment: {}", fragments[0]);
+    assert_eq!(fragments[1], "done");
+
+    let messages = harness.store.messages(run.id).expect("messages");
+    let assistant = messages
+        .iter()
+        .find(|message| message.role == hiverouter_core::entities::ChatRole::Assistant)
+        .expect("assistant message");
+    assert_eq!(
+        assistant.text,
+        fragments.concat(),
+        "persisted text is the concatenation of the streamed fragments"
     );
 }

@@ -38,7 +38,9 @@ export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record
   for (const id of ids) {
     const task = tasks[id];
     const size = NODE_SIZE[task.kind];
-    graph.setNode(id, size);
+    // Dagre mutates the label it is given (adds x/y). Passing the shared size
+    // object makes every same-kind node inherit the last computed x/y.
+    graph.setNode(id, { width: size.width, height: size.height });
   }
   for (const id of ids) {
     const parentId = tasks[id].parentId;

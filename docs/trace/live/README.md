@@ -1,6 +1,8 @@
-﻿# Live app evidence — HiveMind v1 browser QA (2026-11-06)
+# Live app evidence — HiveMind v1 browser QA (2026-11-06)
 
-Base URL: **http://127.0.0.1:8799** (embedded UI served by `tools/bin/hiverouter.exe`; final build
+> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** This is the historical live-QA record from the pre-1.0.0 artifact (`184D51A7…` / asset `index-Cbfm1IuM.js`). Current 1.0.0 artifacts are server `b17eb3d6…062a9a` (13,253,120 B), CLI `49f46e2b…386623`, package `46305fcb…6105ef` (8,444,021 B); embedded assets are `index-6T84PJfk.js` / `index-BWOl__uM.css` (`web/dist/index.html` sha256 `8264ae92…8776d`). Current trace totals: **43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops** (`docs/trace/controls.json`) — the `260 UNVERIFIED / 5 MISSING` counts below are historical. Live-provider evidence now exists (`docs/evidence/key-validation.md`, `docs/evidence/live-provider-smoke.md`, READ-level) and supersedes any "no paid run" phrasing. Historical run rows and asset names below are kept as dated evidence; current release record: `docs/RELEASE-EVIDENCE.md`.
+
+Base URL: <http://127.0.0.1:8799> (embedded UI served by `tools/bin/hiverouter.exe`; final build
 `index-Cbfm1IuM.js`, process PID 33580, binary sha256 `184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9`).
 Harness: Playwright **1.65.0**, installed Chrome channel (no browser download), workers=1, no paid API.
 

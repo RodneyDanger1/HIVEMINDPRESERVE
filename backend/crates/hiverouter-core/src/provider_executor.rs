@@ -1,4 +1,4 @@
-//! Production provider adapter: the one place where the tested DeepSeek client
+﻿//! Production provider adapter: the one place where the tested DeepSeek client
 //! meets the run engine. It never invents output, never logs the key and never
 //! sends a call that failed the per-run budget preflight.
 
@@ -9,14 +9,14 @@ use async_trait::async_trait;
 use hiverouter_contract::{Refusal, RunId, TaskId};
 use hiverouter_provider::{
     BudgetLimits, CallEstimate, ChatMessage, ChatRequest, ClientConfig, Completion, DeepSeekClient,
-    RunBudget,
+    RunBudget, StreamEvent,
 };
 use hiverouter_provider::dto::ResponseFormat;
 use tokio_util::sync::CancellationToken;
 
 use crate::config::ProviderSettings;
 use crate::entities::TaskRecord;
-use crate::execution::{ProviderExecutor, StreamedReply};
+use crate::execution::{DeltaSink, ProviderExecutor, StreamedReply};
 use crate::planner::{Plan, PlanNode};
 
 const PLANNER_SYSTEM: &str = "You are the HiveMind planner. Return ONE JSON object only, \
@@ -93,6 +93,119 @@ impl ProviderExecutorAdapter {
                 error.refusal()
             })
     }
+    /// Drives one budgeted leaf stream: forwards every text fragment to
+    /// `on_delta` as it arrives, settles usage from the final documented chunk,
+    /// and returns the concatenated text for persistence.
+    ///
+    /// The stream is never replayed: any failure after the first fragment (or
+    /// at any point) returns the named refusal without a retry. Absent or
+    /// partial usage settles as INCOMPLETE (`E_USAGE_INCOMPLETE`), never 0.
+    async fn stream_reply(
+        &self,
+        run_id: RunId,
+        request: &ChatRequest,
+        max_output_tokens: u32,
+        cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let estimate = CallEstimate {
+            prompt_tokens: None,
+            max_output_tokens: Some(u64::from(max_output_tokens)),
+        };
+        let mut budgets = self.budgets.lock().await;
+        let budget = budgets
+            .entry(run_id)
+            .or_insert_with(|| RunBudget::new(BudgetLimits::default()));
+        let mut handle = self
+            .client
+            .stream_with_budget(budget, request, &estimate)
+            .await
+            .map_err(|error| {
+                tracing::warn!(
+                    code = error.code(),
+                    detail = error.detail(),
+                    run_id = %run_id,
+                    "provider stream refused"
+                );
+                error.refusal()
+            })?;
+
+        let mut text = String::new();
+        let mut tool_calls_seen = false;
+        let (usage, finish_reason) = loop {
+            let next = tokio::select! {
+                _ = cancel.cancelled() => {
+                    let _ = budget.record_call(self.settings.model, None, now_unix_secs());
+                    return Err(Refusal::ToolCancelled);
+                }
+                event = handle.next() => event,
+            };
+            match next {
+                None => {
+                    // The client sends an explicit error before closing when
+                    // the stream ends without [DONE]; reaching here means the
+                    // pump dropped without a terminal event.
+                    let _ = budget.record_call(self.settings.model, None, now_unix_secs());
+                    return Err(Refusal::ProviderIncomplete);
+                }
+                Some(Err(error)) => {
+                    tracing::warn!(
+                        code = error.code(),
+                        detail = error.detail(),
+                        run_id = %run_id,
+                        "provider stream failed after {} bytes of reply text",
+                        text.len()
+                    );
+                    // Spend after a partial stream is unknown: record the call
+                    // as INCOMPLETE so no report can show a fabricated cost.
+                    let _ = budget.record_call(self.settings.model, None, now_unix_secs());
+                    return Err(error.refusal());
+                }
+                Some(Ok(StreamEvent::Delta { content, .. })) => {
+                    if content.is_empty() {
+                        continue;
+                    }
+                    text.push_str(&content);
+                    on_delta(&content);
+                }
+                Some(Ok(StreamEvent::ToolCallDelta { .. })) => {
+                    tool_calls_seen = true;
+                }
+                Some(Ok(StreamEvent::Finished {
+                    usage: reported,
+                    finish_reason: reason,
+                })) => {
+                    break (reported, reason);
+                }
+            }
+        };
+        // The final documented content chunk carries the usage statistics;
+        // absent or partial usage is INCOMPLETE (`E_USAGE_INCOMPLETE`), never 0.
+        budget
+            .record_call(self.settings.model, usage.as_ref(), now_unix_secs())
+            .map_err(|error| {
+                tracing::warn!(
+                    code = error.code(),
+                    detail = error.detail(),
+                    run_id = %run_id,
+                    "stream usage could not be settled"
+                );
+                error.refusal()
+            })?;
+        if text.is_empty() {
+            tracing::warn!(
+                finish_reason = ?finish_reason,
+                tool_calls_seen,
+                run_id = %run_id,
+                "provider stream produced no visible text"
+            );
+            return Err(Refusal::ProviderInvalidResponse);
+        }
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: usage.unwrap_or_default(),
+        })
+    }
 }
 
 #[async_trait]
@@ -132,6 +245,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         task: &TaskRecord,
         prompt: &str,
         cancel: &CancellationToken,
+        on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         let task_prompt = format!(
             "Original user prompt:\n{prompt}\n\nAssigned role: {}\nSpawn depth: {}\n\
@@ -147,16 +261,14 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         )
         .with_thinking(self.settings.leaf_thinking)
         .with_max_tokens(self.settings.leaf_max_tokens);
-        let completion = tokio::select! {
-            _ = cancel.cancelled() => return Err(Refusal::ToolCancelled),
-            result = self.complete(run_id, &request, self.settings.leaf_max_tokens) => result?,
-        };
-        let text = message_text(&completion)?;
-        let usage = completion.usage.clone().unwrap_or_default();
-        Ok(StreamedReply {
-            deltas: vec![text],
-            usage,
-        })
+        self.stream_reply(
+            run_id,
+            &request,
+            self.settings.leaf_max_tokens,
+            cancel,
+            on_delta,
+        )
+        .await
     }
 
     async fn finish_run(&self, run_id: RunId) {
@@ -317,3 +429,4 @@ mod tests {
         assert_eq!(strip_fences("```json\n{\"nodes\":[]}\n```"), "{\"nodes\":[]}");
     }
 }
+

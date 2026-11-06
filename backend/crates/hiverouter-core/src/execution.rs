@@ -10,6 +10,7 @@
 //! - every mutating command is idempotent by `correlation_id` (24 h window).
 
 use std::collections::{BTreeMap, HashMap};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
@@ -34,6 +35,16 @@ use crate::store::RunStore;
 /// registry has no such template.
 pub const PLANNER_TEMPLATE_ID: &str = "planner";
 
+/// Receives streamed reply fragments from an executor in provider order.
+///
+/// The sink is invoked synchronously from the provider read loop while the SSE
+/// chunks arrive, before the executor returns. `RunEngine` uses it to publish
+/// `REPLY_DELTA` events in real time. Executors that cannot stream may ignore
+/// the sink and return the full text in [`StreamedReply::deltas`] instead; the
+/// engine publishes those only when the sink was never invoked, so a reply is
+/// never emitted twice.
+pub type DeltaSink = Arc<dyn Fn(&str) + Send + Sync>;
+
 /// Provider seam: the Phase 5 client implements this; tests use a mock.
 #[async_trait]
 pub trait ProviderExecutor: Send + Sync {
@@ -45,13 +56,19 @@ pub trait ProviderExecutor: Send + Sync {
         cancel: &CancellationToken,
     ) -> Result<Plan, Refusal>;
 
-    /// Executes one leaf task and returns streamable reply chunks + usage.
+    /// Executes one leaf task and returns the reply text + truthful usage.
+    ///
+    /// Streaming executors call `on_delta` for every text fragment as it
+    /// arrives and also return the concatenated text in the reply for
+    /// persistence. Non-streaming executors may leave the sink unused; the
+    /// engine then publishes the returned deltas after completion.
     async fn execute(
         &self,
         run_id: RunId,
         task: &TaskRecord,
         prompt: &str,
         cancel: &CancellationToken,
+        on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal>;
 
     /// Releases any per-run provider state after the run reaches a terminal
@@ -60,9 +77,13 @@ pub trait ProviderExecutor: Send + Sync {
 }
 
 /// One streamed assistant reply.
+///
+/// `deltas` holds the reply fragments. A streaming executor invokes the
+/// [`DeltaSink`] with the same fragments and returns their concatenation here;
+/// this field is the persistence source (`text()`), not a second event source.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StreamedReply {
-    /// Text chunks (streamed as `REPLY_DELTA`).
+    /// Reply fragments used to persist the assistant message (`text()`).
     pub deltas: Vec<String>,
     /// Provider usage for the reply; absent counters stay absent.
     pub usage: Usage,
@@ -98,6 +119,7 @@ impl ProviderExecutor for UnconfiguredExecutor {
         _task: &TaskRecord,
         _prompt: &str,
         _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         Err(Refusal::KeyMissing)
     }
@@ -578,6 +600,34 @@ impl RunEngine {
         let _ = self.graph.set_state(task.id, AgentState::Running);
         self.publish_node(run.id, task.id, AgentState::Running);
 
+        // Real-time delta publishing: the sink is invoked from the provider
+        // read loop, so REPLY_DELTA events are emitted while chunks arrive.
+        let streamed_deltas = Arc::new(AtomicUsize::new(0));
+        let sink: DeltaSink = {
+            let bus = Arc::clone(&self.bus);
+            let run_id = run.id;
+            let counter = Arc::clone(&streamed_deltas);
+            Arc::new(move |delta: &str| {
+                if delta.is_empty() {
+                    return;
+                }
+                counter.fetch_add(1, Ordering::SeqCst);
+                if let Err(error) = bus.publish_for_run(
+                    Event::ReplyDelta(ReplyDelta {
+                        run_id,
+                        text_delta: delta.to_owned(),
+                    }),
+                    Some(run_id),
+                    None,
+                ) {
+                    tracing::error!(
+                        code = error.code(),
+                        "failed to publish a streamed REPLY_DELTA"
+                    );
+                }
+            })
+        };
+
         let reply = match tokio::select! {
             _ = token.cancelled() => {
                 self.store.update_task_state(task.id, AgentState::Cancelled)?;
@@ -585,7 +635,7 @@ impl RunEngine {
                 self.publish_node(run.id, task.id, AgentState::Cancelled);
                 return Err(Refusal::ToolCancelled);
             }
-            result = self.executor.execute(run.id, task, &run.prompt, token) => result,
+            result = self.executor.execute(run.id, task, &run.prompt, token, &sink) => result,
         } {
             Ok(reply) => reply,
             Err(refusal) => {
@@ -596,18 +646,24 @@ impl RunEngine {
             }
         };
 
-        for delta in &reply.deltas {
-            if delta.is_empty() {
-                continue;
+        // A streaming executor already published every fragment through the
+        // sink; replaying `reply.deltas` would duplicate user-visible text.
+        // Non-streaming executors (and tests) that never invoked the sink have
+        // their returned fragments published here.
+        if streamed_deltas.load(Ordering::SeqCst) == 0 {
+            for delta in &reply.deltas {
+                if delta.is_empty() {
+                    continue;
+                }
+                self.publish(
+                    Event::ReplyDelta(ReplyDelta {
+                        run_id: run.id,
+                        text_delta: delta.clone(),
+                    }),
+                    Some(run.id),
+                    None,
+                );
             }
-            self.publish(
-                Event::ReplyDelta(ReplyDelta {
-                    run_id: run.id,
-                    text_delta: delta.clone(),
-                }),
-                Some(run.id),
-                None,
-            );
         }
         let text = reply.text();
         if !text.is_empty() {

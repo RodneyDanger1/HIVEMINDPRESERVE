@@ -1,5 +1,7 @@
 # TRACE-SCHEMA — 11-hop control trace data contract (v1)
 
+> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** Current evidence-backed trace totals are **43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops** in `docs/trace/controls.json` (the `260 UNVERIFIED / 5 MISSING` figures below are the historical capture). Status line: live capture applied; no fabricated verdicts.
+
 Owner: QA / trace engineer (`docs/trace/**`). Sources: skill `trace` (11-hop ladder, event/payload/terminal
 trace), `blueprint/UI-WIRING-GUIDE.md` §1-§3, `docs/contracts/UI-COMMANDS-v1.md`, EXECUTION-PROMPT §7.
 **Status: LIVE CAPTURE APPLIED (2026-11-06 15:03Z).** Captured evidence-backed verdicts are applied to

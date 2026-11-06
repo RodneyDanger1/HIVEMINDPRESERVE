@@ -1,6 +1,8 @@
-﻿# QA HARNESS — HiveMind v1 (QA / trace engineer)
+# QA HARNESS — HiveMind v1 (QA / trace engineer)
 
-**Status: HARNESS LIVE — FINAL RUN 79 PASSED / 0 FAILED / 14 SKIPPED (exit 0, 2026-11-06 09:21).**
+> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** This QA record is historical (run on pre-1.0.0 artifact `184D51A7…` / asset `index-Cbfm1IuM.js`). Current 1.0.0 artifact: server `b17eb3d6…062a9a` (13,253,120 B), CLI `49f46e2b…386623`, package `46305fcb…6105ef` (8,444,021 B); embedded assets `index-6T84PJfk.js` / `index-BWOl__uM.css`. **Corrected trace totals (current): 43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops** (`docs/trace/controls.json`; the "260 UNVERIFIED / 5 MISSING" text below is historical). The final 1.0.0 browser-e2e claim must be re-established on the rebuilt artifact; the 79/0/14 result below was on the pre-1.0.0 binary. Live-provider evidence now exists (`docs/evidence/key-validation.md`, `docs/evidence/live-provider-smoke.md`, READ-level).
+
+**Status (historical):** HARNESS LIVE — FINAL RUN 79 PASSED / 0 FAILED / 14 SKIPPED (exit 0, 2026-11-06 09:21).
 Playwright **1.65.0** is installed in `e2e/` (package only; installed Chrome channel — no browser download).
 Full Chrome suite against `http://127.0.0.1:8799` (binary `184D51A7…C9A9`, asset `index-Cbfm1IuM.js`, PID 33580): **93 tests =
 79 passed, 0 failed, 14 skipped** (run log `e2e/test-results/run-live-FINAL-artifact.log`, HTML report

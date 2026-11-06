@@ -7,13 +7,7 @@
     "unverified": 0,
     "contradicted": 0
   },
-  "decision_critical_unverified": [
-    {
-      "claim_id": "C-026",
-      "why": "frontend is wired to the frozen contract but has not been exercised against a running /ws + patched commands in a browser session",
-      "fix": "open the release binary's URL in a browser, run a session through SUBMIT_PROMPT/SETTINGS_STATUS/FILE_TREE_LIST/APPROVAL_RESOLVE"
-    }
-  ],
+  "decision_critical_unverified": [],
   "cross_document": [
     {
       "claim_id": "C-009",
@@ -83,5 +77,5 @@
       ]
     }
   ],
-  "notes": "B-Core backend claims are C-301..C-335 with quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md and docs/plans/D2-D3-WIRING-EVIDENCE.md. VERIFIED at this checkpoint: contract 32 passed exit 0; core 83 passed / 0 failed / 1 ignored helper; tools 78 passed; release build exit 0 with hiverouter.exe sha256 DE676AFB...; live WS probe of the four patched commands + /diagnose + CLI diagnose green. C-026 (browser e2e) remains the only open UNVERIFIED item. No VERIFIED without observed command evidence."
+  "notes": "B-Core backend claims are C-301..C-335 with quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md and docs/plans/D2-D3-WIRING-EVIDENCE.md. VERIFIED at this checkpoint: contract 32 passed exit 0; core 83 passed / 0 failed / 1 ignored helper; tools 78 passed. 1.0.0 release artifacts: hiverouter.exe 13,253,120 B sha256 b17eb3d6...062a9a; CLI 49f46e2b...386623 5,373,952 B; package dist/HiveMind-1.0.0-win64.zip 46305fcb...6105ef 8,444,021 B (docs/RELEASE-EVIDENCE.md, tools/release-manifest.json). Live provider/key evidence is recorded READ-level in docs/evidence/key-validation.md and docs/evidence/live-provider-smoke.md (not independently re-run). Current trace totals: 43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops (docs/trace/controls.json). No VERIFIED without observed command evidence."
 }

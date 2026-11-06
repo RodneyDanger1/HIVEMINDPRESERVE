@@ -9,8 +9,11 @@
 //! - Retries: ≤3 attempts, jittered exponential backoff, `Retry-After` capped
 //!   at 60 s, **no retry on 401/402** (B8/B9).
 //! - Streaming: documented SSE (`data:` frames, `[DONE]` terminator, keep-alive
-//!   comments tolerated). Streaming usage is NOT documented → if the provider
-//!   omits it, the caller's accounting marks the run INCOMPLETE (never 0).
+//!   comments tolerated). The final chunk before `[DONE]` carries the usage
+//!   statistics (documented); if the provider omits them, the caller's
+//!   accounting marks the run INCOMPLETE (never 0). The stream is retried only
+//!   before the first byte is delivered; once deltas reach the caller they are
+//!   never replayed.
 //! - No live call is made by this crate's tests; wiremock only.
 
 use std::sync::Arc;
@@ -123,7 +126,9 @@ pub enum StreamEvent {
     },
     /// Terminal event after `data: [DONE]`.
     Finished {
-        /// Usage reported by the stream, if any (not documented; often absent).
+        /// Usage reported by the final content chunk (documented). Absent when
+        /// the provider omits it; the caller must then record an INCOMPLETE
+        /// run, never a zero cost.
         usage: Option<Usage>,
         /// Finish reason from the final choice chunk.
         finish_reason: Option<String>,
@@ -472,14 +477,47 @@ impl DeepSeekClient {
     /// Same named refusals as [`Self::complete`], plus
     /// [`Refusal::ProviderIncomplete`] when the stream ends without `[DONE]`.
     pub async fn stream(&self, request: &ChatRequest) -> Result<StreamHandle, ProviderError> {
+        self.stream_inner(request, None, &CallEstimate::default())
+            .await
+    }
+
+    /// Streaming completion that enforces the run budget **before every open
+    /// attempt** and records each attempt (including retries) in the budget.
+    ///
+    /// Usage is recorded by the caller after [`StreamEvent::Finished`] via
+    /// [`RunBudget::record_call`] (the stream's final chunk is where the
+    /// documented usage statistics arrive); absent usage is INCOMPLETE, never 0.
+    ///
+    /// # Errors
+    /// Propagates the budget refusals (with **zero** provider requests when the
+    /// first preflight refuses) and the same transport refusals as [`Self::complete`].
+    pub async fn stream_with_budget(
+        &self,
+        budget: &mut RunBudget,
+        request: &ChatRequest,
+        estimate: &CallEstimate,
+    ) -> Result<StreamHandle, ProviderError> {
+        self.stream_inner(request, Some(budget), estimate).await
+    }
+
+    async fn stream_inner(
+        &self,
+        request: &ChatRequest,
+        mut budget: Option<&mut RunBudget>,
+        estimate: &CallEstimate,
+    ) -> Result<StreamHandle, ProviderError> {
         request.validate()?;
-        let permit = self.config.in_flight.acquire().await.ok();
+        let permit = self.config.in_flight.acquire().await?;
         let mut stream_request = request.clone();
         stream_request.stream = Some(true);
 
         let mut attempt = 0u32;
         loop {
             attempt = attempt.saturating_add(1);
+            if let Some(active_budget) = budget.as_deref_mut() {
+                active_budget.preflight(estimate)?;
+                active_budget.record_attempt();
+            }
             let opened = self.open_stream(&stream_request).await;
             match opened {
                 Ok(response) => {
@@ -500,6 +538,9 @@ impl DeepSeekClient {
                         return Err(self.final_error(error));
                     }
                     let delay = self.config.retry.delay_for(attempt, error.retry_after());
+                    if let Some(active_budget) = budget.as_deref_mut() {
+                        active_budget.on_retry();
+                    }
                     tokio::time::sleep(delay).await;
                 }
             }

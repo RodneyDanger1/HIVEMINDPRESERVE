@@ -34,7 +34,7 @@ pub use config::{Config, ConfigError};
 pub use context::{ContextStore, ScopedContext};
 pub use db::{Database, DbError, Migration, MIGRATIONS};
 pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
-pub use execution::{ProviderExecutor, RunEngine, RunRegistry, StreamedReply};
+pub use execution::{DeltaSink, ProviderExecutor, RunEngine, RunRegistry, StreamedReply};
 pub use graph::{GraphAuthority, GraphSnapshot, TaskNode};
 pub use handshake::{HandshakeFrame, HandshakeLog, HandshakeOutcome};
 pub use history::{HistoryReadModel, TimeTravel};
