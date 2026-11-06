@@ -1,10 +1,10 @@
 {
-  "counts": {"total": 48, "verified": 39, "vault_recorded": 0, "read": 7, "unverified": 1, "contradicted": 0},
+  "counts": {"total": 72, "verified": 62, "vault_recorded": 0, "read": 8, "unverified": 1, "contradicted": 0},
   "decision_critical_unverified": [
     {
       "claim_id": "C-026",
       "why": "frontend is wired to the frozen contract but has not been exercised against a running /ws + patched commands",
-      "fix": "cargo build --release + run server + browser session executing SUBMIT_PROMPT/SETTINGS_STATUS/FILE_TREE_LIST/APPROVAL_RESOLVE"
+      "fix": "run release binary + browser session executing SUBMIT_PROMPT/SETTINGS_STATUS/FILE_TREE_LIST/APPROVAL_RESOLVE"
     }
   ],
   "cross_document": [
@@ -12,8 +12,8 @@
     {"claim_id": "C-014", "locations": ["docs/ui/figcraft/A/A-ASSETS.json", "docs/ui/figcraft/B/B-ASSETS.json", "docs/ui/figcraft/WATCHDOG-BRIEF.md"]},
     {"claim_id": "C-018", "locations": ["web/package.json", "docs/plans/PHASE-7-8-10-EVIDENCE.md"]},
     {"claim_id": "C-025", "locations": ["web/src/assets/manifest.ts", "ledgers/ui-watchdog.json", "docs/ui/figcraft/ASSETS-INDEX.json"]},
-    {"claim_id": "C-301", "locations": ["docs/plans/PHASE-1-EVIDENCE.md"]},
-    {"claim_id": "C-309", "locations": ["docs/plans/PHASE-2-EVIDENCE.md"]}
+    {"claim_id": "C-320", "locations": ["docs/plans/PHASE-1-EVIDENCE.md", "docs/plans/PHASE-3-EVIDENCE.md", "docs/plans/PHASE-4-EVIDENCE.md", "docs/plans/PHASE-9-EVIDENCE.md"]},
+    {"claim_id": "C-325", "locations": ["backend/crates/hiverouter-core/src/http.rs", "docs/plans/PHASE-1-EVIDENCE.md"]}
   ],
-  "notes": "B-Core backend claims C-301..C-313 added at the Phase 1-2 gate (2026-11-06) with observed-command evidence quoted in docs/plans/PHASE-1-EVIDENCE.md and PHASE-2-EVIDENCE.md. C-016 (contract patch in Rust) moved to VERIFIED: cargo test -p hiverouter-contract = 32 passed, exit 0. C-026 remains the only open UNVERIFIED item (frontend live e2e). No VERIFIED without observed command evidence."
+  "notes": "B-Core backend Phase 1/2/3/4/9 claims are C-301..C-328 with quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md. C-016 (contract patch in Rust) is VERIFIED by cargo test -p hiverouter-contract = 32 passed, exit 0. Final core suite after the disk-wipe rebuild: 78 passed / 0 failed / 1 ignored helper (C-320). Embedded UI serving (C-325) unblocks live frontend e2e; C-026 remains the only open UNVERIFIED item. No VERIFIED without observed command evidence."
 }

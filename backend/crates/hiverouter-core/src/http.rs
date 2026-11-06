@@ -84,6 +84,44 @@ impl AppState {
         }
     }
 
+    /// Builds state with an explicitly recovered graph (boot path).
+    #[must_use]
+    pub fn with_graph(
+        db: Arc<Database>,
+        checks: Vec<Check>,
+        config: Arc<Config>,
+        graph: Arc<GraphAuthority>,
+    ) -> Self {
+        let session = Arc::new(SessionAuth::new(
+            Uuid::now_v7().to_string(),
+            config.allowed_origins.clone(),
+        ));
+        let bus = Arc::new(EventBus::new());
+        let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        let engine = Arc::new(
+            RunEngine::new(
+                db.clone(),
+                bus.clone(),
+                graph.clone(),
+                Arc::new(UnconfiguredExecutor),
+                Arc::new(TemplateRegistry::default()),
+            )
+            .with_snapshot_store(snapshots.clone()),
+        );
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        Self {
+            db,
+            checks,
+            started_at: Instant::now(),
+            config,
+            bus,
+            graph,
+            session,
+            engine,
+            history,
+        }
+    }
+
     /// Builds state with explicitly supplied services (integration tests).
     #[must_use]
     pub fn with_services(
@@ -172,7 +210,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
         .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/ws", get(ws_handler))
-        .fallback(not_found)
+        .fallback(crate::static_ui::static_ui)
         .with_state(state)
 }
 
@@ -327,16 +365,6 @@ async fn api_session(
         })),
     )
         .into_response()
-}
-
-async fn not_found() -> impl IntoResponse {
-    (
-        StatusCode::NOT_FOUND,
-        Json(serde_json::json!({
-            "error": "not found",
-            "schema": hiverouter_contract::SCHEMA_VERSION,
-        })),
-    )
 }
 
 /// Serves the router on an already-bound listener with graceful shutdown.

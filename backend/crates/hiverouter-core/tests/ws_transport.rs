@@ -278,11 +278,13 @@ async fn thousand_rewires_without_a_dropped_ack() {
 }
 
 #[tokio::test]
-async fn unimplemented_run_command_is_an_error_not_a_silent_drop() {
+async fn run_commands_are_handled_by_the_phase4_engine() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
     let mut client = connect(&server, None).await;
     recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
+
+    // CANCEL_RUN now reaches the Phase 4 engine and refuses a missing run by name.
     let correlation = send_command(
         &mut client,
         &Command::CancelRun(CancelRun {
@@ -294,11 +296,20 @@ async fn unimplemented_run_command_is_an_error_not_a_silent_drop() {
         frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
     })
     .await;
+    assert_eq!(error_code(&error), Refusal::RunNotFound.code());
+
+    // Phase 6 commands still have no handler: typed ERROR, not a silent drop.
+    let correlation = send_command(
+        &mut client,
+        &Command::SettingsStatus(hiverouter_contract::command::SettingsStatus {}),
+    )
+    .await;
+    let error = recv_until(&mut client, |value| {
+        frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
     assert_eq!(error_code(&error), Refusal::InternalError.code());
-    assert_eq!(
-        error["payload"]["retryable"], true,
-        "interim handler must be marked retryable"
-    );
+    assert_eq!(error["payload"]["retryable"], true);
     assert_eq!(CommandName::CancelRun.as_str(), "CANCEL_RUN");
     assert_eq!(EventName::NodeRewire.as_str(), "NODE_REWIRE");
 }

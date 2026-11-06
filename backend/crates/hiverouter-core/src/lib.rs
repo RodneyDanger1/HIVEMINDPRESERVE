@@ -21,6 +21,7 @@ pub mod planner;
 pub mod prompts;
 pub mod recovery;
 pub mod snapshot;
+pub mod static_ui;
 pub mod store;
 pub mod ws;
 
@@ -35,8 +36,7 @@ pub use execution::{ProviderExecutor, RunEngine, RunRegistry, StreamedReply};
 pub use graph::{GraphAuthority, GraphSnapshot, TaskNode};
 pub use handshake::{HandshakeFrame, HandshakeLog, HandshakeOutcome};
 pub use history::{HistoryReadModel, TimeTravel};
-pub use http::{build_router, serve, AppState, HealthResponse};
-pub use planner::{Plan, PlanNode};
+pub use http::{build_router, serve, AppState, HealthResponse};pub use planner::{Plan, PlanNode};
 pub use prompts::{Persona, TemplateRegistry};
 pub use recovery::{recover_on_boot, RecoveryReport};
 pub use snapshot::{SnapshotEnvelope, SnapshotStore};

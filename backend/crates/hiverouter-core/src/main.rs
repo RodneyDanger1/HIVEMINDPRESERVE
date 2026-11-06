@@ -113,10 +113,12 @@ async fn run() -> Result<(), ExitCode> {
         }
     }
 
-    let state = Arc::new(AppState::new(
+    let graph = Arc::new(graph);
+    let state = Arc::new(AppState::with_graph(
         database,
         checks,
         Arc::new(config.clone()),
+        graph,
     ));
 
     let listener = match TcpListener::bind(config.bind).await {

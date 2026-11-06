@@ -377,14 +377,16 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 2);
-        assert_eq!(database.migrate().expect("second migrate"), 2);
+        assert_eq!(database.migrate().expect("first migrate"), 3);
+        assert_eq!(database.migrate().expect("second migrate"), 3);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 2);
+        assert_eq!(applied.len(), 3);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
         assert_eq!(applied[1].1, "runs_tasks_chat");
+        assert_eq!(applied[2].0, 3);
+        assert_eq!(applied[2].1, "snapshot_index");
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -399,7 +401,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 2);
+        assert_eq!(database.migrate().expect("re-migrate"), 3);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -415,7 +417,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 2);
+        assert_eq!(reopened.schema_version().expect("version"), 3);
         assert_eq!(reopened.path(), path);
     }
 

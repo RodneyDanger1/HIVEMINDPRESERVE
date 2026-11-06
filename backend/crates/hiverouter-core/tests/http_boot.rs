@@ -98,7 +98,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 2);
+    assert_eq!(health["database"]["schema_version"], 3);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -112,13 +112,53 @@ async fn health_endpoint_reports_boot_checks_and_database() {
 }
 
 #[tokio::test]
-async fn unknown_route_is_an_honest_404() {
+async fn static_ui_serves_index_assets_and_spa_fallback() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
-    let (status, body) = http_get(server.addr, "/nope").await;
+
+    // GET / serves the embedded SPA shell.
+    let (status, body) = http_get(server.addr, "/").await;
+    assert_eq!(status, 200, "GET / must serve the embedded UI");
+    assert!(
+        body.contains("<div id=\"root\">"),
+        "index.html must contain the app root: {body}"
+    );
+
+    // A real built asset is served from memory.
+    let dist = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../web/dist");
+    let asset = std::fs::read_dir(dist.join("assets"))
+        .expect("web/dist/assets exists")
+        .next()
+        .expect("at least one built asset")
+        .expect("asset entry")
+        .file_name()
+        .into_string()
+        .expect("utf8 asset name");
+    let (status, asset_body) = http_get(server.addr, &format!("/assets/{asset}")).await;
+    assert_eq!(status, 200, "asset /assets/{asset} must be embedded");
+    assert!(!asset_body.is_empty());
+
+    // SPA client route (no file extension) falls back to index.html.
+    let (status, spa_body) = http_get(server.addr, "/runs/example-revision").await;
+    assert_eq!(status, 200);
+    assert!(spa_body.contains("<div id=\"root\">"));
+
+    // Missing asset is an honest 404.
+    let (status, missing) = http_get(server.addr, "/assets/does-not-exist.js").await;
     assert_eq!(status, 404);
-    let value: Value = serde_json::from_str(&body).expect("404 body is JSON");
+    let value: Value = serde_json::from_str(&missing).expect("404 body is JSON");
     assert_eq!(value["error"], "not found");
+
+    // Unknown API path stays a JSON 404, never the SPA shell.
+    let (status, api_missing) = http_get(server.addr, "/api/nope").await;
+    assert_eq!(status, 404);
+    let value: Value = serde_json::from_str(&api_missing).expect("api 404 is JSON");
+    assert_eq!(value["error"], "not found");
+
+    // Path traversal cannot escape web/dist: the request is refused, never served.
+    let (traversal_status, traversal_body) = http_get(server.addr, "/../Cargo.toml").await;
+    assert!(traversal_status == 400 || traversal_status == 404);
+    assert!(!traversal_body.contains("[workspace]"), "traversal leaked a file");
 }
 
 #[tokio::test]

@@ -191,7 +191,11 @@ async fn run_lifecycle_plans_and_dispatches() {
     assert_eq!(stored_run.status, AgentState::Completed);
     assert_eq!(harness.store.task_count(run.id).expect("tasks"), 3);
     let messages = harness.store.messages(run.id).expect("messages");
-    assert_eq!(messages.len(), 2, "user prompt + assistant reply");
+    assert_eq!(
+        messages.len(),
+        3,
+        "user prompt + one assistant reply per executed leaf"
+    );
     assert_eq!(messages[0].role, hiverouter_core::entities::ChatRole::User);
     assert_eq!(
         messages[1].role,

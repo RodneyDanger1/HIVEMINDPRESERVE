@@ -212,7 +212,7 @@ mod tests {
     fn switch_clears_old_parent_facts_and_injects_new_ones() {
         let old_parent = TaskId::new();
         let new_parent = TaskId::new();
-        let task = TaskId::new();
+        let _task = TaskId::new();
         let current = ScopedContext::new(Some(old_parent))
             .with_fact(old_parent, "style", "honeycomb")
             .with_fact(old_parent, "system_prompt", "old branch");

@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn node_cap_is_forty() {
-        let nodes: Vec<PlanNode> = (0..41).map(|index| node("worker", Vec::new(), 1)).collect();
+        let nodes: Vec<PlanNode> = (0..41).map(|_| node("worker", Vec::new(), 1)).collect();
         let plan = Plan::new(nodes);
         assert_eq!(plan.validate(), Err(Refusal::CallLimit));
     }
