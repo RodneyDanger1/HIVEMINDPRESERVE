@@ -13,3 +13,5 @@ docs/ui/figcraft/ASSETS/*.svg
 __pycache__/
 *.pyc
 *.log
+
+.artifact-smoke/

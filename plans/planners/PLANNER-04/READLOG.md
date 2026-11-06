@@ -1,0 +1,85 @@
+# READLOG — PLANNER-04 (evidence/acceptance system)
+
+**Planner:** P4 · **Time:** 2026-11-06T11:32:00-06:00 · **Repo:** HEAD `5c69b66` (tag `v1.0.0` = `3988622`; tree dirty at audit time).
+**Mandatory order followed:** 8 seat reports (48 files) read one-at-a-time → audit paper in full → 4 official DeepSeek docs in full. Extractions were taken from full-file reads (script opened every file; per-file metadata + salient lines below); summaries alone were not used.
+
+## A. Seat corpus (48 files, all read)
+
+| # | path | bytes | sha256 | lines |
+|---|---|---:|---|---:|
+| 1 | `plans/seats/SEAT-01/REPORT.md` | 19663 | `B606970FE44467587491589BEBDDB29F3842EF1D26F52B06BFC36CA730A4D776` | 192 |
+| 2 | `plans/seats/SEAT-01/READLOG.md` | 11721 | `46813D59FA3984167BD5DA3C16B97D90A569C447A1FB2AA9895CC4216C54BC85` | 42 |
+| 3 | `plans/seats/SEAT-01/EVIDENCE.md` | 7347 | `A0B0A5BDAAD843B73C8022F84C672242B70E55446DBEBC755DA788DC628B110B` | 97 |
+| 4 | `plans/seats/SEAT-01/GATE-CY-1.md` | 2807 | `B56594A3C60F36BD708E012090E5727B4E9E53471CBD436AC115EA7EBF516F63` | 35 |
+| 5 | `plans/seats/SEAT-01/GATE-CY-2.md` | 3061 | `CFD08BD163D1C1E3D660B37E329F1B67DF0A1976ABE0E2E7BF9A92699B1B0237` | 37 |
+| 6 | `plans/seats/SEAT-01/GATE-CY-3.md` | 3688 | `A3775DCD298F51313DA6E8807DFD5215BF6052C31DAE50719DF93BD2E92C4523` | 43 |
+| 7 | `plans/seats/SEAT-02/REPORT.md` | 11396 | `B2551EBB52F06A6CB6A6BC9284C5FC797D48AD1DF8A3D3B4DE98FC7460007054` | 135 |
+| 8 | `plans/seats/SEAT-02/READLOG.md` | 8115 | `7A4EE53DCA64FEB236F54B480B07289C7EB0C83F97F42892871E26F2B7A102E7` | 36 |
+| 9 | `plans/seats/SEAT-02/EVIDENCE.md` | 8241 | `F7A495CC1DE03BCC5332D540F6B7AE456E2201A5CC23E26523B9C5FA02B0143C` | 86 |
+| 10 | `plans/seats/SEAT-02/GATE-CY-1.md` | 5726 | `D4831A3C178EE59042DBF332F001E6F722C72F3F59B668CD4CC70504A157EA57` | 69 |
+| 11 | `plans/seats/SEAT-02/GATE-CY-2.md` | 1945 | `5A74EE4EFAFE0A87B124F1D83367F8F9A980EEF3A1979001480F7EC5C350B990` | 18 |
+| 12 | `plans/seats/SEAT-02/GATE-CY-3.md` | 3689 | `0343B23A67591FE579D12C40137E96F371890F81D8C76E94DA4F49E21FFE2E6A` | 45 |
+| 13 | `plans/seats/SEAT-03/REPORT.md` | 17500 | `02744209A21F40C0A6ED02454ACAC0D0A267195D4C6DC5FBD4A5078EE92ABC32` | 115 |
+| 14 | `plans/seats/SEAT-03/READLOG.md` | 8546 | `6F343FE536C8A94FDC6BD7649518CA5983E4213E91FBAD438E09DFE8905E39EE` | 50 |
+| 15 | `plans/seats/SEAT-03/EVIDENCE.md` | 5966 | `22E11C3A9301936AEF8B6E75BA1FBA73012898A64679801A434D4EEE766A25D4` | 86 |
+| 16 | `plans/seats/SEAT-03/GATE-CY-1.md` | 2285 | `A1B34B30E6532ADBAA2772BCBC5236BCC4F4176323A86498BEB3D011D8B3886C` | 21 |
+| 17 | `plans/seats/SEAT-03/GATE-CY-2.md` | 3364 | `480270649BCD2F19B9D522C66C930C6354A4B86A0E9E2683278513FEAFB9D92C` | 25 |
+| 18 | `plans/seats/SEAT-03/GATE-CY-3.md` | 2382 | `2B99BA6E115650E802A7E16DF4B92B278FB2BFDBF78CB7EF0E30E86718A7CA24` | 19 |
+| 19 | `plans/seats/SEAT-04/REPORT.md` | 11793 | `07C91A7777ABC9A60A3049632FCA517031332B570670ABC1A4E3AF6B8BD46137` | 89 |
+| 20 | `plans/seats/SEAT-04/READLOG.md` | 21628 | `6C9CCAC253FE538BE56492C2E89D1B844F2C7D867F33726A89D95DF919F4C5B7` | 195 |
+| 21 | `plans/seats/SEAT-04/EVIDENCE.md` | 2608 | `69CF2852E564B6F3DC6DC1B3F28C8B3CB61A82F0E5AF293018964A9DC0667FB1` | 33 |
+| 22 | `plans/seats/SEAT-04/GATE-CY-1.md` | 1110 | `BAE4445129ACE5584C87AA1AB19FC24C46AB51A75E4509BC2A3BF607FC604A46` | 17 |
+| 23 | `plans/seats/SEAT-04/GATE-CY-2.md` | 1514 | `8B1BD6A8D59B6BEA06D57AE3DE4A898A03CBE3B4362999C60F3E01DEFF59CE7E` | 18 |
+| 24 | `plans/seats/SEAT-04/GATE-CY-3.md` | 1321 | `FF6387FAF12D785D6FF5F5E93A0D5EE09AB7C389D03FF60A0BE4980523A0FE15` | 17 |
+| 25 | `plans/seats/SEAT-05/REPORT.md` | 18897 | `F2770F9809AC2125D19E98014DC76D72DB44CD8F321E6B474F7D77D8E04A494C` | 163 |
+| 26 | `plans/seats/SEAT-05/READLOG.md` | 10904 | `259E6698EC4D274AA30B8B5A79D5AA5F1959893A6E5EAD868A2F14FA2B8354EC` | 66 |
+| 27 | `plans/seats/SEAT-05/EVIDENCE.md` | 8806 | `3442D948695B895C27C742C039B58D9210D1C4A6EFFD5EACF1C78141ED91BB89` | 124 |
+| 28 | `plans/seats/SEAT-05/GATE-CY-1.md` | 6863 | `BA8B8426A40EF74A882A5657B5BCBE97943BC29752F85790F1057AF39C7E6DF6` | 82 |
+| 29 | `plans/seats/SEAT-05/GATE-CY-2.md` | 3078 | `DFD3124C757BE86B2C99F7DB39235A41F77836166CF642217F98BC97D656DBF0` | 43 |
+| 30 | `plans/seats/SEAT-05/GATE-CY-3.md` | 4278 | `47DCA24E70CE06B802442ED628CF7273BF52684196387C45E89E1AFBE4A5FE91` | 53 |
+| 31 | `plans/seats/SEAT-06/REPORT.md` | 9036 | `F1F521079D5205B987246E56C7E6A4B25A8624BEDB0C0A922C12112094B0F52E` | 63 |
+| 32 | `plans/seats/SEAT-06/READLOG.md` | 10393 | `19B68C6670DDC11990B2F56797B3E15DE02AD29F488CD59C5A6897F3C659CBE0` | 44 |
+| 33 | `plans/seats/SEAT-06/EVIDENCE.md` | 4747 | `5BBAE593ABE4C4642935BCECDAA6E58A022F8EB79A86288B07A308F5E96C4F63` | 81 |
+| 34 | `plans/seats/SEAT-06/GATE-CY-1.md` | 2656 | `06F334BF8CB625D35C6037D4A8A34C663B9B22E056578237478A481E59DCC7B4` | 30 |
+| 35 | `plans/seats/SEAT-06/GATE-CY-2.md` | 1643 | `CA789B7060C020648A795AE2FAB3F2CEC29D92E5A87295E3FD59FC1D47A09116` | 22 |
+| 36 | `plans/seats/SEAT-06/GATE-CY-3.md` | 2038 | `0D179C4B25546F208843F81ACF82676F38931F101A1068579D53369FB77AF137` | 21 |
+| 37 | `plans/seats/SEAT-07/REPORT.md` | 16114 | `2940B0B4D8DDE4B30B37EA57ECE57F884FE93D758D4C1D89A9A9C7CDA1679105` | 139 |
+| 38 | `plans/seats/SEAT-07/READLOG.md` | 16974 | `FE0FE51E009A9E6FEDC7D47D92204E83624C99CE8C9CA299AB81021A0955C83A` | 91 |
+| 39 | `plans/seats/SEAT-07/EVIDENCE.md` | 5730 | `AEF37E9830ADB74BBAB24C50C48CD2F644E0F87E4EEF8D4F4DF8BCDCF8239B64` | 70 |
+| 40 | `plans/seats/SEAT-07/GATE-CY-1.md` | 1808 | `971634393EAB0C9789F7AE77D196802FA59B0D88A6F4582AC53AD0E2A36F9230` | 17 |
+| 41 | `plans/seats/SEAT-07/GATE-CY-2.md` | 1503 | `E912AF57EF1B814D75A2EC19367B902EF0E2D947DEC3D99DDFCBD48F96A75982` | 17 |
+| 42 | `plans/seats/SEAT-07/GATE-CY-3.md` | 1638 | `248D31A07D744AAA9A0C77E4A888D416708228F7A5FCDD70CDC4BA696511E3BF` | 17 |
+| 43 | `plans/seats/SEAT-08/REPORT.md` | 14638 | `519F2A30224AC3BCE36983A066E3262DFDC7D9B57803B03509502D6BAD70011C` | 98 |
+| 44 | `plans/seats/SEAT-08/READLOG.md` | 7895 | `E21CDAA42656243864EB575E1991A7093982DD34BC97C32EAFBDD13015F0DDE8` | 60 |
+| 45 | `plans/seats/SEAT-08/EVIDENCE.md` | 6659 | `2B2D44C54A4F9F8EB3807955CD278C6403529CEA3118D3DEA1E4777C0CEB83B7` | 96 |
+| 46 | `plans/seats/SEAT-08/GATE-CY-1.md` | 3739 | `504EBE858CA8006EB2491B409CA301B61236FD37F2274A74227A2417A53E663B` | 26 |
+| 47 | `plans/seats/SEAT-08/GATE-CY-2.md` | 4680 | `90065CFE5BBEEBBF0325BF5B15EE32EA4340787A9217D154165C0E9865349F2C` | 40 |
+| 48 | `plans/seats/SEAT-08/GATE-CY-3.md` | 3535 | `CF69E2CAA7F61D37A7B23AD8DA23885CF76C29C2D531334C1E5C950CFBF313A2` | 26 |
+
+## B. Mandatory pre-reads
+
+| 49 | `audit/HIVEMIND-AUDIT-PAPER.md` (in full, 244 lines) | 25141 | `3BAAD198337564E1BD92ED23580A926426F92E2D4A9D64F260DBAF4D6713D495` | 245 |
+| 50 | `https://api-docs.deepseek.com/` (official; fetched 2026-11-06) | — | — | — |
+| 51 | `https://api-docs.deepseek.com/quick_start/pricing.md` (official; fetched 2026-11-06) | — | — | — |
+| 52 | `https://api-docs.deepseek.com/guides/thinking_mode.md` (official; fetched 2026-11-06) | — | — | — |
+| 53 | `https://api-docs.deepseek.com/api/create-chat-completion.md` (official; fetched 2026-11-06) | — | — | — |
+
+## C. Verified cross-seat facts used
+
+| fact | seats agreeing | evidence |
+|---|---|---|
+| HEAD = `5c69b66` = `v1.0.0-3-g5c69b66`; tag `v1.0.0` = `3988622`; P0 fixes A-F01/A-F02/A-F03 landed after the tag | S1, S2, S3, S4, S5, S6, S7, S8 | `git rev-parse`, `git describe`, S5 V1/V2 |
+| Working tree dirty at audit time (8–12 files incl. Cargo.lock, 4 crate manifests, web/package.json, README, runbook, release files) | S1/S2/S3/S5/S6/S7/S8 | `git status --porcelain` per seat |
+| Shipped binary `184D51A7…` (09:10:59) and zip `BC7A2BAD…` (09:33:17) predate the provider-wiring commit (10:59) | S5, S8 | S8 V4/§2; S5 V3/V7 |
+| No HEAD-bound gate logs: Rust/e2e logs carry no commit id, command line, exit code, JUnit XML; e2e skips = 14 explicit `test.fixme` (12 G-UI DOM gates + 2 WS stubs) | S4, S7, S8 | S7-F01/F04/F06; S4-1/2; S8 S-8 |
+| Trace ladder honestly partial: 43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops; 29 controls (23 partial, 6 pending); 28/29 captured (S-APPROVAL missing) | S4, S7, S8 | `docs/trace/controls.json`; S4 §3.5 |
+| Provider wiring at HEAD source is real; `UnconfiguredExecutor` falls back to `E_KEY_MISSING`; live evidence docs exist but are self-attested (no raw transcript, no commit/binary hash) | S1, S2, S6, S8 | S1 V4/V12; S6 F-02; S8 V1/V2 |
+| UI refusal-code map covers 45/65 codes; UI `agentState` = 16 states at HEAD (paper's 15 was baseline) | S2, S3, S8 | S2 §3; S3 V1; S8 S-5 |
+| Key custody: env-only, redacted Debug, no key in logs; **subprocess env inheritance leak vector** (no `env_clear`) | S6, S5 | S6 F-01; S5 V15 |
+| Release tooling gaps: `tools/release-manifest.json` missing though promised; `build-release.ps1` does not build web/assemble dist; tag behind HEAD; duplicate-major deps | S5, S8 | S5 V8/V9/V14/S5-02..05 |
+
+## D. Files not fully reproducible
+
+- Official docs pages are external (fetched 2026-11-06; pricing page required `.md` canonical URL; thinking-mode fetch truncation recorded by S2/S4).
+- `e2e/test-results/**`, `e2e/playwright-report/index.html` are generated; logs read via seat records (they are untracked — S7-F04/S8 S-8).
+- No test/gate was executed by P4 (read-only); all counts are READ from seat/landed evidence, not re-run.
