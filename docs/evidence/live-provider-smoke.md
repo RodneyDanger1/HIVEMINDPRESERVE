@@ -10,4 +10,6 @@
 - Reply: `HIVE-LIVE-OK`
 - Usage: prompt 89, completion 6, total 95 (cache hit 0, miss 89); reasoning tokens absent
 - Provider call is real; no mock is used in the binary path. A terse prompt initially exposed an empty-content planner response; the planner prompt was hardened to wrap the user task in an explicit DAG instruction, after which the same terse prompt completed.
-- Remaining gaps at this evidence point: the adapter currently returns the leaf reply as one delta after the non-streaming completion; true SSE delta publishing and the replay UI are still being completed. These are recorded as open until re-tested.
+- Replay was subsequently verified through the release binary: `HISTORY_REVISION_SET` revision 0 returned a 2-node `HISTORY_SNAPSHOT`; the web canvas projects it read-only.
+- Current limitation: the adapter returns the leaf reply as one delta after a non-streaming completion; true SSE chunk-by-chunk rendering is 1.1 and is not claimed.
+- Final artifact hashes and sealed source commit are in `docs/RELEASE-EVIDENCE.md`.

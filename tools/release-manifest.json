@@ -1,0 +1,24 @@
+﻿{
+    "web_dist_sha256":  "86a1c088dc912517b7abf135f71f0b18526d36bc4e0bde8aa160972353673844",
+    "artifacts":  [
+                      {
+                          "path":  "target/release/hiverouter.exe",
+                          "sha256":  "b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a",
+                          "bytes":  13253120
+                      },
+                      {
+                          "path":  "target/release/hiverouter-cli.exe",
+                          "sha256":  "49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623",
+                          "bytes":  5373952
+                      },
+                      {
+                          "path":  "dist/HiveMind-1.0.0-win64.zip",
+                          "sha256":  "a49dbb2bda65d0c3ad500157e04960638c54e2b08df8c8da5885583cf0e895e8",
+                          "bytes":  8444038
+                      }
+                  ],
+    "note":  "Artifacts rebuilt from source_commit; no modified tracked product files at build time.",
+    "artifact_built_at":  "2026-11-06T11:25:01.8924847-06:00",
+    "toolchain":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "source_commit":  "6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540"
+}

@@ -6,9 +6,9 @@ Date: 2026-11-06 (America/Chicago). Product commit: release commit (recorded at 
 
 | Artifact | SHA-256 | Bytes |
 |---|---|---:|
-| `hiverouter.exe` | `485dac243709a5e5bcf387b04d09b3c2e920b472a15528938c9aa083f6d4538c` | 13,253,120 |
+| `hiverouter.exe` | `b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a` | 13,253,120 |
 | `hiverouter-cli.exe` | `49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623` | 5,373,952 |
-| `dist/HiveMind-1.0.0-win64.zip` | `c675568f1205f4093348db9cf5d42cce7244d7e3d4965cd4c1e8609a555693d6` | 8,444,039 |
+| `dist/HiveMind-1.0.0-win64.zip` | `a49dbb2bda65d0c3ad500157e04960638c54e2b08df8c8da5885583cf0e895e8` | 8,444,038 |
 
 The zip contains both binaries, `README.md`, `RUNBOOK.md`, `RELEASE.md`, and `CHECKSUMS.txt`; an extraction smoke listed all six files and verified the archive opened.
 
@@ -19,15 +19,16 @@ Started `target/release/hiverouter.exe` on `127.0.0.1:8800` with a fresh data di
 - `GET /health` → `ok`, version `1.0.0`.
 - `GET /` → 200, embedded UI HTML present (`id="root"`), 774 bytes.
 - `SETTINGS_STATUS` → `{"provider":"deepseek","model":"deepseek-flash","key_present":true,"thinking":"enabled","reasoning_effort":"high"}`.
-- `SUBMIT_PROMPT` `Reply with exactly HIVE-1.0-FINAL` → `RUN_CREATED` → nodes/reply events → `REPLY_DONE` usage `{prompt:91, completion:8, total:99}` → `RUN_STATUS completed`; reply `HIVE-1.0-FINAL`.
+- `SUBMIT_PROMPT` `Reply with exactly HIVE-ARTIFACT-OK` → `RUN_CREATED` → nodes/reply events → `REPLY_DONE` usage `{prompt:91, completion:8, total:99}` → `RUN_STATUS completed`; reply `HIVE-ARTIFACT-OK`.
 - `HISTORY_REVISION_SET` revision 0 → `HISTORY_SNAPSHOT` with **2 graph nodes** (real snapshot; not fabricated).
 - The key never appeared in the server log, settings payload, or evidence.
 - Child-process isolation: shell/tool spawns remove `DEEPSEEK_API_KEY` before execution (`shell.rs`, `cli_support.rs`), pinned by the new `child_process_does_not_inherit_the_provider_key` test.
+- Source commit for this build: `6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540`; manifest: `tools/release-manifest.json`; web dist hash `86a1c088dc912517b7abf135f71f0b18526d36bc4e0bde8aa160972353673844`.
 
 ## Test evidence at integration baseline
 
-- Rust workspace: all suites green after provider wiring, including the child-environment leak test; the only ignored test is `provider_live` (requires the key and is run explicitly).
-- Web: 46/46 unit tests, typecheck 0 errors, Vite production build green.
+- Rust workspace on sealed commit `6a2b1c6`: **237 passed / 0 failed / 2 ignored** (`docs/evidence/final-gate-tests.log`, includes HEAD/command/exit); the ignored tests are the explicit live-provider test and one live-gated test.
+- Web: **46/46** unit tests, typecheck 0 errors, Vite production build green (`docs/evidence/final-web-tests.log`, `final-web-build.log`).
 - Live provider adapter: planner node + `HIVE-PROVIDER-OK`, usage 99 tokens (`docs/evidence/live-provider-smoke.md` has the server-level run).
 - Key scan over the non-vendor tree: 0 occurrences of a `sk-...` credential; tracked-tree child spawns remove the key.
 
