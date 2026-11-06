@@ -1,7 +1,7 @@
-﻿//! `/health` and `/diagnose` endpoints (Phase 11 WPs 11.6/11.13).
+//! `/health` and `/diagnose` endpoints (Phase 11 WPs 11.6/11.13).
 //!
 //! Local-only observability: one axum router the core server merges; no second
-//! server, no collector. Sampling uses `sysinfo 0.40.1` and keeps the V1â€“V6
+//! server, no collector. Sampling uses `sysinfo 0.40.1` and keeps the V1–V6
 //! null-vs-zero rule: an unavailable sample is `null`, a measured zero is `0`
 //! (`children: 0` is a real zero, never `null`).
 //!
@@ -35,7 +35,7 @@ pub const HEALTH_PATH: &str = "/health";
 /// Path of the diagnosis route.
 pub const DIAGNOSE_PATH: &str = "/diagnose";
 
-/// One health sample (V1â€“V6 honest nulls).
+/// One health sample (V1–V6 honest nulls).
 #[derive(Debug, Clone, Serialize)]
 pub struct HealthReport {
     /// Payload schema id.
@@ -305,6 +305,32 @@ pub fn ready_state(
 // The census is built from the standard registry by `ServiceState::new`; this
 // module deliberately does not hold a second registry instance.
 
+/// Pure `/diagnose` payload for core's route wiring (integration seam).
+///
+/// Core calls this (or mounts [`router`]) from its single axum server; the
+/// function performs no I/O beyond an in-memory census.
+///
+/// # Errors
+/// [`ToolError`] when the derived census has drifted or serialisation fails.
+pub fn diagnostics(db_ok: bool, provider_key_present: bool) -> Result<serde_json::Value, ToolError> {
+    let state = ServiceState::new(env!("CARGO_PKG_VERSION"), db_ok, provider_key_present, None)?;
+    serde_json::to_value(state.diagnose()).map_err(|error| {
+        ToolError::new(
+            hiverouter_contract::Refusal::InternalError,
+            format!("cannot serialise the diagnosis payload: {error}"),
+        )
+    })
+}
+
+/// Pure `/health` payload for core's route wiring (integration seam).
+///
+/// # Errors
+/// [`ToolError`] when the derived census has drifted (startup invariant).
+pub fn health_report(db_ok: bool, provider_key_present: bool) -> Result<HealthReport, ToolError> {
+    let mut state = ServiceState::new(env!("CARGO_PKG_VERSION"), db_ok, provider_key_present, None)?;
+    Ok(state.sample())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -404,6 +430,23 @@ mod tests {
             .await
             .expect("request");
         assert_eq!(response.status().as_u16(), 404);
+    }
+
+    #[test]
+    fn pure_diagnostics_seam_is_derived_and_secret_free() {
+        let payload = diagnostics(true, false).expect("diagnostics");
+        assert_eq!(payload["schema"], DIAGNOSE_SCHEMA);
+        assert_eq!(payload["db_ok"], true);
+        assert_eq!(
+            payload["refusals"]["count"].as_u64().expect("count"),
+            u64::try_from(Refusal::ALL.len()).expect("fits")
+        );
+        assert!(!payload.to_string().contains("sk-"));
+
+        let health = health_report(true, true).expect("health");
+        assert_eq!(health.status, "ok");
+        assert_eq!(health.children, 0);
+        assert!(health.provider_key_present);
     }
 }
 

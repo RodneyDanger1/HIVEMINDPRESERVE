@@ -44,7 +44,73 @@ pub const MIGRATIONS: &[Migration] = &[Migration {
     down: r#"
         DROP TABLE IF EXISTS app_meta;
     "#,
-}];
+},
+Migration {
+    version: 2,
+    name: "runs_tasks_chat",
+    up: r#"
+        CREATE TABLE IF NOT EXISTS runs (
+            id          TEXT PRIMARY KEY NOT NULL,
+            project_id  TEXT NOT NULL,
+            prompt      TEXT NOT NULL,
+            status      TEXT NOT NULL,
+            error_code  TEXT,
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
+        CREATE TABLE IF NOT EXISTS tasks (
+            id             TEXT PRIMARY KEY NOT NULL,
+            run_id         TEXT NOT NULL,
+            parent_task_id TEXT,
+            role           TEXT NOT NULL,
+            depth          INTEGER NOT NULL,
+            spawn_seq      INTEGER NOT NULL,
+            state          TEXT NOT NULL,
+            rev            INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(run_id) REFERENCES runs(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_tasks_run ON tasks(run_id);
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id         TEXT PRIMARY KEY NOT NULL,
+            run_id     TEXT NOT NULL,
+            role       TEXT NOT NULL,
+            text       TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY(run_id) REFERENCES runs(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_messages_run ON chat_messages(run_id);
+        CREATE TABLE IF NOT EXISTS command_receipts (
+            correlation_id TEXT PRIMARY KEY NOT NULL,
+            run_id         TEXT NOT NULL,
+            created_at     TEXT NOT NULL
+        );
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS command_receipts;
+        DROP TABLE IF EXISTS chat_messages;
+        DROP TABLE IF EXISTS tasks;
+        DROP TABLE IF EXISTS runs;
+    "#,
+},
+Migration {
+    version: 3,
+    name: "snapshot_index",
+    up: r#"
+        CREATE TABLE IF NOT EXISTS snapshots (
+            run_id         TEXT NOT NULL,
+            revision       INTEGER NOT NULL,
+            path           TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            schema_version TEXT NOT NULL,
+            PRIMARY KEY (run_id, revision)
+        );
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS snapshots;
+    "#,
+},
+];
 
 /// Database errors; each maps to a named refusal for the wire.
 #[derive(Debug, Error)]
@@ -311,12 +377,14 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 1);
-        assert_eq!(database.migrate().expect("second migrate"), 1);
+        assert_eq!(database.migrate().expect("first migrate"), 2);
+        assert_eq!(database.migrate().expect("second migrate"), 2);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 1);
+        assert_eq!(applied.len(), 2);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
+        assert_eq!(applied[1].0, 2);
+        assert_eq!(applied[1].1, "runs_tasks_chat");
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -331,7 +399,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 1);
+        assert_eq!(database.migrate().expect("re-migrate"), 2);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -347,7 +415,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 1);
+        assert_eq!(reopened.schema_version().expect("version"), 2);
         assert_eq!(reopened.path(), path);
     }
 

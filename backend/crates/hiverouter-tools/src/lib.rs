@@ -61,7 +61,8 @@ pub use commands::{
 };
 pub use error::ToolError;
 pub use health::{
-    ready_state, router as health_router, DiagnoseReport, HealthReport, ServiceState,
+    diagnostics, health_report, ready_state, router as health_router, DiagnoseReport, HealthReport,
+    ServiceState,
 };
 pub use jail::{DirEntryInfo, WorkspaceJail, MAX_READ_BYTES};
 pub use ledger::{LedgerOutcome, LedgerRecord, LedgerRow, RunLedger, LEDGER_FILE_NAME};

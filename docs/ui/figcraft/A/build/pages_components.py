@@ -431,12 +431,13 @@ def buttons_matrix(b):
         b.text(col_x[i], y + 14, st.upper(), 8, "Consolas", "Regular",
                C["ink500"], width=128, line=11, align="center", tracking=8)
     rows = [
-        ("Spawn sub-hive", "primary", "S04-spawn", "S04", "SPAWN_SUB_HIVE"),
-        ("Re-route", "secondary", "S05-reroute", "S05", "REWIRE_TASK"),
-        ("Cancel", "ghost", "S06-cancel", "S06", "CANCEL_RUN"),
-        ("Kill worker", "danger", "S07-kill", "S07", "KILL_WORKER"),
+        ("Spawn sub-hive", "primary", "S04-spawn", "S04", "SPAWN_SUB_HIVE",
+         "E_SPAWN_DEPTH"),
+        ("Re-route", "secondary", "S05-reroute", "S05", "REWIRE_TASK", "E_CYCLE"),
+        ("Cancel", "ghost", "S06-cancel", "S06", "CANCEL_RUN", "E_RUN_TERMINAL"),
+        ("Kill worker", "danger", "S07-kill", "S07", "KILL_WORKER", "E_KILL_DENIED"),
     ]
-    for r, (label, variant, g, surf, cmd) in enumerate(rows):
+    for r, (label, variant, g, surf, cmd, refusal) in enumerate(rows):
         ry = y + 36 + r * 68
         b.surfaces[surf] = len(b.el)
         b.name_text(x + 16, ry + 8, label, 12,
@@ -448,10 +449,14 @@ def buttons_matrix(b):
         for i, st in enumerate(states):
             b.button(col_x[i], ry + 2, 128, 40, label, variant, st,
                      name="02/btn/%s/%s" % (cmd.lower(), st))
+        b.text(col_x[4], ry + 47, refusal, 7.5, "Consolas", "Regular",
+               C["signal"], width=128, line=10, align="center",
+               name="02/btn/%s/refusal-code" % cmd.lower())
     b.text(x + 16, y + 308, "40px min touch target · radius 10 is an off-scale "
                             "exception · label Inter SemiBold 13 · ACK or named refusal "
-                            "before UI mutation.", 8.5, "Consolas", "Regular",
-           C["ink500"], width=820, line=12)
+                            "before UI mutation · REFUSED column prints the refusal code "
+                            "by name · DIFF_PROPOSE/APPLY/REJECT DECISION-GATED (S25).",
+           8.5, "Consolas", "Regular", C["ink500"], width=820, line=12)
 
 
 def settings_and_states(b):

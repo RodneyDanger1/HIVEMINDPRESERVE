@@ -1,14 +1,14 @@
-﻿//! Windows workspace jail (Phase 6 WPs 6.8/6.12/6.14, CANONICAL C18).
+//! Windows workspace jail (Phase 6 WPs 6.8/6.12/6.14, CANONICAL C18).
 //!
 //! One containment owner: a canonicalised workspace root plus refusal of every
-//! escape vector â€” **refused, never clamped** (a clamped path is a silent
+//! escape vector — **refused, never clamped** (a clamped path is a silent
 //! reinterpretation of agent input):
 //! 1. `..` parent traversal;
 //! 2. absolute paths / drive-qualified paths (`C:\...`, `D:file`);
 //! 3. symlink / junction targets that canonicalise outside the root;
 //! 4. UNC / device prefixes (`\\server\share`, `\\?\C:\...`);
 //! 5. drive changes;
-//! 6. 8.3 short-name aliases (`PROGRA~1`) â€” conservatively refused because they
+//! 6. 8.3 short-name aliases (`PROGRA~1`) — conservatively refused because they
 //!    resolve to a different lexical path.
 //!
 //! `cap-std 4.0.3` is SPIKE-GATED and not adopted (FACT F10): this module is the

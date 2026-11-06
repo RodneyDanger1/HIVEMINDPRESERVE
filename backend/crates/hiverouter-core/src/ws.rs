@@ -360,12 +360,46 @@ async fn handle_client_text(
             publish_ack(state, command.name(), correlation);
             Ok(())
         }
+        Command::SubmitPrompt(payload) => {
+            match state
+                .engine
+                .submit_prompt(&payload.text, &payload.project_id, correlation)
+            {
+                Ok(_run) => publish_ack(state, CommandName::SubmitPrompt, correlation),
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
+        Command::SpawnSubHive(payload) => {
+            match state
+                .engine
+                .spawn_sub_hive(payload.parent_task_id, &payload.role)
+            {
+                Ok(_task) => publish_ack(state, CommandName::SpawnSubHive, correlation),
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
+        Command::CancelRun(payload) => {
+            match state.engine.cancel_run(payload.run_id) {
+                Ok(()) => publish_ack(state, CommandName::CancelRun, correlation),
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
+        Command::KillWorker(payload) => {
+            match state.engine.kill_worker(payload.task_id) {
+                Ok(()) => publish_ack(state, CommandName::KillWorker, correlation),
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
         other => {
-            // Run lifecycle commands land in Phase 4; refuse by name instead of
-            // silently dropping them.
+            // Approval/settings/file commands land with the Phase 6 tools crate;
+            // refuse by name until then instead of silently dropping them.
             tracing::warn!(
                 command = other.name().as_str(),
-                "no handler registered yet for this command (Phase 4)"
+                "no handler registered yet for this command (Phase 6)"
             );
             publish_error(state, Refusal::InternalError, Some(correlation));
             Ok(())

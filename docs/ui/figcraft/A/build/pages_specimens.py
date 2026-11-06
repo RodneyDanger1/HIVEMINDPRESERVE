@@ -160,7 +160,7 @@ def tile_loading(b):
     for i, wdt in enumerate((260, 200, 300)):
         b.rect(x + 44, y + 56 + i * 26, wdt, 14, fill=C["recess"], r=4,
                group=g, name="03/load/skeleton")
-    b.ellipse(x + 44, y + 146, 14, 14, fill=None, stroke=C["honey500"], sw=2,
+    b.ellipse(x + 44, y + 146, 14, 14, fill="none", stroke=C["honey500"], sw=2,
               group=g, name="03/load/spinner")
     b.text(x + 66, y + 144, "thinking…", 9.5, "Consolas", "Regular", C["ink700"],
            width=120, line=13, group=g)

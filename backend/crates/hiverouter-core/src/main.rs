@@ -10,7 +10,9 @@ use std::sync::Arc;
 use hiverouter_core::config::Config;
 use hiverouter_core::db::Database;
 use hiverouter_core::http::{self, AppState};
+use hiverouter_core::recovery::recover_on_boot;
 use hiverouter_core::run_checks;
+use hiverouter_core::snapshot::SnapshotStore;
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
 
@@ -73,6 +75,30 @@ async fn run() -> Result<(), ExitCode> {
         }
     };
 
+    let database = Arc::new(database);
+    let snapshots = SnapshotStore::new(&config.data_dir, database.clone());
+    let graph = hiverouter_core::graph::GraphAuthority::new();
+    match recover_on_boot(database.clone(), &graph, &snapshots) {
+        Ok(report) => {
+            if !report.is_empty() {
+                tracing::warn!(
+                    interrupted = report.interrupted_runs.len(),
+                    restored = report.restored_runs.len(),
+                    corrupt = report.corrupt_snapshots.len(),
+                    "kill-restore recovery ran; active runs marked interrupted"
+                );
+            }
+        }
+        Err(refusal) => {
+            eprintln!(
+                "hiverouter: boot recovery failed: {} ({}); refusing to start on a corrupt workspace",
+                refusal.message(),
+                refusal.code()
+            );
+            return Err(ExitCode::FAILURE);
+        }
+    }
+
     let checks = run_checks();
     for check in &checks {
         if check.ok {
@@ -88,7 +114,7 @@ async fn run() -> Result<(), ExitCode> {
     }
 
     let state = Arc::new(AppState::new(
-        Arc::new(database),
+        database,
         checks,
         Arc::new(config.clone()),
     ));

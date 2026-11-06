@@ -11,10 +11,10 @@ use std::sync::{Mutex, MutexGuard};
 use hiverouter_contract::{AgentState, Refusal, TaskId};
 use petgraph::algo::{has_path_connecting, is_cyclic_directed, toposort};
 use petgraph::graph::{DiGraph, NodeIndex};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// One node of the authoritative graph.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskNode {
     /// Task id.
     pub task_id: TaskId,
@@ -27,7 +27,7 @@ pub struct TaskNode {
 }
 
 /// A read-only view of the whole graph.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphSnapshot {
     /// Graph revision, bumped on every successful mutation.
     pub revision: u64,
@@ -265,6 +265,37 @@ impl GraphAuthority {
             .get(&task_id)
             .map(|node| node.parent_task_id)
             .ok_or(Refusal::TaskNotFound)
+    }
+
+    /// Rebuilds the whole graph from a persisted snapshot (kill-restore path).
+    ///
+    /// # Errors
+    /// `E_SNAPSHOT_CORRUPT` when the snapshot's edges refer to unknown nodes or
+    /// the restored graph would contain a cycle; `E_INTERNAL_ERROR` if the graph
+    /// lock is poisoned.
+    pub fn restore_from_snapshot(&self, snapshot: &GraphSnapshot) -> Result<(), Refusal> {
+        let mut state = self.lock()?;
+        let mut graph = DiGraph::<TaskId, ()>::new();
+        let mut index = HashMap::new();
+        let mut nodes = HashMap::new();
+        for node in &snapshot.nodes {
+            let node_index = graph.add_node(node.task_id);
+            index.insert(node.task_id, node_index);
+            nodes.insert(node.task_id, node.clone());
+        }
+        for (parent, child) in &snapshot.edges {
+            let parent_index = index.get(parent).copied().ok_or(Refusal::SnapshotCorrupt)?;
+            let child_index = index.get(child).copied().ok_or(Refusal::SnapshotCorrupt)?;
+            graph.add_edge(parent_index, child_index, ());
+        }
+        if is_cyclic_directed(&graph) {
+            return Err(Refusal::SnapshotCorrupt);
+        }
+        state.graph = graph;
+        state.index = index;
+        state.nodes = nodes;
+        state.revision = snapshot.revision;
+        Ok(())
     }
 }
 

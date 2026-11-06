@@ -175,6 +175,13 @@ def build_episodes(state, entries, node_checks, info, manifest_path):
          "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source "
          "was rewritten through the write tool and all later edits done in Python.",
          "evidence": "A/build/pages_foundations.py"},
+        {"kind": "watchdog_residual_fixed", "detail":
+         "Specimens loading spinner inherited FigCraft's default shape grey #D9D9D9 via an "
+         "unfilled ellipse; now fill:none with a honey-500 stroke. Components REFUSED column "
+         "now prints the named refusal codes E_SPAWN_DEPTH / E_CYCLE / E_RUN_TERMINAL / "
+         "E_KILL_DENIED and the band note prints DIFF_* DECISION-GATED (S25).",
+         "evidence": "A-SELF-CHECK.json checks.svg_only_printed_token_hexes=true; "
+                     "all four SVGs contain only the 20 printed token hexes (0 off-token)"},
     ]
     files = []
     for i, stage in enumerate(state["stages"]):
@@ -263,6 +270,21 @@ def build_episodes(state, entries, node_checks, info, manifest_path):
     return ipath, index
 
 
+def svg_token_audit(state):
+    import re
+    allowed = set(hexv.upper() for _d, _p, hexv in G.TOKENS)
+    out = {}
+    ok = True
+    for stem, v in state["exports"].items():
+        txt = open(v["svg"], encoding="utf-8").read()
+        hexes = set(h.upper() for h in re.findall(r"#[0-9A-Fa-f]{6}\b", txt))
+        extra = sorted(hexes - allowed)
+        out[stem] = {"hex_count": len(hexes), "off_token": extra,
+                     "off_token_count": len(extra)}
+        ok = ok and not extra
+    return ok, out
+
+
 def _hex(c):
     return "#%02X%02X%02X" % (round(c["r"] * 255), round(c["g"] * 255),
                              round(c["b"] * 255))
@@ -284,7 +306,8 @@ def verify_variables():
             "mismatches": mismatches, "missing": missing, "extra": extra}
 
 
-def write_selfcheck(state, entries, node_checks, info, variables):
+def write_selfcheck(state, entries, node_checks, info, variables,
+                    token_audit=None, tokens_ok=True):
     info2 = {k: info[k] for k in ("file", "name", "images", "missingFonts", "nodes",
                                   "styles", "variables")}
     info2["pages"] = [{"id": p["id"], "name": p["name"], "nodes": p["nodes"],
@@ -311,6 +334,8 @@ def write_selfcheck(state, entries, node_checks, info, variables):
         "radius_stops_printed": 7,
         "elevation_tiers_printed": 3,
         "contrast_rows_reproduced": 6,
+        "svg_hex_audit": token_audit or {},
+        "svg_only_printed_token_hexes": bool(tokens_ok),
         "rejected_schema_guesses": [],
     }
     out = {
@@ -357,9 +382,11 @@ def main():
     entries, missing = surface_entries(state)
     node_checks = verify_nodes(entries)
     variables = verify_variables()
+    tokens_ok, token_audit = svg_token_audit(state)
     manifest_path = write_manifest(entries)
     ipath, index = build_episodes(state, entries, node_checks, info, manifest_path)
-    sc_path, sc = write_selfcheck(state, entries, node_checks, info, variables)
+    sc_path, sc = write_selfcheck(state, entries, node_checks, info, variables,
+                                   token_audit, tokens_ok)
     index["generator_sources"] = generator_sources()
     index["self_check"] = os.path.relpath(sc_path, REPO).replace(os.sep, "/")
     with open(ipath, "w", encoding="utf-8", newline="\n") as f:

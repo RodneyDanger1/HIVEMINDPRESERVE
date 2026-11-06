@@ -6,17 +6,39 @@
 #![warn(missing_debug_implementations)]
 
 pub mod bus;
+pub mod caps;
 pub mod checks;
 pub mod config;
+pub mod context;
 pub mod db;
+pub mod entities;
+pub mod execution;
 pub mod graph;
+pub mod handshake;
+pub mod history;
 pub mod http;
+pub mod planner;
+pub mod prompts;
+pub mod recovery;
+pub mod snapshot;
+pub mod store;
 pub mod ws;
 
 pub use bus::{EventBus, Replay, SequencedEvent};
+pub use caps::Caps;
 pub use checks::{run_checks, Check};
 pub use config::{Config, ConfigError};
+pub use context::{ContextStore, ScopedContext};
 pub use db::{Database, DbError, Migration, MIGRATIONS};
+pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
+pub use execution::{ProviderExecutor, RunEngine, RunRegistry, StreamedReply};
 pub use graph::{GraphAuthority, GraphSnapshot, TaskNode};
+pub use handshake::{HandshakeFrame, HandshakeLog, HandshakeOutcome};
+pub use history::{HistoryReadModel, TimeTravel};
 pub use http::{build_router, serve, AppState, HealthResponse};
+pub use planner::{Plan, PlanNode};
+pub use prompts::{Persona, TemplateRegistry};
+pub use recovery::{recover_on_boot, RecoveryReport};
+pub use snapshot::{SnapshotEnvelope, SnapshotStore};
+pub use store::RunStore;
 pub use ws::SessionAuth;

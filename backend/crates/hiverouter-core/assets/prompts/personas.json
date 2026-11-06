@@ -1,0 +1,11 @@
+[
+  {
+    "id": "planner",
+    "display_name": "Hive Planner",
+    "tier": "hyper",
+    "template_id": "planner",
+    "allowed_tool_ids": [],
+    "output_schema_id": "plan-v1",
+    "refusal_policy": "strict"
+  }
+]

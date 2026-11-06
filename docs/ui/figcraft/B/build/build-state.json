@@ -17,7 +17,7 @@
     "page.list",
     "page.rename"
    ],
-   "duration_ms": 1656,
+   "duration_ms": 144,
    "note": "file.new + 4 pages (default page renamed)",
    "failures": []
   },
@@ -33,7 +33,7 @@
     "page.select",
     "page.setBackground"
    ],
-   "duration_ms": 301,
+   "duration_ms": 207,
    "note": "one 1440x900 frame per page + canvas background",
    "failures": []
   },
@@ -50,7 +50,7 @@
     "text.create",
     "vector.create"
    ],
-   "duration_ms": 1877,
+   "duration_ms": 974,
    "note": "content: Canvas / default",
    "failures": []
   },
@@ -65,7 +65,7 @@
     "text.create",
     "vector.create"
    ],
-   "duration_ms": 976,
+   "duration_ms": 473,
    "note": "content: Canvas / zoom states",
    "failures": []
   },
@@ -82,7 +82,7 @@
     "text.create",
     "vector.create"
    ],
-   "duration_ms": 625,
+   "duration_ms": 580,
    "note": "content: Canvas / interaction states",
    "failures": []
   },
@@ -98,7 +98,7 @@
     "text.create",
     "vector.create"
    ],
-   "duration_ms": 577,
+   "duration_ms": 826,
    "note": "content: Brand hero",
    "failures": []
   },
@@ -112,7 +112,7 @@
     "effect.add",
     "effect.set"
    ],
-   "duration_ms": 678,
+   "duration_ms": 651,
    "note": "warm-ink e1/e2/e3 shadows (printed #282010 @7-13%)",
    "failures": []
   }
@@ -1020,9 +1020,9 @@
    "stem": "b-interaction"
   }
  },
- "started": "2026-11-06T04:52:23",
+ "started": "2026-11-06T05:11:44",
  "file": "B\\B-canvas.figcraft",
  "file_sha256": "dae6068926e30c99e89a43a1b15257ff8f16b1fd6c943ae990a4f383c0418288",
  "command_total": 690,
- "wall_ms": 28641
+ "wall_ms": 17853
 }

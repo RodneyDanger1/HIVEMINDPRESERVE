@@ -36,18 +36,18 @@
     "ok": true,
     "steps": 231
    },
-   "duration_ms": 3656
+   "duration_ms": 2535
   }
  ],
  "artifacts": [
   {
    "path": "docs/ui/figcraft/A/scripts/09_specimens.json",
-   "sha256": "16bd649a6eedc9fb0fb18a0394f4cc63f329886228c21e1ee164559b2be4f878",
+   "sha256": "5b968cda478faf53877973046def05f3963b951c48a3faa830064778e7e3d287",
    "kind": "script"
   },
   {
    "path": "docs/ui/figcraft/A/build/page03.figcraft",
-   "sha256": "0de803bbbade922d26f62c7715210bf303390d57b78fcbb7455edb8cf7794bc1",
+   "sha256": "f22935bb1d259df77d6179f60c0b8580c9c6ac3382d18aa73e0e4585be4789f1",
    "kind": "figcraft"
   }
  ],
@@ -63,6 +63,6 @@
  "failures": [],
  "cost": {
   "model_tokens": 0,
-  "wall_s": 3.66
+  "wall_s": 2.54
  }
 }

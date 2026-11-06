@@ -5358,6 +5358,25 @@
  {
   "command": "text.create",
   "params": {
+   "text": "E_SPAWN_DEPTH",
+   "x": 758,
+   "y": 1479,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 10,
+    "textAlign": "center"
+   },
+   "width": 128,
+   "parent": 7,
+   "name": "02/btn/spawn_sub_hive/refusal-code"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
    "text": "Re-route",
    "x": 64,
    "y": 1508,
@@ -5605,6 +5624,25 @@
    "width": 128,
    "parent": 7,
    "name": "02/btn/rewire_task/refused/refused/label"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "E_CYCLE",
+   "x": 758,
+   "y": 1547,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 10,
+    "textAlign": "center"
+   },
+   "width": 128,
+   "parent": 7,
+   "name": "02/btn/rewire_task/refusal-code"
   }
  },
  {
@@ -5862,6 +5900,25 @@
  {
   "command": "text.create",
   "params": {
+   "text": "E_RUN_TERMINAL",
+   "x": 758,
+   "y": 1615,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 10,
+    "textAlign": "center"
+   },
+   "width": 128,
+   "parent": 7,
+   "name": "02/btn/cancel_run/refusal-code"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
    "text": "Kill worker",
    "x": 64,
    "y": 1644,
@@ -6114,7 +6171,26 @@
  {
   "command": "text.create",
   "params": {
-   "text": "40px min touch target · radius 10 is an off-scale exception · label Inter SemiBold 13 · ACK or named refusal before UI mutation.",
+   "text": "E_KILL_DENIED",
+   "x": 758,
+   "y": 1683,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 10,
+    "textAlign": "center"
+   },
+   "width": 128,
+   "parent": 7,
+   "name": "02/btn/kill_worker/refusal-code"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "40px min touch target · radius 10 is an off-scale exception · label Inter SemiBold 13 · ACK or named refusal before UI mutation · REFUSED column prints the refusal code by name · DIFF_PROPOSE/APPLY/REJECT DECISION-GATED (S25).",
    "x": 64,
    "y": 1704,
    "props": {

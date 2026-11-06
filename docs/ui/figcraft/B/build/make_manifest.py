@@ -153,7 +153,8 @@ def build_assets(state):
                  "commands_discovered": 597,
                  "invocation": "headless run/export only; no GUI, no MCP attach"},
         "design_file": {
-            "path": state.get("file"),
+            "path": rel(os.path.join(os.path.dirname(B_ROOT),
+                                     state.get("file") or "")),
             "sha256": state.get("file_sha256"),
             "pages": [dict(code=c, **p) for c, p in sorted(pages.items())],
             "built_pages": sorted(state.get("boards", {}).keys()),
@@ -179,6 +180,8 @@ def build_assets(state):
             "PDF boards are text-layer only (no board raster): pixel layout is UNVERIFIED and is a design proposal.",
             "Elevation e1/e2/e3 print the same #282010 @7-13% on the PDF - one value used, tiers not differentiated.",
             "S25 DIFF commands are NOT FROZEN (UI-COMMANDS-v1 §2): board shows the modal labelled DECISION-GATED, not implemented.",
+            "SVG/PNG exports outline live text to paths (FigCraft exporter behaviour, 0 <text> nodes); the live text remains editable in B-canvas.figcraft and the exact strings are the `text` params in B/scripts/*.json.",
+            "Bee direction is baked into path geometry (rotated in Python), so the bee always points source->target; SVG has no arrow marker to inspect separately.",
         ],
     }
     return manifest

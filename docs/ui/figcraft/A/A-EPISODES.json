@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-episodes.v1",
  "producer": "FigCraft-A",
- "generated": "2026-11-06T04:46:07-0600",
+ "generated": "2026-11-06T05:12:30-0600",
  "command_ids_used": [
   "effect.add",
   "effect.set",
@@ -54,6 +54,11 @@
    "kind": "fixed",
    "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
    "evidence": "A/build/pages_foundations.py"
+  },
+  {
+   "kind": "watchdog_residual_fixed",
+   "detail": "Specimens loading spinner inherited FigCraft's default shape grey #D9D9D9 via an unfilled ellipse; now fill:none with a honey-500 stroke. Components REFUSED column now prints the named refusal codes E_SPAWN_DEPTH / E_CYCLE / E_RUN_TERMINAL / E_KILL_DENIED and the band note prints DIFF_* DECISION-GATED (S25).",
+   "evidence": "A-SELF-CHECK.json checks.svg_only_printed_token_hexes=true; all four SVGs contain only the 20 printed token hexes (0 off-token)"
   }
  ],
  "generator_sources": [
@@ -75,11 +80,11 @@
   },
   {
    "path": "docs/ui/figcraft/A/build/pages_components.py",
-   "sha256": "a7c29f01351a150962481d3d5a5d4aeb4a2e2398c1ee34c200ac1a1062f70ccf"
+   "sha256": "bfe7ded25a8cbec9893d8a7760d79900bb091613b1848ccd96d3c8a791dcecf1"
   },
   {
    "path": "docs/ui/figcraft/A/build/pages_specimens.py",
-   "sha256": "efdf17d75257460c92207db8112e788406bd7cfe1625afe8f2d9eae84a6ad399"
+   "sha256": "3fedb4165d41cedf16a00635dda535c234900daf0726a8b8f17ff34f89e9f794"
   },
   {
    "path": "docs/ui/figcraft/A/build/gen_build.py",
@@ -87,7 +92,7 @@
   },
   {
    "path": "docs/ui/figcraft/A/build/gen_manifest.py",
-   "sha256": "4cb245cf90784d759b73cc3b9e182b23c7705b63175ff3b9161ade02983d18d4"
+   "sha256": "61d800cf7e0a4929cadb9004a933a33ac1a507a5f13268d1ac7fa6e5039cd893"
   }
  ],
  "self_check": "docs/ui/figcraft/A/A-SELF-CHECK.json"

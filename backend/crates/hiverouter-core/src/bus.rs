@@ -121,6 +121,37 @@ impl EventBus {
         Ok(sequenced)
     }
 
+    /// Publishes a run-scoped event (sets `run_id` and an optional correlation
+    /// id on the envelope).
+    ///
+    /// # Errors
+    /// `E_SCHEMA_INVALID` when the event payload cannot be serialized.
+    pub fn publish_for_run(
+        &self,
+        event: Event,
+        run_id: Option<hiverouter_contract::RunId>,
+        correlation_id: Option<Uuid>,
+    ) -> Result<SequencedEvent, Refusal> {
+        let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
+        let mut envelope = event.into_envelope()?.with_seq(seq);
+        if let Some(run_id) = run_id {
+            envelope = envelope.with_run(run_id);
+        }
+        if let Some(correlation_id) = correlation_id {
+            envelope = envelope.with_correlation(correlation_id);
+        }
+        let sequenced = SequencedEvent { seq, envelope };
+        {
+            let mut replay = self.replay.lock().map_err(|_| Refusal::InternalError)?;
+            if replay.len() == REPLAY_CAPACITY {
+                replay.pop_front();
+            }
+            replay.push_back(sequenced.clone());
+        }
+        let _ = self.sender.send(sequenced.clone());
+        Ok(sequenced)
+    }
+
     /// Current server sequence number (`0` before the first event).
     #[must_use]
     pub fn current_seq(&self) -> u64 {

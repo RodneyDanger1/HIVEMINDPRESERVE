@@ -37,7 +37,7 @@
     "ok": true,
     "steps": 27
    },
-   "duration_ms": 2216
+   "duration_ms": 1046
   }
  ],
  "artifacts": [
@@ -76,10 +76,15 @@
    "kind": "fixed",
    "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
    "evidence": "A/build/pages_foundations.py"
+  },
+  {
+   "kind": "watchdog_residual_fixed",
+   "detail": "Specimens loading spinner inherited FigCraft's default shape grey #D9D9D9 via an unfilled ellipse; now fill:none with a honey-500 stroke. Components REFUSED column now prints the named refusal codes E_SPAWN_DEPTH / E_CYCLE / E_RUN_TERMINAL / E_KILL_DENIED and the band note prints DIFF_* DECISION-GATED (S25).",
+   "evidence": "A-SELF-CHECK.json checks.svg_only_printed_token_hexes=true; all four SVGs contain only the 20 printed token hexes (0 off-token)"
   }
  ],
  "cost": {
   "model_tokens": 0,
-  "wall_s": 2.22
+  "wall_s": 1.05
  }
 }

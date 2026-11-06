@@ -1727,6 +1727,7 @@
    "width": 14,
    "height": 14,
    "props": {
+    "fill": "none",
     "stroke": "#D9A02F",
     "strokeWeight": 2
    },

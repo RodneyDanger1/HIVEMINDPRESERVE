@@ -1,4 +1,4 @@
-﻿//! Approval / consent gate (Phase 6 WPs 6.6/6.11/6.13, CANONICAL C18).
+//! Approval / consent gate (Phase 6 WPs 6.6/6.11/6.13, CANONICAL C18).
 //!
 //! Contract (EXT-R5-04):
 //! - An `approval` row is committed **before any side effect**; the request
@@ -66,7 +66,7 @@ impl ApprovalDecision {
     /// # Errors
     /// A named refusal for any other value (the contract patch maps this to
     /// `E_APPROVAL_DECISION_INVALID`; until that variant lands in the contract
-    /// crate the frozen `E_SCHEMA_INVALID` code is used â€” same refusal identity,
+    /// crate the frozen `E_SCHEMA_INVALID` code is used — same refusal identity,
     /// no invented code).
     pub fn from_wire(decision: &str) -> Result<Self, ToolError> {
         match decision {

@@ -95,12 +95,12 @@
  "artifacts": [
   {
    "path": "docs/ui/figcraft/A/A-design.figcraft",
-   "sha256": "93226ddfc3297274aad2b649852b53a60321d8a2f4ff280de05349858276cd74",
+   "sha256": "3c5531aba40abd2c98b2855818cda85475fb46985fb9146ef97c537cc1d8d6c0",
    "kind": "figcraft"
   },
   {
    "path": "docs/ui/figcraft/A/A-ASSETS.json",
-   "sha256": "011d5ac08c1b6e2875f2e5cf643db6624e211b9b0aa9556a0cfab5868057c1b3",
+   "sha256": "88832272cb6c81ddff234d77f5abbdf4d9811ae1e8d787b7b02f1c07f11e77f1",
    "kind": "manifest"
   },
   {
@@ -169,7 +169,7 @@
   },
   {
    "path": "docs/ui/figcraft/ASSETS/a-components.svg",
-   "sha256": "553e64308a50162f95f22f29c16ddb5555ad543cac426e248a95d1adaa53d0ce",
+   "sha256": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
    "kind": "svg",
    "dimensions": {
     "board": [
@@ -185,7 +185,7 @@
   },
   {
    "path": "docs/ui/figcraft/ASSETS/a-components.png",
-   "sha256": "bc71b15999593b6081fdbd2087432d9c80dfaa2c1430ca5a8dd4173bda786c58",
+   "sha256": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
    "kind": "png",
    "dimensions": {
     "board": [
@@ -201,7 +201,7 @@
   },
   {
    "path": "docs/ui/figcraft/ASSETS/a-specimens.svg",
-   "sha256": "d8128e43d7726a39d3be07cf5d579a050fe50945296098e717d2bf346af61563",
+   "sha256": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
    "kind": "svg",
    "dimensions": {
     "board": [
@@ -217,7 +217,7 @@
   },
   {
    "path": "docs/ui/figcraft/ASSETS/a-specimens.png",
-   "sha256": "99321e1fdeb2446ca2457babf865d6353fcc693c3ab3e29361a5d8e4d1027fe7",
+   "sha256": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
    "kind": "png",
    "dimensions": {
     "board": [
@@ -283,7 +283,7 @@
    "node_checks": [
     {
      "surface_id": "S01",
-     "node_id": 1198,
+     "node_id": 1202,
      "found": true,
      "name": "03/empty/canvas",
      "type": "RECTANGLE",
@@ -296,7 +296,7 @@
     },
     {
      "surface_id": "S02",
-     "node_id": 1110,
+     "node_id": 1114,
      "found": true,
      "name": "S02-chat",
      "type": "GROUP",
@@ -309,7 +309,7 @@
     },
     {
      "surface_id": "S03",
-     "node_id": 1111,
+     "node_id": 1115,
      "found": true,
      "name": "S03-composer",
      "type": "GROUP",
@@ -335,7 +335,7 @@
     },
     {
      "surface_id": "S05",
-     "node_id": 754,
+     "node_id": 755,
      "found": true,
      "name": "02/row/S05/label",
      "type": "TEXT",
@@ -348,7 +348,7 @@
     },
     {
      "surface_id": "S06",
-     "node_id": 768,
+     "node_id": 770,
      "found": true,
      "name": "02/row/S06/label",
      "type": "TEXT",
@@ -361,7 +361,7 @@
     },
     {
      "surface_id": "S07",
-     "node_id": 782,
+     "node_id": 785,
      "found": true,
      "name": "02/row/S07/label",
      "type": "TEXT",
@@ -374,7 +374,7 @@
     },
     {
      "surface_id": "S08",
-     "node_id": 1113,
+     "node_id": 1117,
      "found": true,
      "name": "S08-tabs",
      "type": "GROUP",
@@ -387,7 +387,7 @@
     },
     {
      "surface_id": "S09",
-     "node_id": 1114,
+     "node_id": 1118,
      "found": true,
      "name": "S09-hud",
      "type": "GROUP",
@@ -400,7 +400,7 @@
     },
     {
      "surface_id": "S10",
-     "node_id": 1122,
+     "node_id": 1126,
      "found": true,
      "name": "S10-scrubber",
      "type": "GROUP",
@@ -413,7 +413,7 @@
     },
     {
      "surface_id": "S11",
-     "node_id": 1119,
+     "node_id": 1123,
      "found": true,
      "name": "S11-rail",
      "type": "GROUP",
@@ -426,7 +426,7 @@
     },
     {
      "surface_id": "S12",
-     "node_id": 1120,
+     "node_id": 1124,
      "found": true,
      "name": "S12-library",
      "type": "GROUP",
@@ -439,7 +439,7 @@
     },
     {
      "surface_id": "S13",
-     "node_id": 1121,
+     "node_id": 1125,
      "found": true,
      "name": "S13-minimap",
      "type": "GROUP",
@@ -452,7 +452,7 @@
     },
     {
      "surface_id": "S14",
-     "node_id": 1112,
+     "node_id": 1116,
      "found": true,
      "name": "S14-toast",
      "type": "GROUP",
@@ -465,7 +465,7 @@
     },
     {
      "surface_id": "S15",
-     "node_id": 1104,
+     "node_id": 1108,
      "found": true,
      "name": "S15-superagent",
      "type": "GROUP",
@@ -478,7 +478,7 @@
     },
     {
      "surface_id": "S16",
-     "node_id": 1105,
+     "node_id": 1109,
      "found": true,
      "name": "S16-worker",
      "type": "GROUP",
@@ -491,7 +491,7 @@
     },
     {
      "surface_id": "S17",
-     "node_id": 1106,
+     "node_id": 1110,
      "found": true,
      "name": "S17-tool",
      "type": "GROUP",
@@ -504,7 +504,7 @@
     },
     {
      "surface_id": "S18",
-     "node_id": 1107,
+     "node_id": 1111,
      "found": true,
      "name": "S18-error",
      "type": "GROUP",
@@ -517,7 +517,7 @@
     },
     {
      "surface_id": "S19",
-     "node_id": 1109,
+     "node_id": 1113,
      "found": true,
      "name": "S19-chips",
      "type": "GROUP",
@@ -530,7 +530,7 @@
     },
     {
      "surface_id": "S20",
-     "node_id": 1115,
+     "node_id": 1119,
      "found": true,
      "name": "S20-zoom",
      "type": "GROUP",
@@ -543,7 +543,7 @@
     },
     {
      "surface_id": "S21",
-     "node_id": 1117,
+     "node_id": 1121,
      "found": true,
      "name": "S21-settings",
      "type": "GROUP",
@@ -556,7 +556,7 @@
     },
     {
      "surface_id": "S22",
-     "node_id": 1123,
+     "node_id": 1127,
      "found": true,
      "name": "S22-tree",
      "type": "GROUP",
@@ -595,7 +595,7 @@
     },
     {
      "surface_id": "S25",
-     "node_id": 1259,
+     "node_id": 1263,
      "found": true,
      "name": "03/appr/modal",
      "type": "RECTANGLE",
@@ -608,7 +608,7 @@
     },
     {
      "surface_id": "S26",
-     "node_id": 1208,
+     "node_id": 1212,
      "found": true,
      "name": "03/empty/frame",
      "type": "RECTANGLE",
@@ -621,7 +621,7 @@
     },
     {
      "surface_id": "S27",
-     "node_id": 1280,
+     "node_id": 1284,
      "found": true,
      "name": "03/stream/panel",
      "type": "RECTANGLE",
@@ -634,7 +634,7 @@
     },
     {
      "surface_id": "S28",
-     "node_id": 875,
+     "node_id": 879,
      "found": true,
      "name": "02/library/project-name",
      "type": "TEXT",
@@ -677,6 +677,11 @@
    "kind": "fixed",
    "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
    "evidence": "A/build/pages_foundations.py"
+  },
+  {
+   "kind": "watchdog_residual_fixed",
+   "detail": "Specimens loading spinner inherited FigCraft's default shape grey #D9D9D9 via an unfilled ellipse; now fill:none with a honey-500 stroke. Components REFUSED column now prints the named refusal codes E_SPAWN_DEPTH / E_CYCLE / E_RUN_TERMINAL / E_KILL_DENIED and the band note prints DIFF_* DECISION-GATED (S25).",
+   "evidence": "A-SELF-CHECK.json checks.svg_only_printed_token_hexes=true; all four SVGs contain only the 20 printed token hexes (0 off-token)"
   }
  ],
  "cost": {

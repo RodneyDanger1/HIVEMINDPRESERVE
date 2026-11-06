@@ -1,5 +1,5 @@
 {
- "episode_id": "0472de96-7557-46fc-a099-0ed6c38ef0aa",
+ "episode_id": "2e861e88-9f08-4d5a-bd1f-532fe43b4b25",
  "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
  "task_family": "ui_canvas_boards",
  "apps": [
@@ -34,7 +34,7 @@
     "commands_ok": 74,
     "rolledBack": false
    },
-   "duration_ms": 678
+   "duration_ms": 651
   }
  ],
  "artifacts": [
@@ -56,6 +56,6 @@
  "failure_code": null,
  "cost": {
   "model_tokens": 0,
-  "wall_s": 0.68
+  "wall_s": 0.65
  }
 }

@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-assets.v1",
  "producer": "FigCraft-B (delegate) - canvas, zoom states, interaction states, brand hero",
- "generated_at": "2026-11-06T04:52:55-0600",
+ "generated_at": "2026-11-06T05:12:02-0600",
  "tool": {
   "name": "figcraft-cli",
   "version": "0.11.2",
@@ -9,7 +9,7 @@
   "invocation": "headless run/export only; no GUI, no MCP attach"
  },
  "design_file": {
-  "path": "B\\B-canvas.figcraft",
+  "path": "docs/ui/figcraft/B/B-canvas.figcraft",
   "sha256": "dae6068926e30c99e89a43a1b15257ff8f16b1fd6c943ae990a4f383c0418288",
   "pages": [
    {
@@ -1035,6 +1035,8 @@
   "Tile/gradient raster detail may differ between SVG and PNG exporters; SVG is the vector master.",
   "PDF boards are text-layer only (no board raster): pixel layout is UNVERIFIED and is a design proposal.",
   "Elevation e1/e2/e3 print the same #282010 @7-13% on the PDF - one value used, tiers not differentiated.",
-  "S25 DIFF commands are NOT FROZEN (UI-COMMANDS-v1 §2): board shows the modal labelled DECISION-GATED, not implemented."
+  "S25 DIFF commands are NOT FROZEN (UI-COMMANDS-v1 §2): board shows the modal labelled DECISION-GATED, not implemented.",
+  "SVG/PNG exports outline live text to paths (FigCraft exporter behaviour, 0 <text> nodes); the live text remains editable in B-canvas.figcraft and the exact strings are the `text` params in B/scripts/*.json.",
+  "Bee direction is baked into path geometry (rotated in Python), so the bee always points source->target; SVG has no arrow marker to inspect separately."
  ]
 }

@@ -2,15 +2,15 @@
  "schema": "hivemind.figcraft-selfcheck.v1",
  "producer": "FigCraft-A",
  "document": "docs/ui/figcraft/A/A-design.figcraft",
- "document_sha256": "93226ddfc3297274aad2b649852b53a60321d8a2f4ff280de05349858276cd74",
+ "document_sha256": "3c5531aba40abd2c98b2855818cda85475fb46985fb9146ef97c537cc1d8d6c0",
  "figcraft_cli_version": "0.11.2",
- "generated": "2026-11-06T04:46:07-0600",
+ "generated": "2026-11-06T05:12:30-0600",
  "info": {
   "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\A-design.figcraft",
   "name": "HiveMind v1 Design System",
   "images": 0,
   "missingFonts": [],
-  "nodes": 1368,
+  "nodes": 1372,
   "styles": 31,
   "variables": 20,
   "pages": [
@@ -45,7 +45,7 @@
    {
     "id": 3,
     "name": "02 Components",
-    "nodes": 690,
+    "nodes": 694,
     "frames": [
      {
       "height": 2580.0,
@@ -87,7 +87,7 @@
  "node_checks": [
   {
    "surface_id": "S01",
-   "node_id": 1198,
+   "node_id": 1202,
    "found": true,
    "name": "03/empty/canvas",
    "type": "RECTANGLE",
@@ -100,7 +100,7 @@
   },
   {
    "surface_id": "S02",
-   "node_id": 1110,
+   "node_id": 1114,
    "found": true,
    "name": "S02-chat",
    "type": "GROUP",
@@ -113,7 +113,7 @@
   },
   {
    "surface_id": "S03",
-   "node_id": 1111,
+   "node_id": 1115,
    "found": true,
    "name": "S03-composer",
    "type": "GROUP",
@@ -139,7 +139,7 @@
   },
   {
    "surface_id": "S05",
-   "node_id": 754,
+   "node_id": 755,
    "found": true,
    "name": "02/row/S05/label",
    "type": "TEXT",
@@ -152,7 +152,7 @@
   },
   {
    "surface_id": "S06",
-   "node_id": 768,
+   "node_id": 770,
    "found": true,
    "name": "02/row/S06/label",
    "type": "TEXT",
@@ -165,7 +165,7 @@
   },
   {
    "surface_id": "S07",
-   "node_id": 782,
+   "node_id": 785,
    "found": true,
    "name": "02/row/S07/label",
    "type": "TEXT",
@@ -178,7 +178,7 @@
   },
   {
    "surface_id": "S08",
-   "node_id": 1113,
+   "node_id": 1117,
    "found": true,
    "name": "S08-tabs",
    "type": "GROUP",
@@ -191,7 +191,7 @@
   },
   {
    "surface_id": "S09",
-   "node_id": 1114,
+   "node_id": 1118,
    "found": true,
    "name": "S09-hud",
    "type": "GROUP",
@@ -204,7 +204,7 @@
   },
   {
    "surface_id": "S10",
-   "node_id": 1122,
+   "node_id": 1126,
    "found": true,
    "name": "S10-scrubber",
    "type": "GROUP",
@@ -217,7 +217,7 @@
   },
   {
    "surface_id": "S11",
-   "node_id": 1119,
+   "node_id": 1123,
    "found": true,
    "name": "S11-rail",
    "type": "GROUP",
@@ -230,7 +230,7 @@
   },
   {
    "surface_id": "S12",
-   "node_id": 1120,
+   "node_id": 1124,
    "found": true,
    "name": "S12-library",
    "type": "GROUP",
@@ -243,7 +243,7 @@
   },
   {
    "surface_id": "S13",
-   "node_id": 1121,
+   "node_id": 1125,
    "found": true,
    "name": "S13-minimap",
    "type": "GROUP",
@@ -256,7 +256,7 @@
   },
   {
    "surface_id": "S14",
-   "node_id": 1112,
+   "node_id": 1116,
    "found": true,
    "name": "S14-toast",
    "type": "GROUP",
@@ -269,7 +269,7 @@
   },
   {
    "surface_id": "S15",
-   "node_id": 1104,
+   "node_id": 1108,
    "found": true,
    "name": "S15-superagent",
    "type": "GROUP",
@@ -282,7 +282,7 @@
   },
   {
    "surface_id": "S16",
-   "node_id": 1105,
+   "node_id": 1109,
    "found": true,
    "name": "S16-worker",
    "type": "GROUP",
@@ -295,7 +295,7 @@
   },
   {
    "surface_id": "S17",
-   "node_id": 1106,
+   "node_id": 1110,
    "found": true,
    "name": "S17-tool",
    "type": "GROUP",
@@ -308,7 +308,7 @@
   },
   {
    "surface_id": "S18",
-   "node_id": 1107,
+   "node_id": 1111,
    "found": true,
    "name": "S18-error",
    "type": "GROUP",
@@ -321,7 +321,7 @@
   },
   {
    "surface_id": "S19",
-   "node_id": 1109,
+   "node_id": 1113,
    "found": true,
    "name": "S19-chips",
    "type": "GROUP",
@@ -334,7 +334,7 @@
   },
   {
    "surface_id": "S20",
-   "node_id": 1115,
+   "node_id": 1119,
    "found": true,
    "name": "S20-zoom",
    "type": "GROUP",
@@ -347,7 +347,7 @@
   },
   {
    "surface_id": "S21",
-   "node_id": 1117,
+   "node_id": 1121,
    "found": true,
    "name": "S21-settings",
    "type": "GROUP",
@@ -360,7 +360,7 @@
   },
   {
    "surface_id": "S22",
-   "node_id": 1123,
+   "node_id": 1127,
    "found": true,
    "name": "S22-tree",
    "type": "GROUP",
@@ -399,7 +399,7 @@
   },
   {
    "surface_id": "S25",
-   "node_id": 1259,
+   "node_id": 1263,
    "found": true,
    "name": "03/appr/modal",
    "type": "RECTANGLE",
@@ -412,7 +412,7 @@
   },
   {
    "surface_id": "S26",
-   "node_id": 1208,
+   "node_id": 1212,
    "found": true,
    "name": "03/empty/frame",
    "type": "RECTANGLE",
@@ -425,7 +425,7 @@
   },
   {
    "surface_id": "S27",
-   "node_id": 1280,
+   "node_id": 1284,
    "found": true,
    "name": "03/stream/panel",
    "type": "RECTANGLE",
@@ -438,7 +438,7 @@
   },
   {
    "surface_id": "S28",
-   "node_id": 875,
+   "node_id": 879,
    "found": true,
    "name": "02/library/project-name",
    "type": "TEXT",
@@ -492,8 +492,8 @@
   "a-components": {
    "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.svg",
    "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.png",
-   "sha256_svg": "553e64308a50162f95f22f29c16ddb5555ad543cac426e248a95d1adaa53d0ce",
-   "sha256_png": "bc71b15999593b6081fdbd2087432d9c80dfaa2c1430ca5a8dd4173bda786c58",
+   "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+   "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
    "dimensions": {
     "board": [
      1440,
@@ -505,14 +505,14 @@
     ],
     "svg": "vector"
    },
-   "svg_bytes": 3706375,
-   "png_bytes": 2044181
+   "svg_bytes": 3761056,
+   "png_bytes": 2067230
   },
   "a-specimens": {
    "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.svg",
    "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.png",
-   "sha256_svg": "d8128e43d7726a39d3be07cf5d579a050fe50945296098e717d2bf346af61563",
-   "sha256_png": "99321e1fdeb2446ca2457babf865d6353fcc693c3ab3e29361a5d8e4d1027fe7",
+   "sha256_svg": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+   "sha256_png": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
    "dimensions": {
     "board": [
      1440,
@@ -524,8 +524,8 @@
     ],
     "svg": "vector"
    },
-   "svg_bytes": 1800816,
-   "png_bytes": 886753
+   "svg_bytes": 1800657,
+   "png_bytes": 886858
   }
  },
  "checks": {
@@ -583,6 +583,29 @@
   "radius_stops_printed": 7,
   "elevation_tiers_printed": 3,
   "contrast_rows_reproduced": 6,
+  "svg_hex_audit": {
+   "a-foundations": {
+    "hex_count": 20,
+    "off_token": [],
+    "off_token_count": 0
+   },
+   "a-brand": {
+    "hex_count": 12,
+    "off_token": [],
+    "off_token_count": 0
+   },
+   "a-components": {
+    "hex_count": 20,
+    "off_token": [],
+    "off_token_count": 0
+   },
+   "a-specimens": {
+    "hex_count": 17,
+    "off_token": [],
+    "off_token_count": 0
+   }
+  },
+  "svg_only_printed_token_hexes": true,
   "rejected_schema_guesses": []
  },
  "ok": true

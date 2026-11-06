@@ -5,7 +5,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::extract::{ConnectInfo, State};
+use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
@@ -18,7 +18,11 @@ use crate::bus::EventBus;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
+use crate::execution::{RunEngine, UnconfiguredExecutor};
 use crate::graph::GraphAuthority;
+use crate::history::HistoryReadModel;
+use crate::prompts::TemplateRegistry;
+use crate::snapshot::SnapshotStore;
 use crate::ws::{refusal_response, SessionAuth, ws_handler};
 
 /// Shared server state.
@@ -38,6 +42,10 @@ pub struct AppState {
     pub graph: Arc<GraphAuthority>,
     /// WebSocket session authentication.
     pub session: Arc<SessionAuth>,
+    /// Run lifecycle engine.
+    pub engine: Arc<RunEngine>,
+    /// History / time-travel read model.
+    pub history: Arc<HistoryReadModel>,
 }
 
 impl AppState {
@@ -49,14 +57,30 @@ impl AppState {
             Uuid::now_v7().to_string(),
             config.allowed_origins.clone(),
         ));
+        let bus = Arc::new(EventBus::new());
+        let graph = Arc::new(GraphAuthority::new());
+        let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        let engine = Arc::new(
+            RunEngine::new(
+                db.clone(),
+                bus.clone(),
+                graph.clone(),
+                Arc::new(UnconfiguredExecutor),
+                Arc::new(TemplateRegistry::default()),
+            )
+            .with_snapshot_store(snapshots.clone()),
+        );
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         Self {
             db,
             checks,
             started_at: Instant::now(),
             config,
-            bus: Arc::new(EventBus::new()),
-            graph: Arc::new(GraphAuthority::new()),
+            bus,
+            graph,
             session,
+            engine,
+            history,
         }
     }
 
@@ -70,6 +94,18 @@ impl AppState {
         graph: Arc<GraphAuthority>,
         session: Arc<SessionAuth>,
     ) -> Self {
+        let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        let engine = Arc::new(
+            RunEngine::new(
+                db.clone(),
+                bus.clone(),
+                graph.clone(),
+                Arc::new(UnconfiguredExecutor),
+                Arc::new(TemplateRegistry::default()),
+            )
+            .with_snapshot_store(snapshots.clone()),
+        );
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         Self {
             db,
             checks,
@@ -78,6 +114,8 @@ impl AppState {
             bus,
             graph,
             session,
+            engine,
+            history,
         }
     }
 }
@@ -130,9 +168,87 @@ pub fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/api/session", get(api_session))
+        .route("/api/history/runs", get(history_runs))
+        .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
+        .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/ws", get(ws_handler))
         .fallback(not_found)
         .with_state(state)
+}
+
+async fn history_runs(State(state): State<Arc<AppState>>) -> Response {
+    match state.history.runs(200) {
+        Ok(runs) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "runs": runs.iter().map(|run| serde_json::json!({
+                    "run_id": run.id.to_string(),
+                    "project_id": run.project_id,
+                    "status": run.status.as_str(),
+                    "error_code": run.error_code,
+                    "created_at": run.created_at.as_str(),
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn history_revisions(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    match state.history.time_travel(run_id) {
+        Ok(view) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": view.run_id.to_string(),
+                "latest_revision": view.latest_revision,
+                "revision_count": view.revision_count(),
+                "revisions": view.revisions.iter().map(|meta| serde_json::json!({
+                    "revision": meta.revision,
+                    "created_at": meta.created_at.as_str(),
+                    "run_status": meta.run_status.map(|state| state.as_str()),
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
+}
+
+async fn history_state(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    let Some(revision) = query.get("revision").and_then(|value| value.parse::<u64>().ok()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+    };
+    match state.history.state_at(run_id, revision) {
+        Ok(snapshot) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": snapshot.run_id.to_string(),
+                "revision": snapshot.revision,
+                "schema_version": snapshot.schema_version,
+                "run_status": snapshot.run_status.map(|state| state.as_str()),
+                "graph": snapshot.graph,
+            })),
+        )
+            .into_response(),
+        Err(refusal) if refusal == hiverouter_contract::Refusal::HistoryGap => {
+            refusal_response(StatusCode::NOT_FOUND, &refusal)
+        }
+        Err(refusal) => refusal_response(StatusCode::CONFLICT, &refusal),
+    }
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

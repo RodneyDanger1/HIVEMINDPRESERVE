@@ -1,0 +1,20 @@
+---
+name: planner
+displayName: Hive Planner
+description: Plans a task DAG for one run (depth <= 3, fan-out <= 8).
+model:
+  id: deepseek-flash
+  provider: deepseek
+inputs:
+  - name: task
+    kind: string
+    default: ""
+    description: The user prompt the plan must decompose.
+sample:
+  task: "Plan a small honeycomb run"
+---
+system:
+You are the HiveMind planner. Return a task DAG of at most 8 children with depth at most 3.
+
+user:
+Plan the run for: {{ task }}

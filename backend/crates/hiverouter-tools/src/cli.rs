@@ -1,4 +1,4 @@
-﻿//! Agent-native `hiverouter` CLI (Phase 12 WPs 12.1/12.3, agent-native design).
+//! Agent-native `hiverouter` CLI (Phase 12 WPs 12.1/12.3, agent-native design).
 //!
 //! Contract:
 //! - **stdout is for machines**: every outcome (success *and* failure) is a
@@ -419,7 +419,7 @@ fn help_outcome(command: &str) -> CliOutcome {
             seen
         };
         let human = vec![
-            "hiverouter â€” HiveMind v1 local control CLI (agent-native)".to_owned(),
+            "hiverouter — HiveMind v1 local control CLI (agent-native)".to_owned(),
             "Usage: hiverouter <resource> <action> [flags]   |   hiverouter --help".to_owned(),
             format!("Resources: {}", resources.join(", ")),
             "Discovery: `hiverouter schema` lists every command; `hiverouter schema <command>` returns its schema.".to_owned(),
@@ -451,7 +451,7 @@ fn help_outcome(command: &str) -> CliOutcome {
     }
     let human = actions
         .iter()
-        .map(|spec| format!("hiverouter {} â€” {} (tier {}, mutating: {})", spec.name, spec.summary, spec.tier, spec.mutating))
+        .map(|spec| format!("hiverouter {} — {} (tier {}, mutating: {})", spec.name, spec.summary, spec.tier, spec.mutating))
         .collect();
     CliOutcome::success(
         command,
@@ -578,7 +578,7 @@ fn schema_outcome(parsed: &ParsedArgs) -> CliOutcome {
                     "error": {"envelope": {"ok": false, "error": {"code": Refusal::SchemaInvalid.code(), "message": "string", "how_to_fix": "string", "retryable": "bool"}}},
                     "exit_codes": {"ok": EXIT_OK, "usage": EXIT_USAGE, "refusal": EXIT_REFUSAL, "internal": EXIT_INTERNAL},
                 }),
-                vec![format!("hiverouter {} â€” {}", spec.name, spec.summary)],
+                vec![format!("hiverouter {} — {}", spec.name, spec.summary)],
             ),
             None => CliOutcome::failure(
                 "schema",

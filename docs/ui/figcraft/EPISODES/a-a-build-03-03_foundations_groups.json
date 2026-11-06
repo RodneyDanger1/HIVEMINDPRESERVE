@@ -32,7 +32,7 @@
     "ok": true,
     "steps": 11
    },
-   "duration_ms": 2431
+   "duration_ms": 2171
   }
  ],
  "artifacts": [
@@ -59,6 +59,6 @@
  "failures": [],
  "cost": {
   "model_tokens": 0,
-  "wall_s": 2.43
+  "wall_s": 2.17
  }
 }

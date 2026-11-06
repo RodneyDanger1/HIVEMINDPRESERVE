@@ -1,5 +1,5 @@
 {
- "episode_id": "5891a1da-fd57-406b-b2ea-05cf0212e5b6",
+ "episode_id": "c1c785dd-c8d8-406e-854b-6286902da26a",
  "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
  "task_family": "ui_canvas_exports",
  "apps": [
@@ -25,7 +25,7 @@
    "seq": 1,
    "tool": "figcraft-cli export",
    "params": {
-    "file": "B\\B-canvas.figcraft"
+    "file": "docs/ui/figcraft/B/B-canvas.figcraft"
    },
    "result": {
     "exit": 0,
