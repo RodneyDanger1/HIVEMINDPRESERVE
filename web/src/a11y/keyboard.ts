@@ -21,14 +21,26 @@ export interface ShortcutHandlers {
 }
 
 function isEditableElement(target: EventTarget | null): boolean {
-  if (typeof HTMLElement === 'undefined' || !(target instanceof HTMLElement)) {
+  if (target === null || typeof target !== 'object') {
     return false;
   }
-  const tag = target.tagName.toLowerCase();
+  const element = target as {
+    tagName?: unknown;
+    isContentEditable?: unknown;
+    getAttribute?: (name: string) => string | null;
+  };
+  const tag = typeof element.tagName === 'string' ? element.tagName.toLowerCase() : '';
   if (tag === 'input' || tag === 'textarea' || tag === 'select') {
     return true;
   }
-  return target.isContentEditable;
+  if (typeof element.isContentEditable === 'boolean') {
+    return element.isContentEditable;
+  }
+  if (typeof element.getAttribute === 'function') {
+    const editable = element.getAttribute('contenteditable');
+    return editable === '' || editable === 'true';
+  }
+  return false;
 }
 
 /**

@@ -57,6 +57,8 @@ export const STRINGS = {
   },
   assets: {
     pending: 'FigCraft assets pending UI-watchdog allowlist; PDF-derived tokens only.',
+    accepted:
+      'FigCraft A+B exports accepted by UI watchdog (PASS-WITH-NOTES, FAIL 0). Values come from the token module, never sampled pixels; pixel-layout fidelity remains UNVERIFIED.',
     gateLabel: 'FIGCRAFT GATE',
   },
   models: {

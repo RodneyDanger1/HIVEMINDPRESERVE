@@ -63,3 +63,29 @@ Disk free after install: **7.43 GB** (floor 1.2 GB not approached). Node v26.7.0
 - Approval resolution has **no frozen command** in UI-COMMANDS-v1 (events exist, no response command) — the approval surface will render the request and record the gap; resolving would require a contract change.
 - Workspace file-tree API (S22) is absent from the v1 server routes (`/health`, `/api/session`, `/ws` only) — panel renders an honest "unavailable" state, not a fake tree.
 - Live provider/key status has no dedicated endpoint; Settings reads `/health` checks and marks unprobed state, never "present" without evidence.
+
+## Milestone 2 (DONE — all green) — full 28-surface UI + contract patch + asset gate
+
+- **All 28 surfaces S01–S28 implemented or honestly gated** (matrix: `docs/plans/PHASE-7-8-10-EVIDENCE.md` §2):
+  React Flow canvas (honeycomb vector field, 4 node types + broken-route error card, bee-direction edges,
+  minimap, zoom 0.1–3.0, Ctrl+0/Meta alias), pinned chat core + composer + streaming reply, Spawn/Re-route/
+  Cancel/Kill, tabs, HUD (server metrics else derived, null→"—"), time-travel scrubber + replay, 72px nav rail,
+  260px library, refusal toasts ("REFUSED BY NAME · NOT SILENT"), 15-state enum with shape/text cues, settings/
+  key status (patched `SETTINGS_STATUS` + `/health`), file tree/preview (patched `FILE_TREE_LIST`/`FILE_READ`
+  with client jail pre-check), approval overlay (`APPROVAL_RESOLVE`; nonce-gap state honest), decision-gated
+  diff modal, state pack/DEV gallery, project identity.
+- **Typed API client + store**: `GET /api/session` → `ws?token&last_seq` → raw hello → envelopes; commands
+  resolve ONLY on ACK, reject on typed ERROR; dev-only mock behind the same interface (throws in PROD);
+  ACK-before-mutation store; named refusals only.
+- **Contract patch applied**: 14 frozen commands / 21 events / 40 refusal codes, incl. `APPROVAL_RESOLVE`,
+  `SETTINGS_STATUS`, `FILE_TREE_LIST`, `FILE_READ` and their results.
+- **Asset gate WIRED**: watchdog PASS-WITH-NOTES, `allow_frontend=true`, FAIL 0 → `web/src/assets/manifest.ts`
+  records 8 accepted export groups with audited sha256; token values come from the token module only; the
+  off-token spinner is excluded; pixel fidelity stays UNVERIFIED; S25 decision-gated. Assets not copied into
+  the bundle at W1 (Phase-12 packaging decision).
+- **Commands (final):** `npm.cmd run typecheck` → exit 0; `npm.cmd run test` → 8 files / **44 tests passed**;
+  `npm.cmd run build` → ✓ built, 35.75 kB CSS / 669.20 kB JS (213.84 kB gzip), exit 0. Disk 16.59 GB free.
+- **Known gaps (in evidence §6):** live backend e2e not run (Phase 2/6 WIP); NODE_* metadata optional-extension;
+  approval nonce optional-field gap; fonts chosen but not bundled; single-chunk size warning; no browser e2e.
+- **Next:** wire against the running server once `/ws` + patched commands land, add browser e2e when the Lead
+  allows Playwright/Chrome channel, then Phase-12 packaging (asset bundle + code-splitting) and final gates.

@@ -63,11 +63,9 @@ export function LibraryPanel() {
         </ul>
       </div>
       <div className="mt-auto">
-        {FIGCRAFT_GATE.allowFrontend ? null : (
-          <p className="type-mono-meta mb-2 text-meta" title={FIGCRAFT_GATE.evidence.join(' | ')}>
-            {STRINGS.assets.pending}
-          </p>
-        )}
+        <p className="type-mono-meta mb-2 text-meta" title={FIGCRAFT_GATE.notes.join(' | ')}>
+          {FIGCRAFT_GATE.allowFrontend ? STRINGS.assets.accepted : STRINGS.assets.pending}
+        </p>
         <p className="type-mono-meta text-meta">{STRINGS.library.tip}</p>
       </div>
     </aside>
