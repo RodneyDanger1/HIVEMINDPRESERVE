@@ -1,0 +1,1606 @@
+{
+  "_meta": {
+    "schema": "hiverouter.trace.controls/v1",
+    "source": "e2e/data/control-matrix.json",
+    "status": "PENDING_APP_NOT_BUILT",
+    "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
+    "generated_at": "2026-11-06T10:43:02.537Z"
+  },
+  "controls": [
+    {
+      "surface_id": "S01",
+      "surface": "Infinite canvas + honeycomb background",
+      "kind": "client-state",
+      "command": null,
+      "owner": "Phase 7 (P3/P25); Phase 8 (MP-18)",
+      "acceptance": "e2e: pan/zoom bounds + Ctrl+0",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S02",
+      "surface": "HyperAgent hive chat core (pinned)",
+      "kind": "consume+client-state",
+      "command": "CHAT_PIN",
+      "owner": "Phase 10 (UI-ADD-16) + Phase 4 MP-09",
+      "acceptance": "pinned core stays centred through pan/zoom; messages persist",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S03",
+      "surface": "Composer / HyperAgent input",
+      "kind": "mutating-command",
+      "command": "SUBMIT_PROMPT",
+      "owner": "Phase 10 (UI-ADD-16); Phase 4 MP-09; Phase 1 UI-ADD-14",
+      "acceptance": "empty text -> E_PROMPT_EMPTY; valid -> run row + streamed reply",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S04",
+      "surface": "Buttons: Spawn sub-hive",
+      "kind": "mutating-command",
+      "command": "SPAWN_SUB_HIVE",
+      "owner": "Phase 4 MP-08; Phase 2 command bus; Phase 1 UI-ADD-14",
+      "acceptance": "depth/fan-out over cap -> E_SPAWN_DEPTH / E_FANOUT_LIMIT; ACK before render",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S05",
+      "surface": "Button: Re-route",
+      "kind": "mutating-command",
+      "command": "REWIRE_TASK",
+      "owner": "Phase 2 (P2.2/EXT-R3-01); Phase 10; Phase 1 UI-ADD-14",
+      "acceptance": "cycle -> E_CYCLE; streaming worker -> E_REWIRE_IN_FLIGHT (refusal toast)",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S06",
+      "surface": "Button: Cancel",
+      "kind": "mutating-command",
+      "command": "CANCEL_RUN",
+      "owner": "Phase 4 MP-09/EXT-R3-03; Phase 10; Phase 1 UI-ADD-14",
+      "acceptance": "run -> Cancelled; partial state preserved; no further provider calls",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S07",
+      "surface": "Button: Kill worker",
+      "kind": "mutating-command",
+      "command": "KILL_WORKER",
+      "owner": "Phase 6 MP-06/EXT-R1-03; Phase 10; Phase 1 UI-ADD-14",
+      "acceptance": "child+grandchild gone; Cancelled/Killed state broadcast; ledger row",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S08",
+      "surface": "Tabs: Workspace/Swarm/Routing/History",
+      "kind": "client-state",
+      "command": null,
+      "owner": "Phase 10 UI-ADD-05 (owner conflict R-U11)",
+      "acceptance": "one owner rule; deep-link state",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S09",
+      "surface": "HUD throughput badge",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 10 MP-15",
+      "acceptance": "changing graph changes numbers; delta window labelled",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S10",
+      "surface": "Time-travel scrubber",
+      "kind": "mutating-command",
+      "command": "HISTORY_REVISION_SET",
+      "owner": "Phase 9 MP-14; Phase 10",
+      "acceptance": "scrubber replays a real revision; no write-only store",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S11",
+      "surface": "Nav rail (72px fixed, 6 items)",
+      "kind": "client-state",
+      "command": null,
+      "owner": "Phase 10 MP-17",
+      "acceptance": "all six destinations exist; Settings shows key status/refusal",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S12",
+      "surface": "Library panel (260px)",
+      "kind": "mutating-command",
+      "command": "TEMPLATE_INSERT",
+      "owner": "Phase 10 MP-17 + EXT-R2-02/03",
+      "acceptance": "templates resolve from manifest; licence row present",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S13",
+      "surface": "Mini-map (260x170)",
+      "kind": "client-state",
+      "command": null,
+      "owner": "Phase 7 (P65; @xyflow MiniMap)",
+      "acceptance": "minimap reflects viewport; single minimap owner",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S14",
+      "surface": "Refusal toast",
+      "kind": "consume-only",
+      "command": null,
+      "owner": "Phase 1 MP-07; Phase 10 UI-ADD-04",
+      "acceptance": "refusal shows code+how_to_fix; dismissed state; no fake success",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S15",
+      "surface": "SuperAgent sub-hive card",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 7 WP 7.9; Phase 10 MP-16",
+      "acceptance": "card fields derive from state; no hardcoded ctx",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S16",
+      "surface": "WorkerAgent card",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 7; Phase 10 MP-16",
+      "acceptance": "progress 0-100 from real state",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S17",
+      "surface": "ToolAgent card",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 7; Phase 10 MP-16",
+      "acceptance": "score shown only when measured, else em dash/UNVERIFIED",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S18",
+      "surface": "Broken-route error card",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 7; Phase 10 UI-ADD-04",
+      "acceptance": "E-code + attempt N/M sourced from ledger; retry action bounded",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S19",
+      "surface": "Agent chips / state dot (40px hex)",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 10 UI-ADD-7A",
+      "acceptance": "4 dots map 1:1 into enum; non-colour cue present",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S20",
+      "surface": "Zoom controls + shortcut hint",
+      "kind": "client-state",
+      "command": "VIEWPORT_SET",
+      "owner": "Phase 8 MP-18",
+      "acceptance": "Ctrl+0 Windows; bounds; button disabled states",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S21",
+      "surface": "Settings / key status",
+      "kind": "derived",
+      "command": "SETTINGS_STATUS",
+      "owner": "Phase 10 MP-17; Phase 5",
+      "acceptance": "key_present bool from SETTINGS_STATUS_RESULT (never the key); no key -> named refusal from composer; never fake run",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S22",
+      "surface": "File/code hierarchy viewer",
+      "kind": "derived",
+      "command": "FILE_TREE_LIST",
+      "owner": "Phase 10 MP-17; Phase 6 jail",
+      "acceptance": "tree from workspace; traversal outside root refused E_PATH_OUTSIDE_JAIL; file >1 MiB refused",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S23",
+      "surface": "Brand lockups / bee glyph",
+      "kind": "static-asset",
+      "command": null,
+      "owner": "Phase 7 (design system); Phase 10 UI-ADD-05",
+      "acceptance": "asset set present; min-size rules enforced",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S24",
+      "surface": "Elevation e1/e2/e3",
+      "kind": "static-asset",
+      "command": null,
+      "owner": "Phase 7 UI-ADD-05",
+      "acceptance": "per-tier shadow spec decided or UNVERIFIED",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S25",
+      "surface": "Code-diff review modal (decision-gated)",
+      "kind": "decision-gated",
+      "command": null,
+      "owner": "Phase 6 MP-05; Phase 10 UI-ADD-06",
+      "acceptance": "decision-gated; diff renders real Phase-6 patch; denial leaves bytes unchanged",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S26",
+      "surface": "First-run/empty/loading/offline/missing-key states",
+      "kind": "consume-only",
+      "command": null,
+      "owner": "Phase 10 UI-ADD-04",
+      "acceptance": "each state has copy + action; no blank success",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S27",
+      "surface": "Streamed reply/cards",
+      "kind": "consume-only",
+      "command": null,
+      "owner": "Phase 4 MP-09; Phase 2 MP-13; Phase 10",
+      "acceptance": "stream renders progressively; terminal event clears thinking",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S28",
+      "surface": "Project identity",
+      "kind": "derived",
+      "command": null,
+      "owner": "Phase 4 MP-09; Phase 10 UI-ADD-11",
+      "acceptance": "identity from state, not hardcoded",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "surface_id": "S-APPROVAL",
+      "surface": "Approval/consent overlay (contract-named; no UI-WIRING-GUIDE S-number)",
+      "kind": "mutating-command",
+      "command": "APPROVAL_RESOLVE",
+      "owner": "Phase 6 MP-05 / EXT-R1-03 / EXT-R5-04; Phase 10",
+      "acceptance": "approve/deny only with fresh nonce; replayed nonce -> E_APPROVAL_REPLAY, one execution; denial leaves bytes unchanged",
+      "status": "PENDING_APP_NOT_BUILT",
+      "hops": {
+        "1_render": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "2_handler": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "3_client_call": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "4_request": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "5_route": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "6_service": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "7_store": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "8_provider": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "9_response": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "10_render_back": {
+          "verdict": "PENDING",
+          "evidence": []
+        },
+        "11_reentry": {
+          "verdict": "PENDING",
+          "evidence": []
+        }
+      }
+    }
+  ]
+}

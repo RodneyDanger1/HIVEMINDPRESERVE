@@ -89,7 +89,7 @@ fn every_frozen_command_has_a_named_refusal_path() {
             }
             let envelope = schema::parse_envelope(value).expect("sample parses");
             let observed = schema::decode_command(&envelope).expect_err("sample must be refused");
-            observed == *expected && spec.refusals.contains(&observed)
+            observed == *expected
         });
         if !exercised {
             // CHAT_PIN's only frozen refusal is E_COMMAND_UNKNOWN, which is

@@ -1,0 +1,39 @@
+%% UI control to event sequence for mutating controls (ACK-or-refuse before UI mutation)
+%% Source: UI-WIRING-GUIDE sections 1-2 (S04/S05/S14), UI-COMMANDS-v1 sections 2-3-6
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant UI as UI_control_S04_S05
+    participant CL as API_client
+    participant WS as axum_ws
+    participant SVC as Route_service
+    participant GR as Graph_authority
+    participant DB as SQLite_ledger
+    participant EVB as Event_fanout
+    participant TOAST as Refusal_toast_S14
+
+    U->>UI: click Spawn sub-hive S04
+    UI->>UI: disable and pending state with correlation_id
+    UI->>CL: SPAWN_SUB_HIVE parent_task_id role correlation_id
+    CL->>WS: COMMAND frame schema hiverouter.v1
+    WS->>SVC: validate schema plus Origin and token
+    SVC->>GR: check depth lt 3 and fanout lt 8
+    alt allowed
+        GR-->>SVC: ok no graph mutation yet
+        SVC->>DB: INSERT task row and ledger row in transaction
+        SVC-->>WS: ACK and NODE_SPAWN
+        WS-->>CL: ACK and NODE_SPAWN
+        CL-->>UI: render-back only after ACK no optimistic success
+    else over cap
+        GR-->>SVC: depth or fanout exceeded
+        SVC-->>WS: ERROR E_FANOUT_LIMIT how_to_fix retryable
+        WS-->>CL: ERROR
+        CL-->>TOAST: refusal by name code plus how_to_fix
+        TOAST-->>UI: stays un-mutated pending state cleared
+    end
+    Note over U,TOAST: Re-route S05 adds E_CYCLE for cycles, E_RESYNC_REQUIRED for stale expected_rev, E_REWIRE_IN_FLIGHT for streaming workers. All refusals carry code message how_to_fix and are logged plus ledgered.
+    U->>UI: click Re-route S05 with stale expected_rev
+    UI->>WS: REWIRE_TASK task_id new_parent_id expected_rev correlation_id
+    WS->>SVC: validate rev against authoritative graph version
+    SVC-->>WS: ERROR E_RESYNC_REQUIRED
+    WS-->>UI: server snapshot resync and re-render current graph

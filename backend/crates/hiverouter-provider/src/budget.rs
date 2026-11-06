@@ -259,7 +259,14 @@ impl RunBudget {
                 ),
             ));
         }
-        if let (Some(used), Some(estimated)) = (self.combined_tokens(), estimate.total_tokens()) {
+        let used_tokens = if self.accounting.calls() == 0 {
+            // A fresh run has provably used zero tokens (no call recorded), so
+            // the pre-send estimate can be checked against the full budget.
+            Some(0)
+        } else {
+            self.combined_tokens()
+        };
+        if let (Some(used), Some(estimated)) = (used_tokens, estimate.total_tokens()) {
             let projected = used.saturating_add(estimated);
             if projected > self.limits.token_budget_combined {
                 return Err(ProviderError::new(
@@ -649,7 +656,7 @@ mod tests {
 
     #[test]
     fn one_key_rule_refuses_by_name() {
-        assert_eq!(enforce_single_key(1), Ok(()));
+        assert!(enforce_single_key(1).is_ok());
         assert_eq!(enforce_single_key(0).expect_err("none").code(), "E_KEY_MISSING");
         assert_eq!(
             enforce_single_key(2).expect_err("multi").code(),

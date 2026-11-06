@@ -7,3 +7,13 @@ C-005,"Node v26.7.0 satisfies the blueprint floor Node >=22.12.0",docs/plans/HAS
 C-006,"Disk free is 6.05 GB at W0, below a comfortable Rust+Node build budget",docs/plans/HASH-VERIFICATION.md,fact,environment probe,,2026-11-06,VERIFIED,,risk: cargo target + node_modules; mitigations recorded
 C-007,"FigCraft GUI attach (mcp --attach) requires the GUI launched with --control; not available for the existing window",FIGCRAFT-COMMANDREPORT.txt,capability,FIGCRAFT-COMMANDREPORT.txt,,2026-11-06,READ,,use headless `figcraft-cli run/export` path instead
 C-008,"The blueprint is a NEW synthesis for the proposed HiveMind, not the current app",blueprint/HIVEMIND-BLUEPRINT-v1.md §0,fact,EXECUTION-PROMPT.md,,2026-11-06,READ,,all implementation decisions follow the blueprint
+C-009,"Rust stable-x86_64-pc-windows-gnu 1.99.1 is installed per-user and works",docs/plans/TOOLCHAIN.md,fact,toolchain evidence,,2026-11-06,VERIFIED,,rustc/cargo 1.99.1; C and Rust link tests exit 0
+C-010,"GCC 16.2.0 (w64devkit) compiles C and links Rust GNU binaries",docs/plans/TOOLCHAIN.md,fact,toolchain evidence,,2026-11-06,VERIFIED,,"gcc-c-ok"; "rust-gcc-link-ok"; verified independently by Lead and Verifier
+C-011,"Contract crate compiles and 30 tests pass (lib+golden+roundtrip+matrix)",backend/crates/hiverouter-contract,tests,Lead-run cargo test,,2026-11-06,VERIFIED,,16+3+6+5 pass; exit 0
+C-012,"Core crate Phase 1-2 tests pass (31 tests: lib+graph+http_boot) and WS/graph 9/9",backend/crates/hiverouter-core,tests,B-Core receipt,,2026-11-06,READ,,teammate receipt; Lead independent run pending
+C-013,"Provider Phase 5 compiles and 40 tests pass (29 lib + 11 refusal matrix)",backend/crates/hiverouter-provider,tests,B-Provider receipt,,2026-11-06,READ,,wiremock-only; no live key; Lead independent run pending
+C-014,"FigCraft A/B manifests and exports exist; A covers 28/28 surfaces, B 24 + 2 pending",docs/ui/figcraft/A/A-ASSETS.json,fact,Lead file check,,2026-11-06,VERIFIED,,files + manifests present; .figcraft info parses; watchdog verdict pending
+C-015,"Frontend milestone 1 typecheck+build pass (vite 8.3.6)",docs/plans/FRONTEND-STATUS.md,capability,Frontend receipt,,2026-11-06,READ,,npm.cmd build exit 0 stated; dist present; Lead re-run pending
+C-016,"Contract patch (APPROVAL_RESOLVE/SETTINGS_STATUS/FILE_*/events/codes) landed in Rust contract + matrix tests",docs/contracts/UI-COMMANDS-v1.md,fact,CL-I-001,,2026-11-06,UNVERIFIED,,doc landed; Rust enum/matrix pending per verifier D-8 and B-Provider note
+C-017,"Five Mermaid diagrams exported via mmdc without error",docs/diagrams,capability,Verifier receipt,,2026-11-06,READ,,15 files present; export exit 0 stated by verifier
+

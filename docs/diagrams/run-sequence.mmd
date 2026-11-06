@@ -1,0 +1,47 @@
+%% Run sequence - prompt to terminal run, offline/mock provider path (no live paid API)
+%% Source: UI-COMMANDS-v1 sections 2-3, blueprint Phase 4/5/6/9
+sequenceDiagram
+    autonumber
+    actor U as User
+    participant UI as UI_composer_S03
+    participant WS as axum_ws
+    participant BUS as Command_bus
+    participant RUN as Run_manager
+    participant SCH as Scheduler_caps
+    participant PRV as Provider_client
+    participant DB as SQLite
+    participant EVB as Event_fanout
+
+    U->>UI: type prompt then Enter
+    UI->>WS: SUBMIT_PROMPT text project_id correlation_id
+    WS->>BUS: validate envelope and schema
+    alt invalid payload
+        BUS-->>WS: ERROR E_SCHEMA_INVALID or E_PROMPT_EMPTY
+        WS-->>UI: ERROR frame to refusal toast S14
+    else valid
+        BUS->>DB: INSERT run status queued
+        BUS-->>WS: ACK and RUN_CREATED
+        WS-->>UI: ACK and RUN_CREATED
+        BUS->>RUN: plan DAG one provider call per plan
+        RUN->>PRV: pre-send Decimal budget preflight
+        alt budget exceeded
+            PRV-->>RUN: E_BUDGET_EXCEEDED provider call count 0
+            RUN->>DB: run row failed INCOMPLETE cost NULL not zero
+            EVB-->>UI: RUN_STATUS failed and ERROR
+        else budget allowed
+            RUN->>SCH: dispatch tasks depth lt 3 fanout lt 8
+            SCH->>PRV: POST chat completions wiremock tests or live with approval
+            PRV-->>SCH: response and usage prompt completion tokens
+            SCH->>EVB: NODE_STATE and RUN_METRICS
+            EVB-->>WS: diff broadcast frames seq monotonic
+            WS-->>UI: NODE_STATE and RUN_METRICS render-back
+            RUN->>DB: persist usage and Decimal cost
+            RUN->>EVB: REPLY_DELTA stream
+            EVB-->>UI: progressive streamed reply S27
+            RUN->>DB: terminal run row completed and snapshot revision
+            RUN->>EVB: REPLY_DONE and RUN_STATUS completed
+            EVB-->>UI: terminal state thinking cleared
+        end
+    end
+    Note over SCH,PRV: failure path 429 401 402 timeout maps to a named E_PROVIDER refusal, run failed, partial state preserved
+    Note over WS,EVB: reconnect sends hello last_seq and stale expected_rev returns E_RESYNC_REQUIRED

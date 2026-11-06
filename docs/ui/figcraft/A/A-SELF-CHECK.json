@@ -1,0 +1,589 @@
+{
+ "schema": "hivemind.figcraft-selfcheck.v1",
+ "producer": "FigCraft-A",
+ "document": "docs/ui/figcraft/A/A-design.figcraft",
+ "document_sha256": "2bb34442bf46a7c5f4099281ba8b1077a02a904f07aa2653c2555461d088eaf2",
+ "figcraft_cli_version": "0.11.2",
+ "generated": "2026-11-06T04:40:28-0600",
+ "info": {
+  "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\A-design.figcraft",
+  "name": "HiveMind v1 Design System",
+  "images": 0,
+  "missingFonts": [],
+  "nodes": 1368,
+  "styles": 31,
+  "variables": 20,
+  "pages": [
+   {
+    "id": 1,
+    "name": "00 Foundations",
+    "nodes": 253,
+    "frames": [
+     {
+      "height": 1200.0,
+      "id": 5,
+      "name": "00 Foundations",
+      "type": "FRAME",
+      "width": 1440.0
+     }
+    ]
+   },
+   {
+    "id": 2,
+    "name": "01 Brand",
+    "nodes": 176,
+    "frames": [
+     {
+      "height": 900.0,
+      "id": 6,
+      "name": "01 Brand",
+      "type": "FRAME",
+      "width": 1440.0
+     }
+    ]
+   },
+   {
+    "id": 3,
+    "name": "02 Components",
+    "nodes": 690,
+    "frames": [
+     {
+      "height": 2580.0,
+      "id": 7,
+      "name": "02 Components",
+      "type": "FRAME",
+      "width": 1440.0
+     }
+    ]
+   },
+   {
+    "id": 4,
+    "name": "03 Specimens",
+    "nodes": 245,
+    "frames": [
+     {
+      "height": 1400.0,
+      "id": 8,
+      "name": "03 Specimens",
+      "type": "FRAME",
+      "width": 1440.0
+     }
+    ]
+   }
+  ]
+ },
+ "variables": {
+  "count": 20,
+  "expected": 20,
+  "mismatches": [],
+  "missing": [],
+  "extra": []
+ },
+ "surfaces": {
+  "expected": 28,
+  "mapped": 28,
+  "missing": []
+ },
+ "node_checks": [
+  {
+   "surface_id": "S01",
+   "node_id": 1198,
+   "found": true,
+   "name": "03/empty/canvas",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 140.0,
+    "width": 200.0,
+    "x": 708.0,
+    "y": 560.0
+   }
+  },
+  {
+   "surface_id": "S02",
+   "node_id": 1110,
+   "found": true,
+   "name": "S02-chat",
+   "type": "GROUP",
+   "bounds": {
+    "height": 421.0,
+    "width": 420.0,
+    "x": 48.0,
+    "y": 932.0
+   }
+  },
+  {
+   "surface_id": "S03",
+   "node_id": 1111,
+   "found": true,
+   "name": "S03-composer",
+   "type": "GROUP",
+   "bounds": {
+    "height": 201.0,
+    "width": 440.0,
+    "x": 492.0,
+    "y": 932.0
+   }
+  },
+  {
+   "surface_id": "S04",
+   "node_id": 782,
+   "found": true,
+   "name": "name",
+   "type": "TEXT",
+   "bounds": {
+    "height": 16.0,
+    "width": 62.0,
+    "x": 64.0,
+    "y": 1644.0
+   }
+  },
+  {
+   "surface_id": "S05",
+   "node_id": 782,
+   "found": true,
+   "name": "name",
+   "type": "TEXT",
+   "bounds": {
+    "height": 16.0,
+    "width": 62.0,
+    "x": 64.0,
+    "y": 1644.0
+   }
+  },
+  {
+   "surface_id": "S06",
+   "node_id": 782,
+   "found": true,
+   "name": "name",
+   "type": "TEXT",
+   "bounds": {
+    "height": 16.0,
+    "width": 62.0,
+    "x": 64.0,
+    "y": 1644.0
+   }
+  },
+  {
+   "surface_id": "S07",
+   "node_id": 782,
+   "found": true,
+   "name": "name",
+   "type": "TEXT",
+   "bounds": {
+    "height": 16.0,
+    "width": 62.0,
+    "x": 64.0,
+    "y": 1644.0
+   }
+  },
+  {
+   "surface_id": "S08",
+   "node_id": 1113,
+   "found": true,
+   "name": "S08-tabs",
+   "type": "GROUP",
+   "bounds": {
+    "height": 100.0,
+    "width": 436.0,
+    "x": 956.0,
+    "y": 932.0
+   }
+  },
+  {
+   "surface_id": "S09",
+   "node_id": 1114,
+   "found": true,
+   "name": "S09-hud",
+   "type": "GROUP",
+   "bounds": {
+    "height": 100.0,
+    "width": 436.0,
+    "x": 956.0,
+    "y": 1052.0
+   }
+  },
+  {
+   "surface_id": "S10",
+   "node_id": 1122,
+   "found": true,
+   "name": "S10-scrubber",
+   "type": "GROUP",
+   "bounds": {
+    "height": 141.0,
+    "width": 680.0,
+    "x": 712.0,
+    "y": 1796.0
+   }
+  },
+  {
+   "surface_id": "S11",
+   "node_id": 1119,
+   "found": true,
+   "name": "S11-rail",
+   "type": "GROUP",
+   "bounds": {
+    "height": 464.0,
+    "width": 92.0,
+    "x": 48.0,
+    "y": 1796.0
+   }
+  },
+  {
+   "surface_id": "S12",
+   "node_id": 1120,
+   "found": true,
+   "name": "S12-library",
+   "type": "GROUP",
+   "bounds": {
+    "height": 441.0,
+    "width": 260.0,
+    "x": 144.0,
+    "y": 1796.0
+   }
+  },
+  {
+   "surface_id": "S13",
+   "node_id": 1121,
+   "found": true,
+   "name": "S13-minimap",
+   "type": "GROUP",
+   "bounds": {
+    "height": 191.0,
+    "width": 260.0,
+    "x": 428.0,
+    "y": 1796.0
+   }
+  },
+  {
+   "surface_id": "S14",
+   "node_id": 1112,
+   "found": true,
+   "name": "S14-toast",
+   "type": "GROUP",
+   "bounds": {
+    "height": 231.0,
+    "width": 440.0,
+    "x": 492.0,
+    "y": 1132.0
+   }
+  },
+  {
+   "surface_id": "S15",
+   "node_id": 1104,
+   "found": true,
+   "name": "S15-superagent",
+   "type": "GROUP",
+   "bounds": {
+    "height": 321.0,
+    "width": 296.0,
+    "x": 92.0,
+    "y": 266.0
+   }
+  },
+  {
+   "surface_id": "S16",
+   "node_id": 1105,
+   "found": true,
+   "name": "S16-worker",
+   "type": "GROUP",
+   "bounds": {
+    "height": 321.0,
+    "width": 296.0,
+    "x": 412.0,
+    "y": 266.0
+   }
+  },
+  {
+   "surface_id": "S17",
+   "node_id": 1106,
+   "found": true,
+   "name": "S17-tool",
+   "type": "GROUP",
+   "bounds": {
+    "height": 321.0,
+    "width": 296.0,
+    "x": 732.0,
+    "y": 266.0
+   }
+  },
+  {
+   "surface_id": "S18",
+   "node_id": 1107,
+   "found": true,
+   "name": "S18-error",
+   "type": "GROUP",
+   "bounds": {
+    "height": 321.0,
+    "width": 296.0,
+    "x": 1052.0,
+    "y": 266.0
+   }
+  },
+  {
+   "surface_id": "S19",
+   "node_id": 1109,
+   "found": true,
+   "name": "S19-chips",
+   "type": "GROUP",
+   "bounds": {
+    "height": 250.0,
+    "width": 656.0,
+    "x": 736.0,
+    "y": 636.0
+   }
+  },
+  {
+   "surface_id": "S20",
+   "node_id": 1115,
+   "found": true,
+   "name": "S20-zoom",
+   "type": "GROUP",
+   "bounds": {
+    "height": 100.0,
+    "width": 436.0,
+    "x": 956.0,
+    "y": 1172.0
+   }
+  },
+  {
+   "surface_id": "S21",
+   "node_id": 1117,
+   "found": true,
+   "name": "S21-settings",
+   "type": "GROUP",
+   "bounds": {
+    "height": 189.0,
+    "width": 456.0,
+    "x": 936.0,
+    "y": 1396.0
+   }
+  },
+  {
+   "surface_id": "S22",
+   "node_id": 1123,
+   "found": true,
+   "name": "S22-tree",
+   "type": "GROUP",
+   "bounds": {
+    "height": 301.0,
+    "width": 320.0,
+    "x": 712.0,
+    "y": 1936.0
+   }
+  },
+  {
+   "surface_id": "S23",
+   "node_id": 270,
+   "found": true,
+   "name": "01/lockup/primary/panel",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 230.0,
+    "width": 420.0,
+    "x": 48.0,
+    "y": 220.0
+   }
+  },
+  {
+   "surface_id": "S24",
+   "node_id": 213,
+   "found": true,
+   "name": "00/elev/e1 / node/card",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 50.0,
+    "width": 292.0,
+    "x": 1078.0,
+    "y": 752.0
+   }
+  },
+  {
+   "surface_id": "S25",
+   "node_id": 1259,
+   "found": true,
+   "name": "03/appr/modal",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 136.0,
+    "width": 336.0,
+    "x": 1000.0,
+    "y": 844.0
+   }
+  },
+  {
+   "surface_id": "S26",
+   "node_id": 1208,
+   "found": true,
+   "name": "03/empty/frame",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 140.0,
+    "width": 200.0,
+    "x": 708.0,
+    "y": 560.0
+   }
+  },
+  {
+   "surface_id": "S27",
+   "node_id": 1280,
+   "found": true,
+   "name": "03/stream/panel",
+   "type": "RECTANGLE",
+   "bounds": {
+    "height": 116.0,
+    "width": 330.0,
+    "x": 104.0,
+    "y": 1122.0
+   }
+  },
+  {
+   "surface_id": "S28",
+   "node_id": 1099,
+   "found": true,
+   "name": "text",
+   "type": "TEXT",
+   "bounds": {
+    "height": 12.0,
+    "width": 1344.0,
+    "x": 48.0,
+    "y": 2500.0
+   }
+  }
+ ],
+ "exports": {
+  "a-foundations": {
+   "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-foundations.svg",
+   "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-foundations.png",
+   "sha256_svg": "24536354e6ffe9ba4dda2c9682b526bb44bedea6aea7f1d21fd4e3aeb75e551a",
+   "sha256_png": "e49b788a812e8a4962a29a926d25970b0a39218ade8dd34ee9c8c7079bdc53bc",
+   "dimensions": {
+    "board": [
+     1440,
+     1200
+    ],
+    "png_2x": [
+     2880,
+     2400
+    ],
+    "svg": "vector"
+   },
+   "svg_bytes": 1768930,
+   "png_bytes": 1054806
+  },
+  "a-brand": {
+   "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-brand.svg",
+   "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-brand.png",
+   "sha256_svg": "94cf946703c14355601813367f9a5fa11105d4e744990dd66ac7b0e5ad0a9522",
+   "sha256_png": "47680984aa5dacb1bf6a3576b42a11b01864c646068f33e5ca4acfe124f4a918",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ],
+    "svg": "vector"
+   },
+   "svg_bytes": 940908,
+   "png_bytes": 628963
+  },
+  "a-components": {
+   "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.svg",
+   "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.png",
+   "sha256_svg": "553e64308a50162f95f22f29c16ddb5555ad543cac426e248a95d1adaa53d0ce",
+   "sha256_png": "bc71b15999593b6081fdbd2087432d9c80dfaa2c1430ca5a8dd4173bda786c58",
+   "dimensions": {
+    "board": [
+     1440,
+     2580
+    ],
+    "png_2x": [
+     2880,
+     5160
+    ],
+    "svg": "vector"
+   },
+   "svg_bytes": 3706375,
+   "png_bytes": 2044181
+  },
+  "a-specimens": {
+   "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.svg",
+   "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.png",
+   "sha256_svg": "d8128e43d7726a39d3be07cf5d579a050fe50945296098e717d2bf346af61563",
+   "sha256_png": "99321e1fdeb2446ca2457babf865d6353fcc693c3ab3e29361a5d8e4d1027fe7",
+   "dimensions": {
+    "board": [
+     1440,
+     1400
+    ],
+    "png_2x": [
+     2880,
+     2800
+    ],
+    "svg": "vector"
+   },
+   "svg_bytes": 1800816,
+   "png_bytes": 886753
+  }
+ },
+ "checks": {
+  "info_parses": true,
+  "page_count_4": true,
+  "one_frame_per_page": true,
+  "frame_sizes_exact": [
+   {
+    "page": "00 Foundations",
+    "w": 1440.0,
+    "h": 1200.0
+   },
+   {
+    "page": "01 Brand",
+    "w": 1440.0,
+    "h": 900.0
+   },
+   {
+    "page": "02 Components",
+    "w": 1440.0,
+    "h": 2580.0
+   },
+   {
+    "page": "03 Specimens",
+    "w": 1440.0,
+    "h": 1400.0
+   }
+  ],
+  "missing_fonts_empty": true,
+  "variables_20_exact_hex": true,
+  "styles_31": true,
+  "surfaces_28_mapped": true,
+  "nodes_resolve_28": true,
+  "exports_nonzero": true,
+  "export_dimensions_2x": {
+   "a-foundations": [
+    2880,
+    2400
+   ],
+   "a-brand": [
+    2880,
+    1800
+   ],
+   "a-components": [
+    2880,
+    5160
+   ],
+   "a-specimens": [
+    2880,
+    2800
+   ]
+  },
+  "tokens_printed": 20,
+  "type_steps_printed": 8,
+  "radius_stops_printed": 7,
+  "elevation_tiers_printed": 3,
+  "contrast_rows_reproduced": 6,
+  "rejected_schema_guesses": []
+ },
+ "ok": true
+}

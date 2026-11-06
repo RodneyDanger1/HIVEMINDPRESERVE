@@ -1,0 +1,85 @@
+{
+ "episode_id": "a-build-00-00_setup_pages",
+ "brief": "HiveMind v1 design-system boards — FigCraft-A build stage 00_setup_pages.json",
+ "task_family": "design_system_artboards",
+ "apps": [
+  {
+   "name": "FigCraft",
+   "version": "0.11.2",
+   "mode": "headless cli"
+  }
+ ],
+ "rights": {
+  "source": "FigCraft `00 · Cover.pdf` sha256 F2D9B5AFDF3E9B37A7C0D14BDCBB21D7315538817245E566113B45492145006A",
+  "licence": "internal HiveMind v1 design system; text/values derived from the supplied boards and UI-WIRING-GUIDE only"
+ },
+ "plan": {
+  "steps": [
+   "file.new",
+   "page.add",
+   "page.list",
+   "page.rename",
+   "variable.create",
+   "variable.createCollection"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli run",
+   "params": {
+    "script": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\scripts\\00_setup_pages.json",
+    "in": null,
+    "out": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\build\\stage0.figcraft",
+    "commands": 27
+   },
+   "result": {
+    "ok": true,
+    "steps": 27
+   },
+   "duration_ms": 175
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/A/scripts/00_setup_pages.json",
+   "sha256": "622b84004114282a408c44cea435b2934b298586f3663d207f44782d95105698",
+   "kind": "script"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/stage0.figcraft",
+   "sha256": "4e7f14ecd87d467e4dd27a8241c5d526e37be7fb0ce55a8a858ba4c8eccbb892",
+   "kind": "figcraft"
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "transactional_run_ok": true,
+   "all_steps_ok": true
+  }
+ },
+ "outcome": "verified",
+ "failure_code": null,
+ "failures": [
+  {
+   "kind": "discovered",
+   "detail": "object.group sends the new group to the FRONT of the frame stack; a full-panel group hides same-band siblings created earlier. Fixed by leaving the buttons band panel ungrouped. Not a schema guess.",
+   "evidence": "A/build/c4.png empty buttons panel vs probe-s04c.png standalone render"
+  },
+  {
+   "kind": "avoided",
+   "detail": "shape.line with width 0 was rejected pre-emptively by inspection; minimap edges redrawn as 1px rects. No command rejection occurred.",
+   "evidence": "A/build/pages_components.py minimap"
+  },
+  {
+   "kind": "fixed",
+   "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
+   "evidence": "A/build/pages_foundations.py"
+  }
+ ],
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0.17
+ }
+}

@@ -319,7 +319,7 @@ impl RunAccounting {
             completion_tokens: self.usage.completion_tokens,
             total_tokens: self.usage.total_tokens,
             reasoning_tokens: self.usage.reasoning_tokens,
-            incomplete_reason: self.incomplete_reason.map(Refusal::code),
+            incomplete_reason: self.incomplete_reason.map(|refusal| refusal.code()),
             usage_provenance: Provenance::Measured.label(),
             amount_provenance: Provenance::Derived.label(),
         }

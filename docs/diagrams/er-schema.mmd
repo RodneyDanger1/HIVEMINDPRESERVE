@@ -1,0 +1,91 @@
+%% ER schema — TARGET durable store (Phase 4/5/6/9 WPs); SQLite scope = cache/metrics/usage/run/audit
+%% Graph is memory + versioned JSON snapshots (Phase 9 WP 9.8); SQLite never stores the graph claim.
+%% Source: blueprint Phase 4/5/6/9, docs/contracts/UI-COMMANDS-v1.md events, backend db.rs bootstrap (v1 has app_meta only)
+erDiagram
+  RUNS ||--o{ RUN_TASKS : dispatches
+  RUNS ||--o{ MESSAGES : contains
+  RUNS ||--o{ APPROVALS : requires
+  RUNS ||--o{ USAGE_RECORDS : bills
+  RUNS ||--o{ HISTORY_REVISIONS : snapshots
+  RUNS ||--o{ AUDIT_LEDGER : audits
+  RUN_TASKS ||--o{ TOOL_CALLS : executes
+
+  RUNS {
+    string run_id PK
+    string project_id
+    string status "queued|running|completed|failed|cancelled|killed"
+    string error_code "NULL unless failed"
+    datetime started_at
+    datetime finished_at
+    string cost_usd "Decimal TEXT, NULL = not measured"
+    int prompt_tokens "NULL = not measured"
+    int completion_tokens "NULL = not measured"
+  }
+  RUN_TASKS {
+    string task_id PK
+    string run_id FK
+    string parent_task_id FK "depth/fan-out authority"
+    int depth "cap < 3"
+    string agent_tier "HyperAgent|SuperAgent|Worker|Tool"
+    string state "one >=13-state enum"
+    int step_seq "monotonic super-step"
+  }
+  MESSAGES {
+    string message_id PK
+    string run_id FK
+    string role "user|assistant|tool"
+    string content
+    datetime created_at
+  }
+  APPROVALS {
+    string approval_id PK
+    string run_id FK
+    string tool_call_id FK
+    string args_sha256 "binds approval to exact args"
+    string permission_class "Mutate|Execute|Network"
+    string decision "AllowOnce|AllowSession|Deny"
+    string nonce "UNIQUE - replay = E_APPROVAL_REPLAY"
+    datetime expires_at "TTL -> E_APPROVAL_TIMEOUT"
+  }
+  TOOL_CALLS {
+    string call_id PK
+    string task_id FK
+    string tool_name
+    string permission_class
+    string refusal_code "NULL when allowed"
+    string args_sha256
+    string result_sha256 "NULL = no side effect"
+  }
+  USAGE_RECORDS {
+    string usage_id PK
+    string run_id FK
+    string model "deepseek-flash"
+    int prompt_tokens
+    int completion_tokens
+    string cost_usd "Decimal TEXT from provider usage"
+    string price_snapshot "source_url + fetched_at row"
+  }
+  HISTORY_REVISIONS {
+    string run_id FK
+    int revision "server-authoritative for S10 scrubber"
+    string graph_json "versioned snapshot"
+    string sha256
+    datetime created_at
+  }
+  AUDIT_LEDGER {
+    int seq PK
+    string run_id FK
+    string code "refusal/error code or null"
+    string tool_name
+    string permission_class
+    datetime at
+  }
+  SCHEMA_MIGRATIONS {
+    int version PK
+    string name
+    datetime applied_at
+  }
+  APP_META {
+    string key PK
+    string value
+  }

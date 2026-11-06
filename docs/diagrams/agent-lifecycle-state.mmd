@@ -1,0 +1,45 @@
+%% Agent lifecycle state machine - ONE enum (>=13 states)
+%% Source: blueprint Phase 4/5/6/9/10, UI-WIRING-GUIDE R-U4, UI-COMMANDS-v1 section 4
+stateDiagram-v2
+    [*] --> healthy
+    [*] --> empty
+    [*] --> loading
+
+    healthy --> running : run created
+    queued --> running : scheduler dispatch
+    running --> planning : plan DAG being built
+    planning --> thinking : provider call in flight
+    thinking --> streaming : first REPLY_DELTA
+    streaming --> running : stream continues
+    running --> thinking : next step
+    thinking --> awaiting_approval : tool needs approval
+    awaiting_approval --> running : approval allowed
+    awaiting_approval --> cancelled : approval denied or TTL expiry
+    running --> completed : terminal success
+    running --> failed : named provider/refusal error
+    running --> cancelled : CANCEL_RUN
+    running --> killed : KILL_WORKER
+    streaming --> completed : REPLY_DONE
+    streaming --> failed : provider error mid-stream
+    completed --> [*]
+    failed --> [*]
+    cancelled --> [*]
+    killed --> [*]
+
+    healthy --> reconnecting : WS drop
+    reconnecting --> healthy : hello last_seq resnapshot
+    reconnecting --> failed : bounded retries exhausted E_WS_DISCONNECTED
+
+    healthy --> replay : open history revision
+    replay --> healthy : leave replay
+
+    note right of empty
+        empty/loading are SURFACE states, not agent states
+    end note
+    note right of awaiting_approval
+        blocks approve/deny until single-use nonce decision;
+        replay of nonce -> E_APPROVAL_REPLAY
+    end note
+    note right of replay
+        read-only view state from Phase 9 history API
+    end note

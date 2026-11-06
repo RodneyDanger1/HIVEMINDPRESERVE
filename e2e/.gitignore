@@ -1,0 +1,6 @@
+# Playwright artifacts — never commit run output.
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+node_modules/

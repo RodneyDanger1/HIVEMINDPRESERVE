@@ -1,0 +1,1334 @@
+[
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    102
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    102
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    112
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    112
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    124
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    124
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    136
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    136
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    143
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    143
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    155
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    155
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    171
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    171
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    208
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    208
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    218
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    218
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    237
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    237
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    259
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    259
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    289
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    289
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    327
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    327
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    339
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    339
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    348
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    348
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    364
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    364
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    373
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    373
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    386
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    386
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    389
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    389
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    399
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    399
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    402
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    402
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    412
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    412
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    428
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    428
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    431
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    431
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    434
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    434
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    437
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    437
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    444
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    444
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    459
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    459
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    511
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    511
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    519
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    519
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    527
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    527
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    534
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    534
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    553
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    553
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    557
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    557
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    558
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    558
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    574
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    574
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    584
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    584
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ }
+]

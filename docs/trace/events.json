@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "schema": "hiverouter.trace.events/v1",
+    "status": "NOT_COLLECTED",
+    "event_vocabulary_source": "docs/contracts/UI-COMMANDS-v1.md §3 (frozen)",
+    "parity_rules": [
+      "emitted set (server source) == subscribed set (client addEventListener) == delivered set (browser capture)",
+      "SSE/WS named frames must be unwrapped only when the schema marker is present",
+      "live payload shape must equal the persisted payload shape",
+      "terminal run: run row status/error, terminal event payload, usage/cost/tokens must agree",
+      "failed/budget terminal runs: runs.cost_usd/prompt_tokens/completion_tokens must be NULL/incomplete, never 0"
+    ],
+    "generated_at": "2026-11-06T10:43:02.537Z"
+  },
+  "emitted": [],
+  "subscribed": [],
+  "delivered": [],
+  "payload_parity": [],
+  "terminal_records": [],
+  "event_vocabulary": [
+    "ACK",
+    "ERROR",
+    "SERVER_HELLO",
+    "RESYNC_REQUIRED",
+    "RUN_CREATED",
+    "RUN_STATUS",
+    "REPLY_DELTA",
+    "REPLY_DONE",
+    "NODE_SPAWN",
+    "NODE_DRAG",
+    "NODE_REWIRE",
+    "NODE_STATE",
+    "RUN_METRICS",
+    "APPROVAL_REQUEST",
+    "APPROVAL_RESOLVED",
+    "SETTINGS_STATUS_RESULT",
+    "FILE_TREE_RESULT",
+    "FILE_CONTENT",
+    "HISTORY_SNAPSHOT",
+    "PING",
+    "PONG"
+  ]
+}

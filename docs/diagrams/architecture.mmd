@@ -1,0 +1,50 @@
+%% Architecture — HiveMind v1 (single Rust binary + React canvas, one DeepSeek key, no Python/Docker)
+%% Source: blueprint §1/§3 Phase cards 1-12, EXECUTION-PROMPT §3, docs/contracts/UI-COMMANDS-v1.md
+%% Baseline status: PLANNED TARGET — backend crates exist in part; web/ not implemented at baseline.
+flowchart TD
+  subgraph Browser["Browser on localhost - React 19 + Vite 8 + @xyflow/react 12.12.1"]
+    UI["UI surfaces S01-S28<br/>canvas - chat - panels - tabs"]
+    TOK["Token module<br/>PDF tokens only, no hex outside"]
+    CLIENT["API / WS client<br/>uuid-v7 correlation_id"]
+  end
+
+  subgraph Server["Single Rust binary - tokio + axum 0.8 bound to 127.0.0.1"]
+    HTTP["http.rs<br/>/health - static assets - routes"]
+    WS["ws.rs<br/>one /ws - Origin allowlist + per-session token"]
+    BUS["bus.rs<br/>COMMAND/EVENT frames - ACK or typed Error"]
+    GRAPH["graph.rs<br/>petgraph authority - cycle refused"]
+    ORCH["orchestrator / run lifecycle<br/>plan DAG - depth/fan-out caps"]
+    SCHED["scheduler<br/>priority queue - CancellationToken"]
+    PROV["provider client<br/>deepseek-flash - Decimal budget"]
+    TOOLS["tools + approval nonce<br/>workspace jail - run ledger"]
+    DB["db.rs SQLite WAL<br/>runs - tasks - usage - metrics - audit"]
+    SNAP["snapshots<br/>versioned JSON - history revisions"]
+    OBS["observability<br/>JSONL tracing - capability census"]
+  end
+
+  subgraph External["External services"]
+    DS["api.deepseek.com<br/>POST /chat/completions - one key from env"]
+    WM["wiremock 0.6.5<br/>offline refusal matrix - dev only"]
+  end
+
+  UI --> TOK
+  UI --> CLIENT
+  CLIENT -->|"WS frames COMMAND/EVENT"| WS
+  WS --> BUS
+  BUS -->|"command - validate - ACK/refuse"| ORCH
+  BUS -->|"graph read/diff"| GRAPH
+  ORCH --> SCHED
+  ORCH --> PROV
+  SCHED --> PROV
+  ORCH --> TOOLS
+  PROV -->|"HTTPS - no key in logs"| DS
+  PROV -.->|"tests only - no key needed"| WM
+  ORCH --> DB
+  GRAPH --> SNAP
+  TOOLS --> DB
+  PROV --> DB
+  SNAP --> DB
+  DB --> OBS
+  BUS -->|"EVENT fan-out - seq monotonic"| WS
+  WS --> CLIENT
+  CLIENT -->|"render-back"| UI

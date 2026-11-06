@@ -21,6 +21,23 @@ pub struct Config {
     pub data_dir: PathBuf,
     /// SQLite database file.
     pub db_path: PathBuf,
+    /// WebSocket Origin allowlist (`http://127.0.0.1:<port>` etc.).
+    pub allowed_origins: Vec<String>,
+}
+
+/// Environment variable that appends comma-separated extra Origins.
+pub const ALLOWED_ORIGINS_ENV: &str = "HIVEROUTER_ALLOWED_ORIGINS";
+
+/// Default allowlist for a bound port (`*` for ephemeral test ports).
+#[must_use]
+pub fn default_allowed_origins(bind: SocketAddr) -> Vec<String> {
+    if bind.port() == 0 {
+        return Vec::new();
+    }
+    vec![
+        format!("http://127.0.0.1:{}", bind.port()),
+        format!("http://localhost:{}", bind.port()),
+    ]
 }
 
 /// Configuration errors (fail loudly before the server starts).
@@ -135,6 +152,7 @@ impl Config {
             bind,
             data_dir,
             db_path,
+            allowed_origins: resolve_allowed_origins(bind),
         })
     }
 
@@ -143,6 +161,18 @@ impl Config {
     pub fn db_file(&self) -> &Path {
         &self.db_path
     }
+}
+
+fn resolve_allowed_origins(bind: SocketAddr) -> Vec<String> {
+    let mut origins = default_allowed_origins(bind);
+    if let Ok(extra) = std::env::var(ALLOWED_ORIGINS_ENV) {
+        for origin in extra.split(',').map(str::trim).filter(|origin| !origin.is_empty()) {
+            if !origins.iter().any(|existing| existing.eq_ignore_ascii_case(origin)) {
+                origins.push(origin.to_owned());
+            }
+        }
+    }
+    origins
 }
 
 #[cfg(test)]
@@ -156,6 +186,10 @@ mod tests {
             .expect("valid config");
         assert!(config.bind.ip().is_loopback());
         assert_eq!(config.db_path, temp.path().join(DEFAULT_DB_FILE));
+        assert!(config
+            .allowed_origins
+            .contains(&"http://127.0.0.1:8080".to_owned()));
+        assert!(config.allowed_origins.contains(&"http://localhost:8080".to_owned()));
     }
 
     #[test]

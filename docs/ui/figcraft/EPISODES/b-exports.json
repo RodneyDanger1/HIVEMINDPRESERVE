@@ -1,0 +1,72 @@
+{
+ "episode_id": "1efb9131-25db-4b67-aad0-1e600a4d8225",
+ "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
+ "task_family": "ui_canvas_exports",
+ "apps": [
+  {
+   "name": "figcraft-cli",
+   "version": "0.11.2"
+  }
+ ],
+ "rights": {
+  "source": "same design file",
+  "licence": "project-internal"
+ },
+ "plan": {
+  "steps": [
+   "figcraft-cli export --format svg --scale 1",
+   "figcraft-cli export --format png --scale 2",
+   "PIL dimensions",
+   "sha256"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli export",
+   "params": {
+    "file": "B\\B-canvas.figcraft"
+   },
+   "result": {
+    "exit": 0,
+    "exports": 1
+   },
+   "duration_ms": 0
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+   "sha256": "fea7e5cc208dbe57e12d01e909d1dd8315cbbe7bb6d9fd07785476822360fba3",
+   "format": "svg",
+   "dimensions": [
+    1440,
+    900
+   ]
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+   "sha256": "cca6b5e2726475b7928d6dc5a83b788f707a69c9ab0bd7e0c3f95e501f8898ba",
+   "format": "png",
+   "dimensions": [
+    2880,
+    1800
+   ]
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "non_zero": "ok",
+   "dimensions_png_2x": "ok",
+   "sha256_recorded": "ok"
+  }
+ },
+ "outcome": "partial-built",
+ "failure_code": null,
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0
+ },
+ "note": "partial: boards ['00'] built; pending surfaces ['S24', 'S25']"
+}

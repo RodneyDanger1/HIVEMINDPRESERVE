@@ -24,6 +24,10 @@ schema mismatch → `E_SCHEMA_INVALID`; refusal is a typed `Error` event, never 
 | `REWIRE_TASK` | `task_id`, `new_parent_id`, `expected_rev` | graph acyclic, worker not streaming | `ACK` + `NODE_REWIRE` | `E_CYCLE`, `E_RESYNC_REQUIRED`, `E_REWIRE_IN_FLIGHT`, `E_TASK_NOT_FOUND` |
 | `CANCEL_RUN` | `run_id` | run active | `ACK` + `RUN_STATUS(CANCELLED)` | `E_RUN_TERMINAL`, `E_RUN_NOT_FOUND` |
 | `KILL_WORKER` | `task_id` | task running | `ACK` + `NODE_STATE(KILLED)` | `E_TASK_NOT_FOUND`, `E_TASK_TERMINAL`, `E_KILL_DENIED` |
+| `APPROVAL_RESOLVE` | `approval_id`, `nonce`, `decision` (`approve`/`deny`), `reason?` | pending approval, nonce fresh and unused | `ACK` + `APPROVAL_RESOLVED` | `E_APPROVAL_NOT_FOUND`, `E_APPROVAL_REPLAY`, `E_APPROVAL_TIMEOUT`, `E_APPROVAL_DECISION_INVALID`, `E_RESYNC_REQUIRED` |
+| `SETTINGS_STATUS` | `{}` | none | `ACK` + `SETTINGS_STATUS_RESULT` (provider, model, `key_present` bool — never the key) | `E_COMMAND_UNKNOWN` only; missing key is reported as `key_present:false`, not a refusal |
+| `FILE_TREE_LIST` | `{}` | workspace root configured | `ACK` + `FILE_TREE_RESULT` | `E_PATH_OUTSIDE_JAIL`, `E_PATH_NOT_FOUND` |
+| `FILE_READ` | `path` (workspace-relative) | jail contains canonical path; file <= 1 MiB | `ACK` + `FILE_CONTENT` | `E_PATH_OUTSIDE_JAIL`, `E_PATH_NOT_FOUND`, `E_FILE_TOO_LARGE` |
 | `CHAT_PIN` | `pinned` (bool) | client surface | `ACK` | `E_COMMAND_UNKNOWN` only |
 | `TEMPLATE_INSERT` | `template_id`, `project_id` | template manifest row present, licence allowed | `ACK` + `NODE_SPAWN` set | `E_TEMPLATE_UNKNOWN`, `E_TEMPLATE_LICENSE_MISSING` (`E_TEMPLATE_LICENSE_MISSING` is emitted when the licence allowlist rejects the row), `E_TEMPLATE_REF_FORBIDDEN` |
 | `HISTORY_REVISION_SET` | `run_id`, `revision` | run exists, revision <= latest | `ACK` + `HISTORY_SNAPSHOT` | `E_HISTORY_GAP`, `E_RUN_NOT_FOUND` |
@@ -38,7 +42,9 @@ schema mismatch → `E_SCHEMA_INVALID`; refusal is a typed `Error` event, never 
 `REPLY_DELTA` (`run_id`, `text_delta`) · `REPLY_DONE` (`run_id`, `usage`) ·
 `NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` (`task_id`, `state`) ·
 `RUN_METRICS` (`superagents`, `workers`, `green_pct`, `delta`) · `APPROVAL_REQUEST` / `APPROVAL_RESOLVED`
-(`approval_id`, `tool`, `decision`) · `HISTORY_SNAPSHOT` (`run_id`, `revision`, `graph`) · `PING` / `PONG`.
+(`approval_id`, `tool`, `decision`) · `SETTINGS_STATUS_RESULT` (`provider`, `model`, `key_present`) ·
+`FILE_TREE_RESULT` (`entries[]`, `root`) · `FILE_CONTENT` (`path`, `sha256`, `bytes`, `text`) ·
+`HISTORY_SNAPSHOT` (`run_id`, `revision`, `graph`) · `PING` / `PONG`.
 
 ## 4. Single agent-state enum (>=13; superset allowed)
 
@@ -53,15 +59,17 @@ Transport/UI: `E_ORIGIN_REJECTED`, `E_TOKEN_INVALID`, `E_RESYNC_REQUIRED`, `E_ZO
 `E_WS_DISCONNECTED`; command/schema: `E_COMMAND_UNKNOWN`, `E_SCHEMA_INVALID`, `E_PROMPT_EMPTY`, `E_PROMPT_TOO_LONG`,
 `E_RUN_ACTIVE`, `E_KEY_MISSING`, `E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`, `E_CYCLE`, `E_REWIRE_IN_FLIGHT`, `E_RUN_TERMINAL`,
 `E_RUN_NOT_FOUND`, `E_TASK_NOT_FOUND`, `E_TASK_TERMINAL`, `E_KILL_DENIED`, `E_BUDGET_EXCEEDED`, `E_APPROVAL_REPLAY`,
-`E_APPROVAL_TIMEOUT`, `E_DIFF_DECISION_REQUIRED`, `E_TEMPLATE_UNKNOWN`, `E_TEMPLATE_LICENSE_MISSING`,
-`E_TEMPLATE_REF_FORBIDDEN`; tool/safety: `E_TOOL_NOT_FOUND`, `E_TOOL_SCHEMA`, `E_JAIL_ESCAPE`, `E_TOOL_TIMEOUT`,
+`E_APPROVAL_TIMEOUT`, `E_APPROVAL_NOT_FOUND`, `E_APPROVAL_DECISION_INVALID`, `E_DIFF_DECISION_REQUIRED`,
+`E_TEMPLATE_UNKNOWN`, `E_TEMPLATE_LICENSE_MISSING`, `E_TEMPLATE_REF_FORBIDDEN`; files/jail: `E_PATH_OUTSIDE_JAIL`,
+`E_PATH_NOT_FOUND`, `E_FILE_TOO_LARGE`; tool/safety: `E_TOOL_NOT_FOUND`, `E_TOOL_SCHEMA`, `E_JAIL_ESCAPE`, `E_TOOL_TIMEOUT`,
 `E_TOOL_CANCELLED`; provider: `E_PROVIDER_AUTH`, `E_PROVIDER_RATE_LIMIT`, `E_PROVIDER_TIMEOUT`, `E_PROVIDER_INCOMPLETE`;
 build/toolchain: `E_TOOLCHAIN_MSRV`, `E_NODE_MISSING`. Codes are stable identifiers; messages may change.
 
 ## 6. Commands ↔ surface matrix (FigCraft assets must label these)
 
 S03 composer→`SUBMIT_PROMPT`; S04→`SPAWN_SUB_HIVE`; S05→`REWIRE_TASK`; S06→`CANCEL_RUN`; S07→`KILL_WORKER`;
-S10→`HISTORY_REVISION_SET`; S12→`TEMPLATE_INSERT`; S20→`VIEWPORT_SET`/`VIEWPORT_RECENTER`; S25→DIFF (decision-gated).
+S10→`HISTORY_REVISION_SET`; S12→`TEMPLATE_INSERT`; S20→`VIEWPORT_SET`/`VIEWPORT_RECENTER`; S21→`SETTINGS_STATUS`;
+S22→`FILE_TREE_LIST`/`FILE_READ`; approval overlay→`APPROVAL_RESOLVE`; S25→DIFF (decision-gated).
 All other surfaces are read/derived. Every mutating control must show ACK or named refusal before mutating UI state.
 
 ## 7. Acceptance (Phase 1 gate)

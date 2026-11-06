@@ -185,6 +185,12 @@ refusal_table! {
     ApprovalTimeout => ("E_APPROVAL_TIMEOUT", true,
         "The approval request timed out before a decision arrived.",
         "Resolve the request when prompted; the tool call is refused, never faked."),
+    ApprovalNotFound => ("E_APPROVAL_NOT_FOUND", false,
+        "The approval id does not exist or is no longer pending.",
+        "Refresh the pending approvals and resolve an approval that still exists."),
+    ApprovalDecisionInvalid => ("E_APPROVAL_DECISION_INVALID", false,
+        "The approval decision is not one of the frozen values.",
+        "Send decision \"approve\" or \"deny\" with the pending approval nonce."),
     DiffDecisionRequired => ("E_DIFF_DECISION_REQUIRED", false,
         "A code diff requires an explicit decision.",
         "Approve or reject the diff decision; DIFF_* is decision-gated in v1."),
@@ -209,6 +215,17 @@ refusal_table! {
     SnapshotCorrupt => ("E_SNAPSHOT_CORRUPT", false,
         "The graph snapshot JSON is corrupt or fails its versioned schema.",
         "Restore an earlier snapshot revision; the workspace is never silently reset."),
+
+    // --- files / workspace jail --------------------------------------------
+    PathOutsideJail => ("E_PATH_OUTSIDE_JAIL", false,
+        "The requested path resolves outside the configured workspace root.",
+        "Use a workspace-relative path that stays inside the workspace root."),
+    PathNotFound => ("E_PATH_NOT_FOUND", false,
+        "The requested file or directory does not exist inside the workspace.",
+        "Refresh the file tree and pick an existing workspace-relative path."),
+    FileTooLarge => ("E_FILE_TOO_LARGE", false,
+        "The requested file exceeds the 1 MiB read cap.",
+        "Read a smaller file or add the path to a workspace exclusion list."),
 
     // --- tool / safety ------------------------------------------------------
     ToolNotFound => ("E_TOOL_NOT_FOUND", false,

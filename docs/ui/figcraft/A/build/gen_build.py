@@ -28,10 +28,10 @@ PAGE_MODS = {
            "03_foundations_groups.json", "a-foundations"),
     "01": ("pages_brand", "build_brand", "05_brand.json",
            "06_brand_groups.json", "a-brand"),
-    "02": ("pages_components", "build_components", "07_components_a.json",
-           "09_components_groups.json", "a-components"),
-    "03": ("pages_specimens", "build_specimens", "10_specimens.json",
-           "11_specimens_groups.json", "a-specimens"),
+    "02": ("pages_components", "build_components", "07_components.json",
+           "08_components_groups.json", "a-components"),
+    "03": ("pages_specimens", "build_specimens", "09_specimens.json",
+           "10_specimens_groups.json", "a-specimens"),
 }
 
 

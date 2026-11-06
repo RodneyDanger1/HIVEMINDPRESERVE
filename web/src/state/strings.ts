@@ -1,0 +1,340 @@
+/**
+ * The single string table (R-U13): every user-facing string resolves from
+ * here so no copy is hardcoded in components. Static copy is derived from the
+ * FigCraft PDF text (`PDF:<line>` = evidence/pdf/pages.txt) or the frozen
+ * contract; strings the PDF does not provide are PROPOSED-ADDITION.
+ */
+
+export const STRINGS = {
+  app: {
+    title: 'HiveMind',
+    subtitle: 'SPATIAL EXECUTION ENVIRONMENT',
+    documentTitle: 'HiveMind — Spatial Execution Environment',
+    skipToCanvas: 'Skip to canvas',
+  },
+  brand: {
+    wordmark: 'HiveMind',
+    lockupSubtitle: 'SPATIAL EXECUTION ENVIRONMENT',
+    /** PROPOSED-ADDITION: inline fallback glyph until FigCraft assets are allowlisted. */
+    markAria: 'HiveMind hexagon with routing bee',
+  },
+  nav: {
+    aria: 'Primary navigation',
+    workspace: 'Workspace',
+    agents: 'Agents',
+    data: 'Data',
+    models: 'Models',
+    routing: 'Routing',
+    settings: 'Settings',
+  },
+  tabs: {
+    aria: 'Workspace tabs',
+    workspace: 'Workspace',
+    swarm: 'Swarm',
+    routing: 'Routing',
+    history: 'History',
+  },
+  hud: {
+    aria: 'Swarm throughput',
+    superagents: 'SUPERAGENTS',
+    workers: 'WORKERS',
+    green: 'GREEN',
+    deltaLabel: 'since previous metrics frame',
+  },
+  chat: {
+    aria: 'HyperAgent hive chat core',
+    title: 'Hive AI Assistant',
+    pinned: 'Pinned to hive centre',
+    pin: 'Pin chat',
+    unpin: 'Unpin chat',
+    close: 'Hide chat',
+    reopen: 'Show chat',
+    empty: 'Drop a repository into the core hive and the HyperAgent maps its architecture before a single worker spawns.',
+    assistantName: 'Hive AI Assistant',
+    userLabel: 'You',
+    closeAria: 'Hide the chat core (the hive stays)',
+    untitledRun: 'Untitled run',
+  },
+  composer: {
+    placeholder: 'Type your prompt...',
+    submit: 'Submit prompt',
+    hint: 'Enter submits · Shift+Enter newline · Ctrl+0 recentres',
+    emptyRefusal: 'Prompt is empty',
+  },
+  controls: {
+    spawn: 'Spawn sub-hive',
+    reroute: 'Re-route',
+    cancel: 'Cancel',
+    kill: 'Kill worker',
+    approve: 'Approve',
+    deny: 'Deny',
+    retry: 'Retry',
+    dismiss: 'Dismiss',
+    close: 'Close',
+    refresh: 'Refresh',
+    recenter: 'Recentre hive (Ctrl+0)',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    zoomFit: 'Fit swarm',
+    openSettings: 'Open settings',
+    disabledNoRun: 'No active run',
+    disabledNoSelection: 'Select a running worker first',
+  },
+  library: {
+    aria: 'Library panel',
+    title: 'Library',
+    projectLabel: 'Project',
+    projectFallback: 'HiveMind AI',
+    activeAgents: 'ACTIVE AGENTS',
+    templates: 'TEMPLATES',
+    tip: 'Drag a worker onto another super-agent to re-route its context stream live.',
+    emptyAgents: 'No active agents',
+    templateLicence: 'licence',
+  },
+  templates: {
+    contentWriter: 'Content Writer',
+    dataAnalyst: 'Data Analyst',
+    codeReviewer: 'Code Reviewer',
+    chatbot: 'Chatbot',
+  },
+  scrubber: {
+    aria: 'Time-travel scrubber',
+    label: 'Routing state',
+    of: 'of',
+    live: 'live',
+    empty: 'No run history yet',
+  },
+  minimap: {
+    aria: 'Canvas minimap',
+  },
+  toast: {
+    regionAria: 'Refusals and errors',
+    prefix: 'REFUSED BY NAME',
+    suffix: 'NOT SILENT',
+    dismiss: 'Dismiss refusal',
+  },
+  settings: {
+    aria: 'Settings',
+    title: 'Settings',
+    keyTitle: 'Provider key status',
+    keyUnknown: 'Not probed by the server',
+    keyPresent: 'Key configured',
+    keyMissing: 'Key missing',
+    keyUnprobedHint: 'Submit a prompt to surface E_KEY_MISSING if no key is configured.',
+    modelLabel: 'Model',
+    providerLabel: 'Provider',
+    healthLabel: 'Server health',
+    healthUnknown: 'Not checked',
+    checksLabel: 'Environment checks',
+    refresh: 'Re-check health',
+  },
+  /** One label per agent state (R-U4: same vocabulary as the enum). */
+  agentStates: {
+    healthy: 'Healthy',
+    running: 'Running',
+    queued: 'Queued',
+    failed: 'Failed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+    killed: 'Killed',
+    planning: 'Planning',
+    thinking: 'Thinking',
+    awaiting_approval: 'Awaiting approval',
+    streaming: 'Streaming',
+    reconnecting: 'Reconnecting',
+    replay: 'Replay',
+    empty: 'Empty',
+    loading: 'Loading',
+  },
+  states: {
+    loading: 'Loading',
+    empty: 'Nothing here yet',
+    error: 'Something went wrong',
+    offline: 'Server unreachable',
+    missingKey: 'Provider key missing',
+    replay: 'Replay (read-only)',
+    notMeasured: 'Not measured',
+    unavailable: 'Unavailable',
+  },
+  panels: {
+    agentsTitle: 'Agents',
+    agentsEmpty: 'No agents yet — submit a prompt to create the first run.',
+    dataTitle: 'Data',
+    dataUnavailable:
+      'The v1 server exposes no workspace-file API yet; the file tree is a named gap (Phase 6 tool plane), not a fake tree.',
+    modelsTitle: 'Models',
+    modelsEmpty: 'Server reports no models.',
+    routingTitle: 'Routing',
+    routingEmpty: 'No edges in the current graph.',
+    historyTitle: 'History',
+    historyEmpty: 'No revisions yet.',
+  },
+  diff: {
+    title: 'Code-diff review',
+    decisionRequired:
+      'Decision required: the code-diff surface is proposal-gated (no PDF artboard, no frozen DIFF command). It is not built in v1.',
+  },
+  approval: {
+    title: 'Tool approval requested',
+    toolLabel: 'Tool',
+    noCommand:
+      'Approval cannot be resolved from this UI: the frozen command set has no approval-response command (recorded contract gap).',
+  },
+  node: {
+    hyperAgent: 'HyperAgent',
+    superAgent: 'SuperAgent',
+    workerAgent: 'WorkerAgent',
+    toolAgent: 'ToolAgent',
+    errorState: 'Error state',
+    role: 'role',
+    workers: 'workers',
+    ctx: 'ctx',
+    progress: 'progress',
+    score: 'score',
+    attempt: 'attempt',
+    failed: 'Compile failed',
+    toolLabel: 'TOOL',
+    workerLabel: 'WORKER',
+    running: 'RUNNING',
+    noMetrics: '—',
+  },
+  seed: {
+    superAgentRoot: 'Hive chat core',
+    superAgentBackend: 'Backend Architecture',
+    superAgentFrontend: 'Frontend Architecture',
+    workerTailwind: 'tailwind-builder',
+    workerSchema: 'db-schema',
+    workerTest: 'agent.spec.ts',
+    toolPrisma: 'Prisma Generator',
+    errorPrismaMessage: 'Prisma client type mismatch on Run.sessionId',
+    toolCode: 'schema.prisma',
+  },
+  /** Client-side refusal copy for codes that can be raised without a server frame. */
+  clientRefusalUnknown: {
+    message: 'Unrecognised server refusal',
+    howToFix: 'Record the frame and report a contract gap; do not retry blindly.',
+  },
+  clientRefusals: {
+    E_PROMPT_EMPTY: {
+      message: 'The prompt is empty.',
+      howToFix: 'Type a prompt before submitting (1-8000 characters).',
+      retryable: true,
+    },
+    E_PROMPT_TOO_LONG: {
+      message: 'The prompt exceeds 8000 characters.',
+      howToFix: 'Shorten the prompt to 8000 characters or fewer.',
+      retryable: true,
+    },
+    E_WS_DISCONNECTED: {
+      message: 'The local server is unreachable.',
+      howToFix: 'Start the HiveMind server (cargo run --release) and reload the UI.',
+      retryable: true,
+    },
+    E_SCHEMA_INVALID: {
+      message: 'A frame did not match the frozen contract.',
+      howToFix: 'Reload the UI; if it repeats, record the frame and restart the server.',
+      retryable: true,
+    },
+    E_COMMAND_UNKNOWN: {
+      message: 'The server does not recognise this command.',
+      howToFix: 'This UI build is out of date with the server contract; redeploy the matching bundle.',
+      retryable: false,
+    },
+    E_ORIGIN_REJECTED: {
+      message: 'The browser origin is not allowlisted for this server.',
+      howToFix: 'Open the UI from http://127.0.0.1:8080 (or add the origin to HIVEROUTER_ALLOWED_ORIGINS).',
+      retryable: false,
+    },
+    E_TOKEN_INVALID: {
+      message: 'The per-session WebSocket token is missing or stale.',
+      howToFix: 'Reload the UI so it fetches a fresh token from /api/session.',
+      retryable: true,
+    },
+    E_ZOOM_RANGE: {
+      message: 'Zoom is outside the supported 0.1x-3.0x range.',
+      howToFix: 'Use the zoom controls; values are clamped to 0.1-3.0.',
+      retryable: true,
+    },
+    E_RESYNC_REQUIRED: {
+      message: 'The client missed events and must resnapshot.',
+      howToFix: 'Wait for the reconnect/resnapshot to finish; do not retry mutations until synced.',
+      retryable: true,
+    },
+    E_TASK_NOT_FOUND: {
+      message: 'The selected task no longer exists on the server.',
+      howToFix: 'Select a task that still exists; the graph may have changed.',
+      retryable: false,
+    },
+    E_RUN_NOT_FOUND: {
+      message: 'There is no active run to act on.',
+      howToFix: 'Submit a prompt to create a run first.',
+      retryable: true,
+    },
+    E_RUN_TERMINAL: {
+      message: 'The run is already terminal.',
+      howToFix: 'Submit a new prompt; completed/cancelled/killed runs cannot be mutated.',
+      retryable: false,
+    },
+    E_APPROVAL_NOT_FOUND: {
+      message: 'The approval request is no longer pending.',
+      howToFix: 'Refresh the approval overlay; it may have timed out or been resolved elsewhere.',
+      retryable: false,
+    },
+    E_RUN_ACTIVE: {
+      message: 'A run is already active in this session.',
+      howToFix: 'Wait for the active run to finish or cancel it first.',
+      retryable: true,
+    },
+    E_KILL_DENIED: {
+      message: 'The worker cannot be killed from its current state.',
+      howToFix: 'Only running workers can be killed; refresh the worker state.',
+      retryable: false,
+    },
+  },
+} as const;
+
+export type StringTable = typeof STRINGS;
+
+/** Locale-stable number formatting; counts in the UI are derived, never typed. */
+export function formatCount(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return STRINGS.node.noMetrics;
+  }
+  return new Intl.NumberFormat('en-US').format(value);
+}
+
+export function formatPercent(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return STRINGS.node.noMetrics;
+  }
+  return `${value.toFixed(digits)}%`;
+}
+
+export function formatDelta(value: number | null | undefined, digits = 1): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return STRINGS.node.noMetrics;
+  }
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${value.toFixed(digits)}%`;
+}
+
+export function formatCtx(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return STRINGS.node.noMetrics;
+  }
+  return `${(value / 1000).toFixed(1)}k ${STRINGS.node.ctx}`;
+}
+
+export function formatStateOf(index: number, total: number): string {
+  return `${STRINGS.scrubber.label} ${index + 1} ${STRINGS.scrubber.of} ${total}`;
+}
+
+export function refusalCopy(code: string): {
+  message: string;
+  howToFix: string;
+  retryable: boolean;
+} | null {
+  const table: Record<string, { message: string; howToFix: string; retryable: boolean }> =
+    STRINGS.clientRefusals;
+  return table[code] ?? null;
+}

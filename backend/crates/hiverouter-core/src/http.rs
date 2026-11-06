@@ -1,20 +1,25 @@
-//! Localhost HTTP surface for Phase 1: `GET /health` plus an honest 404 until the
-//! embedded web build exists.
+//! Localhost HTTP surface: `GET /health`, `GET /api/session`, `GET /ws`, and an
+//! honest 404 until the embedded web build exists.
 
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::extract::State;
-use axum::http::StatusCode;
+use axum::extract::{ConnectInfo, State};
+use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
 use tokio::net::TcpListener;
+use uuid::Uuid;
 
+use crate::bus::EventBus;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
+use crate::graph::GraphAuthority;
+use crate::ws::{refusal_response, SessionAuth, ws_handler};
 
 /// Shared server state.
 #[derive(Debug)]
@@ -27,17 +32,52 @@ pub struct AppState {
     pub started_at: Instant,
     /// Resolved configuration.
     pub config: Arc<Config>,
+    /// Server event sequencer + fan-out.
+    pub bus: Arc<EventBus>,
+    /// The single authoritative graph owner.
+    pub graph: Arc<GraphAuthority>,
+    /// WebSocket session authentication.
+    pub session: Arc<SessionAuth>,
 }
 
 impl AppState {
-    /// Builds state for a running server.
+    /// Builds state for a running server with a fresh event bus, graph and
+    /// session token derived from the configuration.
     #[must_use]
     pub fn new(db: Arc<Database>, checks: Vec<Check>, config: Arc<Config>) -> Self {
+        let session = Arc::new(SessionAuth::new(
+            Uuid::now_v7().to_string(),
+            config.allowed_origins.clone(),
+        ));
         Self {
             db,
             checks,
             started_at: Instant::now(),
             config,
+            bus: Arc::new(EventBus::new()),
+            graph: Arc::new(GraphAuthority::new()),
+            session,
+        }
+    }
+
+    /// Builds state with explicitly supplied services (integration tests).
+    #[must_use]
+    pub fn with_services(
+        db: Arc<Database>,
+        checks: Vec<Check>,
+        config: Arc<Config>,
+        bus: Arc<EventBus>,
+        graph: Arc<GraphAuthority>,
+        session: Arc<SessionAuth>,
+    ) -> Self {
+        Self {
+            db,
+            checks,
+            started_at: Instant::now(),
+            config,
+            bus,
+            graph,
+            session,
         }
     }
 }
@@ -58,6 +98,8 @@ pub struct HealthResponse {
     pub checks: Vec<Check>,
     /// Database health.
     pub database: DatabaseHealth,
+    /// Transport counters.
+    pub transport: TransportHealth,
 }
 
 /// Database portion of the health payload.
@@ -71,11 +113,24 @@ pub struct DatabaseHealth {
     pub error_code: Option<&'static str>,
 }
 
-/// Builds the Phase 1 router. Later phases mount transport/history routes on it.
+/// Transport portion of the health payload.
+#[derive(Debug, Serialize)]
+pub struct TransportHealth {
+    /// Current server event sequence.
+    pub last_seq: u64,
+    /// Graph nodes in memory.
+    pub graph_nodes: Option<usize>,
+    /// Origin allowlist size (the values themselves stay out of the payload).
+    pub allowed_origins: usize,
+}
+
+/// Builds the server router.
 #[must_use]
 pub fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route("/api/session", get(api_session))
+        .route("/ws", get(ws_handler))
         .fallback(not_found)
         .with_state(state)
 }
@@ -115,6 +170,11 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
         uptime_secs: state.started_at.elapsed().as_secs(),
         checks: state.checks.clone(),
         database,
+        transport: TransportHealth {
+            last_seq: state.bus.current_seq(),
+            graph_nodes: state.graph.node_count().ok(),
+            allowed_origins: state.session.allowed_origins().len(),
+        },
     };
     let status_code = if required_ok {
         StatusCode::OK
@@ -122,6 +182,35 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
         StatusCode::SERVICE_UNAVAILABLE
     };
     (status_code, Json(payload)).into_response()
+}
+
+async fn api_session(
+    State(state): State<Arc<AppState>>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+) -> Response {
+    let origin = headers
+        .get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok());
+    let allowed = match origin {
+        Some(origin) => state.session.is_origin_allowed(Some(origin)),
+        // Same-origin fetches normally carry no Origin header; only a loopback
+        // peer may use that path.
+        None => peer.ip().is_loopback(),
+    };
+    if !allowed {
+        return refusal_response(StatusCode::FORBIDDEN, &hiverouter_contract::Refusal::OriginRejected);
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "token": state.session.token(),
+            "schema": hiverouter_contract::SCHEMA_VERSION,
+            "last_seq": state.bus.current_seq(),
+            "ws": "/ws",
+        })),
+    )
+        .into_response()
 }
 
 async fn not_found() -> impl IntoResponse {
@@ -143,7 +232,16 @@ pub async fn serve(
     state: Arc<AppState>,
     shutdown: impl std::future::Future<Output = ()> + Send + 'static,
 ) -> std::io::Result<()> {
-    axum::serve(listener, build_router(state))
-        .with_graceful_shutdown(shutdown)
-        .await
+    axum::serve(
+        listener,
+        build_router(state).into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown)
+    .await
+}
+
+/// Best-effort loopback check used by handlers that receive a peer address.
+#[must_use]
+pub fn is_loopback(ip: IpAddr) -> bool {
+    ip.is_loopback()
 }

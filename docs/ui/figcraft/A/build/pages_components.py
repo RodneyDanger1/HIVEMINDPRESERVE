@@ -72,15 +72,17 @@ def worker_card(b):
           name="02/worker/state-dot")
     b.text(x + 30, y + 121, "running", 9.5, "Consolas", "Regular", C["ink700"],
            width=120, line=13, group=g)
-    b.text(x + 16, y + 152, "no header fill", 9, "Consolas", "Regular",
-           C["ink700"], width=264, line=13, group=g)
-    b.rect(x + 16, y + 176, 264, 54, fill=C["panel_alt"], r=8, stroke=C["hairline"],
+    b.text(x + 16, y + 152, "meta  ·  0.55  ·  react/vite", 9.5, "Consolas",
+           "Regular", C["ink500"], width=264, line=13, group=g)
+    b.text(x + 16, y + 168, "no header fill — the progress bar is the only motion",
+           9, "Inter", "Regular", C["ink700"], width=264, line=13, group=g)
+    b.rect(x + 16, y + 192, 264, 54, fill=C["panel_alt"], r=8, stroke=C["hairline"],
            sw=1, group=g, name="02/worker/spec")
     b.text(x + 26, y + 184, "CARD ANATOMY / WORKER", 8, "Consolas", "Regular",
            C["ink500"], width=230, line=11, tracking=8, group=g)
-    b.text(x + 26, y + 199, "name 14.5 · role mono 9.5 · meta mono 9.5 #75663F",
+    b.text(x + 26, y + 207, "name 14.5 · role mono 9.5 · meta mono 9.5 #75663F",
            8, "Consolas", "Regular", C["ink700"], width=244, line=11, group=g)
-    b.text(x + 26, y + 212, "radius 12 · padding 16 · progress 5/3",
+    b.text(x + 26, y + 220, "radius 12 · padding 16 · progress 5/3",
            8, "Consolas", "Regular", C["ink700"], width=244, line=11, group=g)
     b.text(x, y + CARD_H + 8, "S16 · WORKERAGENT · PDF p6:192-196,222", 9,
            "Consolas", "Regular", C["ink500"], width=CARD_W, line=13, group=g)
@@ -292,16 +294,16 @@ def composer(b):
            name="02/composer/submit")
     b.text(x + 344, y + 45, "Send →", 11, "Inter", "SemiBold", C["ink900"],
            width=80, line=15, align="center", group=g)
-    b.text(x + 16, y + 84, "focus: 2px ink-700 #4E3A15 (9.86:1) replaces the printed "
-                           "honey-300 ring (1.70/1.55 — fails 3:1).", 8.5,
-           "Consolas", "Regular", C["signal"], width=408, line=12, group=g)
-    b.text(x + 16, y + 102, "placeholder “Type your prompt…” · Enter submits · "
+    b.text(x + 16, y + 84, "focus: ink-700 #4E3A15 (9.86:1) — printed honey-300 ring "
+                           "failed 3:1", 8.5,
+           "Consolas", "Regular", C["signal"], width=420, line=12, group=g)
+    b.text(x + 16, y + 100, "placeholder “Type your prompt…” · Enter submits · "
                             "Shift+Enter newline", 8.5, "Consolas", "Regular",
            C["ink700"], width=408, line=12, group=g)
-    b.text(x + 16, y + 120, "empty → E_PROMPT_EMPTY · disabled in-flight · duplicate "
+    b.text(x + 16, y + 114, "empty → E_PROMPT_EMPTY · disabled in-flight · duplicate "
                             "submit = one run", 8.5, "Consolas", "Regular",
            C["ink700"], width=408, line=12, group=g)
-    b.text(x + 16, y + 140, "SUBMIT_PROMPT {text, project_id, correlation_id} · ACK or "
+    b.text(x + 16, y + 132, "SUBMIT_PROMPT {text, project_id, correlation_id} · ACK or "
                             "named refusal before mutation", 8, "Consolas", "Regular",
            C["ink500"], width=408, line=11, group=g)
     b.text(x, y + h + 8, "S03 · COMPOSER · PDF p7:235-237,302 · UI-R-04 / UI-R-29",
@@ -309,7 +311,7 @@ def composer(b):
 
 
 def toast(b):
-    x, y, w, h = 492, 1132, 440, 200
+    x, y, w, h = 492, 1132, 440, 210
     g = "S14-toast"
     b.rect(x, y, w, h, fill=C["paper"], r=12, stroke=C["hairline"], sw=1, group=g,
            surface="S14", name="02/toast/panel")
@@ -325,15 +327,15 @@ def toast(b):
     b.text(x + 20, y + 88, "E_REWIRE_IN_FLIGHT  ·  retryable  ·  how_to_fix: wait for "
                            "stream end or cancel the run", 9, "Consolas", "Regular",
            C["signal"], width=390, line=13, group=g)
-    b.rect(x + 20, y + 112, 392, 22, fill=C["honey100"], r=6, group=g,
+    b.rect(x + 20, y + 124, 392, 22, fill=C["honey100"], r=6, group=g,
            name="02/toast/footer")
-    b.text(x + 28, y + 118, "REFUSED BY NAME  ·  NOT SILENT", 8.5, "Consolas",
+    b.text(x + 28, y + 130, "REFUSED BY NAME  ·  NOT SILENT", 8.5, "Consolas",
            "Regular", C["ink700"], width=300, line=13, tracking=8, group=g)
-    b.text(x + 20, y + 142, "code + cause + how_to_fix + retryable · aria-live=assertive · "
+    b.text(x + 20, y + 156, "code + cause + how_to_fix + retryable · aria-live=assertive · "
                             "fired before any UI mutation · logged as a row",
            8.5, "Inter", "Regular", C["ink700"], width=390, line=12, group=g)
-    b.text(x + 20, y + 170, "Three fixtures (429, budget, rewire-while-streaming) must "
-                            "render three distinct coded refusals.", 8, "Consolas",
+    b.text(x + 20, y + 184, "Fixtures 429, budget, rewire-while-streaming → three "
+                            "coded refusals", 8, "Consolas",
            "Regular", C["ink500"], width=390, line=11, group=g)
     b.text(x, y + h + 8, "S14 · TOAST / REFUSAL · PDF p7:269-273 · MP-07 / B12",
            9, "Consolas", "Regular", C["ink500"], width=w, line=13, group=g)
@@ -422,13 +424,12 @@ def buttons_matrix(b):
     b.section(48, 1370, 860, "buttons · spawn / re-route / cancel / kill",
               note="PDF p7:238-240")
     b.rect(x, y, w, h, fill=C["paper"], r=12, stroke=C["hairline"], sw=1,
-           group="02-buttons-base", name="02/buttons/panel")
+           name="02/buttons/panel")
     states = ["default", "hover", "pressed", "disabled", "refused"]
     col_x = [x + 150 + i * 140 for i in range(5)]
     for i, st in enumerate(states):
         b.text(col_x[i], y + 14, st.upper(), 8, "Consolas", "Regular",
-               C["ink500"], width=128, line=11, align="center", tracking=8,
-               group="02-buttons-base")
+               C["ink500"], width=128, line=11, align="center", tracking=8)
     rows = [
         ("Spawn sub-hive", "primary", "S04-spawn", "S04", "SPAWN_SUB_HIVE"),
         ("Re-route", "secondary", "S05-reroute", "S05", "REWIRE_TASK"),
@@ -437,28 +438,26 @@ def buttons_matrix(b):
     ]
     for r, (label, variant, g, surf, cmd) in enumerate(rows):
         ry = y + 36 + r * 68
-        first_el = len(b.el)
-        b.surfaces[surf] = first_el
-        b.name_text(x + 16, ry + 8, label, 12, group=g)
+        b.surfaces[surf] = len(b.el)
+        b.name_text(x + 16, ry + 8, label, 12)
         b.text(x + 16, ry + 26, cmd, 8, "Consolas", "Regular", C["ink500"],
-               width=130, line=11, group=g)
+               width=130, line=11)
         b.text(x + 16, ry + 40, "min 40px · radius 10", 8, "Consolas", "Regular",
-               C["ink500"], width=130, line=11, group=g)
+               C["ink500"], width=130, line=11)
         for i, st in enumerate(states):
-            b.button(col_x[i], ry + 2, 128, 40, label, variant, st, group=g,
+            b.button(col_x[i], ry + 2, 128, 40, label, variant, st,
                      name="02/btn/%s/%s" % (cmd.lower(), st))
-        # surface on first row group only for manifest
     b.text(x + 16, y + 308, "40px min touch target · radius 10 is an off-scale "
                             "exception · label Inter SemiBold 13 · ACK or named refusal "
                             "before UI mutation.", 8.5, "Consolas", "Regular",
-           C["ink500"], width=820, line=12, group="02-buttons-base")
+           C["ink500"], width=820, line=12)
 
 
 def settings_and_states(b):
     x, y, w = 936, 1396, 456
     b.section(936, 1370, 456, "settings · key status", note="PDF p7:254")
     g = "S21-settings"
-    b.rect(x, y, w, 160, fill=C["paper"], r=12, stroke=C["hairline"], sw=1,
+    b.rect(x, y, w, 168, fill=C["paper"], r=12, stroke=C["hairline"], sw=1,
            group=g, surface="S21", name="02/settings/panel")
     b.text(x + 16, y + 12, "SETTINGS / PROVIDER + KEY", 8.5, "Consolas", "Regular",
            C["ink700"], width=300, line=12, tracking=8, group=g)
@@ -482,9 +481,9 @@ def settings_and_states(b):
     b.text(x + 16, y + 132, "key absent → E_KEY_MISSING from composer AND settings; "
                             "never fake a run.", 8.5, "Inter", "Regular", C["ink700"],
            width=424, line=12, group=g)
-    b.text(x + 16, y + 152, "no key → named refusal; the run row is never created.",
+    b.text(x + 16, y + 148, "no key → named refusal; the run row is never created.",
            8, "Consolas", "Regular", C["ink500"], width=424, line=11, group=g)
-    b.text(x, y + 168, "S21 · SETTINGS / KEY STATUS · PDF p7:254", 9, "Consolas",
+    b.text(x, y + 176, "S21 · SETTINGS / KEY STATUS · PDF p7:254", 9, "Consolas",
            "Regular", C["ink500"], width=w, line=13, group=g)
 
     # state vocabulary (compact, pointer to specimens)
@@ -527,10 +526,10 @@ def nav_rail(b):
         b.text(x + 4, iy + 38, it, 8.2, "Inter", "SemiBold" if active else "Regular",
                C["ink900"] if active else C["ink500"], width=64, line=11,
                align="center", group=g)
-    b.text(x, y + h + 8, "S11 · NAV RAIL 72PX · PDF p7:248-254", 9, "Consolas",
-           "Regular", C["ink500"], width=180, line=13, group=g)
-    b.text(x, y + h + 22, "never scrolls · all six destinations exist or refuse by name",
-           8, "Consolas", "Regular", C["ink500"], width=180, line=11, group=g)
+    b.text(x, y + h + 8, "S11 · NAV RAIL", 9, "Consolas",
+           "Regular", C["ink500"], width=90, line=13, group=g)
+    b.text(x, y + h + 22, "72px fixed · never scrolls", 8, "Consolas", "Regular",
+           C["ink500"], width=92, line=11, group=g)
 
 
 def library_panel(b):
@@ -541,11 +540,11 @@ def library_panel(b):
     # project identity (S28)
     g28 = "S28-project"
     b.text(x + 14, y + 14, "Project: HiveMind AI", 12.5, "Inter", "SemiBold",
-           C["ink900"], width=230, line=16, group=g28, surface="S28")
+           C["ink900"], width=230, line=16, group=g, surface="S28")
     b.text(x + 14, y + 32, "AC A. Chen", 9, "Consolas", "Regular", C["ink500"],
-           width=150, line=12, group=g28)
+           width=150, line=12, group=g)
     b.text(x + 14, y + 48, "project_id from state · never hardcoded", 8, "Consolas",
-           "Regular", C["ink500"], width=230, line=11, group=g28)
+           "Regular", C["ink500"], width=230, line=11, group=g)
     b.line(x + 14, y + 64, 232, C["hairline"], 1, group=g, name="02/library/rule1")
     b.text(x + 14, y + 72, "ACTIVE AGENTS", 8.5, "Consolas", "Regular", C["ink700"],
            width=200, line=12, tracking=12, group=g)
@@ -672,9 +671,9 @@ def file_tree(b):
 
 
 def surface_index(b):
-    y = 2250
+    y = 2262
     b.section(48, y, 1344, "surface index · S01-S28 wiring",
-              note="UI-WIRING-GUIDE §1 · commands frozen in UI-COMMANDS-v1")
+              note="UI-WIRING-GUIDE §1 · UI-COMMANDS-v1")
     short = {
         "S01": ("Canvas + honeycomb bg", "viewport state"),
         "S02": ("HyperAgent chat core", "CHAT_PIN"),

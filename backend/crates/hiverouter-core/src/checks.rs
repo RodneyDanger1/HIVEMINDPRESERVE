@@ -103,7 +103,8 @@ pub fn node_check() -> Check {
                     "node",
                     false,
                     format!(
-                        "{raw} is older than the required {NODE_MIN_MAJOR}.{NODE_MIN_MINOR}.0"
+                        "{raw} is older than the required {NODE_MIN_MAJOR}.{NODE_MIN_MINOR}.0 (parsed {}.{}.{})",
+                        version.0, version.1, version.2
                     ),
                     "E_NODE_MISSING",
                 ),

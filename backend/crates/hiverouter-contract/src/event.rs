@@ -46,6 +46,12 @@ pub enum EventName {
     ApprovalRequest,
     /// Tool approval resolved.
     ApprovalResolved,
+    /// Provider/model/key status (never the key itself).
+    SettingsStatusResult,
+    /// Workspace file-tree listing.
+    FileTreeResult,
+    /// One workspace file's content.
+    FileContent,
     /// History snapshot for the scrubber.
     HistorySnapshot,
     /// Keepalive request.
@@ -72,6 +78,9 @@ impl EventName {
         EventName::RunMetrics,
         EventName::ApprovalRequest,
         EventName::ApprovalResolved,
+        EventName::SettingsStatusResult,
+        EventName::FileTreeResult,
+        EventName::FileContent,
         EventName::HistorySnapshot,
         EventName::Ping,
         EventName::Pong,
@@ -96,6 +105,9 @@ impl EventName {
             EventName::RunMetrics => "RUN_METRICS",
             EventName::ApprovalRequest => "APPROVAL_REQUEST",
             EventName::ApprovalResolved => "APPROVAL_RESOLVED",
+            EventName::SettingsStatusResult => "SETTINGS_STATUS_RESULT",
+            EventName::FileTreeResult => "FILE_TREE_RESULT",
+            EventName::FileContent => "FILE_CONTENT",
             EventName::HistorySnapshot => "HISTORY_SNAPSHOT",
             EventName::Ping => "PING",
             EventName::Pong => "PONG",
@@ -246,8 +258,52 @@ pub struct ApprovalResolved {
     pub approval_id: ApprovalId,
     /// Tool name.
     pub tool: String,
-    /// Resolved decision (`approved` / `rejected`).
+    /// Resolved decision (`approve` / `deny`).
     pub decision: String,
+}
+
+/// `SETTINGS_STATUS_RESULT` payload.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SettingsStatusResult {
+    /// Provider id (`deepseek`).
+    pub provider: String,
+    /// Configured model id.
+    pub model: String,
+    /// Whether an API key is configured; the key itself is never sent.
+    pub key_present: bool,
+}
+
+/// One entry of a workspace file tree.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct FileTreeEntry {
+    /// Workspace-relative path.
+    pub path: String,
+    /// Final path component.
+    pub name: String,
+    /// Whether the entry is a directory.
+    pub is_dir: bool,
+}
+
+/// `FILE_TREE_RESULT` payload.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct FileTreeResult {
+    /// Workspace root the tree was listed from.
+    pub root: String,
+    /// Directory entries (one level).
+    pub entries: Vec<FileTreeEntry>,
+}
+
+/// `FILE_CONTENT` payload.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct FileContent {
+    /// Workspace-relative path of the file.
+    pub path: String,
+    /// SHA-256 of the file bytes (lowercase hex).
+    pub sha256: String,
+    /// File size in bytes.
+    pub bytes: u64,
+    /// UTF-8 file text (the transport refuses non-UTF-8 files).
+    pub text: String,
 }
 
 /// `HISTORY_SNAPSHOT` payload.
@@ -298,6 +354,12 @@ pub enum Event {
     ApprovalRequest(ApprovalRequest),
     /// See [`ApprovalResolved`].
     ApprovalResolved(ApprovalResolved),
+    /// See [`SettingsStatusResult`].
+    SettingsStatusResult(SettingsStatusResult),
+    /// See [`FileTreeResult`].
+    FileTreeResult(FileTreeResult),
+    /// See [`FileContent`].
+    FileContent(FileContent),
     /// See [`HistorySnapshot`].
     HistorySnapshot(HistorySnapshot),
     /// Keepalive request.
@@ -326,6 +388,9 @@ impl Event {
             Event::RunMetrics(_) => EventName::RunMetrics,
             Event::ApprovalRequest(_) => EventName::ApprovalRequest,
             Event::ApprovalResolved(_) => EventName::ApprovalResolved,
+            Event::SettingsStatusResult(_) => EventName::SettingsStatusResult,
+            Event::FileTreeResult(_) => EventName::FileTreeResult,
+            Event::FileContent(_) => EventName::FileContent,
             Event::HistorySnapshot(_) => EventName::HistorySnapshot,
             Event::Ping(_) => EventName::Ping,
             Event::Pong(_) => EventName::Pong,
@@ -358,6 +423,11 @@ impl Event {
             EventName::RunMetrics => Event::RunMetrics(envelope.decode_payload()?),
             EventName::ApprovalRequest => Event::ApprovalRequest(envelope.decode_payload()?),
             EventName::ApprovalResolved => Event::ApprovalResolved(envelope.decode_payload()?),
+            EventName::SettingsStatusResult => {
+                Event::SettingsStatusResult(envelope.decode_payload()?)
+            }
+            EventName::FileTreeResult => Event::FileTreeResult(envelope.decode_payload()?),
+            EventName::FileContent => Event::FileContent(envelope.decode_payload()?),
             EventName::HistorySnapshot => Event::HistorySnapshot(envelope.decode_payload()?),
             EventName::Ping => Event::Ping(envelope.decode_payload()?),
             EventName::Pong => Event::Pong(envelope.decode_payload()?),
@@ -386,6 +456,9 @@ impl Event {
             Event::RunMetrics(payload) => serde_json::to_value(payload),
             Event::ApprovalRequest(payload) => serde_json::to_value(payload),
             Event::ApprovalResolved(payload) => serde_json::to_value(payload),
+            Event::SettingsStatusResult(payload) => serde_json::to_value(payload),
+            Event::FileTreeResult(payload) => serde_json::to_value(payload),
+            Event::FileContent(payload) => serde_json::to_value(payload),
             Event::HistorySnapshot(payload) => serde_json::to_value(payload),
             Event::Ping(payload) => serde_json::to_value(payload),
             Event::Pong(payload) => serde_json::to_value(payload),
@@ -425,6 +498,9 @@ mod tests {
             "RUN_METRICS",
             "APPROVAL_REQUEST",
             "APPROVAL_RESOLVED",
+            "SETTINGS_STATUS_RESULT",
+            "FILE_TREE_RESULT",
+            "FILE_CONTENT",
             "HISTORY_SNAPSHOT",
             "PING",
             "PONG",

@@ -1,8 +1,0 @@
-[
- {"command":"file.new","params":{"name":"smoke"}},
- {"command":"page.add","params":{"name":"P1"}},
- {"command":"frame.create","params":{"name":"F1","x":0,"y":0,"width":400,"height":300}},
- {"command":"shape.rectangle","params":{"x":10,"y":10,"width":100,"height":50}},
- {"command":"node.set","params":{"fill":"#FF0000","name":"rect"}},
- {"command":"text.create","params":{"text":"Hello","x":20,"y":80,"props":{"fontSize":16,"fontFamily":"Inter"}}}
-]

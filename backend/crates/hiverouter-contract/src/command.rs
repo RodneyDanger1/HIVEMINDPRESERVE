@@ -5,12 +5,16 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::envelope::{Envelope, FrameKind};
-use crate::ids::{RunId, TaskId};
+use crate::ids::{ApprovalId, RunId, TaskId};
 use crate::refusal::Refusal;
 use crate::schema;
 
 /// Maximum prompt length accepted by `SUBMIT_PROMPT` (frozen contract §2).
 pub const MAX_PROMPT_CHARS: usize = 8_000;
+/// Maximum file size readable through `FILE_READ` (frozen contract §2: 1 MiB).
+pub const MAX_FILE_BYTES: u64 = 1_048_576;
+/// Allowed `APPROVAL_RESOLVE` decision values (frozen contract §2).
+pub const APPROVAL_DECISIONS: &[&str] = &["approve", "deny"];
 /// Minimum zoom accepted by `VIEWPORT_SET` (frozen contract §2).
 pub const MIN_ZOOM: f64 = 0.1;
 /// Maximum zoom accepted by `VIEWPORT_SET` (frozen contract §2).
@@ -30,6 +34,14 @@ pub enum CommandName {
     CancelRun,
     /// `KILL_WORKER` — kill a running worker.
     KillWorker,
+    /// `APPROVAL_RESOLVE` — resolve a pending tool approval.
+    ApprovalResolve,
+    /// `SETTINGS_STATUS` — read provider/model/key status (never the key).
+    SettingsStatus,
+    /// `FILE_TREE_LIST` — list the workspace file tree.
+    FileTreeList,
+    /// `FILE_READ` — read one workspace file (jailed, <= 1 MiB).
+    FileRead,
     /// `CHAT_PIN` — pin chat (client surface only).
     ChatPin,
     /// `TEMPLATE_INSERT` — insert a template node set.
@@ -56,6 +68,10 @@ impl CommandName {
         CommandName::RewireTask,
         CommandName::CancelRun,
         CommandName::KillWorker,
+        CommandName::ApprovalResolve,
+        CommandName::SettingsStatus,
+        CommandName::FileTreeList,
+        CommandName::FileRead,
         CommandName::ChatPin,
         CommandName::TemplateInsert,
         CommandName::HistoryRevisionSet,
@@ -75,6 +91,10 @@ impl CommandName {
             CommandName::RewireTask => "REWIRE_TASK",
             CommandName::CancelRun => "CANCEL_RUN",
             CommandName::KillWorker => "KILL_WORKER",
+            CommandName::ApprovalResolve => "APPROVAL_RESOLVE",
+            CommandName::SettingsStatus => "SETTINGS_STATUS",
+            CommandName::FileTreeList => "FILE_TREE_LIST",
+            CommandName::FileRead => "FILE_READ",
             CommandName::ChatPin => "CHAT_PIN",
             CommandName::TemplateInsert => "TEMPLATE_INSERT",
             CommandName::HistoryRevisionSet => "HISTORY_REVISION_SET",
@@ -115,6 +135,7 @@ impl CommandName {
                 | CommandName::RewireTask
                 | CommandName::CancelRun
                 | CommandName::KillWorker
+                | CommandName::ApprovalResolve
                 | CommandName::TemplateInsert
         )
     }
@@ -161,6 +182,35 @@ pub struct CancelRun {
 pub struct KillWorker {
     /// Task whose worker should be killed.
     pub task_id: TaskId,
+}
+
+/// `APPROVAL_RESOLVE` payload.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ApprovalResolve {
+    /// Approval request being resolved.
+    pub approval_id: ApprovalId,
+    /// Single-use nonce from the `APPROVAL_REQUEST` frame.
+    pub nonce: String,
+    /// Frozen decision value: `approve` or `deny`.
+    pub decision: String,
+    /// Optional operator reason.
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+
+/// `SETTINGS_STATUS` payload (no fields).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SettingsStatus {}
+
+/// `FILE_TREE_LIST` payload (no fields).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct FileTreeList {}
+
+/// `FILE_READ` payload.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct FileRead {
+    /// Workspace-relative path of the file to read.
+    pub path: String,
 }
 
 /// `CHAT_PIN` payload.
@@ -223,6 +273,14 @@ pub enum Command {
     CancelRun(CancelRun),
     /// See [`KillWorker`].
     KillWorker(KillWorker),
+    /// See [`ApprovalResolve`].
+    ApprovalResolve(ApprovalResolve),
+    /// See [`SettingsStatus`].
+    SettingsStatus(SettingsStatus),
+    /// See [`FileTreeList`].
+    FileTreeList(FileTreeList),
+    /// See [`FileRead`].
+    FileRead(FileRead),
     /// See [`ChatPin`].
     ChatPin(ChatPin),
     /// See [`TemplateInsert`].
@@ -253,6 +311,10 @@ impl Command {
             Command::RewireTask(payload) => serde_json::to_value(payload),
             Command::CancelRun(payload) => serde_json::to_value(payload),
             Command::KillWorker(payload) => serde_json::to_value(payload),
+            Command::ApprovalResolve(payload) => serde_json::to_value(payload),
+            Command::SettingsStatus(payload) => serde_json::to_value(payload),
+            Command::FileTreeList(payload) => serde_json::to_value(payload),
+            Command::FileRead(payload) => serde_json::to_value(payload),
             Command::ChatPin(payload) => serde_json::to_value(payload),
             Command::TemplateInsert(payload) => serde_json::to_value(payload),
             Command::HistoryRevisionSet(payload) => serde_json::to_value(payload),
@@ -283,6 +345,10 @@ impl Command {
             Command::RewireTask(_) => CommandName::RewireTask,
             Command::CancelRun(_) => CommandName::CancelRun,
             Command::KillWorker(_) => CommandName::KillWorker,
+            Command::ApprovalResolve(_) => CommandName::ApprovalResolve,
+            Command::SettingsStatus(_) => CommandName::SettingsStatus,
+            Command::FileTreeList(_) => CommandName::FileTreeList,
+            Command::FileRead(_) => CommandName::FileRead,
             Command::ChatPin(_) => CommandName::ChatPin,
             Command::TemplateInsert(_) => CommandName::TemplateInsert,
             Command::HistoryRevisionSet(_) => CommandName::HistoryRevisionSet,
@@ -325,10 +391,27 @@ impl Command {
                 }
                 Ok(())
             }
+            Command::ApprovalResolve(payload) => {
+                if payload.nonce.trim().is_empty() {
+                    return Err(Refusal::SchemaInvalid);
+                }
+                if !APPROVAL_DECISIONS.contains(&payload.decision.as_str()) {
+                    return Err(Refusal::ApprovalDecisionInvalid);
+                }
+                Ok(())
+            }
+            Command::FileRead(payload) => {
+                if payload.path.trim().is_empty() {
+                    return Err(Refusal::SchemaInvalid);
+                }
+                Ok(())
+            }
             Command::ChatPin(_)
             | Command::RewireTask(_)
             | Command::CancelRun(_)
             | Command::KillWorker(_)
+            | Command::SettingsStatus(_)
+            | Command::FileTreeList(_)
             | Command::TemplateInsert(_)
             | Command::HistoryRevisionSet(_)
             | Command::ViewportRecenter(_) => Ok(()),
@@ -361,6 +444,10 @@ impl Command {
             CommandName::RewireTask => Command::RewireTask(envelope.decode_payload()?),
             CommandName::CancelRun => Command::CancelRun(envelope.decode_payload()?),
             CommandName::KillWorker => Command::KillWorker(envelope.decode_payload()?),
+            CommandName::ApprovalResolve => Command::ApprovalResolve(envelope.decode_payload()?),
+            CommandName::SettingsStatus => Command::SettingsStatus(envelope.decode_payload()?),
+            CommandName::FileTreeList => Command::FileTreeList(envelope.decode_payload()?),
+            CommandName::FileRead => Command::FileRead(envelope.decode_payload()?),
             CommandName::ChatPin => Command::ChatPin(envelope.decode_payload()?),
             CommandName::TemplateInsert => Command::TemplateInsert(envelope.decode_payload()?),
             CommandName::HistoryRevisionSet => {
@@ -389,6 +476,10 @@ mod tests {
             "REWIRE_TASK",
             "CANCEL_RUN",
             "KILL_WORKER",
+            "APPROVAL_RESOLVE",
+            "SETTINGS_STATUS",
+            "FILE_TREE_LIST",
+            "FILE_READ",
             "CHAT_PIN",
             "TEMPLATE_INSERT",
             "HISTORY_REVISION_SET",
@@ -404,6 +495,41 @@ mod tests {
             assert_eq!(CommandName::from_name(expected), Some(*name));
         }
         assert_eq!(CommandName::from_name("NOT_A_COMMAND"), None);
+    }
+
+    #[test]
+    fn approval_decision_values_are_frozen() {
+        let sample = |decision: &str| {
+            Command::ApprovalResolve(ApprovalResolve {
+                approval_id: ApprovalId::new(),
+                nonce: "nonce-1".to_owned(),
+                decision: decision.to_owned(),
+                reason: None,
+            })
+        };
+        assert_eq!(sample("approve").validate(), Ok(()));
+        assert_eq!(sample("deny").validate(), Ok(()));
+        assert_eq!(
+            sample("maybe").validate(),
+            Err(Refusal::ApprovalDecisionInvalid)
+        );
+        assert_eq!(
+            sample("reject").validate(),
+            Err(Refusal::ApprovalDecisionInvalid),
+            "the frozen vocabulary is approve/deny, not reject"
+        );
+    }
+
+    #[test]
+    fn file_read_requires_a_path() {
+        let empty = Command::FileRead(FileRead {
+            path: "  ".to_owned(),
+        });
+        assert_eq!(empty.validate(), Err(Refusal::SchemaInvalid));
+        let valid = Command::FileRead(FileRead {
+            path: "src/lib.rs".to_owned(),
+        });
+        assert_eq!(valid.validate(), Ok(()));
     }
 
     #[test]

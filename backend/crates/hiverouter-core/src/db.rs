@@ -159,12 +159,7 @@ impl Database {
     }
 
     fn current_version(connection: &Connection) -> Result<i64, DbError> {
-        let tables: i64 = connection.query_row(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'",
-            [],
-            |row| row.get(0),
-        )?;
-        if tables == 0 {
+        if !Self::table_exists(connection, "schema_migrations")? {
             return Ok(0);
         }
         let version: Option<i64> =
@@ -172,6 +167,15 @@ impl Database {
                 row.get(0)
             })?;
         Ok(version.unwrap_or(0))
+    }
+
+    fn table_exists(connection: &Connection, name: &str) -> Result<bool, DbError> {
+        let tables: i64 = connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+            rusqlite::params![name],
+            |row| row.get(0),
+        )?;
+        Ok(tables > 0)
     }
 
     /// Applies every pending migration in order (idempotent).
@@ -249,6 +253,9 @@ impl Database {
     /// [`DbError`] when the query fails.
     pub fn applied_migrations(&self) -> Result<Vec<(i64, String, String)>, DbError> {
         let connection = self.lock()?;
+        if !Self::table_exists(&connection, "schema_migrations")? {
+            return Ok(Vec::new());
+        }
         let mut statement =
             connection.prepare("SELECT version, name, applied_at FROM schema_migrations ORDER BY version")?;
         let rows = statement.query_map([], |row| {

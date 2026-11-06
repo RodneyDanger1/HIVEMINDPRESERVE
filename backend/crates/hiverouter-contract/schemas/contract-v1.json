@@ -231,6 +231,72 @@
         }
       }
     },
+    "APPROVAL_RESOLVE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "ApprovalResolve",
+      "description": "`APPROVAL_RESOLVE` payload.",
+      "type": "object",
+      "properties": {
+        "approval_id": {
+          "description": "Approval request being resolved.",
+          "$ref": "#/$defs/ApprovalId"
+        },
+        "nonce": {
+          "description": "Single-use nonce from the `APPROVAL_REQUEST` frame.",
+          "type": "string"
+        },
+        "decision": {
+          "description": "Frozen decision value: `approve` or `deny`.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Optional operator reason.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "approval_id",
+        "nonce",
+        "decision"
+      ],
+      "$defs": {
+        "ApprovalId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "SETTINGS_STATUS": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "SettingsStatus",
+      "description": "`SETTINGS_STATUS` payload (no fields).",
+      "type": "object"
+    },
+    "FILE_TREE_LIST": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "FileTreeList",
+      "description": "`FILE_TREE_LIST` payload (no fields).",
+      "type": "object"
+    },
+    "FILE_READ": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "FileRead",
+      "description": "`FILE_READ` payload.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Workspace-relative path of the file to read.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
     "CHAT_PIN": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "ChatPin",
@@ -378,6 +444,26 @@
               "description": "`KILL_WORKER` — kill a running worker.",
               "type": "string",
               "const": "KILL_WORKER"
+            },
+            {
+              "description": "`APPROVAL_RESOLVE` — resolve a pending tool approval.",
+              "type": "string",
+              "const": "APPROVAL_RESOLVE"
+            },
+            {
+              "description": "`SETTINGS_STATUS` — read provider/model/key status (never the key).",
+              "type": "string",
+              "const": "SETTINGS_STATUS"
+            },
+            {
+              "description": "`FILE_TREE_LIST` — list the workspace file tree.",
+              "type": "string",
+              "const": "FILE_TREE_LIST"
+            },
+            {
+              "description": "`FILE_READ` — read one workspace file (jailed, <= 1 MiB).",
+              "type": "string",
+              "const": "FILE_READ"
             },
             {
               "description": "`CHAT_PIN` — pin chat (client surface only).",
@@ -1378,7 +1464,7 @@
           "type": "string"
         },
         "decision": {
-          "description": "Resolved decision (`approved` / `rejected`).",
+          "description": "Resolved decision (`approve` / `deny`).",
           "type": "string"
         }
       },
@@ -1393,6 +1479,111 @@
           "format": "uuid"
         }
       }
+    },
+    "SETTINGS_STATUS_RESULT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "SettingsStatusResult",
+      "description": "`SETTINGS_STATUS_RESULT` payload.",
+      "type": "object",
+      "properties": {
+        "provider": {
+          "description": "Provider id (`deepseek`).",
+          "type": "string"
+        },
+        "model": {
+          "description": "Configured model id.",
+          "type": "string"
+        },
+        "key_present": {
+          "description": "Whether an API key is configured; the key itself is never sent.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "key_present"
+      ]
+    },
+    "FILE_TREE_RESULT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "FileTreeResult",
+      "description": "`FILE_TREE_RESULT` payload.",
+      "type": "object",
+      "properties": {
+        "root": {
+          "description": "Workspace root the tree was listed from.",
+          "type": "string"
+        },
+        "entries": {
+          "description": "Directory entries (one level).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FileTreeEntry"
+          }
+        }
+      },
+      "required": [
+        "root",
+        "entries"
+      ],
+      "$defs": {
+        "FileTreeEntry": {
+          "description": "One entry of a workspace file tree.",
+          "type": "object",
+          "properties": {
+            "path": {
+              "description": "Workspace-relative path.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Final path component.",
+              "type": "string"
+            },
+            "is_dir": {
+              "description": "Whether the entry is a directory.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "path",
+            "name",
+            "is_dir"
+          ]
+        }
+      }
+    },
+    "FILE_CONTENT": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "FileContent",
+      "description": "`FILE_CONTENT` payload.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Workspace-relative path of the file.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 of the file bytes (lowercase hex).",
+          "type": "string"
+        },
+        "bytes": {
+          "description": "File size in bytes.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "text": {
+          "description": "UTF-8 file text (the transport refuses non-UTF-8 files).",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "text"
+      ]
     },
     "HISTORY_SNAPSHOT": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",

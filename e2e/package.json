@@ -1,0 +1,20 @@
+{
+  "name": "hiverouter-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Playwright e2e + trace harness for HiveMind v1 (installed Chrome/Edge channels only; no browser download)",
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  },
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:chrome": "playwright test --project=chrome",
+    "e2e:msedge": "playwright test --project=msedge",
+    "verify:harness": "node ../tools/qa/verify-harness.mjs",
+    "verify:figcraft": "node ../tools/qa/figcraft-assets.mjs",
+    "seeds": "node ../tools/qa/build-trace-seeds.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

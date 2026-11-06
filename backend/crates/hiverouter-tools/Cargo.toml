@@ -10,6 +10,15 @@ publish = false
 name = "hiverouter_tools"
 path = "src/lib.rs"
 
+[[bin]]
+name = "hiverouter"
+path = "src/bin/hiverouter.rs"
+
+[[bench]]
+name = "engine_benches"
+path = "benches/engine_benches.rs"
+harness = false
+
 [dependencies]
 hiverouter-contract = { path = "../hiverouter-contract" }
 hiverouter-provider = { path = "../hiverouter-provider" }
@@ -29,6 +38,7 @@ uuid.workspace = true
 async-trait.workspace = true
 rusqlite.workspace = true
 tokio-util.workspace = true
+notify.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 win32job.workspace = true

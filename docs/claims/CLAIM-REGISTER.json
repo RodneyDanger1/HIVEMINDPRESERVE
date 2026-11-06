@@ -1,6 +1,11 @@
 {
-  "counts": {"total": 8, "verified": 6, "vault_recorded": 0, "read": 2, "unverified": 0, "contradicted": 0},
-  "decision_critical_unverified": [],
-  "cross_document": [],
-  "notes": "Phase 0 register. C-001..C-006 verified by commands observed this session; C-007/C-008 read from the cited file. Register is rebuilt per phase; no VERIFIED without observed evidence."
+  "counts": {"total": 17, "verified": 10, "vault_recorded": 0, "read": 6, "unverified": 1, "contradicted": 0},
+  "decision_critical_unverified": [
+    {"claim_id": "C-016", "why": "frozen contract patch must exist in Rust enums + matrix before approval/file surfaces gate", "fix": "B-Core contract patch + cargo test -p hiverouter-contract evidence"}
+  ],
+  "cross_document": [
+    {"claim_id": "C-009", "locations": ["docs/plans/TOOLCHAIN.md", "docs/audit/BASELINE-VERIFICATION.md"]},
+    {"claim_id": "C-014", "locations": ["docs/ui/figcraft/A/A-ASSETS.json", "docs/ui/figcraft/B/B-ASSETS.json", "docs/ui/figcraft/WATCHDOG-BRIEF.md"]}
+  ],
+  "notes": "C-003/C-006 from W0 are superseded environment snapshots (toolchain installed; disk later 4.5-8.4 GB). C-012/C-013/C-015/C-017 are teammate receipts pending independent Lead/Verifier re-run. No VERIFIED without observed command evidence."
 }

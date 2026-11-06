@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-l);
+    line-height: var(--text-body-l-line);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-honey-200);
+    color: var(--color-ink-900);
+  }
+}
+
+/* Printed type scale as utility classes (PDF:111-124). */
+.type-display-xxl {
+  font-family: var(--font-display);
+  font-size: var(--text-display-xxl);
+  line-height: var(--text-display-xxl-line);
+  letter-spacing: var(--tracking-display-xxl);
+}
+.type-display-l {
+  font-family: var(--font-display);
+  font-size: var(--text-display-l);
+  line-height: var(--text-display-l-line);
+  letter-spacing: var(--tracking-display-l);
+}
+.type-heading-h1 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--text-heading-h1);
+  line-height: var(--text-heading-h1-line);
+  letter-spacing: var(--tracking-heading-h1);
+}
+.type-heading-h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--text-heading-h3);
+  line-height: var(--text-heading-h3-line);
+  letter-spacing: var(--tracking-heading-h3);
+}
+.type-body-l {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-l);
+  line-height: var(--text-body-l-line);
+  letter-spacing: var(--tracking-body-l);
+}
+.type-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--text-label);
+  line-height: var(--text-label-line);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+.type-mono-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-code);
+  line-height: var(--text-mono-code-line);
+  letter-spacing: var(--tracking-mono-code);
+}
+.type-mono-meta {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono-meta);
+  line-height: var(--text-mono-meta-line);
+  letter-spacing: var(--tracking-mono-meta);
+  text-transform: uppercase;
+}
+
+/* Contrast corrections applied where the PDF value fails (R-U3). */
+.text-meta {
+  color: var(--meta-text);
+}
+.text-amber-large {
+  color: var(--color-amber);
+}
+
+/* Reduced motion: prefers-reduced-motion plus an explicit in-app switch (R-U10). */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Honeycomb canvas field (S01): vector lines, no raster. */
+.hive-canvas-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--color-honey-200);
+  opacity: 0.9;
+}
+
+/* Small helper for the pinned chat core and panels. */
+.surface-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-e1);
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--color-ink-900);
+  color: var(--color-canvas);
+  border-radius: var(--radius-sm);
+  transition: top 120ms ease;
+}
+.skip-link:focus {
+  top: 8px;
+}

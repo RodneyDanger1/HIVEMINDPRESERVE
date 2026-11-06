@@ -1,0 +1,63 @@
+{
+ "episode_id": "2777ac92-6dca-4bd3-97ba-12329ed6cba6",
+ "brief": "FigCraft-B: HiveMind v1 canvas design truth (PROPOSED HiveMind, not the current app) - default canvas, zoom states, interaction states, brand hero; assets only, no app code.",
+ "task_family": "ui_canvas_boards",
+ "apps": [
+  {
+   "name": "figcraft-cli",
+   "version": "0.11.2"
+  }
+ ],
+ "rights": {
+  "source": "supplied FigCraft PDF artboards + project tokens; no third-party assets",
+  "licence": "project-internal"
+ },
+ "plan": {
+  "stage": "01_frames.json",
+  "note": "one 1440x900 frame per page + canvas background",
+  "command_ids": [
+   "frame.create",
+   "node.set",
+   "page.select",
+   "page.setBackground"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli run",
+   "params": {
+    "script": "docs/ui/figcraft/B/scripts/01_frames.json",
+    "in": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\B\\build\\tmp\\step0.figcraft",
+    "out": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\B\\build\\tmp\\step1.figcraft"
+   },
+   "result": {
+    "exit": 0,
+    "commands_ok": 16,
+    "rolledBack": false
+   },
+   "duration_ms": 647
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/B/build/tmp/step1.figcraft",
+   "sha256": "55f239bc554356c57de286952ab9bc3624cb1ca4d944c610f2dad73276d5a5ab",
+   "format": "figcraft"
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "transactional_run": "ok",
+   "rollback": "not triggered (all steps ok)"
+  },
+  "human": null
+ },
+ "outcome": "stage-ok",
+ "failure_code": null,
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0.65
+ }
+}

@@ -99,6 +99,10 @@ pub fn command_payload_schema(name: CommandName) -> Option<Result<Value, Refusal
         CommandName::RewireTask => to_schema_value::<crate::command::RewireTask>(),
         CommandName::CancelRun => to_schema_value::<crate::command::CancelRun>(),
         CommandName::KillWorker => to_schema_value::<crate::command::KillWorker>(),
+        CommandName::ApprovalResolve => to_schema_value::<crate::command::ApprovalResolve>(),
+        CommandName::SettingsStatus => to_schema_value::<crate::command::SettingsStatus>(),
+        CommandName::FileTreeList => to_schema_value::<crate::command::FileTreeList>(),
+        CommandName::FileRead => to_schema_value::<crate::command::FileRead>(),
         CommandName::ChatPin => to_schema_value::<crate::command::ChatPin>(),
         CommandName::TemplateInsert => to_schema_value::<crate::command::TemplateInsert>(),
         CommandName::HistoryRevisionSet => {
@@ -131,6 +135,9 @@ pub fn event_payload_schema(name: EventName) -> Option<Result<Value, Refusal>> {
         EventName::RunMetrics => to_schema_value::<crate::event::RunMetrics>(),
         EventName::ApprovalRequest => to_schema_value::<crate::event::ApprovalRequest>(),
         EventName::ApprovalResolved => to_schema_value::<crate::event::ApprovalResolved>(),
+        EventName::SettingsStatusResult => to_schema_value::<crate::event::SettingsStatusResult>(),
+        EventName::FileTreeResult => to_schema_value::<crate::event::FileTreeResult>(),
+        EventName::FileContent => to_schema_value::<crate::event::FileContent>(),
         EventName::HistorySnapshot => to_schema_value::<crate::event::HistorySnapshot>(),
         EventName::Ping | EventName::Pong => to_schema_value::<crate::event::EmptyPayload>(),
     };
@@ -255,6 +262,45 @@ pub const COMMAND_MATRIX: &[CommandSpec] = &[
             Refusal::TaskNotFound,
             Refusal::TaskTerminal,
             Refusal::KillDenied,
+        ],
+    },
+    CommandSpec {
+        name: CommandName::ApprovalResolve,
+        payload_schema: "ApprovalResolve",
+        ack: true,
+        frozen: true,
+        refusals: &[
+            Refusal::ApprovalNotFound,
+            Refusal::ApprovalReplay,
+            Refusal::ApprovalTimeout,
+            Refusal::ApprovalDecisionInvalid,
+            Refusal::ResyncRequired,
+        ],
+    },
+    CommandSpec {
+        name: CommandName::SettingsStatus,
+        payload_schema: "SettingsStatus",
+        ack: true,
+        frozen: true,
+        // Frozen contract: missing key is data (`key_present:false`), not a refusal.
+        refusals: &[Refusal::CommandUnknown],
+    },
+    CommandSpec {
+        name: CommandName::FileTreeList,
+        payload_schema: "FileTreeList",
+        ack: true,
+        frozen: true,
+        refusals: &[Refusal::PathOutsideJail, Refusal::PathNotFound],
+    },
+    CommandSpec {
+        name: CommandName::FileRead,
+        payload_schema: "FileRead",
+        ack: true,
+        frozen: true,
+        refusals: &[
+            Refusal::PathOutsideJail,
+            Refusal::PathNotFound,
+            Refusal::FileTooLarge,
         ],
     },
     CommandSpec {

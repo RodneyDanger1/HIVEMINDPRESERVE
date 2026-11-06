@@ -1,0 +1,686 @@
+{
+ "episode_id": "a-exports",
+ "brief": "Export four boards to SVG + 2x PNG and publish A-ASSETS.json",
+ "task_family": "design_system_export",
+ "apps": [
+  {
+   "name": "FigCraft",
+   "version": "0.11.2",
+   "mode": "headless cli"
+  }
+ ],
+ "rights": {
+  "source": "same boards as build episodes",
+  "licence": "internal design system"
+ },
+ "plan": {
+  "steps": [
+   "figcraft-cli export --format svg --scale 1",
+   "figcraft-cli export --format png --scale 2",
+   "figcraft-cli info --json"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli export",
+   "params": {
+    "a-foundations": {
+     "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-foundations.svg",
+     "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-foundations.png",
+     "dimensions": {
+      "board": [
+       1440,
+       1200
+      ],
+      "png_2x": [
+       2880,
+       2400
+      ],
+      "svg": "vector"
+     }
+    },
+    "a-brand": {
+     "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-brand.svg",
+     "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-brand.png",
+     "dimensions": {
+      "board": [
+       1440,
+       900
+      ],
+      "png_2x": [
+       2880,
+       1800
+      ],
+      "svg": "vector"
+     }
+    },
+    "a-components": {
+     "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.svg",
+     "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-components.png",
+     "dimensions": {
+      "board": [
+       1440,
+       2580
+      ],
+      "png_2x": [
+       2880,
+       5160
+      ],
+      "svg": "vector"
+     }
+    },
+    "a-specimens": {
+     "svg": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.svg",
+     "png": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\ASSETS\\a-specimens.png",
+     "dimensions": {
+      "board": [
+       1440,
+       1400
+      ],
+      "png_2x": [
+       2880,
+       2800
+      ],
+      "svg": "vector"
+     }
+    }
+   },
+   "result": {
+    "ok": true
+   },
+   "duration_ms": 0
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/A/A-design.figcraft",
+   "sha256": "2bb34442bf46a7c5f4099281ba8b1077a02a904f07aa2653c2555461d088eaf2",
+   "kind": "figcraft"
+  },
+  {
+   "path": "docs/ui/figcraft/A/A-ASSETS.json",
+   "sha256": "a6c9a38902d506cb7c0d454f2bbf8db59b14663b64147d5df8dd8468177f6577",
+   "kind": "manifest"
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-foundations.svg",
+   "sha256": "24536354e6ffe9ba4dda2c9682b526bb44bedea6aea7f1d21fd4e3aeb75e551a",
+   "kind": "svg",
+   "dimensions": {
+    "board": [
+     1440,
+     1200
+    ],
+    "png_2x": [
+     2880,
+     2400
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-foundations.png",
+   "sha256": "e49b788a812e8a4962a29a926d25970b0a39218ade8dd34ee9c8c7079bdc53bc",
+   "kind": "png",
+   "dimensions": {
+    "board": [
+     1440,
+     1200
+    ],
+    "png_2x": [
+     2880,
+     2400
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-brand.svg",
+   "sha256": "94cf946703c14355601813367f9a5fa11105d4e744990dd66ac7b0e5ad0a9522",
+   "kind": "svg",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-brand.png",
+   "sha256": "47680984aa5dacb1bf6a3576b42a11b01864c646068f33e5ca4acfe124f4a918",
+   "kind": "png",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-components.svg",
+   "sha256": "553e64308a50162f95f22f29c16ddb5555ad543cac426e248a95d1adaa53d0ce",
+   "kind": "svg",
+   "dimensions": {
+    "board": [
+     1440,
+     2580
+    ],
+    "png_2x": [
+     2880,
+     5160
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-components.png",
+   "sha256": "bc71b15999593b6081fdbd2087432d9c80dfaa2c1430ca5a8dd4173bda786c58",
+   "kind": "png",
+   "dimensions": {
+    "board": [
+     1440,
+     2580
+    ],
+    "png_2x": [
+     2880,
+     5160
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+   "sha256": "d8128e43d7726a39d3be07cf5d579a050fe50945296098e717d2bf346af61563",
+   "kind": "svg",
+   "dimensions": {
+    "board": [
+     1440,
+     1400
+    ],
+    "png_2x": [
+     2880,
+     2800
+    ],
+    "svg": "vector"
+   }
+  },
+  {
+   "path": "docs/ui/figcraft/ASSETS/a-specimens.png",
+   "sha256": "99321e1fdeb2446ca2457babf865d6353fcc693c3ab3e29361a5d8e4d1027fe7",
+   "kind": "png",
+   "dimensions": {
+    "board": [
+     1440,
+     1400
+    ],
+    "png_2x": [
+     2880,
+     2800
+    ],
+    "svg": "vector"
+   }
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "info_parses": true,
+   "pages_present": [
+    "00 Foundations",
+    "01 Brand",
+    "02 Components",
+    "03 Specimens"
+   ],
+   "page_frame_sizes": {
+    "00 Foundations": {
+     "height": 1200.0,
+     "id": 5,
+     "name": "00 Foundations",
+     "type": "FRAME",
+     "width": 1440.0
+    },
+    "01 Brand": {
+     "height": 900.0,
+     "id": 6,
+     "name": "01 Brand",
+     "type": "FRAME",
+     "width": 1440.0
+    },
+    "02 Components": {
+     "height": 2580.0,
+     "id": 7,
+     "name": "02 Components",
+     "type": "FRAME",
+     "width": 1440.0
+    },
+    "03 Specimens": {
+     "height": 1400.0,
+     "id": 8,
+     "name": "03 Specimens",
+     "type": "FRAME",
+     "width": 1440.0
+    }
+   },
+   "frames_one_per_page": true,
+   "missing_fonts": [],
+   "variables_created": 20,
+   "styles_created": 31,
+   "surfaces_expected": 28,
+   "surfaces_mapped": 28,
+   "surfaces_missing": [],
+   "nodes_resolve": true,
+   "node_checks": [
+    {
+     "surface_id": "S01",
+     "node_id": 1198,
+     "found": true,
+     "name": "03/empty/canvas",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 140.0,
+      "width": 200.0,
+      "x": 708.0,
+      "y": 560.0
+     }
+    },
+    {
+     "surface_id": "S02",
+     "node_id": 1110,
+     "found": true,
+     "name": "S02-chat",
+     "type": "GROUP",
+     "bounds": {
+      "height": 421.0,
+      "width": 420.0,
+      "x": 48.0,
+      "y": 932.0
+     }
+    },
+    {
+     "surface_id": "S03",
+     "node_id": 1111,
+     "found": true,
+     "name": "S03-composer",
+     "type": "GROUP",
+     "bounds": {
+      "height": 201.0,
+      "width": 440.0,
+      "x": 492.0,
+      "y": 932.0
+     }
+    },
+    {
+     "surface_id": "S04",
+     "node_id": 782,
+     "found": true,
+     "name": "name",
+     "type": "TEXT",
+     "bounds": {
+      "height": 16.0,
+      "width": 62.0,
+      "x": 64.0,
+      "y": 1644.0
+     }
+    },
+    {
+     "surface_id": "S05",
+     "node_id": 782,
+     "found": true,
+     "name": "name",
+     "type": "TEXT",
+     "bounds": {
+      "height": 16.0,
+      "width": 62.0,
+      "x": 64.0,
+      "y": 1644.0
+     }
+    },
+    {
+     "surface_id": "S06",
+     "node_id": 782,
+     "found": true,
+     "name": "name",
+     "type": "TEXT",
+     "bounds": {
+      "height": 16.0,
+      "width": 62.0,
+      "x": 64.0,
+      "y": 1644.0
+     }
+    },
+    {
+     "surface_id": "S07",
+     "node_id": 782,
+     "found": true,
+     "name": "name",
+     "type": "TEXT",
+     "bounds": {
+      "height": 16.0,
+      "width": 62.0,
+      "x": 64.0,
+      "y": 1644.0
+     }
+    },
+    {
+     "surface_id": "S08",
+     "node_id": 1113,
+     "found": true,
+     "name": "S08-tabs",
+     "type": "GROUP",
+     "bounds": {
+      "height": 100.0,
+      "width": 436.0,
+      "x": 956.0,
+      "y": 932.0
+     }
+    },
+    {
+     "surface_id": "S09",
+     "node_id": 1114,
+     "found": true,
+     "name": "S09-hud",
+     "type": "GROUP",
+     "bounds": {
+      "height": 100.0,
+      "width": 436.0,
+      "x": 956.0,
+      "y": 1052.0
+     }
+    },
+    {
+     "surface_id": "S10",
+     "node_id": 1122,
+     "found": true,
+     "name": "S10-scrubber",
+     "type": "GROUP",
+     "bounds": {
+      "height": 141.0,
+      "width": 680.0,
+      "x": 712.0,
+      "y": 1796.0
+     }
+    },
+    {
+     "surface_id": "S11",
+     "node_id": 1119,
+     "found": true,
+     "name": "S11-rail",
+     "type": "GROUP",
+     "bounds": {
+      "height": 464.0,
+      "width": 92.0,
+      "x": 48.0,
+      "y": 1796.0
+     }
+    },
+    {
+     "surface_id": "S12",
+     "node_id": 1120,
+     "found": true,
+     "name": "S12-library",
+     "type": "GROUP",
+     "bounds": {
+      "height": 441.0,
+      "width": 260.0,
+      "x": 144.0,
+      "y": 1796.0
+     }
+    },
+    {
+     "surface_id": "S13",
+     "node_id": 1121,
+     "found": true,
+     "name": "S13-minimap",
+     "type": "GROUP",
+     "bounds": {
+      "height": 191.0,
+      "width": 260.0,
+      "x": 428.0,
+      "y": 1796.0
+     }
+    },
+    {
+     "surface_id": "S14",
+     "node_id": 1112,
+     "found": true,
+     "name": "S14-toast",
+     "type": "GROUP",
+     "bounds": {
+      "height": 231.0,
+      "width": 440.0,
+      "x": 492.0,
+      "y": 1132.0
+     }
+    },
+    {
+     "surface_id": "S15",
+     "node_id": 1104,
+     "found": true,
+     "name": "S15-superagent",
+     "type": "GROUP",
+     "bounds": {
+      "height": 321.0,
+      "width": 296.0,
+      "x": 92.0,
+      "y": 266.0
+     }
+    },
+    {
+     "surface_id": "S16",
+     "node_id": 1105,
+     "found": true,
+     "name": "S16-worker",
+     "type": "GROUP",
+     "bounds": {
+      "height": 321.0,
+      "width": 296.0,
+      "x": 412.0,
+      "y": 266.0
+     }
+    },
+    {
+     "surface_id": "S17",
+     "node_id": 1106,
+     "found": true,
+     "name": "S17-tool",
+     "type": "GROUP",
+     "bounds": {
+      "height": 321.0,
+      "width": 296.0,
+      "x": 732.0,
+      "y": 266.0
+     }
+    },
+    {
+     "surface_id": "S18",
+     "node_id": 1107,
+     "found": true,
+     "name": "S18-error",
+     "type": "GROUP",
+     "bounds": {
+      "height": 321.0,
+      "width": 296.0,
+      "x": 1052.0,
+      "y": 266.0
+     }
+    },
+    {
+     "surface_id": "S19",
+     "node_id": 1109,
+     "found": true,
+     "name": "S19-chips",
+     "type": "GROUP",
+     "bounds": {
+      "height": 250.0,
+      "width": 656.0,
+      "x": 736.0,
+      "y": 636.0
+     }
+    },
+    {
+     "surface_id": "S20",
+     "node_id": 1115,
+     "found": true,
+     "name": "S20-zoom",
+     "type": "GROUP",
+     "bounds": {
+      "height": 100.0,
+      "width": 436.0,
+      "x": 956.0,
+      "y": 1172.0
+     }
+    },
+    {
+     "surface_id": "S21",
+     "node_id": 1117,
+     "found": true,
+     "name": "S21-settings",
+     "type": "GROUP",
+     "bounds": {
+      "height": 189.0,
+      "width": 456.0,
+      "x": 936.0,
+      "y": 1396.0
+     }
+    },
+    {
+     "surface_id": "S22",
+     "node_id": 1123,
+     "found": true,
+     "name": "S22-tree",
+     "type": "GROUP",
+     "bounds": {
+      "height": 301.0,
+      "width": 320.0,
+      "x": 712.0,
+      "y": 1936.0
+     }
+    },
+    {
+     "surface_id": "S23",
+     "node_id": 270,
+     "found": true,
+     "name": "01/lockup/primary/panel",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 230.0,
+      "width": 420.0,
+      "x": 48.0,
+      "y": 220.0
+     }
+    },
+    {
+     "surface_id": "S24",
+     "node_id": 213,
+     "found": true,
+     "name": "00/elev/e1 / node/card",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 50.0,
+      "width": 292.0,
+      "x": 1078.0,
+      "y": 752.0
+     }
+    },
+    {
+     "surface_id": "S25",
+     "node_id": 1259,
+     "found": true,
+     "name": "03/appr/modal",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 136.0,
+      "width": 336.0,
+      "x": 1000.0,
+      "y": 844.0
+     }
+    },
+    {
+     "surface_id": "S26",
+     "node_id": 1208,
+     "found": true,
+     "name": "03/empty/frame",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 140.0,
+      "width": 200.0,
+      "x": 708.0,
+      "y": 560.0
+     }
+    },
+    {
+     "surface_id": "S27",
+     "node_id": 1280,
+     "found": true,
+     "name": "03/stream/panel",
+     "type": "RECTANGLE",
+     "bounds": {
+      "height": 116.0,
+      "width": 330.0,
+      "x": 104.0,
+      "y": 1122.0
+     }
+    },
+    {
+     "surface_id": "S28",
+     "node_id": 1099,
+     "found": true,
+     "name": "text",
+     "type": "TEXT",
+     "bounds": {
+      "height": 12.0,
+      "width": 1344.0,
+      "x": 48.0,
+      "y": 2500.0
+     }
+    }
+   ],
+   "export_files_nonzero": true,
+   "tokens_printed": 20,
+   "type_steps_printed": 8,
+   "radius_stops_printed": 7,
+   "elevation_tiers_printed": 3,
+   "contrast_rows_reproduced": 6,
+   "corrections_labelled": [
+    "meta ink-500 #75663F",
+    "focus ink-700 #4E3A15",
+    "amber large-text only"
+   ],
+   "rejected_schema_guesses": []
+  }
+ },
+ "outcome": "verified",
+ "failure_code": null,
+ "failures": [
+  {
+   "kind": "discovered",
+   "detail": "object.group sends the new group to the FRONT of the frame stack; a full-panel group hides same-band siblings created earlier. Fixed by leaving the buttons band panel ungrouped. Not a schema guess.",
+   "evidence": "A/build/c4.png empty buttons panel vs probe-s04c.png standalone render"
+  },
+  {
+   "kind": "avoided",
+   "detail": "shape.line with width 0 was rejected pre-emptively by inspection; minimap edges redrawn as 1px rects. No command rejection occurred.",
+   "evidence": "A/build/pages_components.py minimap"
+  },
+  {
+   "kind": "fixed",
+   "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
+   "evidence": "A/build/pages_foundations.py"
+  }
+ ],
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0
+ }
+}

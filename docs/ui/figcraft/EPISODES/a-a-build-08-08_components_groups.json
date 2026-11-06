@@ -1,0 +1,64 @@
+{
+ "episode_id": "a-build-08-08_components_groups",
+ "brief": "HiveMind v1 design-system boards — FigCraft-A build stage 08_components_groups.json",
+ "task_family": "design_system_artboards",
+ "apps": [
+  {
+   "name": "FigCraft",
+   "version": "0.11.2",
+   "mode": "headless cli"
+  }
+ ],
+ "rights": {
+  "source": "FigCraft `00 · Cover.pdf` sha256 F2D9B5AFDF3E9B37A7C0D14BDCBB21D7315538817245E566113B45492145006A",
+  "licence": "internal HiveMind v1 design system; text/values derived from the supplied boards and UI-WIRING-GUIDE only"
+ },
+ "plan": {
+  "steps": [
+   "object.group"
+  ]
+ },
+ "actions": [
+  {
+   "seq": 1,
+   "tool": "figcraft-cli run",
+   "params": {
+    "script": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\scripts\\08_components_groups.json",
+    "in": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\build\\page02.figcraft",
+    "out": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\A\\build\\page02g.figcraft",
+    "commands": 22
+   },
+   "result": {
+    "ok": true,
+    "steps": 22
+   },
+   "duration_ms": 491
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "docs/ui/figcraft/A/scripts/08_components_groups.json",
+   "sha256": "513d19bf62012802139ad86b8dd1cca4d1dc256143c12533784c9a216d25f70f",
+   "kind": "script"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/page02g.figcraft",
+   "sha256": "ed8d9a0d44d030c2d60f96af5a1f455ec369855192749c86221dea835b740843",
+   "kind": "figcraft"
+  }
+ ],
+ "evaluation": {
+  "ok": true,
+  "gates": {
+   "transactional_run_ok": true,
+   "all_steps_ok": true
+  }
+ },
+ "outcome": "verified",
+ "failure_code": null,
+ "failures": [],
+ "cost": {
+  "model_tokens": 0,
+  "wall_s": 0.49
+ }
+}

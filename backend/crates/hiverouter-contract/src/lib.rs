@@ -30,8 +30,9 @@ pub mod timestamp;
 pub mod usage;
 
 pub use command::{
-    CancelRun, ChatPin, Command, CommandName, DiffDecision, HistoryRevisionSet, KillWorker,
-    RewireTask, SpawnSubHive, SubmitPrompt, TemplateInsert, ViewportRecenter, ViewportSet,
+    ApprovalResolve, CancelRun, ChatPin, Command, CommandName, DiffDecision, FileRead, FileTreeList,
+    HistoryRevisionSet, KillWorker, RewireTask, SettingsStatus, SpawnSubHive, SubmitPrompt,
+    TemplateInsert, ViewportRecenter, ViewportSet,
 };
 pub use envelope::{Envelope, FrameKind};
 pub use event::{Event, EventName};

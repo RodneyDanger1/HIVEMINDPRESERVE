@@ -5,13 +5,15 @@
 #![allow(dead_code)]
 
 use hiverouter_contract::command::{
-    CancelRun, ChatPin, Command, CommandName, HistoryRevisionSet, KillWorker, RewireTask,
-    SpawnSubHive, SubmitPrompt, TemplateInsert, ViewportRecenter, ViewportSet,
+    ApprovalResolve, CancelRun, ChatPin, Command, CommandName, FileRead, FileTreeList,
+    HistoryRevisionSet, KillWorker, RewireTask, SettingsStatus, SpawnSubHive, SubmitPrompt,
+    TemplateInsert, ViewportRecenter, ViewportSet,
 };
 use hiverouter_contract::event::{
-    Ack, ApprovalRequest, ApprovalResolved, EmptyPayload, ErrorPayload, Event, HistorySnapshot,
-    NodeEvent, ReplyDelta, ReplyDone, ResyncRequiredPayload, RunCreated, RunMetrics,
-    RunStatusPayload, ServerHello,
+    Ack, ApprovalRequest, ApprovalResolved, EmptyPayload, ErrorPayload, Event, FileContent,
+    FileTreeEntry, FileTreeResult, HistorySnapshot, NodeEvent, ReplyDelta, ReplyDone,
+    ResyncRequiredPayload, RunCreated, RunMetrics, RunStatusPayload, ServerHello,
+    SettingsStatusResult,
 };
 use hiverouter_contract::ids::{ApprovalId, RunId, TaskId};
 use hiverouter_contract::state::AgentState;
@@ -56,6 +58,17 @@ pub fn command_samples() -> Vec<Command> {
             zoom: 1.25,
         }),
         Command::ViewportRecenter(ViewportRecenter {}),
+        Command::ApprovalResolve(ApprovalResolve {
+            approval_id: ApprovalId::new(),
+            nonce: "nonce-1".to_owned(),
+            decision: "approve".to_owned(),
+            reason: Some("operator approved".to_owned()),
+        }),
+        Command::SettingsStatus(SettingsStatus {}),
+        Command::FileTreeList(FileTreeList {}),
+        Command::FileRead(FileRead {
+            path: "src/main.rs".to_owned(),
+        }),
     ]
 }
 
@@ -133,6 +146,32 @@ pub fn event_samples() -> Vec<Event> {
             approval_id,
             tool: "shell.run".to_owned(),
             decision: "approved".to_owned(),
+        }),
+        Event::SettingsStatusResult(SettingsStatusResult {
+            provider: "deepseek".to_owned(),
+            model: "deepseek-flash".to_owned(),
+            key_present: false,
+        }),
+        Event::FileTreeResult(FileTreeResult {
+            root: ".".to_owned(),
+            entries: vec![
+                FileTreeEntry {
+                    path: "src".to_owned(),
+                    name: "src".to_owned(),
+                    is_dir: true,
+                },
+                FileTreeEntry {
+                    path: "README.md".to_owned(),
+                    name: "README.md".to_owned(),
+                    is_dir: false,
+                },
+            ],
+        }),
+        Event::FileContent(FileContent {
+            path: "README.md".to_owned(),
+            sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08".to_owned(),
+            bytes: 12,
+            text: "hello hive\n".to_owned(),
         }),
         Event::HistorySnapshot(HistorySnapshot {
             run_id,
@@ -268,6 +307,50 @@ pub fn refusal_samples() -> Vec<(CommandName, &'static str, serde_json::Value, R
             CommandName::ViewportRecenter,
             "VIEWPORT_RECENTER bad payload",
             command_envelope("VIEWPORT_RECENTER", serde_json::json!("recenter")),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::ApprovalResolve,
+            "APPROVAL_RESOLVE invalid decision",
+            command_envelope(
+                "APPROVAL_RESOLVE",
+                serde_json::json!({
+                    "approval_id": "019a0d5c-6666-7abc-8def-0123456789ab",
+                    "nonce": "nonce-1",
+                    "decision": "maybe"
+                }),
+            ),
+            Refusal::ApprovalDecisionInvalid,
+        ),
+        (
+            CommandName::ApprovalResolve,
+            "APPROVAL_RESOLVE empty nonce",
+            command_envelope(
+                "APPROVAL_RESOLVE",
+                serde_json::json!({
+                    "approval_id": "019a0d5c-6666-7abc-8def-0123456789ab",
+                    "nonce": "",
+                    "decision": "approve"
+                }),
+            ),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::SettingsStatus,
+            "SETTINGS_STATUS bad payload",
+            command_envelope("SETTINGS_STATUS", serde_json::json!("status")),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::FileTreeList,
+            "FILE_TREE_LIST bad payload",
+            command_envelope("FILE_TREE_LIST", serde_json::json!([1, 2, 3])),
+            Refusal::SchemaInvalid,
+        ),
+        (
+            CommandName::FileRead,
+            "FILE_READ missing path",
+            command_envelope("FILE_READ", serde_json::json!({})),
             Refusal::SchemaInvalid,
         ),
         (
