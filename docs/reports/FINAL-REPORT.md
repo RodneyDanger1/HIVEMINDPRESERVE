@@ -1,4 +1,4 @@
-# HiveMind v1 — FINAL REPORT (shipped artifact)
+﻿# HiveMind v1 — FINAL REPORT (shipped artifact)
 
 Date: 2026-11-06 (America/Chicago). Workspace: `C:\Users\Riley\Desktop\hiverouter-v1`.
 Blueprint source of truth: `C:\Users\Riley\Desktop\hivemind-blueprint` (read-only; hashes verified 9/9 at start).
@@ -42,7 +42,7 @@ Blueprint source of truth: `C:\Users\Riley\Desktop\hivemind-blueprint` (read-onl
 | Agent-native CLI | JSON stdout, human stderr, exit codes 0/2/3, `--dry-run`, schema, live `health`/`diagnose` | `docs/audit/PHASE-B-VERIFICATION.md` |
 | UI watchdog | PASS 20/20, allow_frontend true, tokens exact, blueprint/source unchanged | `ledgers/ui-watchdog.json/.md` |
 | Trace ladder | 43 `WIRED-AND-WORKS` hops with captured evidence; 260 UNVERIFIED; 5 MISSING; 0 fabricated | `docs/trace/controls.json`, `docs/trace/live/trace-capture.json` |
-| Claim register | 78 rows (75 verified / 3 read / 0 unverified by final count regeneration), no false VERIFIED | `docs/claims/CLAIM-REGISTER.csv/.json` |
+| Claim register | 80 rows: 72 VERIFIED / 8 READ / 0 UNVERIFIED / 0 CONTRADICTED (C-026 + C-340 added) | `docs/claims/CLAIM-REGISTER.csv/.json` |
 | Deployment | clean-extraction smoke: `--version`, `/health` 200, `/` 200, `/diagnose` 200 | `runtime-test/pkg-final` |
 
 ## Not done / deliberately not claimed
