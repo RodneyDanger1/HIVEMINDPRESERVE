@@ -23,6 +23,7 @@ use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
 use crate::prompts::TemplateRegistry;
 use crate::snapshot::SnapshotStore;
+use crate::tools_bridge::ToolsBridge;
 use crate::ws::{refusal_response, SessionAuth, ws_handler};
 
 /// Shared server state.
@@ -46,6 +47,18 @@ pub struct AppState {
     pub engine: Arc<RunEngine>,
     /// History / time-travel read model.
     pub history: Arc<HistoryReadModel>,
+    /// Wired tools capabilities (settings, jailed files, approvals, diagnose).
+    pub tools: Arc<ToolsBridge>,
+}
+
+fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
+    if let Err(error) = ToolsBridge::migrate(db) {
+        tracing::error!(
+            code = error.code(),
+            "tools approval-table migration failed; APPROVAL_RESOLVE will refuse by name"
+        );
+    }
+    Arc::new(ToolsBridge::new(&config.workspace_root, db.clone()))
 }
 
 impl AppState {
@@ -71,6 +84,7 @@ impl AppState {
             .with_snapshot_store(snapshots.clone()),
         );
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let tools = build_tools(&db, &config);
         Self {
             db,
             checks,
@@ -81,6 +95,7 @@ impl AppState {
             session,
             engine,
             history,
+            tools,
         }
     }
 
@@ -109,6 +124,7 @@ impl AppState {
             .with_snapshot_store(snapshots.clone()),
         );
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let tools = build_tools(&db, &config);
         Self {
             db,
             checks,
@@ -119,6 +135,7 @@ impl AppState {
             session,
             engine,
             history,
+            tools,
         }
     }
 
@@ -144,6 +161,7 @@ impl AppState {
             .with_snapshot_store(snapshots.clone()),
         );
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let tools = build_tools(&db, &config);
         Self {
             db,
             checks,
@@ -154,6 +172,7 @@ impl AppState {
             session,
             engine,
             history,
+            tools,
         }
     }
 }
@@ -205,6 +224,7 @@ pub struct TransportHealth {
 pub fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route("/diagnose", get(diagnose))
         .route("/api/session", get(api_session))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
@@ -212,6 +232,23 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
+}
+
+/// `GET /diagnose` — tools-owned derived diagnostics (no secrets).
+async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
+    match state.tools.diagnostics() {
+        Ok(value) => (StatusCode::OK, Json(value)).into_response(),
+        Err(refusal) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "code": refusal.code(),
+                "message": refusal.message(),
+                "how_to_fix": refusal.how_to_fix(),
+                "retryable": refusal.retryable(),
+            })),
+        )
+            .into_response(),
+    }
 }
 
 async fn history_runs(State(state): State<Arc<AppState>>) -> Response {

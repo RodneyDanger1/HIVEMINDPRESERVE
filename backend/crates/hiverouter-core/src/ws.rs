@@ -394,12 +394,49 @@ async fn handle_client_text(
             }
             Ok(())
         }
+        Command::SettingsStatus(_) => {
+            let result = state.tools.settings_status();
+            publish_ack(state, CommandName::SettingsStatus, correlation);
+            publish_with_correlation(state, Event::SettingsStatusResult(result), correlation);
+            Ok(())
+        }
+        Command::FileTreeList(_) => {
+            match state.tools.file_tree_list() {
+                Ok(result) => {
+                    publish_ack(state, CommandName::FileTreeList, correlation);
+                    publish_with_correlation(state, Event::FileTreeResult(result), correlation);
+                }
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
+        Command::FileRead(payload) => {
+            match state.tools.file_read(&payload) {
+                Ok(result) => {
+                    publish_ack(state, CommandName::FileRead, correlation);
+                    publish_with_correlation(state, Event::FileContent(result), correlation);
+                }
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
+        Command::ApprovalResolve(payload) => {
+            match state.tools.resolve_approval(&payload) {
+                Ok(resolution) => {
+                    let resolved =
+                        crate::tools_bridge::ToolsBridge::approval_resolved_event(&resolution);
+                    publish_ack(state, CommandName::ApprovalResolve, correlation);
+                    publish_with_correlation(state, Event::ApprovalResolved(resolved), correlation);
+                }
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
         other => {
-            // Approval/settings/file commands land with the Phase 6 tools crate;
-            // refuse by name until then instead of silently dropping them.
-            tracing::warn!(
+            // Defensive: every frozen command is handled above or earlier.
+            tracing::error!(
                 command = other.name().as_str(),
-                "no handler registered yet for this command (Phase 6)"
+                "unhandled frozen command reached the dispatch fallback"
             );
             publish_error(state, Refusal::InternalError, Some(correlation));
             Ok(())
@@ -438,6 +475,15 @@ fn publish_ack(state: &Arc<AppState>, command: CommandName, correlation: Uuid) {
         Some(correlation),
     ) {
         tracing::error!(code = error.code(), "failed to publish ACK event");
+    }
+}
+
+fn publish_with_correlation(state: &Arc<AppState>, event: Event, correlation: Uuid) {
+    if let Err(error) = state
+        .bus
+        .publish_for_run(event, None, Some(correlation))
+    {
+        tracing::error!(code = error.code(), "failed to publish command result event");
     }
 }
 

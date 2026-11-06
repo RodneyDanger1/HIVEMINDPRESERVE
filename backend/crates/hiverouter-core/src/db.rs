@@ -360,6 +360,22 @@ impl Database {
         let mut connection = self.lock()?;
         Ok(f(&mut connection)?)
     }
+
+    /// Runs a closure that reports named refusals directly (tools-layer calls).
+    ///
+    /// This keeps a business refusal such as `E_APPROVAL_REPLAY` from being
+    /// flattened into a generic database error by a transport wrapper.
+    ///
+    /// # Errors
+    /// The closure's named refusal, or `E_INTERNAL_ERROR` when the lock is
+    /// poisoned.
+    pub fn with_connection_refusal<T>(
+        &self,
+        f: impl FnOnce(&mut Connection) -> Result<T, Refusal>,
+    ) -> Result<T, Refusal> {
+        let mut connection = self.lock().map_err(|_| Refusal::InternalError)?;
+        f(&mut connection)
+    }
 }
 
 #[cfg(test)]

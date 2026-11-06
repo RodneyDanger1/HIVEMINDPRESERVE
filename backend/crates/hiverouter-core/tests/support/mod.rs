@@ -38,11 +38,27 @@ pub struct TestServer {
 }
 
 impl TestServer {
-    /// Starts a server on an ephemeral loopback port.
+    /// Starts a server on an ephemeral loopback port (workspace root = the temp dir).
     pub async fn start(temp: &tempfile::TempDir) -> Self {
+        Self::start_with_workspace(temp, Some(temp.path())).await
+    }
+
+    /// Starts a server with an explicit workspace root for the jailed file tools.
+    pub async fn start_with_workspace(
+        temp: &tempfile::TempDir,
+        workspace_root: Option<&std::path::Path>,
+    ) -> Self {
+        // A non-existent root is a genuine "file access unavailable" state; it
+        // must not be created implicitly by the test harness.
+        let workspace_root = workspace_root.map(std::path::Path::to_path_buf);
         let config = Arc::new(
-            Config::resolve("127.0.0.1:0", temp.path().to_str().expect("utf8"), None)
-                .expect("test config"),
+            Config::resolve_with_workspace(
+                "127.0.0.1:0",
+                temp.path().to_str().expect("utf8"),
+                None,
+                workspace_root.as_deref(),
+            )
+            .expect("test config"),
         );
         let database = Arc::new(Database::open(config.db_file()).expect("database"));
         database.migrate().expect("migrations");

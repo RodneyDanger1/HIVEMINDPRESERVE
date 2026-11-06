@@ -226,6 +226,9 @@ refusal_table! {
     FileTooLarge => ("E_FILE_TOO_LARGE", false,
         "The requested file exceeds the 1 MiB read cap.",
         "Read a smaller file or add the path to a workspace exclusion list."),
+    FileTreeUnavailable => ("E_FILE_TREE_UNAVAILABLE", false,
+        "Workspace file access is unavailable because no usable workspace root is configured.",
+        "Start the server with --workspace-root pointing at an existing directory."),
 
     // --- tool / safety ------------------------------------------------------
     ToolNotFound => ("E_TOOL_NOT_FOUND", false,

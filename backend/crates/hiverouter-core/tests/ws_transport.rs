@@ -6,9 +6,11 @@
 
 mod support;
 
-use hiverouter_contract::command::{CancelRun, RewireTask, ViewportSet};
+use hiverouter_contract::command::{
+    ApprovalResolve, CancelRun, FileRead, FileTreeList, RewireTask, SettingsStatus, ViewportSet,
+};
 use hiverouter_contract::event::NodeEvent;
-use hiverouter_contract::ids::{RunId, TaskId};
+use hiverouter_contract::ids::{ApprovalId, RunId, TaskId};
 use hiverouter_contract::{schema, AgentState, Command, CommandName, Event, EventName, Refusal};
 use serde_json::Value;
 use support::{error_code, frame_name, recv_until, recv_with_timeout, WsClient, TestServer, TEST_ORIGIN};
@@ -297,19 +299,185 @@ async fn run_commands_are_handled_by_the_phase4_engine() {
     })
     .await;
     assert_eq!(error_code(&error), Refusal::RunNotFound.code());
+    assert_eq!(CommandName::CancelRun.as_str(), "CANCEL_RUN");
+    assert_eq!(EventName::NodeRewire.as_str(), "NODE_REWIRE");
+}
 
-    // Phase 6 commands still have no handler: typed ERROR, not a silent drop.
+fn seed_pending_approval(server: &TestServer) -> (ApprovalId, String) {
+    let gate = server.state.tools.approval_gate();
+    let now = hiverouter_contract::Timestamp::now().unix_secs().unwrap_or(0);
+    server
+        .state
+        .db
+        .with_connection(|conn| {
+            let request = gate
+                .request(
+                    conn,
+                    RunId::new(),
+                    TaskId::new(),
+                    "call-1",
+                    hiverouter_tools::tool::ToolId::FileWrite,
+                    hiverouter_tools::tool::PermissionClass::Mutate,
+                    &serde_json::json!({"path": "note.txt", "content": "x"}),
+                    now,
+                )
+                .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+            Ok((request.approval_id, request.nonce))
+        })
+        .expect("seed pending approval")
+}
+
+#[tokio::test]
+async fn settings_status_command_returns_result_over_ws() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let mut client = connect(&server, None).await;
+    recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
+
+    let correlation = send_command(&mut client, &Command::SettingsStatus(SettingsStatus {})).await;
+    let ack = recv_until(&mut client, |value| {
+        frame_name(value) == "ACK" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    assert_eq!(ack["payload"]["command"], "SETTINGS_STATUS");
+    let result = recv_until(&mut client, |value| frame_name(value) == "SETTINGS_STATUS_RESULT").await;
+    assert_eq!(result["payload"]["provider"], "deepseek");
+    assert_eq!(result["payload"]["model"], "deepseek-flash");
+    assert!(result["payload"]["key_present"].is_boolean());
+    let rendered = result.to_string();
+    assert!(!rendered.contains("sk-"), "settings must never expose the key");
+    assert!(!rendered.contains("DEEPSEEK_API_KEY"));
+}
+
+#[tokio::test]
+async fn file_tree_and_file_read_commands_use_the_jail() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    std::fs::write(temp.path().join("note.txt"), b"hello jail").expect("write note");
+    let server = TestServer::start(&temp).await;
+    let mut client = connect(&server, None).await;
+    recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
+
+    // FILE_TREE_LIST -> ACK + FILE_TREE_RESULT with the real jail root.
+    let correlation = send_command(&mut client, &Command::FileTreeList(FileTreeList {})).await;
+    recv_until(&mut client, |value| {
+        frame_name(value) == "ACK" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    let tree = recv_until(&mut client, |value| frame_name(value) == "FILE_TREE_RESULT").await;
+    let entries = tree["payload"]["entries"].as_array().expect("entries");
+    assert!(
+        entries.iter().any(|entry| entry["name"] == "note.txt"),
+        "file tree must list the workspace file: {tree}"
+    );
+
+    // FILE_READ -> ACK + FILE_CONTENT with real bytes/sha/text.
     let correlation = send_command(
         &mut client,
-        &Command::SettingsStatus(hiverouter_contract::command::SettingsStatus {}),
+        &Command::FileRead(FileRead {
+            path: "note.txt".to_owned(),
+        }),
+    )
+    .await;
+    recv_until(&mut client, |value| {
+        frame_name(value) == "ACK" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    let content = recv_until(&mut client, |value| frame_name(value) == "FILE_CONTENT").await;
+    assert_eq!(content["payload"]["path"], "note.txt");
+    assert_eq!(content["payload"]["text"], "hello jail");
+    assert_eq!(content["payload"]["bytes"], 10);
+    assert_eq!(
+        content["payload"]["sha256"].as_str().expect("sha").len(),
+        64
+    );
+
+    // Missing file -> named refusal.
+    let correlation = send_command(
+        &mut client,
+        &Command::FileRead(FileRead {
+            path: "nope.txt".to_owned(),
+        }),
     )
     .await;
     let error = recv_until(&mut client, |value| {
         frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
     })
     .await;
-    assert_eq!(error_code(&error), Refusal::InternalError.code());
-    assert_eq!(error["payload"]["retryable"], true);
-    assert_eq!(CommandName::CancelRun.as_str(), "CANCEL_RUN");
-    assert_eq!(EventName::NodeRewire.as_str(), "NODE_REWIRE");
+    assert_eq!(error_code(&error), Refusal::PathNotFound.code());
+
+    // Escape attempt -> named refusal, never an outside read.
+    let correlation = send_command(
+        &mut client,
+        &Command::FileRead(FileRead {
+            path: "../outside.txt".to_owned(),
+        }),
+    )
+    .await;
+    let error = recv_until(&mut client, |value| {
+        frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    assert_eq!(error_code(&error), Refusal::PathOutsideJail.code());
+}
+
+#[tokio::test]
+async fn file_commands_refuse_by_name_when_workspace_is_unavailable() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let missing_root = temp.path().join("no-such-workspace");
+    let server = TestServer::start_with_workspace(&temp, Some(&missing_root)).await;
+    let mut client = connect(&server, None).await;
+    recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
+    assert!(!server.state.tools.file_access_available());
+
+    for command in [
+        Command::FileTreeList(FileTreeList {}),
+        Command::FileRead(FileRead {
+            path: "anything.txt".to_owned(),
+        }),
+    ] {
+        let correlation = send_command(&mut client, &command).await;
+        let error = recv_until(&mut client, |value| {
+            frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
+        })
+        .await;
+        assert_eq!(
+            error_code(&error),
+            Refusal::FileTreeUnavailable.code(),
+            "unavailable workspace must refuse truthfully, never E_INTERNAL_ERROR"
+        );
+        assert_ne!(error_code(&error), Refusal::InternalError.code());
+    }
+}
+
+#[tokio::test]
+async fn approval_resolve_command_acks_and_emits_resolved_event() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (approval_id, nonce) = seed_pending_approval(&server);
+    let mut client = connect(&server, None).await;
+    recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
+
+    let payload = ApprovalResolve {
+        approval_id,
+        nonce,
+        decision: "approve".to_owned(),
+        reason: Some("operator approved".to_owned()),
+    };
+    let correlation = send_command(&mut client, &Command::ApprovalResolve(payload.clone())).await;
+    recv_until(&mut client, |value| {
+        frame_name(value) == "ACK" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    let resolved = recv_until(&mut client, |value| frame_name(value) == "APPROVAL_RESOLVED").await;
+    assert_eq!(resolved["payload"]["approval_id"], approval_id.to_string());
+    assert_eq!(resolved["payload"]["tool"], "file_write");
+    assert_eq!(resolved["payload"]["decision"], "approve");
+
+    // Replaying the same nonce is a named refusal, never a second grant.
+    let correlation = send_command(&mut client, &Command::ApprovalResolve(payload)).await;
+    let error = recv_until(&mut client, |value| {
+        frame_name(value) == "ERROR" && value["correlation_id"] == correlation.to_string()
+    })
+    .await;
+    assert_eq!(error_code(&error), Refusal::ApprovalReplay.code());
 }

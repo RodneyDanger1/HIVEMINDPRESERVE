@@ -290,7 +290,11 @@ pub const COMMAND_MATRIX: &[CommandSpec] = &[
         payload_schema: "FileTreeList",
         ack: true,
         frozen: true,
-        refusals: &[Refusal::PathOutsideJail, Refusal::PathNotFound],
+        refusals: &[
+            Refusal::PathOutsideJail,
+            Refusal::PathNotFound,
+            Refusal::FileTreeUnavailable,
+        ],
     },
     CommandSpec {
         name: CommandName::FileRead,
@@ -301,6 +305,7 @@ pub const COMMAND_MATRIX: &[CommandSpec] = &[
             Refusal::PathOutsideJail,
             Refusal::PathNotFound,
             Refusal::FileTooLarge,
+            Refusal::FileTreeUnavailable,
         ],
     },
     CommandSpec {

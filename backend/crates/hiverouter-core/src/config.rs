@@ -23,10 +23,20 @@ pub struct Config {
     pub db_path: PathBuf,
     /// WebSocket Origin allowlist (`http://127.0.0.1:<port>` etc.).
     pub allowed_origins: Vec<String>,
+    /// Workspace root for the jailed file tools (`FILE_TREE_LIST`/`FILE_READ`).
+    pub workspace_root: PathBuf,
 }
 
 /// Environment variable that appends comma-separated extra Origins.
 pub const ALLOWED_ORIGINS_ENV: &str = "HIVEROUTER_ALLOWED_ORIGINS";
+/// Environment variable selecting the workspace root for the jailed file tools.
+pub const WORKSPACE_ROOT_ENV: &str = "HIVEROUTER_WORKSPACE_ROOT";
+
+/// Default workspace root: the process working directory.
+#[must_use]
+pub fn default_workspace_root() -> PathBuf {
+    std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+}
 
 /// Default allowlist for a bound port (`*` for ephemeral test ports).
 #[must_use]
@@ -81,6 +91,9 @@ impl Config {
         let mut data_dir =
             std::env::var("HIVEROUTER_DATA_DIR").unwrap_or_else(|_| DEFAULT_DATA_DIR.to_owned());
         let mut db_path: Option<PathBuf> = std::env::var("HIVEROUTER_DB").ok().map(PathBuf::from);
+        let mut workspace_root: Option<PathBuf> = std::env::var(WORKSPACE_ROOT_ENV)
+            .ok()
+            .map(PathBuf::from);
 
         let mut iter = args.into_iter();
         while let Some(argument) = iter.next() {
@@ -95,6 +108,10 @@ impl Config {
                     let value = iter.next().ok_or(ConfigError::MissingValue(argument))?;
                     db_path = Some(PathBuf::from(value));
                 }
+                "--workspace-root" => {
+                    let value = iter.next().ok_or(ConfigError::MissingValue(argument))?;
+                    workspace_root = Some(PathBuf::from(value));
+                }
                 other if other.starts_with("--bind=") => {
                     bind = other["--bind=".len()..].to_owned();
                 }
@@ -104,10 +121,13 @@ impl Config {
                 other if other.starts_with("--db=") => {
                     db_path = Some(PathBuf::from(&other["--db=".len()..]));
                 }
+                other if other.starts_with("--workspace-root=") => {
+                    workspace_root = Some(PathBuf::from(&other["--workspace-root=".len()..]));
+                }
                 other => return Err(ConfigError::UnknownArgument(other.to_owned())),
             }
         }
-        Self::resolve(&bind, &data_dir, db_path)
+        Self::resolve_with_workspace(&bind, &data_dir, db_path, workspace_root.as_deref())
     }
 
     /// Validates and resolves the configuration, creating the data directory.
@@ -119,6 +139,20 @@ impl Config {
         bind: &str,
         data_dir: &str,
         db_path: Option<PathBuf>,
+    ) -> Result<Self, ConfigError> {
+        Self::resolve_with_workspace(bind, data_dir, db_path, None)
+    }
+
+    /// Validates and resolves the configuration with an explicit workspace root.
+    ///
+    /// # Errors
+    /// Returns [`ConfigError`] when the bind address is invalid/non-loopback or
+    /// the data directory cannot be created.
+    pub fn resolve_with_workspace(
+        bind: &str,
+        data_dir: &str,
+        db_path: Option<PathBuf>,
+        workspace_root: Option<&Path>,
     ) -> Result<Self, ConfigError> {
         let bind: SocketAddr = bind
             .parse()
@@ -153,6 +187,9 @@ impl Config {
             data_dir,
             db_path,
             allowed_origins: resolve_allowed_origins(bind),
+            workspace_root: workspace_root
+                .map(Path::to_path_buf)
+                .unwrap_or_else(default_workspace_root),
         })
     }
 
@@ -190,6 +227,7 @@ mod tests {
             .allowed_origins
             .contains(&"http://127.0.0.1:8080".to_owned()));
         assert!(config.allowed_origins.contains(&"http://localhost:8080".to_owned()));
+        assert!(config.workspace_root.is_absolute() || config.workspace_root.exists());
     }
 
     #[test]
@@ -210,10 +248,13 @@ mod tests {
             "--data-dir".to_owned(),
             temp.path().display().to_string(),
             format!("--db={}", temp.path().join("custom.db").display()),
+            "--workspace-root".to_owned(),
+            temp.path().display().to_string(),
         ];
         let config = Config::from_args(args).expect("parses");
         assert_eq!(config.bind.port(), 0);
         assert_eq!(config.db_path, temp.path().join("custom.db"));
+        assert_eq!(config.workspace_root, temp.path());
 
         let error = Config::from_args(vec!["--nope".to_owned()]).expect_err("unknown flag");
         assert!(matches!(error, ConfigError::UnknownArgument(_)));

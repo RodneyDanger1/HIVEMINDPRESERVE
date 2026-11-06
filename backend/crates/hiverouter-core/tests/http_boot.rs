@@ -216,3 +216,17 @@ async fn binary_help_and_version_are_successful() {
     let version_text = String::from_utf8_lossy(&version.stdout);
     assert!(version_text.contains("hiverouter.v1"), "version output: {version_text}");
 }
+
+#[tokio::test]
+async fn diagnose_route_returns_tools_json() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (status, body) = http_get(server.addr, "/diagnose").await;
+    assert_eq!(status, 200, "GET /diagnose must be mounted: {body}");
+    let value: Value = serde_json::from_str(&body).expect("diagnose body is JSON");
+    assert_eq!(value["schema"], "hiverouter.diagnose.v1");
+    // Derived census fields are present; the payload never carries the key.
+    assert!(value.get("census").is_some() || value.get("tools").is_some());
+    assert!(!body.contains("DEEPSEEK_API_KEY"));
+    assert!(!body.contains("sk-"));
+}

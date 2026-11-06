@@ -18,6 +18,7 @@ path = "src/lib.rs"
 
 [dependencies]
 hiverouter-contract = { path = "../hiverouter-contract" }
+hiverouter-tools = { path = "../hiverouter-tools" }
 tokio = { workspace = true }
 axum = { workspace = true }
 rusqlite = { workspace = true }
