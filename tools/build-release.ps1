@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   HiveMind deterministic release builder.
 
@@ -148,7 +148,7 @@ function Get-ZipEntries([string]$ZipPath) {
 }
 
 function Test-AbsolutePaths([string]$Text, [string]$Where) {
-    $matches = [regex]::Matches($Text, '[A-Za-z]:(\\|/)|\\\\[A-Za-z0-9]')
+    $matches = [regex]::Matches($Text, '(?<![A-Za-z0-9])[A-Za-z]:[\\/]|\\\\[A-Za-z0-9]')
     if ($matches.Count -gt 0) {
         $samples = @()
         foreach ($m in $matches) { $samples += $m.Value }
