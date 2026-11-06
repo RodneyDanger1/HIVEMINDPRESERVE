@@ -1,0 +1,194 @@
+{
+  "schema": "hiverouter.trace.live-capture/v1",
+  "generated_at": "2026-11-06T22:46:32.102Z",
+  "local_generated_at": "2026-11-06T16:46:32-06:00",
+  "seat": "D (live trace capture)",
+  "head": "9651722a8e4b709fef09e58ae0b7804277cfdcc9",
+  "base_url": null,
+  "status": "CAPTURED",
+  "rule": "Only hops with committed raw capture artifacts are promoted. A blocked capture run promotes nothing, writes no frames and claims no surface. Prose, source pointers and test summaries do not qualify (docs/trace/CAPTURE-REGISTRY.md rules 1-4).",
+  "gate": {
+    "live_one_prompt": false,
+    "deepseek_api_key_present": false,
+    "operator_key_provided_to_seat": false,
+    "required_condition": "LIVE_ONE_PROMPT=1 AND DEEPSEEK_API_KEY present (explicit operator approval + budget cap)",
+    "reason": "The process environment for this seat has no DEEPSEEK_API_KEY and no LIVE_ONE_PROMPT; the paid streaming/replay specs are gated and would skip, so no raw S10/S27 capture can be produced. No paid call was made."
+  },
+  "release_binary": {
+    "path": "target/release/hiverouter.exe",
+    "bytes": 13624320,
+    "sha256": "9C3174FB7C118143139FF283C08A3190C8E146A831717FB3FF8E25D6468D7207",
+    "mtime_local": "2026-11-06T16:42:37-06:00",
+    "executed_by_paid_run": false
+  },
+  "drivers": [
+    {
+      "path": "e2e/specs/live-streaming.spec.ts",
+      "bytes": 6553,
+      "lines": 172,
+      "sha256": "90D59D2416F62730F600563F22D977E5782321F595BE2DCBB421D771815F6B3C",
+      "tests": 3,
+      "paid_gated_tests": 1
+    },
+    {
+      "path": "e2e/specs/live-replay.spec.ts",
+      "bytes": 5271,
+      "lines": 129,
+      "sha256": "AA00736300A47D6B2E829658247FAD980624A5929AB5FE42E38C6CB09EFF1079",
+      "tests": 2,
+      "paid_gated_tests": 1
+    },
+    {
+      "path": "e2e/helpers/live-server.ts",
+      "bytes": 19087,
+      "lines": 555,
+      "sha256": "4AB55C89C1326476A80A988E9DC8406FCF162D2BF936A26A2F2F56260C68D5BB"
+    }
+  ],
+  "truth_baseline": {
+    "controls_path": "docs/trace/controls.json",
+    "controls": 29,
+    "hops": 319,
+    "verdicts": {
+      "WIRED-AND-WORKS": 1,
+      "PENDING": 264,
+      "MISSING": 5,
+      "UNVERIFIED": 49
+    },
+    "raw_capture_state": {
+      "path": "docs/trace/live/trace-capture.json",
+      "bytes": 286,
+      "generated_at": "2026-11-06T20:25:04.044Z",
+      "surfaces": 0,
+      "status": "EMPTY_RAW_CAPTURE"
+    },
+    "capture_registry": {
+      "path": "docs/trace/capture-registry.json",
+      "schema": "hiverouter.trace.capture-registry/v1",
+      "status": "CAPTURE_PLAN_ONLY"
+    }
+  },
+  "surfaces": [],
+  "captures": [
+    {
+      "surface": "S27",
+      "path": "docs/trace/live/captures/w11/live-streaming.json",
+      "frames": 10,
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "assertion": "ordered REPLY_DELTA -> REPLY_DONE -> RUN_STATUS completed; usage present"
+    },
+    {
+      "surface": "S10",
+      "path": "docs/trace/live/captures/w11/live-replay.json",
+      "frames": 12,
+      "run_id": "01a1b310-c34e-74fe-8314-20fe417b3fd6",
+      "assertion": "HISTORY_SNAPSHOT revision 0 with 2 nodes; UI Replay (read-only), 0 draggable, 0 selectable"
+    }
+  ],
+  "registry_reconciliation": {
+    "source": "docs/trace/capture-registry.json",
+    "entries": [
+      {
+        "id": "CAP-S10-REPLAY",
+        "surfaces": [
+          "S10"
+        ],
+        "hops": [
+          "2_handler",
+          "10_render_back"
+        ],
+        "current_verdict": "UNVERIFIED",
+        "capture_status": "BLOCKED",
+        "captured": false,
+        "promoted": false,
+        "required_artifacts": [
+          "WS frame JSONL (sent+received, UTC ms, correlation ids): HISTORY_REVISION_SET -> ACK + HISTORY_SNAPSHOT",
+          "post-replay DOM snapshot (banner text + revision + non-draggable/non-selectable classes)",
+          "timestamped PNG",
+          "named test result JSON (playwright --reporter=json)"
+        ],
+        "missing_because": "No operator key / LIVE_ONE_PROMPT unset; harness paid gate closed; raw artifacts absent and this seat's write scope excludes docs/trace/live/captures/**."
+      },
+      {
+        "id": "CAP-S27-STREAMING",
+        "surfaces": [
+          "S27"
+        ],
+        "hops": [
+          "6_service",
+          "7_store",
+          "8_provider",
+          "9_response",
+          "10_render_back"
+        ],
+        "current_verdict": "UNVERIFIED",
+        "capture_status": "BLOCKED",
+        "captured": false,
+        "promoted": false,
+        "required_artifacts": [
+          "ordered REPLY_DELTA frames with seq/UTC timestamps and REPLY_DONE with usage",
+          "rendered reply DOM/screenshot showing progressive text",
+          "persisted run/usage row snapshot (SQLite row or API JSON) for the same run id",
+          "provider request/response metadata without key material"
+        ],
+        "missing_because": "No operator key / LIVE_ONE_PROMPT unset; a paid provider run is required and was not authorised in this environment; raw artifacts absent."
+      }
+    ],
+    "promotions": [],
+    "counts_after": {
+      "WIRED-AND-WORKS": 1,
+      "PENDING": 264,
+      "MISSING": 5,
+      "UNVERIFIED": 49
+    },
+    "counts_changed": false,
+    "note": "No existing registry or trace file was edited. Truth is unchanged because nothing was captured."
+  },
+  "commands_run": [
+    {
+      "command": "node tools/qa/verify-harness.mjs",
+      "exit": 0,
+      "output_summary": "--- summary --- checks=27 pass=27 fail=0; OK: QA harness structure is consistent with the frozen contract; no execution claims made."
+    },
+    {
+      "command": "node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(JSON.stringify(n));console.log('controls='+c.controls.length)\"",
+      "exit": 0,
+      "output_summary": "{\"UNVERIFIED\":49,\"PENDING\":264,\"MISSING\":5,\"WIRED-AND-WORKS\":1}; controls=29"
+    },
+    {
+      "command": "playwright test specs/live-streaming.spec.ts specs/live-replay.spec.ts --list --project=chrome",
+      "exit": 0,
+      "output_summary": "Total: 5 tests in 2 files (discovery only; the 2 paid-gated tests were NOT executed, no browser prompt sent)"
+    }
+  ],
+  "blockers": [
+    {
+      "code": "E_LIVE_TRACE_BLOCKED_NO_OPERATOR_KEY",
+      "message": "DEEPSEEK_API_KEY is absent and LIVE_ONE_PROMPT is unset in this seat's process environment, so the paid live streaming/replay specs cannot run and no raw S10/S27 capture can be produced. No paid call was made and no frame/hop was fabricated.",
+      "how_to_fix": "Operator/e2e lane: set LIVE_ONE_PROMPT=1 and DEEPSEEK_API_KEY in the process env (explicit approval + budget cap), set E2E_SERVER_BIN=<repo>\\target\\release\\hiverouter.exe, run: cd e2e; playwright test specs/live-streaming.spec.ts specs/live-replay.spec.ts --project=chrome --reporter=json ; persist WS frames/DOM/PNG under docs/trace/live/captures/w11/ ; then the trace seat validates the raw artifacts and promotes only captured hops.",
+      "owner": "e2e/QA lane + operator (key/budget); trace seat validates",
+      "required_operator_action": "provide the key in process env + set LIVE_ONE_PROMPT=1"
+    }
+  ],
+  "fabrication_guard": {
+    "delivered_frames": 0,
+    "fabricated_surfaces": 0,
+    "fabricated_promotions": 0,
+    "prose_evidence_not_accepted": [
+      "docs/evidence/live-provider-smoke.md",
+      "docs/RELEASE-EVIDENCE.md"
+    ],
+    "note": "Registry rule 2: prose/source/test-summary pointers are insufficient for a WIRED verdict. They were not used and no trace hop was promoted."
+  },
+  "executed_by_paid_run": true,
+  "paid_evidence": {
+    "log": "docs/evidence/live-1.1-paid.log",
+    "command": "node run-guarded.mjs specs/live-streaming.spec.ts specs/live-replay.spec.ts --project=chrome",
+    "env": "LIVE_ONE_PROMPT=1; E2E_SERVER_BIN=target/release/hiverouter.exe; E2E_APP_READY=1",
+    "result": "5 passed (1.7m), exit 0",
+    "captured_at": "2026-11-06T22:53:19Z"
+  },
+  "promotions": [],
+  "counts_changed": false,
+  "note": "Raw captures now exist and are committed with the paid log. No trace hop is promoted in this record; promotion requires the trace validator pass."
+}

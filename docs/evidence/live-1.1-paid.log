@@ -1,0 +1,19 @@
+
+Running 5 tests using 1 worker
+
+node : (node:14680) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:3 char:1
++ node run-guarded.mjs specs/live-streaming.spec.ts specs/live-replay.s ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:14680) Wa... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 [chrome] › specs\live-replay.spec.ts:50:3 › live replay (real server, ephemeral process) › HISTORY_REVISION_SET for an unknown run refuses by name, no snapshot (no paid call) (3.7s)
+  ok 2 [chrome] › specs\live-replay.spec.ts:72:3 › live replay (real server, ephemeral process) › live replay: HISTORY_REVISION_SET -> HISTORY_SNAPSHOT >=2 nodes, UI read-only (paid gate) (6.9s)
+  ok 3 [chrome] › specs\live-streaming.spec.ts:52:3 › live streaming (real server, ephemeral process) › boots real server: /health, /api/session, embedded UI, WS hello (no key, no paid call) (4.5s)
+  ok 4 [chrome] › specs\live-streaming.spec.ts:80:3 › live streaming (real server, ephemeral process) › SUBMIT_PROMPT without a key fails closed: typed E_KEY_MISSING, no REPLY_DELTA (no paid call) (3.1s)
+  ok 5 [chrome] › specs\live-streaming.spec.ts:112:3 › live streaming (real server, ephemeral process) › live streaming: ordered REPLY_DELTA -> REPLY_DONE -> RUN_STATUS completed (paid gate) (5.8s)
+
+  5 passed (1.7m)
+EXIT=0

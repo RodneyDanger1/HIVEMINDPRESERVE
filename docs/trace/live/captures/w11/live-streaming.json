@@ -1,0 +1,174 @@
+{
+  "captured_at": "2026-11-06T22:53:19.872Z",
+  "release_binary": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\target\\release\\hiverouter.exe",
+  "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+  "reply_text": "OK",
+  "usage": {
+    "prompt_tokens": 87,
+    "completion_tokens": 1,
+    "total_tokens": 88,
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 87,
+    "reasoning_tokens": null
+  },
+  "frames": [
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "SERVER_HELLO",
+      "id": "01a1b310-fc92-72e3-85cd-f3e9a768152b",
+      "correlation_id": "01a1b310-fc92-72e3-85cd-f3e9a768152b",
+      "run_id": null,
+      "task_id": null,
+      "seq": null,
+      "ts": "2026-11-06T22:53:17Z",
+      "payload": {
+        "last_seq": 0,
+        "schema": "hiverouter.v1"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "RUN_CREATED",
+      "id": "01a1b310-fda3-77ff-8ac9-5801aed1996d",
+      "correlation_id": "98853244-d2c5-45ab-b29a-9b91b02a3e94",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 1,
+      "ts": "2026-11-06T22:53:17Z",
+      "payload": {
+        "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+        "status": "queued"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "ACK",
+      "id": "01a1b310-fda3-77ff-8ac9-5802eb56d88c",
+      "correlation_id": "98853244-d2c5-45ab-b29a-9b91b02a3e94",
+      "run_id": null,
+      "task_id": null,
+      "seq": 2,
+      "ts": "2026-11-06T22:53:17Z",
+      "payload": {
+        "command": "SUBMIT_PROMPT",
+        "correlation_id": "98853244-d2c5-45ab-b29a-9b91b02a3e94"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "NODE_SPAWN",
+      "id": "01a1b311-039c-724b-b0b5-1e096a35fffc",
+      "correlation_id": "01a1b311-039c-724b-b0b5-1e096a35fffc",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 3,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "task_id": "01a1b311-039c-724b-b0b5-1e08dc989783",
+        "state": "queued"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "NODE_SPAWN",
+      "id": "01a1b311-039c-724b-b0b5-1e0af1772068",
+      "correlation_id": "01a1b311-039c-724b-b0b5-1e0af1772068",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 4,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "task_id": "01a1b311-039c-724b-b0b5-1e07e03c9191",
+        "state": "queued"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "NODE_STATE",
+      "id": "01a1b311-039c-724b-b0b5-1e0b484c4132",
+      "correlation_id": "01a1b311-039c-724b-b0b5-1e0b484c4132",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 5,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "task_id": "01a1b311-039c-724b-b0b5-1e07e03c9191",
+        "state": "running"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "REPLY_DELTA",
+      "id": "01a1b311-05bd-7245-b2c0-6375b5e54e28",
+      "correlation_id": "01a1b311-05bd-7245-b2c0-6375b5e54e28",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 6,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+        "text_delta": "OK"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "REPLY_DONE",
+      "id": "01a1b311-061e-711f-8513-4e2d8c9f4864",
+      "correlation_id": "01a1b311-061e-711f-8513-4e2d8c9f4864",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 7,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+        "usage": {
+          "prompt_tokens": 87,
+          "completion_tokens": 1,
+          "total_tokens": 88,
+          "prompt_cache_hit_tokens": 0,
+          "prompt_cache_miss_tokens": 87,
+          "reasoning_tokens": null
+        }
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "NODE_STATE",
+      "id": "01a1b311-061e-711f-8513-4e2e37a668c9",
+      "correlation_id": "01a1b311-061e-711f-8513-4e2e37a668c9",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 8,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "task_id": "01a1b311-039c-724b-b0b5-1e07e03c9191",
+        "state": "completed"
+      }
+    },
+    {
+      "schema": "hiverouter.v1",
+      "type": "EVENT",
+      "name": "RUN_STATUS",
+      "id": "01a1b311-061e-711f-8513-4e2fe533eaa4",
+      "correlation_id": "01a1b311-061e-711f-8513-4e2fe533eaa4",
+      "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+      "task_id": null,
+      "seq": 9,
+      "ts": "2026-11-06T22:53:19Z",
+      "payload": {
+        "run_id": "01a1b310-fda3-77ff-8ac9-57ff0463f471",
+        "status": "completed",
+        "error_code": null
+      }
+    }
+  ]
+}
