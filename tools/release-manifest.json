@@ -37,5 +37,5 @@
                            }
                        ],
     "toolchain":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
-    "source_commit":  "74be0f46dc3dc349c238dc6fbc50fd182f68ce0f"
+    "source_commit":  "6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540"
 }
