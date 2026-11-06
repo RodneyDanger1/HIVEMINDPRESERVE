@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   HiveMind deterministic release builder.
 
@@ -202,6 +202,7 @@ try {
         try { $existingManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json }
         catch { Fail "E_RELEASE_MANIFEST" ("existing tools/release-manifest.json does not parse: " + $_.Exception.Message) 2 }
     }
+    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { $Version }
 
     # effective staging version (proactive supersede); drift-driven bump is refused post-build
     $effectiveVersion = $Version
@@ -337,7 +338,7 @@ try {
         Write-Host ("on-disk zip: " + $currentZipSha + " (match=" + ($currentZipSha -eq $recordedZipSha) + ")")
     }
 
-    if ($drift -and $effectiveVersion -eq $Version) {
+    if ($drift -and $effectiveVersion -eq $manifestVersion) {
         Fail "E_RELEASE_HASH_DRIFT" ("a rebuild would change recorded 1.0 artifact bytes. Preserve the 1.0 hashes: pass -NewStagingVersion 1.1.0 to stage a superseding release (old hashes kept in supersedes[]).") 5
     }
     $sidecarRel = $zipRel + ".sha256"
@@ -417,10 +418,10 @@ try {
             $oldToNew += [pscustomobject]@{ artifact = $d.name; old_sha256 = $rec.sha256; new_sha256 = $d.sha256; old_bytes = $rec.bytes; new_bytes = $d.bytes }
         }
     }
-    if ($realDrift -and $effectiveVersion -eq $Version) {
+    if ($realDrift -and $effectiveVersion -eq $manifestVersion) {
         Fail "E_RELEASE_HASH_DRIFT" "build changed artifact bytes but staging version was not bumped; recorded 1.0 hashes must be preserved (-NewStagingVersion required)." 5
     }
-    if ($realDrift -and $effectiveVersion -ne $Version) {
+    if ($realDrift -and $effectiveVersion -ne $manifestVersion) {
         Write-Host ("superseding release " + $Version + " -> " + $effectiveVersion + " (old -> new):") -ForegroundColor Yellow
         foreach ($r in $oldToNew) { Write-Host ("  " + $r.artifact + ": " + $r.old_sha256 + " -> " + $r.new_sha256) }
     }
@@ -430,6 +431,7 @@ try {
         $backup = Join-Path $script:Repo ("dist/.release-manifest-" + (Get-Date -Format 'yyyyMMddHHmmss') + ".json")
         Copy-Item -LiteralPath $manifestPath -Destination $backup -Force
     }
+    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { $Version }
 
     # ---------------------------------------------------------------- staging
     Step ("staging: " + $stagingRel)
@@ -524,7 +526,7 @@ try {
     # ---------------------------------------------------------------- manifest
     Step "manifest: tools/release-manifest.json"
     $supersedes = @()
-    if ($existingManifest -and $existingManifest.artifacts -and $effectiveVersion -ne $Version) {
+    if ($existingManifest -and $existingManifest.artifacts -and $effectiveVersion -ne $manifestVersion) {
         foreach ($a in $existingManifest.artifacts) {
             $supersedes += [pscustomobject]@{ path = $a.path; sha256 = $a.sha256; bytes = $a.bytes; note = 'SUPERSEDED by ' + $effectiveVersion }
         }
@@ -603,3 +605,4 @@ try {
 finally {
     Pop-Location
 }
+
