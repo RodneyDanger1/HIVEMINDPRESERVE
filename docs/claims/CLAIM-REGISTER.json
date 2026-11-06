@@ -1,10 +1,10 @@
 {
   "counts": {
-    "total": 79,
-    "verified": 70,
+    "total": 80,
+    "verified": 72,
     "vault_recorded": 0,
     "read": 8,
-    "unverified": 1,
+    "unverified": 0,
     "contradicted": 0
   },
   "decision_critical_unverified": [
