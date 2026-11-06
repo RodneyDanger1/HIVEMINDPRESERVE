@@ -1,6 +1,16 @@
 # QA HARNESS — HiveMind v1 (QA / trace engineer)
 
-> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** This QA record is historical (run on pre-1.0.0 artifact `184D51A7…` / asset `index-Cbfm1IuM.js`). Current 1.0.0 artifact: server `b17eb3d6…062a9a` (13,253,120 B), CLI `49f46e2b…386623`, package `46305fcb…6105ef` (8,444,021 B); embedded assets `index-6T84PJfk.js` / `index-BWOl__uM.css`. **Corrected trace totals (current): 43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops** (`docs/trace/controls.json`; the "260 UNVERIFIED / 5 MISSING" text below is historical). The final 1.0.0 browser-e2e claim must be re-established on the rebuilt artifact; the 79/0/14 result below was on the pre-1.0.0 binary. Live-provider evidence now exists (`docs/evidence/key-validation.md`, `docs/evidence/live-provider-smoke.md`, READ-level).
+> **Dated correction — W9 trace-truth (2026-11-06T14:10:40-0600, HEAD `8a5b583`).** Recomputed from `docs/trace/controls.json`:
+> **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops**; 55 hops carry evidence
+> (non-PENDING), 54 evidence-backed excluding the UNVERIFIED marker. This supersedes the earlier
+> `43 WIRED / 270 PENDING / 6 MISSING` figures (which counted a stale pre-fix `S22 6_service=MISSING` and did not
+> include the 1.1 wave-2 evidence). Applied evidence: W3 streaming tests (S27 6_service/7_store/8_provider/9_response),
+> W4 replay browser proof + source (S10 2_handler WIRED, 10_render_back UNVERIFIED), S22 6_service fixed from the
+> tracked live probe. No hop was upgraded without a repo pointer; `delivered[]` stays empty (no fabricated frames).
+> Recompute: `python -c "import json,collections;d=json.load(open('docs/trace/controls.json'));c=collections.Counter(h['verdict'] for x in d['controls'] for h in x['hops'].values());print(dict(c))"`
+
+
+
 
 **Status (historical):** HARNESS LIVE — FINAL RUN 79 PASSED / 0 FAILED / 14 SKIPPED (exit 0, 2026-11-06 09:21).
 Playwright **1.65.0** is installed in `e2e/` (package only; installed Chrome channel — no browser download).
@@ -9,7 +19,7 @@ Full Chrome suite against `http://127.0.0.1:8799` (binary `184D51A7…C9A9`, ass
 `e2e/playwright-report/index.html`). Earlier pre-fix failures (SETTINGS_STATUS E_INTERNAL_ERROR, stale
 Data/Approval copy, FILE_TREE_RESULT rendering) were fixed by the build owners and re-verified. Live evidence:
 `docs/trace/live/` (see `docs/trace/live/README.md`); trace capture refreshed 15:03Z and evidence-backed verdicts
-applied to `controls.json` (43 WIRED-AND-WORKS hops, 260 UNVERIFIED, 5 MISSING). Static harness still 27/27.
+applied to `controls.json` (49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)). Static harness still 27/27.
 Skipped/fixme tests are explicitly **not** passes; node-card and streaming surfaces stay UNVERIFIED (no run).
 
 ## 1. Role & scope
@@ -124,7 +134,7 @@ Verdicts: `WIRED-AND-WORKS | WIRED-BUT-DEAD | MISSING | REFUSED-BY-NAME | UNVERI
 Evidence kinds: `dom | request | ws-frame | db-row | log | file` with pointer+quote. Event evidence additionally
 requires emitted==subscribed==delivered parity, live-vs-persisted payload shape equality, terminal-record truth and
 NULL-not-zero usage for failed/budget runs (`docs/trace/events.json` parity_rules; `terminal-truth.md` template).
-Seeds generated: `node tools/qa/build-trace-seeds.mjs` → 29 controls × 11 PENDING hops; `traces.json` 0 runs.
+Current seed state (W9 recompute): 29 controls × 11 hop slots; **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)** — `node tools/qa/build-trace-seeds.mjs` would regenerate PENDING seeds (do not run: it would drop the captured + test-backed verdicts); `traces.json` 0 runs (no captured TraceRun).
 
 ## 7. A11y/contrast plan
 

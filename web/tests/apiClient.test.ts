@@ -142,4 +142,51 @@ describe('WS API client (ACK / refusal / hello)', () => {
     );
     expect(transport.sent).toHaveLength(1);
   });
+
+  it('bounds GET /api/session with a named timeout refusal (no hang, no transport)', async () => {
+    const neverFetch = (() => new Promise<Response>(() => {})) as unknown as typeof fetch;
+    let transportCreated = false;
+    const client = new WsApiClient({
+      baseUrl: 'http://127.0.0.1:8080',
+      fetchImpl: neverFetch,
+      httpTimeoutMs: 25,
+      transportFactory: () => {
+        transportCreated = true;
+        return new FakeTransport();
+      },
+    });
+    const startedAt = Date.now();
+    const outcome = await client.open().then(
+      () => null,
+      (error: unknown) => error,
+    );
+    expect(outcome).toBeInstanceOf(RefusalError);
+    const refusal = (outcome as RefusalError).refusal;
+    expect(refusal.code).toBe('E_WS_DISCONNECTED');
+    expect(refusal.message).toContain('GET /api/session');
+    expect(refusal.message).toContain('timed out after 25 ms');
+    expect(refusal.how_to_fix.length).toBeGreaterThan(0);
+    expect(Date.now() - startedAt).toBeLessThan(2000);
+    expect(transportCreated).toBe(false);
+    expect(client.getStatus()).toBe('error');
+  });
+
+  it('names a network failure on GET /api/session instead of throwing a bare error', async () => {
+    const failingFetch = (async () => {
+      throw new Error('ECONNREFUSED');
+    }) as unknown as typeof fetch;
+    const client = new WsApiClient({
+      baseUrl: 'http://127.0.0.1:8080',
+      fetchImpl: failingFetch,
+      httpTimeoutMs: 500,
+    });
+    const outcome = await client.open().then(
+      () => null,
+      (error: unknown) => error,
+    );
+    expect(outcome).toBeInstanceOf(RefusalError);
+    expect((outcome as RefusalError).refusal.code).toBe('E_WS_DISCONNECTED');
+    expect((outcome as RefusalError).refusal.message).toContain('GET /api/session');
+    expect((outcome as RefusalError).refusal.message).toContain('ECONNREFUSED');
+  });
 });

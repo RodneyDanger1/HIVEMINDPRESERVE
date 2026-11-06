@@ -28,6 +28,8 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    // Machine-readable results consumed by the skip-guard teardown.
+    ['json', { outputFile: 'test-results/results.json' }],
   ],
   use: {
     baseURL: BASE_URL,
@@ -45,3 +47,4 @@ export default defineConfig({
     { name: 'msedge', use: { channel: 'msedge' } },
   ],
 });
+

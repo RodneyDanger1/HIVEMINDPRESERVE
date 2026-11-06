@@ -2,7 +2,7 @@
   "_meta": {
     "schema": "hiverouter.trace.controls/v1",
     "source": "e2e/data/control-matrix.json",
-    "status": "PENDING_APP_NOT_BUILT",
+    "status": "PARTIAL_CAPTURE_APPLIED + WAVE-2 EVIDENCE (W9 trace-truth)",
     "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
     "generated_at": "2026-11-06T10:56:04.256Z",
     "live_capture": {
@@ -12,6 +12,45 @@
       "controls_touched": 28,
       "hops_evidence_backed": 48,
       "rule": "Only hops with captured DOM/interaction/frame evidence are WIRED-AND-WORKS; all others UNVERIFIED. No fabricated pass."
+    },
+    "recomputed_at": "2026-11-06T14:10:40-0600",
+    "counts": {
+      "total_hops": 319,
+      "wired_and_works": 49,
+      "pending": 264,
+      "missing": 5,
+      "unverified": 1,
+      "refused_by_name": 0,
+      "wired_but_dead": 0,
+      "non_pending": 55,
+      "evidence_backed_hops": 54,
+      "controls_partially_verified": 23,
+      "controls_pending_app_not_built": 6
+    },
+    "counts_note": "Recomputed by W9 from this file: each hop's verdict is counted; non-PENDING hops must carry non-empty evidence[]. live_capture.hops_evidence_backed=48 describes only the 2026-11-06T15:24Z capture application (43 WIRED + 5 MISSING); it is not the controls.json total.",
+    "wave2_evidence": {
+      "applied_at": "2026-11-06T14:10:40-0600",
+      "sources": [
+        "plans/waves/W3-STREAMING.md:143-150 (observed cargo test output: streaming 8 / provider_streaming 6 / run_lifecycle 7; workspace 261 passed)",
+        "backend/crates/hiverouter-provider/tests/streaming.rs (8 SSE wiremock tests)",
+        "backend/crates/hiverouter-core/tests/provider_streaming.rs (6 adapter tests)",
+        "e2e/specs/replay-state.spec.ts + e2e/helpers/replay-harness.ts (W4 browser replay proof; deterministic dist + mocked WS)",
+        "web/tests/graph.replay.test.ts + web/tests/state.parity.test.ts (replay projection / 16-state parity)",
+        "e2e/test-results/.last-run.json = {\"status\":\"passed\",\"failedTests\":[]} (2026-11-06T20:02:54Z)",
+        "docs/audit/evidence/final/live-probe-final.json (tracked browser-origin WS roundtrips)",
+        "docs/RELEASE-EVIDENCE.md:21-23 (release-binary smoke: SETTINGS_STATUS, SUBMIT_PROMPT->REPLY_DONE usage 99, HISTORY_REVISION_SET revision 0 -> 2-node HISTORY_SNAPSHOT)"
+      ],
+      "hop_delta": {
+        "S27": "6_service,7_store,8_provider,9_response -> WIRED-AND-WORKS (integration-test evidence)",
+        "S10": "2_handler -> WIRED-AND-WORKS; 10_render_back -> UNVERIFIED (browser proof run exists, no captured DOM artifact)",
+        "S22": "6_service MISSING -> WIRED-AND-WORKS (stale pre-fix capture removed; tracked live probe roundtrip)"
+      },
+      "not_upgraded": "S10 live round-trip hops, S15-S19 node cards, S27 UI progressive rendering, S-APPROVAL overlay: no captured evidence; kept PENDING/MISSING with named missing evidence."
+    },
+    "verification": {
+      "recompute_command": "python -c \"import json,collections;d=json.load(open('docs/trace/controls.json'));c=collections.Counter(h['verdict'] for x in d['controls'] for h in x['hops'].values());print(dict(c))\"",
+      "static_validator": "node tools/qa/verify-harness.mjs",
+      "evidence_rule": "a verdict leaves PENDING only with non-empty evidence[] pointing at a repo file/log that was read"
     }
   },
   "controls": [
@@ -611,8 +650,19 @@
           ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "file",
+              "pointer": "web/src/flow/Canvas.tsx:114-115,135-136,147-150; web/src/flow/graph.ts:96",
+              "quote": "replay branch projects HISTORY_SNAPSHOT via buildReplayTasks and renders read-only nodes (interactive=false -> draggable/selectable false); onNodeClick guarded when replayGraph set"
+            },
+            {
+              "kind": "log",
+              "pointer": "e2e/specs/replay-state.spec.ts + e2e/test-results/.last-run.json",
+              "quote": "playwright run status=passed failedTests=[] at 2026-11-06T20:02:54Z; spec asserts replay nodes inert and click does not mutate live selection"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -643,15 +693,21 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "UNVERIFIED",
+          "evidence": [
+            {
+              "kind": "log",
+              "pointer": "e2e/test-results/.last-run.json + e2e/specs/replay-state.spec.ts",
+              "quote": "status=passed, failedTests=[] (2026-11-06T20:02:54Z) for the replay browser proof; the run result file does not name the spec and no raw DOM/screenshot artifact is committed"
+            }
+          ]
         },
         "11_reentry": {
           "verdict": "PENDING",
           "evidence": []
         }
       },
-      "notes": "selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true | selector input#scrubber count=1 | disabled(no history)=true"
+      "notes": "W9: at HEAD 8a5b583 the browser replay proof (e2e/specs/replay-state.spec.ts, deterministic dist+routeWebSocket harness) exists and its last-run file says passed; projection/read-only source hops are now WIRED. | NOT WIRED: 3_client_call/4_request/5_route/6_service/7_store/9_response/11_reentry require a captured live HISTORY_REVISION_SET -> HISTORY_SNAPSHOT round-trip against a running server. READ-level claims exist in docs/RELEASE-EVIDENCE.md:23 and docs/evidence/live-provider-smoke.md:13 (2-node snapshot, canvas projects it) but the raw frames/DB row are not committed. | Missing evidence for 10_render_back: timestamped DOM snapshot/screenshot or Playwright trace naming replay-state, showing replay banner + inert nodes."
     },
     {
       "surface_id": "S11",
@@ -973,7 +1029,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture"
+      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S16",
@@ -1035,7 +1091,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture"
+      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S17",
@@ -1097,7 +1153,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture"
+      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S18",
@@ -1159,7 +1215,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture"
+      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S19",
@@ -1221,7 +1277,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture | react-flow nodes=0; no run was executed in this capture"
+      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S20",
@@ -1387,7 +1443,7 @@
           "evidence": []
         }
       },
-      "notes": "settings panel rendered; \"Provider key status\" present=true | SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong. | settings panel rendered; \"Provider key status\" present=true | SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong. | settings panel rendered; \"Provider key status\" present=true | SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong. | settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true | Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values. | settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true | Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values. | settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true | Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values. | settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true | Server ACK + SETTINGS_STATUS_RESULT (provider/model/key_present); Settings rendered the values."
+      "notes": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true (provider/model/key_present); Settings rendered the values. | W9 HISTORY: earlier live capture showed E_INTERNAL_ERROR and a double SETTINGS_STATUS emission; both were fixed (live-app/12-settings-status.json: settingsCommandsSent=1, ACK+RESULT) - the remaining hops 6_service/7_store/8_provider/10_render_back/11_reentry are not proven by a capture (10_render_back missing: timestamped before/after DOM of the rendered key-status values)."
     },
     {
       "surface_id": "S22",
@@ -1449,12 +1505,17 @@
           ]
         },
         "6_service": {
-          "verdict": "MISSING",
+          "verdict": "WIRED-AND-WORKS",
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered; named-gap copy present=true"
+              "kind": "log",
+              "pointer": "docs/audit/evidence/final/live-probe-final.json#ws.roundtrips[FILE_TREE_LIST]",
+              "quote": "browser-origin WS probe: FILE_TREE_LIST -> frames ACK + FILE_TREE_RESULT; FILE_READ -> ACK + FILE_CONTENT; FILE_READ ../Cargo.toml -> ERROR E_PATH_OUTSIDE_JAIL (1.0-artifact probe; file-tree service unchanged in 8a5b583)"
+            },
+            {
+              "kind": "log",
+              "pointer": "docs/trace/live/live-app/14-file-tree.json",
+              "quote": "resultReceived=true; entries README.md, note.txt; noteVisible=1 readmeVisible=1"
             }
           ]
         },
@@ -1491,7 +1552,7 @@
           "evidence": []
         }
       },
-      "notes": "Data panel rendered; named-gap copy present=true | FILE_TREE_LIST/FILE_READ are frozen in the contract but the UI/server exposes no file API; panel shows a named gap (honest, not fake). | Data panel rendered=true; FILE_TREE_RESULT received=false; tree entries rendered=true | Server sends ACK + FILE_TREE_RESULT with README.md/note.txt; the Data panel stays on LOADING and does not render the entries — frontend result-handling defect captured by live-app.spec.ts 14. | Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true | Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries. | Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true | Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries. | Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true | Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries. | Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true | Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries. | Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true | Server ACK + FILE_TREE_RESULT (README.md/note.txt); Data panel rendered the workspace entries."
+      "notes": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true. | W9 HISTORY: pre-fix capture (named-gap copy, frontend LOADING defect) produced the former 6_service=MISSING; the defect was fixed and re-captured (live-app/14-file-tree.json). 7_store stays PENDING (read-only tree has no store write); 11_reentry stays PENDING."
     },
     {
       "surface_id": "S23",
@@ -1789,20 +1850,54 @@
           "evidence": []
         },
         "6_service": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "log",
+              "pointer": "plans/waves/W3-STREAMING.md:143-150",
+              "quote": "run_lifecycle: 7 passed; provider_streaming: 6 passed (engine publishes REPLY_DELTA from the provider read loop before REPLY_DONE, no duplicate emission)"
+            }
+          ]
         },
         "7_store": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "file",
+              "pointer": "backend/crates/hiverouter-core/tests/provider_streaming.rs (execute_streams_fragments_in_order_and_persists_text)",
+              "quote": "persisted reply.text() equals the concatenation of the streamed fragments; usage measured"
+            },
+            {
+              "kind": "log",
+              "pointer": "plans/waves/W3-STREAMING.md:148-150",
+              "quote": "run_lifecycle: 7 passed; workspace total passed=261 failed=0"
+            }
+          ]
         },
         "8_provider": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "log",
+              "pointer": "plans/waves/W3-STREAMING.md:143-150",
+              "quote": "cargo test -p hiverouter-provider --test streaming -> test result: ok. 8 passed; 0 failed; 0 ignored; cargo test -p hiverouter-core --test provider_streaming --test run_lifecycle -> 6 passed / 7 passed; cargo test --workspace --locked -> TOTAL passed=261 failed=0 ignored=2; WORKSPACE_TEST_EXIT=0"
+            },
+            {
+              "kind": "file",
+              "pointer": "backend/crates/hiverouter-provider/tests/streaming.rs",
+              "quote": "8 wiremock SSE tests: ordered deltas + [DONE] + usage, malformed SSE, missing [DONE], retry-before-first-byte, no retry after first delta, budget preflight with zero requests, absent usage INCOMPLETE"
+            }
+          ]
         },
         "9_response": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "file",
+              "pointer": "backend/crates/hiverouter-core/tests/provider_streaming.rs + backend/crates/hiverouter-provider/tests/streaming.rs",
+              "quote": "absent/partial usage -> E_USAGE_INCOMPLETE (never 0); missing [DONE] -> E_PROVIDER_INCOMPLETE; malformed SSE -> named refusal; no retry after first delta"
+            }
+          ]
         },
         "10_render_back": {
           "verdict": "PENDING",
@@ -1813,7 +1908,7 @@
           "evidence": []
         }
       },
-      "notes": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED. | selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED."
+      "notes": "S27 wave-2 (1.1): true SSE streaming wired; 4 hops evidence-backed by new provider+core integration tests (plans/waves/W3-STREAMING.md:143-150). | STILL PENDING: 2_handler/3_client_call/4_request/5_route (no captured UI->WS frames for a streamed run), 10_render_back (no browser capture of progressive REPLY_DELTA rendering), 11_reentry. | Missing evidence to close 10_render_back: >=2 captured REPLY_DELTA frames + timestamped before/after DOM or Playwright trace showing incremental text; paid run or provider fixture in browser."
     },
     {
       "surface_id": "S28",
@@ -1930,7 +2025,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "W9: APPROVAL_RESOLVE route is implemented and refusal-captured (docs/audit/evidence/final/live-probe-final.json: bogus id -> ERROR E_APPROVAL_NOT_FOUND); the UI approval overlay is not rendered/captured, so the control stays PENDING_APP_NOT_BUILT. Missing evidence: DOM overlay + fresh-nonce APPROVE/DENY frames + replayed-nonce E_APPROVAL_REPLAY."
     }
   ]
 }

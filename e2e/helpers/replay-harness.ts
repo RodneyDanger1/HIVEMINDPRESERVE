@@ -127,6 +127,10 @@ export function eventFrame(name: string, payload: unknown, seq: number): string 
 export interface MockWsHarness {
   /** The routed page-side socket; test code pushes events through it. */
   route(): WebSocketRoute;
+  /** Every COMMAND name the page sent through the mocked socket (proves pre-mutation/no-send). */
+  commands: string[];
+  /** Raw frames the page sent (control hello + COMMAND envelopes), for diagnostics only. */
+  sent: string[];
 }
 
 /**
@@ -136,11 +140,22 @@ export interface MockWsHarness {
  */
 export async function installMockWs(page: Page): Promise<MockWsHarness> {
   let current: WebSocketRoute | null = null;
+  const commands: string[] = [];
+  const sent: string[] = [];
   await page.routeWebSocket(/\/ws(\?.*)?$/, (route) => {
     current = route;
     route.onMessage((message) => {
       if (typeof message !== 'string') {
         return;
+      }
+      sent.push(message);
+      try {
+        const parsed = JSON.parse(message) as { type?: string; name?: string };
+        if (parsed.type === 'COMMAND' && typeof parsed.name === 'string') {
+          commands.push(parsed.name);
+        }
+      } catch {
+        // Raw control frame (hello): not a COMMAND.
       }
       try {
         const frame = JSON.parse(message) as {
@@ -174,6 +189,8 @@ export async function installMockWs(page: Page): Promise<MockWsHarness> {
     });
   });
   return {
+    commands,
+    sent,
     route(): WebSocketRoute {
       if (current === null) {
         throw new Error('replay harness: WebSocket route was not established by the app');

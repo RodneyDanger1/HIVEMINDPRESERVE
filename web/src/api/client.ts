@@ -23,6 +23,7 @@ import {
   type ServerCommandName,
 } from './contract';
 import { nowIso, uuidv7 } from './ids';
+import { DEFAULT_HTTP_TIMEOUT_MS, fetchWithBoundTimeout } from './http';
 import { RefusalError, clientRefusal } from './refusals';
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'open' | 'reconnecting' | 'closed' | 'error';
@@ -68,6 +69,8 @@ export interface WsApiClientOptions {
   readonly now?: () => string;
   readonly requestTimeoutMs?: number;
   readonly handshakeTimeoutMs?: number;
+  /** Hard upper bound for the `GET /api/session` bootstrap request. */
+  readonly httpTimeoutMs?: number;
 }
 
 interface PendingCommand {
@@ -170,6 +173,7 @@ export class WsApiClient implements UiApi {
   readonly kind = 'ws' as const;
   private readonly requestTimeoutMs: number;
   private readonly handshakeTimeoutMs: number;
+  private readonly httpTimeoutMs: number;
   private readonly fetchImpl: typeof fetch | undefined;
   private readonly baseUrl: string | undefined;
   private readonly wsUrl: string | undefined;
@@ -194,6 +198,7 @@ export class WsApiClient implements UiApi {
   constructor(options: WsApiClientOptions = {}) {
     this.requestTimeoutMs = options.requestTimeoutMs ?? 15000;
     this.handshakeTimeoutMs = options.handshakeTimeoutMs ?? 8000;
+    this.httpTimeoutMs = options.httpTimeoutMs ?? DEFAULT_HTTP_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl;
     this.baseUrl = options.baseUrl;
     this.wsUrl = options.wsUrl;
@@ -228,16 +233,21 @@ export class WsApiClient implements UiApi {
 
   private async openInternal(): Promise<SessionInfo> {
     this.setStatus('connecting');
-    const fetchImpl = this.fetchImpl ?? fetch;
     const baseUrl = this.baseUrl ?? defaultBaseUrl();
     let response: Response;
     try {
-      response = await fetchImpl(`${baseUrl}/api/session`, {
-        credentials: 'same-origin',
-        headers: { accept: 'application/json' },
+      response = await fetchWithBoundTimeout(`${baseUrl}/api/session`, {
+        label: 'GET /api/session',
+        timeoutMs: this.httpTimeoutMs,
+        fetchImpl: this.fetchImpl,
+        init: {
+          credentials: 'same-origin',
+          headers: { accept: 'application/json' },
+        },
       });
-    } catch {
-      const refusal = clientRefusal('E_WS_DISCONNECTED');
+    } catch (error) {
+      const refusal =
+        error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
       this.setStatus('error', refusal);
       throw new RefusalError(refusal);
     }

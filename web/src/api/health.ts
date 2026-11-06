@@ -2,8 +2,14 @@
  * Health probe for Settings (S21 read surface). The v1 server exposes
  * `GET /health`; key status comes from the patched SETTINGS_STATUS command.
  * A failed probe is surfaced as UNVERIFIED, never as "no key"/"healthy".
+ *
+ * The request is bounded (`DEFAULT_HTTP_TIMEOUT_MS`) and every failure is a
+ * named refusal — timeout/abort/network all become `E_WS_DISCONNECTED` with an
+ * explicit message, so the Settings panel can show "unverified" instead of
+ * spinning forever.
  */
 import { apiBaseUrl } from './client';
+import { DEFAULT_HTTP_TIMEOUT_MS, fetchWithBoundTimeout } from './http';
 import { clientRefusal, RefusalError } from './refusals';
 
 export interface HealthSnapshot {
@@ -12,14 +18,30 @@ export interface HealthSnapshot {
   readonly version: string | null;
 }
 
-export async function fetchHealth(fetchImpl: typeof fetch = fetch): Promise<HealthSnapshot> {
+export interface HealthFetchOptions {
+  readonly fetchImpl?: typeof fetch;
+  readonly timeoutMs?: number;
+  /** Caller-owned abort signal (e.g. component unmount). */
+  readonly signal?: AbortSignal;
+}
+
+export async function fetchHealth(options: HealthFetchOptions = {}): Promise<HealthSnapshot> {
   let response: Response;
   try {
-    response = await fetchImpl(`${apiBaseUrl()}/health`, {
-      credentials: 'same-origin',
-      headers: { accept: 'application/json' },
+    response = await fetchWithBoundTimeout(`${apiBaseUrl()}/health`, {
+      label: 'GET /health',
+      timeoutMs: options.timeoutMs ?? DEFAULT_HTTP_TIMEOUT_MS,
+      fetchImpl: options.fetchImpl,
+      signal: options.signal,
+      init: {
+        credentials: 'same-origin',
+        headers: { accept: 'application/json' },
+      },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof RefusalError) {
+      throw error;
+    }
     throw new RefusalError(clientRefusal('E_WS_DISCONNECTED'));
   }
   let body: unknown = null;

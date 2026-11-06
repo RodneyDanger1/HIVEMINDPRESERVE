@@ -3,6 +3,14 @@
 **Status: NOT_COLLECTED.** The app does not exist yet; this file is the template the trace seat
 fills from captured evidence once a run is executed. An empty template is not a pass.
 
+> **W9 trace-truth note (2026-11-06T14:10:40-0600).** Status remains **NOT_COLLECTED**: no persisted run row + snapshot + persisted
+> `/events` capture is committed. Available partial evidence is READ-level only:
+> `docs/RELEASE-EVIDENCE.md:22` (release binary: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE
+> usage `{prompt:91, completion:8, total:99}` -> RUN_STATUS completed) and `docs/evidence/live-provider-smoke.md:8-11`
+> (event sequence + completed run). The new streaming integration tests (`plans/waves/W3-STREAMING.md:143-150`)
+> prove engine emission order but are not a run record. Missing evidence: SQLite `runs`/`usage`/`traces` rows,
+> snapshot file, and a persisted-events capture for the same run. Do not fill this template from those notes.
+
 Source of rules: skills `trace` (event/payload/terminal-state trace) + `evidence-check`;
 blueprint Phase 11; `docs/contracts/UI-COMMANDS-v1.md` §3.
 

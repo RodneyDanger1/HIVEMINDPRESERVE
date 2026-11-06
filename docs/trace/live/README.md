@@ -1,6 +1,16 @@
 # Live app evidence — HiveMind v1 browser QA (2026-11-06)
 
-> **Dated correction 2026-11-06 (W8 docs-truth; HEAD `0dfe23b`).** This is the historical live-QA record from the pre-1.0.0 artifact (`184D51A7…` / asset `index-Cbfm1IuM.js`). Current 1.0.0 artifacts are server `b17eb3d6…062a9a` (13,253,120 B), CLI `49f46e2b…386623`, package `46305fcb…6105ef` (8,444,021 B); embedded assets are `index-6T84PJfk.js` / `index-BWOl__uM.css` (`web/dist/index.html` sha256 `8264ae92…8776d`). Current trace totals: **43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops** (`docs/trace/controls.json`) — the `260 UNVERIFIED / 5 MISSING` counts below are historical. Live-provider evidence now exists (`docs/evidence/key-validation.md`, `docs/evidence/live-provider-smoke.md`, READ-level) and supersedes any "no paid run" phrasing. Historical run rows and asset names below are kept as dated evidence; current release record: `docs/RELEASE-EVIDENCE.md`.
+> **Dated correction — W9 trace-truth (2026-11-06T14:10:40-0600, HEAD `8a5b583`).** Recomputed from `docs/trace/controls.json`:
+> **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops**; 55 hops carry evidence
+> (non-PENDING), 54 evidence-backed excluding the UNVERIFIED marker. This supersedes the earlier
+> `43 WIRED / 270 PENDING / 6 MISSING` figures (which counted a stale pre-fix `S22 6_service=MISSING` and did not
+> include the 1.1 wave-2 evidence). Applied evidence: W3 streaming tests (S27 6_service/7_store/8_provider/9_response),
+> W4 replay browser proof + source (S10 2_handler WIRED, 10_render_back UNVERIFIED), S22 6_service fixed from the
+> tracked live probe. No hop was upgraded without a repo pointer; `delivered[]` stays empty (no fabricated frames).
+> Recompute: `python -c "import json,collections;d=json.load(open('docs/trace/controls.json'));c=collections.Counter(h['verdict'] for x in d['controls'] for h in x['hops'].values());print(dict(c))"`
+
+
+
 
 Base URL: <http://127.0.0.1:8799> (embedded UI served by `tools/bin/hiverouter.exe`; final build
 `index-Cbfm1IuM.js`, process PID 33580, binary sha256 `184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9`).
@@ -19,7 +29,7 @@ npx playwright test --project=chrome --reporter=list,html
 - HTML report: `e2e/playwright-report/index.html`
 - Screenshots/traces for failures: `e2e/test-results/` (no failures in the final run; earlier failure artifacts retained)
 - Per-test evidence: `docs/trace/live/live-app/*.json`; boot/census screenshots `docs/trace/live/live-app/*.png`
-- Trace capture: `docs/trace/live/trace-capture.json` (refreshed 2026-11-06T15:24:24.056Z; 28 surfaces, 43 WIRED-AND-WORKS / 260 UNVERIFIED / 5 MISSING hops)
+- Trace capture: `docs/trace/live/trace-capture.json` (refreshed 2026-11-06T15:24:24.056Z; 28 surfaces, 43 WIRED-AND-WORKS / 260 UNVERIFIED / 5 MISSING hops). **W9 recompute of `controls.json`: 49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)**
 - Controls: `docs/trace/controls.json` (evidence-backed verdicts applied by `tools/qa/apply-live-trace.mjs`)
 - Static validator: `node tools/qa/verify-harness.mjs` → **27/27 PASS**
 
@@ -44,8 +54,8 @@ npx playwright test --project=chrome --reporter=list,html
 ### Trace verdict totals (from `trace-capture.json`)
 
 `43 × WIRED-AND-WORKS`, `260 × UNVERIFIED` (server hops not provable from the browser / no paid run),
-`5 × MISSING` (S15-S19 node cards need a live run), `0 × WIRED-BUT-DEAD`.
-`controls.json`: 23 controls `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT`, 48 hop verdicts evidence-backed.
+`5 × MISSING` (S15-S19 node cards need a live run), `0 × WIRED-BUT-DEAD` — capture-level counts.
+`controls.json` after W9 wave-2 evidence: **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)**; 23 controls `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT`.
 
 ## History of this live pass (all defects found here were fixed and re-verified)
 

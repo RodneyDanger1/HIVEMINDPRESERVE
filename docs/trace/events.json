@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schema": "hiverouter.trace.events/v1",
-    "status": "NOT_COLLECTED",
+    "status": "NOT_COLLECTED (source-derived partial: 1 emitted site, 1 subscribed handler; delivered NOT captured)",
     "event_vocabulary_source": "docs/contracts/UI-COMMANDS-v1.md §3 (frozen)",
     "parity_rules": [
       "emitted set (server source) == subscribed set (client addEventListener) == delivered set (browser capture)",
@@ -10,10 +10,24 @@
       "terminal run: run row status/error, terminal event payload, usage/cost/tokens must agree",
       "failed/budget terminal runs: runs.cost_usd/prompt_tokens/completion_tokens must be NULL/incomplete, never 0"
     ],
-    "generated_at": "2026-11-06T10:56:04.256Z"
+    "generated_at": "2026-11-06T10:56:04.256Z",
+    "recomputed_at": "2026-11-06T14:10:40-0600",
+    "note": "delivered[] MUST stay empty per tools/qa/verify-harness.mjs (no fabricated deliveries). emitted/subscribed below are READ-level source pointers, not a parity proof; parity remains NOT_COLLECTED."
   },
-  "emitted": [],
-  "subscribed": [],
+  "emitted": [
+    {
+      "event": "REPLY_DELTA",
+      "pointer": "backend/crates/hiverouter-core/src/execution.rs:604-625",
+      "quote": "REPLY_DELTA events are emitted from the provider read loop via the DeltaSink while SSE chunks arrive (W3 streaming wiring)"
+    }
+  ],
+  "subscribed": [
+    {
+      "event": "HISTORY_SNAPSHOT",
+      "pointer": "web/src/state/store.ts:385",
+      "quote": "case 'HISTORY_SNAPSHOT': stores { revision, graph } as history.replayGraph (read-only replay source)"
+    }
+  ],
   "delivered": [],
   "payload_parity": [],
   "terminal_records": [],

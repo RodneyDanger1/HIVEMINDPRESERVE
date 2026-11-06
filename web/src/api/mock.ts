@@ -65,8 +65,13 @@ export class MockApiClient implements UiApi {
   private readonly tasks = new Map<string, { label: string; parentId: string | null }>();
 
   constructor() {
-    if (import.meta.env.PROD) {
-      throw new Error('MockApiClient is dev-only and must never be constructed in production');
+    // Production guard AND explicit dev-opt-in: the test double may only exist
+    // when a dev build explicitly asks for it (dynamic import in ./index.ts).
+    // A production build folds these flags to false, so no bundle can construct it.
+    if (!import.meta.env.DEV || import.meta.env.VITE_UI_MOCK !== '1') {
+      throw new Error(
+        'MockApiClient is dev-only: construct it only when import.meta.env.DEV && VITE_UI_MOCK === "1"',
+      );
     }
   }
 

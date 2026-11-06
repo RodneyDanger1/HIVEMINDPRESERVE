@@ -2,8 +2,32 @@
   "_meta": {
     "schema": "hiverouter.trace.runs/v1",
     "status": "NO_RUNS",
-    "note": "Appended by e2e/helpers/trace.ts when a Playwright run captures evidence; empty means nothing has been executed.",
-    "generated_at": "2026-11-06T10:56:04.256Z"
+    "note": "No TraceRun envelope (per-hop captured evidence appended by e2e/helpers/trace.ts) exists in the repo. traces[] stays empty: the W4 replay proof is a Playwright spec run with a mocked transport and only a last-run status file; W3 streaming proof is backend integration tests. Neither is a captured TraceRun. Do not populate this list from docs prose.",
+    "generated_at": "2026-11-06T10:56:04.256Z",
+    "recomputed_at": "2026-11-06T14:10:40-0600",
+    "evidence_index_available": [
+      {
+        "path": "docs/trace/live/trace-capture.json",
+        "kind": "28-surface browser capture (historical, 1.0 artifact)",
+        "verdicts": "43 WIRED / 260 UNVERIFIED / 5 MISSING"
+      },
+      {
+        "path": "docs/trace/live/live-app/*.json",
+        "kind": "per-test browser evidence (15 files)"
+      },
+      {
+        "path": "e2e/test-results/.last-run.json",
+        "kind": "last Playwright run status only (no per-test names)"
+      },
+      {
+        "path": "plans/waves/W3-STREAMING.md:143-150",
+        "kind": "observed cargo test output for streaming"
+      },
+      {
+        "path": "docs/audit/evidence/final/live-probe-final.json",
+        "kind": "tracked browser-origin WS roundtrips"
+      }
+    ]
   },
   "traces": []
 }
