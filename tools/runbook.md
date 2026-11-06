@@ -1,4 +1,4 @@
-# HiveMind v1 — Windows runbook
+# HiveMind 1.0 — Windows runbook
 
 Truthful packaging statement: **v1 is a localhost server + a browser UI.** The
 release build produces two executables (`hiverouter.exe` local server,
@@ -43,11 +43,24 @@ or: `pwsh -NoProfile -ExecutionPolicy Bypass -File tools\build-release.ps1`
 
 1. Set the one key in the environment of the server process:
    `$env:DEEPSEEK_API_KEY = "<your-key>"` (never commit it; never paste it into the UI).
-2. Start the local server (binds 127.0.0.1 only): `.\target\release\hiverouter.exe`
-3. Open the local UI in a browser: the server prints its `http://127.0.0.1:8080` URL.
-4. Verify health: `hiverouter-cli health --url http://127.0.0.1:8080` → 200 JSON
+   For a persistent user-level environment, set it with
+   `[Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', '<your-key>', 'User')`
+   in a private terminal; the key is then available to future processes of this user.
+   The repository contains no key; `.env*` is ignored and never loaded by the server.
+2. Optional provider behaviour (validated at boot; unknown values refuse `E_SCHEMA_INVALID`):
+   `HIVEROUTER_MODEL` (`deepseek-flash` default; `deepseek-v4-pro` allowed),
+   `HIVEROUTER_THINKING` (planner, default `enabled`),
+   `HIVEROUTER_LEAF_THINKING` (leaf, default `disabled`),
+   `HIVEROUTER_REASONING_EFFORT` (`none|low|high|max`; default `high`),
+   `HIVEROUTER_MAX_OUTPUT_TOKENS` (leaf cap, default 8192),
+   `HIVEROUTER_PLANNER_MAX_OUTPUT_TOKENS` (planner cap, default 16384),
+   `HIVEROUTER_PROVIDER` (`auto` default; `disabled` forces the honest `E_KEY_MISSING` executor).
+   Settings shows model, thinking mode, reasoning effort and key presence (boolean only).
+3. Start the local server (binds 127.0.0.1 only): `.\target\release\hiverouter.exe`
+4. Open the local UI in a browser: the server prints its `http://127.0.0.1:8080` URL.
+5. Verify health: `hiverouter-cli health --url http://127.0.0.1:8080` → 200 JSON
    with `schema: hiverouter.health.v1`. Diagnose: `hiverouter-cli diagnose`.
-5. Watch the audit log written by the server under its data directory (`audit.jsonl.*`
+6. Watch the audit log written by the server under its data directory (`audit.jsonl.*`
    JSONL files). The audit probe refuses key/token substrings.
 
 ## 4. Stopping / cleanup

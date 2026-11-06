@@ -39,6 +39,7 @@ pub fn rust_msrv_floor() -> (u64, u64, u64) {
 /// or does not answer within five seconds (it is then killed).
 pub fn version_probe(program: &str) -> Result<(String, String), String> {
     let mut child = Command::new(program)
+        .env_remove(hiverouter_provider::API_KEY_ENV)
         .arg("--version")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())

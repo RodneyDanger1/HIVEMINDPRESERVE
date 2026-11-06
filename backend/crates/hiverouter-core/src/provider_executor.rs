@@ -158,6 +158,10 @@ impl ProviderExecutor for ProviderExecutorAdapter {
             usage,
         })
     }
+
+    async fn finish_run(&self, run_id: RunId) {
+        self.budgets.lock().await.remove(&run_id);
+    }
 }
 
 fn message_text(completion: &Completion) -> Result<String, Refusal> {

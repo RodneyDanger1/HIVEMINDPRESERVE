@@ -59,6 +59,7 @@ export function buildNodes(
   tasks: Readonly<Record<string, TaskRecord>>,
   selectedTaskId: string | null,
   onSelect: (taskId: string) => void,
+  interactive = true,
 ): CanvasNode[] {
   const positions = layoutTasks(tasks);
   return Object.values(tasks).map((task) => ({
@@ -67,8 +68,8 @@ export function buildNodes(
     position: positions[task.id] ?? { x: 0, y: 0 },
     data: { task, selected: task.id === selectedTaskId, onSelect },
     ariaLabel: `${task.label} (${task.kind}, ${task.state})`,
-    draggable: true,
-    selectable: true,
+    draggable: interactive,
+    selectable: interactive,
   }));
 }
 

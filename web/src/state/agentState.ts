@@ -110,6 +110,7 @@ export function canTransition(from: AgentState, to: AgentState): boolean {
 /** States that block mutating controls until resolved. */
 export function isTerminal(state: AgentState): boolean {
   return (
+    state === 'failed' ||
     state === 'completed' ||
     state === 'cancelled' ||
     state === 'killed' ||

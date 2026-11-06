@@ -116,7 +116,7 @@ function CanvasInner() {
   );
   const noopSelect = useCallback((_taskId: string) => {}, []);
   const replayNodes = useMemo(
-    () => buildNodes(replayTasks, null, noopSelect),
+    () => buildNodes(replayTasks, null, noopSelect, false),
     [replayTasks, noopSelect],
   );
   const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
@@ -143,7 +143,11 @@ function CanvasInner() {
         edgesFocusable
         deleteKeyCode={null}
         multiSelectionKeyCode={null}
-        onNodeClick={(_, node) => handleSelect(node.id)}
+        onNodeClick={(_, node) => {
+          if (!history.replayGraph) {
+            handleSelect(node.id);
+          }
+        }}
         onPaneClick={() => selectTask(null)}
         onMoveEnd={(_, viewport) => {
           setZoomLabel(zoomPercent(viewport.zoom));

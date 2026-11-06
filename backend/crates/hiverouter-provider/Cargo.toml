@@ -1,6 +1,6 @@
-[package]
+﻿[package]
 name = "hiverouter-provider"
-version = "0.1.0"
+version = "1.0.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -27,3 +27,4 @@ async-trait.workspace = true
 wiremock.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
 tracing-subscriber.workspace = true
+

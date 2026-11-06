@@ -200,6 +200,7 @@ pub async fn execute(
     let started = Instant::now();
     let mut command = Command::new(&request.program);
     command
+        .env_remove(hiverouter_provider::API_KEY_ENV)
         .args(&request.args)
         .current_dir(&cwd)
         .stdin(std::process::Stdio::null())
@@ -397,6 +398,33 @@ mod tests {
         assert!(output.success, "exit: {:?}", output.exit_code);
         assert!(output.stdout.contains("hi-hive"), "stdout: {}", output.stdout);
         assert_eq!(output.exit_code, Some(0));
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn child_process_does_not_inherit_the_provider_key() {
+        let previous = std::env::var_os(hiverouter_provider::API_KEY_ENV);
+        std::env::set_var(
+            hiverouter_provider::API_KEY_ENV,
+            "sk-shell-env-test-not-a-real-key",
+        );
+        let (_temp, jail) = jail();
+        let policy = ShellPolicy::conservative_default();
+        let request = ShellRequest::new(
+            "cmd.exe",
+            vec!["/C".into(), "echo %DEEPSEEK_API_KEY%".into()],
+        );
+        let result = execute(&jail, &policy, &request, None).await;
+        match previous {
+            Some(value) => std::env::set_var(hiverouter_provider::API_KEY_ENV, value),
+            None => std::env::remove_var(hiverouter_provider::API_KEY_ENV),
+        }
+        let output = result.expect("executes");
+        assert!(
+            !output.stdout.contains("sk-shell-env-test-not-a-real-key"),
+            "child inherited the provider key: {}",
+            output.stdout
+        );
     }
 
     #[cfg(windows)]

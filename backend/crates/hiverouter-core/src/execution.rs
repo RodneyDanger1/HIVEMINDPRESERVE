@@ -53,6 +53,10 @@ pub trait ProviderExecutor: Send + Sync {
         prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<StreamedReply, Refusal>;
+
+    /// Releases any per-run provider state after the run reaches a terminal
+    /// status. The default is a no-op for stateless/test executors.
+    async fn finish_run(&self, _run_id: RunId) {}
 }
 
 /// One streamed assistant reply.
@@ -469,6 +473,7 @@ impl RunEngine {
         }
         let _ = self.set_active(None);
         self.tokens.remove(run.id);
+        self.executor.finish_run(run.id).await;
     }
 
     async fn dispatch_inner(&self, run: &Run, token: &CancellationToken) -> Result<(), Refusal> {
@@ -567,6 +572,7 @@ impl RunEngine {
         task: &TaskRecord,
         token: &CancellationToken,
     ) -> Result<(), Refusal> {
+        self.caps.check_calls(1)?;
         self.store
             .update_task_state(task.id, AgentState::Running)?;
         let _ = self.graph.set_state(task.id, AgentState::Running);
