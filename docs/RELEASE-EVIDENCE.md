@@ -1,6 +1,6 @@
 # HiveMind 1.0.0 — release evidence
 
-Date: 2026-11-06 (America/Chicago). Product commit: release commit (recorded at tag time). No key material appears in this file.
+Date: 2026-11-06 (America/Chicago). Product commit: sealed source `6a2b1c6`; artifacts committed after it. No key material appears in this file. Independent final audit: `plans/verification/FINAL-AUDIT.md` — PASS-WITH-NOTES; the web-dist manifest note was fixed by recording per-file dist hashes (no opaque aggregate hash).
 
 ## Artifacts
 
@@ -8,7 +8,7 @@ Date: 2026-11-06 (America/Chicago). Product commit: release commit (recorded at 
 |---|---|---:|
 | `hiverouter.exe` | `b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a` | 13,253,120 |
 | `hiverouter-cli.exe` | `49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623` | 5,373,952 |
-| `dist/HiveMind-1.0.0-win64.zip` | `a49dbb2bda65d0c3ad500157e04960638c54e2b08df8c8da5885583cf0e895e8` | 8,444,038 |
+| `dist/HiveMind-1.0.0-win64.zip` | `46305fcb1fe1bee23d3645a94a82635a68ee47fbcd3ce0537df747de3c6105ef` | 8,444,021 |
 
 The zip contains both binaries, `README.md`, `RUNBOOK.md`, `RELEASE.md`, and `CHECKSUMS.txt`; an extraction smoke listed all six files and verified the archive opened.
 

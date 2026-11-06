@@ -1,4 +1,4 @@
-# HiveMind 1.0 — release notes (draft; update hashes at final build)
+# HiveMind 1.0 — release notes
 
 ## What this release is
 

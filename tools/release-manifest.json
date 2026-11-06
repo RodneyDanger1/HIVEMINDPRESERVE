@@ -1,5 +1,4 @@
 ﻿{
-    "web_dist_sha256":  "86a1c088dc912517b7abf135f71f0b18526d36bc4e0bde8aa160972353673844",
     "artifacts":  [
                       {
                           "path":  "target/release/hiverouter.exe",
@@ -13,12 +12,30 @@
                       },
                       {
                           "path":  "dist/HiveMind-1.0.0-win64.zip",
-                          "sha256":  "a49dbb2bda65d0c3ad500157e04960638c54e2b08df8c8da5885583cf0e895e8",
-                          "bytes":  8444038
+                          "sha256":  "46305fcb1fe1bee23d3645a94a82635a68ee47fbcd3ce0537df747de3c6105ef",
+                          "bytes":  8444021
                       }
                   ],
-    "note":  "Artifacts rebuilt from source_commit; no modified tracked product files at build time.",
-    "artifact_built_at":  "2026-11-06T11:25:01.8924847-06:00",
+    "web_dist_algorithm":  "sha256 per file; path+sha256+bytes array",
+    "note":  "Artifacts rebuilt from source_commit; per-file web dist hashes are reproducible.",
+    "artifact_built_at":  "2026-11-06T11:36:51.9585385-06:00",
+    "web_dist_files":  [
+                           {
+                               "path":  "web/dist/assets/index-6T84PJfk.js",
+                               "sha256":  "b771bc2e22ef406701b6b4f62e65f70c2d599f16f16e44bf3bf59008f6a549bc",
+                               "bytes":  672267
+                           },
+                           {
+                               "path":  "web/dist/assets/index-BWOl__uM.css",
+                               "sha256":  "96ffa8737f8a6123f364eb2e4f7082d448b470c85fbc7e1a2656a2629443a748",
+                               "bytes":  35753
+                           },
+                           {
+                               "path":  "web/dist/index.html",
+                               "sha256":  "8264ae9257f75bf9b7125a21d1ef6c3275ae770126ebae5c2afb2f686dc8776d",
+                               "bytes":  774
+                           }
+                       ],
     "toolchain":  "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
-    "source_commit":  "6a2b1c6d461a81e7ee66951d0d0eb6b1063bf540"
+    "source_commit":  "74be0f46dc3dc349c238dc6fbc50fd182f68ce0f"
 }
