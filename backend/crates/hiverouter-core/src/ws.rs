@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use hiverouter_contract::command::{Command, CommandName};
 use hiverouter_contract::event::{
-    Ack, EmptyPayload, ErrorPayload, Event, EventName, NodeEvent, ServerHello,
+    Ack, EmptyPayload, ErrorPayload, Event, EventName, HistorySnapshot, NodeEvent, ServerHello,
 };
 use hiverouter_contract::schema;
 use hiverouter_contract::Refusal;
@@ -395,9 +395,45 @@ async fn handle_client_text(
             Ok(())
         }
         Command::SettingsStatus(_) => {
-            let result = state.tools.settings_status();
+            let mut result = state.tools.settings_status();
+            result.model = state.config.provider.model.id().to_owned();
+            result.thinking = Some(match state.config.provider.planner_thinking.kind {
+                hiverouter_provider::dto::ThinkingType::Enabled => "enabled".to_owned(),
+                hiverouter_provider::dto::ThinkingType::Disabled => "disabled".to_owned(),
+            });
+            result.reasoning_effort = Some(
+                match state.config.provider.planner_reasoning_effort {
+                    hiverouter_provider::ReasoningEffort::None => "none",
+                    hiverouter_provider::ReasoningEffort::Low => "low",
+                    hiverouter_provider::ReasoningEffort::High => "high",
+                    hiverouter_provider::ReasoningEffort::Max => "max",
+                }
+                .to_owned(),
+            );
             publish_ack(state, CommandName::SettingsStatus, correlation);
             publish_with_correlation(state, Event::SettingsStatusResult(result), correlation);
+            Ok(())
+        }
+        Command::HistoryRevisionSet(payload) => {
+            match state.history.state_at(payload.run_id, payload.revision) {
+                Ok(envelope) => {
+                    let graph = match serde_json::to_value(envelope.graph) {
+                        Ok(graph) => graph,
+                        Err(_) => {
+                            publish_error(state, Refusal::InternalError, Some(correlation));
+                            return Ok(());
+                        }
+                    };
+                    let snapshot = HistorySnapshot {
+                        run_id: envelope.run_id,
+                        revision: envelope.revision,
+                        graph,
+                    };
+                    publish_ack(state, CommandName::HistoryRevisionSet, correlation);
+                    publish_with_correlation(state, Event::HistorySnapshot(snapshot), correlation);
+                }
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
             Ok(())
         }
         Command::FileTreeList(_) => {

@@ -152,6 +152,9 @@ export const STRINGS = {
     keyPresent: 'Key configured',
     keyMissing: 'Key missing',
     keyUnprobedHint: 'Submit a prompt to surface E_KEY_MISSING if no key is configured.',
+    thinkingLabel: 'Thinking mode',
+    effortLabel: 'Reasoning effort',
+    notReported: 'Not reported',
     modelLabel: 'Model',
     providerLabel: 'Provider',
     healthLabel: 'Server health',
@@ -176,6 +179,7 @@ export const STRINGS = {
     replay: 'Replay',
     empty: 'Empty',
     loading: 'Loading',
+    interrupted: 'Interrupted',
   },
   states: {
     loading: 'Loading',

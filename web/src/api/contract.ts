@@ -243,6 +243,8 @@ export interface SettingsStatusResultPayload {
   readonly provider: string;
   readonly model: string;
   readonly key_present: boolean;
+  readonly thinking?: string;
+  readonly reasoning_effort?: string;
 }
 export type FileTreeEntryKind = 'file' | 'dir';
 export interface FileTreeEntry {
@@ -661,9 +663,21 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
       if (!provider || !model || keyPresent === null) {
         return invalid('SETTINGS_STATUS_RESULT payload');
       }
+      const thinking = typeof payload.thinking === 'string' ? payload.thinking : undefined;
+      const reasoningEffort =
+        typeof payload.reasoning_effort === 'string' ? payload.reasoning_effort : undefined;
       return {
         ok: true,
-        value: { name, payload: { provider, model, key_present: keyPresent } },
+        value: {
+          name,
+          payload: {
+            provider,
+            model,
+            key_present: keyPresent,
+            ...(thinking ? { thinking } : {}),
+            ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
+          },
+        },
       };
     }
     case 'FILE_TREE_RESULT': {

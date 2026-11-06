@@ -20,6 +20,8 @@ pub fn settings_status() -> SettingsStatusResult {
         provider: "deepseek".to_owned(),
         model: DEFAULT_MODEL.id().to_owned(),
         key_present: ApiKey::present_in_env(),
+        thinking: None,
+        reasoning_effort: None,
     }
 }
 

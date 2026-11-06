@@ -76,6 +76,8 @@ export interface SettingsState {
   readonly provider: string | null;
   readonly model: string | null;
   readonly keyPresent: boolean | null;
+  readonly thinking: string | null;
+  readonly reasoningEffort: string | null;
   readonly refusal: Refusal | null;
   readonly health: 'unknown' | 'ok' | 'degraded' | 'failing';
   readonly healthVersion: string | null;
@@ -173,6 +175,8 @@ function initialSettings(): SettingsState {
     provider: null,
     model: null,
     keyPresent: null,
+    thinking: null,
+    reasoningEffort: null,
     refusal: null,
     health: 'unknown',
     healthVersion: null,
@@ -347,6 +351,8 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
               provider: event.payload.provider,
               model: event.payload.model,
               keyPresent: event.payload.key_present,
+              thinking: event.payload.thinking ?? null,
+              reasoningEffort: event.payload.reasoning_effort ?? null,
               refusal: null,
               lastProbe: Date.now(),
             },
@@ -661,9 +667,11 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           return;
         }
         set({ settings: { ...get().settings, status: 'pending', refusal: null } });
+        const priorRefusalIds = new Set(get().refusals.map((entry) => entry.id));
         const ok = await run('SETTINGS_STATUS', {});
         if (!ok) {
-          const refusal = get().refusals[0]?.refusal ?? null;
+          const refusal =
+            get().refusals.find((entry) => !priorRefusalIds.has(entry.id))?.refusal ?? null;
           set({
             settings: {
               ...get().settings,

@@ -3,6 +3,7 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 
+use hiverouter_provider::{Model, ReasoningEffort, Thinking, MAX_OUTPUT_TOKENS};
 use thiserror::Error;
 
 /// Default bind address: loopback only, port 8080 (blueprint Phase 2).
@@ -11,6 +12,161 @@ pub const DEFAULT_BIND: &str = "127.0.0.1:8080";
 pub const DEFAULT_DATA_DIR: &str = "data";
 /// Database file name inside the data directory.
 pub const DEFAULT_DB_FILE: &str = "hiverouter.db";
+/// Default model id (documented `deepseek-flash` = DeepSeek-V4.1-Flash-1017).
+pub const DEFAULT_MODEL: &str = "deepseek-flash";
+/// Default planner output cap (documented max is 393216; we cap cost locally).
+pub const DEFAULT_PLANNER_MAX_TOKENS: u32 = 16_384;
+/// Default leaf output cap.
+pub const DEFAULT_LEAF_MAX_TOKENS: u32 = 8_192;
+
+/// Environment variables for provider behaviour (never for the key itself).
+pub const PROVIDER_ENV: &str = "HIVEROUTER_PROVIDER";
+/// Model id environment variable.
+pub const MODEL_ENV: &str = "HIVEROUTER_MODEL";
+/// Planner thinking mode (`enabled`/`disabled`).
+pub const THINKING_ENV: &str = "HIVEROUTER_THINKING";
+/// Leaf thinking mode (`enabled`/`disabled`); default disabled to bound cost.
+pub const LEAF_THINKING_ENV: &str = "HIVEROUTER_LEAF_THINKING";
+/// Reasoning effort (`none`/`low`/`high`/`max`, with documented aliases).
+pub const REASONING_EFFORT_ENV: &str = "HIVEROUTER_REASONING_EFFORT";
+/// Leaf output cap.
+pub const MAX_OUTPUT_TOKENS_ENV: &str = "HIVEROUTER_MAX_OUTPUT_TOKENS";
+/// Planner output cap.
+pub const PLANNER_MAX_OUTPUT_TOKENS_ENV: &str = "HIVEROUTER_PLANNER_MAX_OUTPUT_TOKENS";
+
+/// Provider behaviour resolved from the environment at boot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderSettings {
+    /// When false, the server uses the honest `UnconfiguredExecutor`.
+    pub enabled: bool,
+    /// Documented model id.
+    pub model: Model,
+    /// Planner thinking switch.
+    pub planner_thinking: Thinking,
+    /// Leaf thinking switch.
+    pub leaf_thinking: Thinking,
+    /// Planner reasoning effort.
+    pub planner_reasoning_effort: ReasoningEffort,
+    /// Planner max output tokens.
+    pub planner_max_tokens: u32,
+    /// Leaf max output tokens.
+    pub leaf_max_tokens: u32,
+}
+
+impl Default for ProviderSettings {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            model: Model::Flash,
+            planner_thinking: Thinking::enabled(),
+            leaf_thinking: Thinking::disabled(),
+            planner_reasoning_effort: ReasoningEffort::High,
+            planner_max_tokens: DEFAULT_PLANNER_MAX_TOKENS,
+            leaf_max_tokens: DEFAULT_LEAF_MAX_TOKENS,
+        }
+    }
+}
+
+impl ProviderSettings {
+    /// Resolves provider settings from the process environment.
+    ///
+    /// # Errors
+    /// Returns [`ConfigError::ProviderSetting`] for an unknown model, mode,
+    /// effort or an out-of-range output cap. Unknown values never silently
+    /// become defaults.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let default = Self::default();
+        let enabled = match std::env::var(PROVIDER_ENV) {
+            Ok(value) => match value.trim().to_ascii_lowercase().as_str() {
+                "auto" | "on" | "enabled" | "true" | "1" => true,
+                "off" | "disabled" | "false" | "0" => false,
+                other => {
+                    return Err(ConfigError::ProviderSetting(format!(
+                        "unknown {PROVIDER_ENV} value `{other}` (expected auto|disabled)"
+                    )))
+                }
+            },
+            Err(_) => default.enabled,
+        };
+        let model = match std::env::var(MODEL_ENV) {
+            Ok(value) => {
+                let trimmed = value.trim();
+                Model::from_id(trimmed).ok_or_else(|| {
+                    ConfigError::ProviderSetting(format!(
+                        "unknown {MODEL_ENV} value `{trimmed}` (documented: deepseek-flash|deepseek-v4-pro)"
+                    ))
+                })?
+            }
+            Err(_) => default.model,
+        };
+        let planner_thinking = match std::env::var(THINKING_ENV) {
+            Ok(value) => parse_thinking(&value, THINKING_ENV)?,
+            Err(_) => default.planner_thinking,
+        };
+        let leaf_thinking = match std::env::var(LEAF_THINKING_ENV) {
+            Ok(value) => parse_thinking(&value, LEAF_THINKING_ENV)?,
+            Err(_) => default.leaf_thinking,
+        };
+        let planner_reasoning_effort = match std::env::var(REASONING_EFFORT_ENV) {
+            Ok(value) => parse_reasoning_effort(&value)?,
+            Err(_) => default.planner_reasoning_effort,
+        };
+        let planner_max_tokens = match std::env::var(PLANNER_MAX_OUTPUT_TOKENS_ENV) {
+            Ok(value) => parse_max_tokens(&value, PLANNER_MAX_OUTPUT_TOKENS_ENV)?,
+            Err(_) => default.planner_max_tokens,
+        };
+        let leaf_max_tokens = match std::env::var(MAX_OUTPUT_TOKENS_ENV) {
+            Ok(value) => parse_max_tokens(&value, MAX_OUTPUT_TOKENS_ENV)?,
+            Err(_) => default.leaf_max_tokens,
+        };
+        Ok(Self {
+            enabled,
+            model,
+            planner_thinking,
+            leaf_thinking,
+            planner_reasoning_effort,
+            planner_max_tokens,
+            leaf_max_tokens,
+        })
+    }
+}
+
+/// Parses one documented thinking toggle value.
+fn parse_thinking(raw: &str, key: &str) -> Result<Thinking, ConfigError> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "enabled" | "on" | "true" | "1" => Ok(Thinking::enabled()),
+        "disabled" | "off" | "false" | "0" => Ok(Thinking::disabled()),
+        other => Err(ConfigError::ProviderSetting(format!(
+            "unknown {key} value `{other}` (expected enabled|disabled)"
+        ))),
+    }
+}
+
+/// Parses the documented effort values and their compatibility aliases.
+fn parse_reasoning_effort(raw: &str) -> Result<ReasoningEffort, ConfigError> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "none" => Ok(ReasoningEffort::None),
+        "low" | "minimal" => Ok(ReasoningEffort::Low),
+        "high" | "medium" | "xhigh" => Ok(ReasoningEffort::High),
+        "max" | "ultra" => Ok(ReasoningEffort::Max),
+        other => Err(ConfigError::ProviderSetting(format!(
+            "unknown {REASONING_EFFORT_ENV} value `{other}` (expected none|low|high|max)"
+        ))),
+    }
+}
+
+/// Parses an output-token cap inside the documented range.
+fn parse_max_tokens(raw: &str, key: &str) -> Result<u32, ConfigError> {
+    let value: u32 = raw.trim().parse().map_err(|_| {
+        ConfigError::ProviderSetting(format!("{key} must be an integer, got `{raw}`"))
+    })?;
+    if value == 0 || value > MAX_OUTPUT_TOKENS {
+        return Err(ConfigError::ProviderSetting(format!(
+            "{key} must be between 1 and {MAX_OUTPUT_TOKENS}, got {value}"
+        )));
+    }
+    Ok(value)
+}
 
 /// Resolved server configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +181,8 @@ pub struct Config {
     pub allowed_origins: Vec<String>,
     /// Workspace root for the jailed file tools (`FILE_TREE_LIST`/`FILE_READ`).
     pub workspace_root: PathBuf,
+    /// Provider behaviour (model, thinking, effort, caps).
+    pub provider: ProviderSettings,
 }
 
 /// Environment variable that appends comma-separated extra Origins.
@@ -79,6 +237,9 @@ pub enum ConfigError {
     /// A CLI flag is not recognised.
     #[error("unknown argument `{0}` (try --help)")]
     UnknownArgument(String),
+    /// A provider setting is malformed or undocumented.
+    #[error("E_SCHEMA_INVALID: {0}")]
+    ProviderSetting(String),
 }
 
 impl Config {
@@ -140,7 +301,12 @@ impl Config {
         data_dir: &str,
         db_path: Option<PathBuf>,
     ) -> Result<Self, ConfigError> {
-        Self::resolve_with_workspace(bind, data_dir, db_path, None)
+        // Test/helper resolution defaults to the offline executor so `cargo test`
+        // never performs a live provider call just because a key is present in
+        // the developer environment. Production uses `from_args`.
+        let mut config = Self::resolve_with_workspace(bind, data_dir, db_path, None)?;
+        config.provider.enabled = false;
+        Ok(config)
     }
 
     /// Validates and resolves the configuration with an explicit workspace root.
@@ -190,6 +356,7 @@ impl Config {
             workspace_root: workspace_root
                 .map(Path::to_path_buf)
                 .unwrap_or_else(default_workspace_root),
+            provider: ProviderSettings::from_env()?,
         })
     }
 

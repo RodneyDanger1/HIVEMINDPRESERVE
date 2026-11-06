@@ -271,6 +271,12 @@ pub struct SettingsStatusResult {
     pub model: String,
     /// Whether an API key is configured; the key itself is never sent.
     pub key_present: bool,
+    /// Planner thinking mode (`enabled`/`disabled`), when configured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<String>,
+    /// Planner reasoning effort (`none`/`low`/`high`/`max`), when configured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<String>,
 }
 
 /// One entry of a workspace file tree.

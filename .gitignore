@@ -8,4 +8,8 @@ docs/ui/figcraft/*/*.figcraft
 docs/ui/figcraft/ASSETS/*.png
 docs/ui/figcraft/ASSETS/*.svg
 .env
+.env.*
+.live-smoke-data/
+__pycache__/
+*.pyc
 *.log

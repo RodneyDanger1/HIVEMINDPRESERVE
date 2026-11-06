@@ -377,6 +377,20 @@ impl ChatRequest {
         self
     }
 
+    /// Sets the documented reasoning effort.
+    #[must_use]
+    pub fn with_reasoning_effort(mut self, effort: ReasoningEffort) -> Self {
+        self.reasoning_effort = Some(effort);
+        self
+    }
+
+    /// Sets the documented JSON-mode response format.
+    #[must_use]
+    pub fn with_response_format(mut self, format: ResponseFormat) -> Self {
+        self.response_format = Some(format);
+        self
+    }
+
     /// Sets `tool_choice`.
     #[must_use]
     pub fn with_tool_choice(mut self, tool_choice: ToolChoice) -> Self {

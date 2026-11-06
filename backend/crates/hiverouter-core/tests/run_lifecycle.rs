@@ -70,13 +70,20 @@ impl MockExecutor {
 
 #[async_trait]
 impl ProviderExecutor for MockExecutor {
-    async fn plan(&self, _prompt: &str) -> Result<Plan, Refusal> {
+    async fn plan(
+        &self,
+        _run_id: hiverouter_contract::RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
         Ok(self.plan.clone())
     }
 
     async fn execute(
         &self,
+        _run_id: hiverouter_contract::RunId,
         task: &hiverouter_core::entities::TaskRecord,
+        _prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<StreamedReply, Refusal> {
         let index = self.executed.fetch_add(1, Ordering::SeqCst);

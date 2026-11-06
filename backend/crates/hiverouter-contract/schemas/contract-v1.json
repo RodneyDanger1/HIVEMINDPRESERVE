@@ -1497,6 +1497,20 @@
         "key_present": {
           "description": "Whether an API key is configured; the key itself is never sent.",
           "type": "boolean"
+        },
+        "thinking": {
+          "description": "Planner thinking mode (`enabled`/`disabled`), when configured.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reasoning_effort": {
+          "description": "Planner reasoning effort (`none`/`low`/`high`/`max`), when configured.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [

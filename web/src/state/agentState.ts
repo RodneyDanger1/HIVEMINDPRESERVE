@@ -1,8 +1,8 @@
 /**
- * ONE agent-state vocabulary (R-U4 / UI-COMMANDS-v1 §4). 15 states: the
- * contract's 14-state list plus `empty` (surface state). A superset of 13 is
- * allowed by the frozen contract; this module is the only vocabulary the UI
- * renders.
+ * ONE agent-state vocabulary (R-U4 / UI-COMMANDS-v1 §4). 16 states: the
+ * contract's 16-state list including `interrupted`; `empty` is a surface state.
+ * A superset was allowed by the frozen contract; this module is the only
+ * vocabulary the UI renders.
  */
 import { STRINGS } from './strings';
 
@@ -22,6 +22,7 @@ export const AGENT_STATES = [
   'replay',
   'empty',
   'loading',
+  'interrupted',
 ] as const;
 
 export type AgentState = (typeof AGENT_STATES)[number];
@@ -69,6 +70,7 @@ const NON_DOT_VISUAL: Record<
   replay: { shape: 'hex', toneToken: 'ink-800' },
   empty: { shape: 'square', toneToken: 'hairline' },
   loading: { shape: 'ring', toneToken: 'ink-500' },
+  interrupted: { shape: 'triangle', toneToken: 'signal' },
 };
 
 export function visualFor(state: AgentState): StateVisual {
@@ -98,6 +100,7 @@ export const STATE_TRANSITIONS: Readonly<Record<AgentState, readonly AgentState[
   replay: [],
   empty: ['loading', 'healthy'],
   loading: ['healthy', 'empty', 'failed'],
+  interrupted: [],
 };
 
 export function canTransition(from: AgentState, to: AgentState): boolean {
@@ -106,7 +109,12 @@ export function canTransition(from: AgentState, to: AgentState): boolean {
 
 /** States that block mutating controls until resolved. */
 export function isTerminal(state: AgentState): boolean {
-  return state === 'completed' || state === 'cancelled' || state === 'killed';
+  return (
+    state === 'completed' ||
+    state === 'cancelled' ||
+    state === 'killed' ||
+    state === 'interrupted'
+  );
 }
 
 export function isRunActive(state: AgentState): boolean {

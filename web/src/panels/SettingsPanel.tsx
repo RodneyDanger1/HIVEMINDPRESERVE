@@ -67,6 +67,12 @@ export function SettingsPanel() {
           <dd className="type-mono-code text-ink-900">{settings.provider ?? STRINGS.settings.keyUnknown}</dd>
           <dt className="type-mono-meta text-meta">{STRINGS.settings.modelLabel}</dt>
           <dd className="type-mono-code text-ink-900">{settings.model ?? STRINGS.settings.keyUnknown}</dd>
+          <dt className="type-mono-meta text-meta">{STRINGS.settings.thinkingLabel}</dt>
+          <dd className="type-mono-code text-ink-900">{settings.thinking ?? STRINGS.settings.notReported}</dd>
+          <dt className="type-mono-meta text-meta">{STRINGS.settings.effortLabel}</dt>
+          <dd className="type-mono-code text-ink-900">
+            {settings.reasoningEffort ?? STRINGS.settings.notReported}
+          </dd>
           <dt className="type-mono-meta text-meta">{STRINGS.settings.keyTitle}</dt>
           <dd className="type-mono-code text-ink-900">{keyLabel}</dd>
         </dl>

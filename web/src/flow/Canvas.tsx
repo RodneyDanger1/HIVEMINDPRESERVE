@@ -17,7 +17,7 @@ import {
   type EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { buildEdges, buildNodes, type CanvasNode } from './graph';
+import { buildEdges, buildNodes, buildReplayTasks, type CanvasNode } from './graph';
 import { NODE_RENDERERS } from './nodes';
 import { BeeEdge } from './BeeEdge';
 import { handleCanvasShortcut } from '../a11y/keyboard';
@@ -110,7 +110,16 @@ function CanvasInner() {
   }, []);
 
   const selected = selectedTaskId ? tasks[selectedTaskId] : null;
-  const replayNodes = useMemo<Node[]>(() => [], []);
+  const replayTasks = useMemo(
+    () => buildReplayTasks(history.replayGraph?.graph),
+    [history.replayGraph],
+  );
+  const noopSelect = useCallback((_taskId: string) => {}, []);
+  const replayNodes = useMemo(
+    () => buildNodes(replayTasks, null, noopSelect),
+    [replayTasks, noopSelect],
+  );
+  const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
 
   return (
     <div id="hive-canvas" className="relative h-full min-h-0 w-full" role="application" aria-label="HiveMind spatial canvas">
@@ -124,7 +133,7 @@ function CanvasInner() {
       </svg>
       <ReactFlow
         nodes={history.replayGraph ? replayNodes : nodes}
-        edges={history.replayGraph ? [] : edges}
+        edges={history.replayGraph ? replayEdges : edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         minZoom={0.1}

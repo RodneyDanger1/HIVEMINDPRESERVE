@@ -18,10 +18,11 @@ use crate::bus::EventBus;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
-use crate::execution::{RunEngine, UnconfiguredExecutor};
+use crate::execution::{ProviderExecutor, RunEngine, UnconfiguredExecutor};
 use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
 use crate::prompts::TemplateRegistry;
+use crate::provider_executor::ProviderExecutorAdapter;
 use crate::snapshot::SnapshotStore;
 use crate::tools_bridge::ToolsBridge;
 use crate::ws::{refusal_response, SessionAuth, ws_handler};
@@ -61,6 +62,25 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
     Arc::new(ToolsBridge::new(&config.workspace_root, db.clone()))
 }
 
+/// Builds the production executor. Missing key or disabled provider falls back
+/// to the honest `E_KEY_MISSING` executor; it never fabricates replies.
+fn build_executor(config: &Config) -> Arc<dyn ProviderExecutor> {
+    if !config.provider.enabled {
+        tracing::info!("provider disabled by configuration; live prompts refuse E_KEY_MISSING");
+        return Arc::new(UnconfiguredExecutor);
+    }
+    match ProviderExecutorAdapter::from_env(config.provider.clone()) {
+        Ok(executor) => Arc::new(executor),
+        Err(error) => {
+            tracing::warn!(
+                code = error.code(),
+                "provider key/client unavailable; live prompts refuse by name"
+            );
+            Arc::new(UnconfiguredExecutor)
+        }
+    }
+}
+
 impl AppState {
     /// Builds state for a running server with a fresh event bus, graph and
     /// session token derived from the configuration.
@@ -78,7 +98,7 @@ impl AppState {
                 db.clone(),
                 bus.clone(),
                 graph.clone(),
-                Arc::new(UnconfiguredExecutor),
+                build_executor(&config),
                 Arc::new(TemplateRegistry::default()),
             )
             .with_snapshot_store(snapshots.clone()),
@@ -118,7 +138,7 @@ impl AppState {
                 db.clone(),
                 bus.clone(),
                 graph.clone(),
-                Arc::new(UnconfiguredExecutor),
+                build_executor(&config),
                 Arc::new(TemplateRegistry::default()),
             )
             .with_snapshot_store(snapshots.clone()),
@@ -155,7 +175,7 @@ impl AppState {
                 db.clone(),
                 bus.clone(),
                 graph.clone(),
-                Arc::new(UnconfiguredExecutor),
+                build_executor(&config),
                 Arc::new(TemplateRegistry::default()),
             )
             .with_snapshot_store(snapshots.clone()),

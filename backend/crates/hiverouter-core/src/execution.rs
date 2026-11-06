@@ -38,12 +38,19 @@ pub const PLANNER_TEMPLATE_ID: &str = "planner";
 #[async_trait]
 pub trait ProviderExecutor: Send + Sync {
     /// Produces the plan DAG for one prompt (exactly one call per plan).
-    async fn plan(&self, prompt: &str) -> Result<Plan, Refusal>;
+    async fn plan(
+        &self,
+        run_id: RunId,
+        prompt: &str,
+        cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal>;
 
     /// Executes one leaf task and returns streamable reply chunks + usage.
     async fn execute(
         &self,
+        run_id: RunId,
         task: &TaskRecord,
+        prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<StreamedReply, Refusal>;
 }
@@ -72,13 +79,20 @@ pub struct UnconfiguredExecutor;
 
 #[async_trait]
 impl ProviderExecutor for UnconfiguredExecutor {
-    async fn plan(&self, _prompt: &str) -> Result<Plan, Refusal> {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
         Err(Refusal::KeyMissing)
     }
 
     async fn execute(
         &self,
+        _run_id: RunId,
         _task: &TaskRecord,
+        _prompt: &str,
         _cancel: &CancellationToken,
     ) -> Result<StreamedReply, Refusal> {
         Err(Refusal::KeyMissing)
@@ -465,7 +479,7 @@ impl RunEngine {
         let planning_prompt = self.planning_prompt(run);
         let plan = tokio::select! {
             _ = token.cancelled() => return Err(Refusal::ToolCancelled),
-            result = self.executor.plan(&planning_prompt) => result?,
+            result = self.executor.plan(run.id, &planning_prompt, token) => result?,
         };
         plan.validate()?;
 
@@ -565,7 +579,7 @@ impl RunEngine {
                 self.publish_node(run.id, task.id, AgentState::Cancelled);
                 return Err(Refusal::ToolCancelled);
             }
-            result = self.executor.execute(task, token) => result,
+            result = self.executor.execute(run.id, task, &run.prompt, token) => result,
         } {
             Ok(reply) => reply,
             Err(refusal) => {

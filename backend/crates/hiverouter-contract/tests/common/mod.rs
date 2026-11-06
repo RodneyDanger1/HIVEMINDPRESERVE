@@ -151,6 +151,8 @@ pub fn event_samples() -> Vec<Event> {
             provider: "deepseek".to_owned(),
             model: "deepseek-flash".to_owned(),
             key_present: false,
+            thinking: None,
+            reasoning_effort: None,
         }),
         Event::FileTreeResult(FileTreeResult {
             root: ".".to_owned(),

@@ -7,7 +7,7 @@
 import dagre from '@dagrejs/dagre';
 import type { Edge, Node } from '@xyflow/react';
 import type { TaskRecord } from '../state/store';
-import type { NodeKindLabel } from '../state/agentState';
+import { isAgentState, type NodeKindLabel } from '../state/agentState';
 
 export interface CanvasNodeData extends Record<string, unknown> {
   readonly task: TaskRecord;
@@ -82,6 +82,52 @@ export function buildEdges(tasks: Readonly<Record<string, TaskRecord>>): Edge[] 
       type: 'bee',
       animated: false,
     }));
+}
+
+/**
+ * Projects a stored `HISTORY_SNAPSHOT` graph into read-only task records.
+ * The snapshot records only id/parent/state/rev; no role or progress is
+ * invented. Unknown/malformed nodes are skipped rather than crashing the
+ * canvas or showing a fabricated state.
+ */
+export function buildReplayTasks(graph: unknown): Record<string, TaskRecord> {
+  if (!graph || typeof graph !== 'object') {
+    return {};
+  }
+  const rawNodes = (graph as { nodes?: unknown }).nodes;
+  if (!Array.isArray(rawNodes)) {
+    return {};
+  }
+  const tasks: Record<string, TaskRecord> = {};
+  for (const raw of rawNodes) {
+    if (!raw || typeof raw !== 'object') continue;
+    const node = raw as {
+      task_id?: unknown;
+      parent_task_id?: unknown;
+      state?: unknown;
+      rev?: unknown;
+    };
+    if (typeof node.task_id !== 'string' || !isAgentState(node.state)) continue;
+    const parentId = typeof node.parent_task_id === 'string' ? node.parent_task_id : null;
+    tasks[node.task_id] = {
+      id: node.task_id,
+      parentId,
+      kind: 'worker',
+      label: `task ${node.task_id.slice(0, 8)}`,
+      state: node.state,
+      progress: null,
+      errorCode: null,
+      rev: typeof node.rev === 'number' ? node.rev : 0,
+    };
+  }
+  // Drop parent references that are not present in this snapshot; otherwise
+  // the graph would point at a node the reader cannot see.
+  for (const task of Object.values(tasks)) {
+    if (task.parentId !== null && tasks[task.parentId] === undefined) {
+      tasks[task.id] = { ...task, parentId: null };
+    }
+  }
+  return tasks;
 }
 
 export function taskCounts(tasks: Readonly<Record<string, TaskRecord>>): {
