@@ -2,6 +2,7 @@
   "name": "hiverouter-e2e",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "description": "Playwright e2e + trace harness for HiveMind v1 (installed Chrome/Edge channels only; no browser download)",
   "devDependencies": {
     "@playwright/test": "1.65.0"

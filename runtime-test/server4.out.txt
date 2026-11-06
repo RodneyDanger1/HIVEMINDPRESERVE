@@ -1,0 +1,4 @@
+2026-11-06T13:27:20.636091Z  INFO environment check passed check="rustc" detail=rustc 1.99.1 (58cf8f9c3 2026-10-13) (MSRV 1.89.0)
+2026-11-06T13:27:20.638454Z  INFO environment check passed check="node" detail=v26.7.0 (>= 22.12.0)
+hiverouter 0.1.0 listening on http://127.0.0.1:8799 (db C:\Users\Riley\Desktop\hiverouter-v1\runtime-test\data4\hiverouter.db, schema v3, contract hiverouter.v1)
+2026-11-06T13:27:20.643927Z  INFO server booted address=127.0.0.1:8799 db=C:\Users\Riley\Desktop\hiverouter-v1\runtime-test\data4\hiverouter.db schema_version=3
