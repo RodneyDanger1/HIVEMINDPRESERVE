@@ -202,7 +202,7 @@ try {
         try { $existingManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json }
         catch { Fail "E_RELEASE_MANIFEST" ("existing tools/release-manifest.json does not parse: " + $_.Exception.Message) 2 }
     }
-    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { $Version }
+    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { '0.0.0' }
 
     # effective staging version (proactive supersede); drift-driven bump is refused post-build
     $effectiveVersion = $Version
@@ -431,7 +431,7 @@ try {
         $backup = Join-Path $script:Repo ("dist/.release-manifest-" + (Get-Date -Format 'yyyyMMddHHmmss') + ".json")
         Copy-Item -LiteralPath $manifestPath -Destination $backup -Force
     }
-    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { $Version }
+    $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { '0.0.0' }
 
     # ---------------------------------------------------------------- staging
     Step ("staging: " + $stagingRel)
@@ -605,4 +605,5 @@ try {
 finally {
     Pop-Location
 }
+
 
