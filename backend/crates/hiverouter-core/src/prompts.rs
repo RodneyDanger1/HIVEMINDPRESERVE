@@ -29,6 +29,20 @@ pub const ALLOWED_LICENCES: &[&str] = &[
     "CC0-1.0",
 ];
 
+/// The shipped template manifest, embedded at compile time.
+///
+/// The release artifact is a single binary: web assets are embedded with
+/// `rust-embed` (`static_ui.rs`), so prompt assets are embedded the same way.
+/// A missing file is a build error (fail closed before the binary exists); a
+/// malformed file still refuses by name at load time.
+pub const EMBEDDED_MANIFEST: &str = include_str!("../assets/prompts/manifest.json");
+
+/// Embedded template bodies, keyed by the manifest `file` field.
+pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[(
+    "planner.prompty",
+    include_str!("../assets/prompts/planner.prompty"),
+)];
+
 /// Role marker in the prompt body / rendered message.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -95,6 +109,11 @@ struct TemplateRegistryState {
 }
 
 /// In-memory template registry loaded from a manifest directory.
+///
+/// `Default` is the **test-only** empty-registry seam (kept so unit tests can
+/// construct an engine without assets). Production constructors load the
+/// embedded assets (`load_embedded`) and never silently serve with an empty
+/// registry: a load failure is a named refusal surfaced by the boot path.
 #[derive(Clone, Debug, Default)]
 pub struct TemplateRegistry {
     state: TemplateRegistryState,
@@ -104,15 +123,72 @@ impl TemplateRegistry {
     /// Loads every template listed in `manifest.json` inside `directory`.
     ///
     /// # Errors
-    /// `E_TEMPLATE_LICENSE_MISSING`, `E_TEMPLATE_REF_FORBIDDEN`, `E_TEMPLATE_INVALID`, or a database/IO refusal.
+    /// `E_TEMPLATE_LICENSE_MISSING`, `E_TEMPLATE_REF_FORBIDDEN`, `E_TEMPLATE_INVALID`,
+    /// or `E_TEMPLATE_UNKNOWN` when the manifest/file cannot be read.
     pub fn load(directory: &Path) -> Result<Self, Refusal> {
         let manifest_path = directory.join("manifest.json");
         let manifest_text = std::fs::read_to_string(&manifest_path).map_err(|error| {
             tracing::warn!(path = %manifest_path.display(), %error, "template manifest unreadable");
             Refusal::TemplateUnknown
         })?;
+        Self::build(&manifest_text, |file| {
+            let path = directory.join(file);
+            std::fs::read_to_string(&path).map_err(|error| {
+                tracing::warn!(path = %path.display(), %error, "template file unreadable");
+                Refusal::TemplateUnknown
+            })
+        })
+    }
+
+    /// Loads the shipped prompt templates embedded in the binary.
+    ///
+    /// This is the production constructor seam: the manifest and every
+    /// referenced `.prompty` file are compile-time embedded, so a release can
+    /// never be missing them silently. Malformed content still refuses by name.
+    ///
+    /// # Errors
+    /// `E_TEMPLATE_INVALID` for unparseable manifest/front matter,
+    /// `E_TEMPLATE_UNKNOWN` when the manifest names a file that is not embedded,
+    /// `E_TEMPLATE_LICENSE_MISSING` for a licence/source/fetch gap,
+    /// `E_TEMPLATE_REF_FORBIDDEN` for `${env:}` / `${file:}` references.
+    pub fn load_embedded() -> Result<Self, Refusal> {
+        Self::build(EMBEDDED_MANIFEST, |file| {
+            EMBEDDED_TEMPLATE_FILES
+                .iter()
+                .find(|(name, _)| *name == file)
+                .map(|(_, body)| (*body).to_owned())
+                .ok_or(Refusal::TemplateUnknown)
+        })
+    }
+
+    /// Builds a registry from manifest text plus a caller-supplied file resolver.
+    ///
+    /// Exposed so tests can prove the refusal paths (invalid manifest, missing
+    /// file, bad licence) against the exact production policy without touching
+    /// the embedded assets. Production code uses [`TemplateRegistry::load_embedded`].
+    ///
+    /// # Errors
+    /// Same named refusals as [`TemplateRegistry::load_embedded`].
+    pub fn load_from_manifest_text(
+        manifest_text: &str,
+        files: &[(&str, &str)],
+    ) -> Result<Self, Refusal> {
+        Self::build(manifest_text, |file| {
+            files
+                .iter()
+                .find(|(name, _)| *name == file)
+                .map(|(_, body)| (*body).to_owned())
+                .ok_or(Refusal::TemplateUnknown)
+        })
+    }
+
+    /// Shared loader: manifest JSON -> licence gate -> per-file resolver -> parse.
+    fn build(
+        manifest_text: &str,
+        mut resolve: impl FnMut(&str) -> Result<String, Refusal>,
+    ) -> Result<Self, Refusal> {
         let entries: Vec<TemplateManifestEntry> =
-            serde_json::from_str(&manifest_text).map_err(|_| Refusal::TemplateInvalid)?;
+            serde_json::from_str(manifest_text).map_err(|_| Refusal::TemplateInvalid)?;
         let mut templates = BTreeMap::new();
         for entry in entries {
             if !ALLOWED_LICENCES
@@ -123,8 +199,10 @@ impl TemplateRegistry {
             {
                 return Err(Refusal::TemplateLicenseMissing);
             }
-            let path = directory.join(&entry.file);
-            let loaded = load_template_file(&path, entry)?;
+            let file = entry.file.clone();
+            let raw = resolve(&file)?;
+            let source = PathBuf::from(&file);
+            let loaded = parse_prompty(&raw, &source, entry)?;
             templates.insert(loaded.manifest.template_id.clone(), loaded);
         }
         Ok(Self {
@@ -165,19 +243,21 @@ impl TemplateRegistry {
     }
 }
 
-fn load_template_file(
-    path: &Path,
+fn parse_prompty(
+    raw: &str,
+    source: &Path,
     manifest: TemplateManifestEntry,
 ) -> Result<LoadedTemplate, Refusal> {
-    let raw = std::fs::read_to_string(path).map_err(|_| Refusal::TemplateUnknown)?;
     if raw.contains("${env:") || raw.contains("${file:") {
         return Err(Refusal::TemplateRefForbidden);
     }
     // The pinned prompty loader validates the front matter; it can panic on
     // malformed assets, so the call is isolated and mapped to a named refusal.
-    let path_owned = path.to_path_buf();
+    // `load_from_string` is the same parser the file loader uses, without the
+    // filesystem read: embedded bytes and fixture bytes share one policy path.
+    let source_owned = source.to_path_buf();
     let parsed = catch_unwind(AssertUnwindSafe(|| {
-        prompty::loader::load(path_owned.as_path())
+        prompty::loader::load_from_string(raw, source_owned.as_path())
     }))
     .map_err(|_| Refusal::TemplateInvalid)?
     .map_err(|_| Refusal::TemplateInvalid)?;

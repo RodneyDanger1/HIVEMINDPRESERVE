@@ -129,3 +129,9 @@ Applied evidence pointers (all exist at HEAD `8a5b583`):
 - **Unverified:** `e2e/test-results/.last-run.json` does not name the replay test (only status=passed at
   2026-11-06T20:02:54Z); the browser replay proof used a mocked WS transport (not a live-run trace); the release-smoke
   replay claim (`docs/RELEASE-EVIDENCE.md:23`) is READ-level with no committed raw frames/DB row.
+
+
+---
+
+## W4 CORRECTION (supersedes W9 counts) — 2026-11-06T21:57:09.616Z
+- W9 reported 49 WIRED / 264 PENDING / 5 MISSING / 1 UNVERIFIED (54 evidence-backed). The underlying raw capture `docs/trace/live/trace-capture.json` was later overwritten by an e2e run with `surfaces: []` (generated_at 2026-11-06T20:25:04.044Z, 286 B), so 43 capture-derived WIRED verdicts and 5 non-raw W9 promotions (S10/2_handler, S27/6-9) are not supported by current raw evidence. W4 downgraded them to UNVERIFIED with `w4_correction` history; S22/6_service remains WIRED on tracked raw live-probe + DOM evidence. Corrected counts: **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**. See `plans/waves/W4-TRACE-CAPTURE.md` and `docs/trace/CAPTURE-REGISTRY.md`.

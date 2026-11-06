@@ -1,8 +1,8 @@
 # QA HARNESS — HiveMind v1 (QA / trace engineer)
 
 > **Dated correction — W9 trace-truth (2026-11-06T14:10:40-0600, HEAD `8a5b583`).** Recomputed from `docs/trace/controls.json`:
-> **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops**; 55 hops carry evidence
-> (non-PENDING), 54 evidence-backed excluding the UNVERIFIED marker. This supersedes the earlier
+> **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**; 55 hops carry evidence
+> (non-PENDING), 55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker. This supersedes the earlier
 > `43 WIRED / 270 PENDING / 6 MISSING` figures (which counted a stale pre-fix `S22 6_service=MISSING` and did not
 > include the 1.1 wave-2 evidence). Applied evidence: W3 streaming tests (S27 6_service/7_store/8_provider/9_response),
 > W4 replay browser proof + source (S10 2_handler WIRED, 10_render_back UNVERIFIED), S22 6_service fixed from the
@@ -19,8 +19,11 @@ Full Chrome suite against `http://127.0.0.1:8799` (binary `184D51A7…C9A9`, ass
 `e2e/playwright-report/index.html`). Earlier pre-fix failures (SETTINGS_STATUS E_INTERNAL_ERROR, stale
 Data/Approval copy, FILE_TREE_RESULT rendering) were fixed by the build owners and re-verified. Live evidence:
 `docs/trace/live/` (see `docs/trace/live/README.md`); trace capture refreshed 15:03Z and evidence-backed verdicts
-applied to `controls.json` (49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)). Static harness still 27/27.
+applied to `controls.json` (1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker)). Static harness still 27/27.
 Skipped/fixme tests are explicitly **not** passes; node-card and streaming surfaces stay UNVERIFIED (no run).
+
+
+> **W4 TRACE-CAPTURE CORRECTION (2026-11-06T21:57:09.616Z).** `docs/trace/live/trace-capture.json` was overwritten with `surfaces: []` at `2026-11-06T20:25:04.044Z`. 48 hops that had been marked WIRED from that capture (43) or promoted from non-raw pointers (5: S10/2_handler, S27/6-9) are now **UNVERIFIED** with `w4_correction` history; only **S22/6_service** stays WIRED (tracked raw live-probe WS roundtrip + DOM evidence). Current counts: **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**. Capture plan: `docs/trace/CAPTURE-REGISTRY.md`; seat plan: `plans/waves/W4-TRACE-CAPTURE.md`.
 
 ## 1. Role & scope
 
@@ -134,7 +137,7 @@ Verdicts: `WIRED-AND-WORKS | WIRED-BUT-DEAD | MISSING | REFUSED-BY-NAME | UNVERI
 Evidence kinds: `dom | request | ws-frame | db-row | log | file` with pointer+quote. Event evidence additionally
 requires emitted==subscribed==delivered parity, live-vs-persisted payload shape equality, terminal-record truth and
 NULL-not-zero usage for failed/budget runs (`docs/trace/events.json` parity_rules; `terminal-truth.md` template).
-Current seed state (W9 recompute): 29 controls × 11 hop slots; **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)** — `node tools/qa/build-trace-seeds.mjs` would regenerate PENDING seeds (do not run: it would drop the captured + test-backed verdicts); `traces.json` 0 runs (no captured TraceRun).
+Current seed state (W9 recompute): 29 controls × 11 hop slots; **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker)** — `node tools/qa/build-trace-seeds.mjs` would regenerate PENDING seeds (do not run: it would drop the captured + test-backed verdicts); `traces.json` 0 runs (no captured TraceRun).
 
 ## 7. A11y/contrast plan
 

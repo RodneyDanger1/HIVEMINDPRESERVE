@@ -1,8 +1,8 @@
 # TRACE-SCHEMA — 11-hop control trace data contract (v1)
 
 > **Dated correction — W9 trace-truth (2026-11-06T14:10:40-0600, HEAD `8a5b583`).** Recomputed from `docs/trace/controls.json`:
-> **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops**; 55 hops carry evidence
-> (non-PENDING), 54 evidence-backed excluding the UNVERIFIED marker. This supersedes the earlier
+> **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**; 55 hops carry evidence
+> (non-PENDING), 55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker. This supersedes the earlier
 > `43 WIRED / 270 PENDING / 6 MISSING` figures (which counted a stale pre-fix `S22 6_service=MISSING` and did not
 > include the 1.1 wave-2 evidence). Applied evidence: W3 streaming tests (S27 6_service/7_store/8_provider/9_response),
 > W4 replay browser proof + source (S10 2_handler WIRED, 10_render_back UNVERIFIED), S22 6_service fixed from the
@@ -14,14 +14,17 @@
 
 Owner: QA / trace engineer (`docs/trace/**`). Sources: skill `trace` (11-hop ladder, event/payload/terminal
 trace), `blueprint/UI-WIRING-GUIDE.md` §1-§3, `docs/contracts/UI-COMMANDS-v1.md`, EXECUTION-PROMPT §7.
-**Status: LIVE CAPTURE APPLIED + WAVE-2 EVIDENCE (W9 recompute).** Current `controls.json` totals: 49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker);
+**Status: LIVE CAPTURE APPLIED + WAVE-2 EVIDENCE (W9 recompute).** Current `controls.json` totals: 1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker);
 23 controls partially verified, 6 pending-app-not-built; a verdict may only leave PENDING when its `evidence[]` is non-empty and points at a repo artifact (capture, test log or source file).
+
+
+> **W4 TRACE-CAPTURE CORRECTION (2026-11-06T21:57:09.616Z).** `docs/trace/live/trace-capture.json` was overwritten with `surfaces: []` at `2026-11-06T20:25:04.044Z`. 48 hops that had been marked WIRED from that capture (43) or promoted from non-raw pointers (5: S10/2_handler, S27/6-9) are now **UNVERIFIED** with `w4_correction` history; only **S22/6_service** stays WIRED (tracked raw live-probe WS roundtrip + DOM evidence). Current counts: **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**. Capture plan: `docs/trace/CAPTURE-REGISTRY.md`; seat plan: `plans/waves/W4-TRACE-CAPTURE.md`.
 
 ## 1. Files
 
 | File | Role | Current state |
 |---|---|---|
-| `controls.json` | 29 control records (28 guide surfaces + supplemental `S-APPROVAL`) × 11 hop slots (initial verdicts) | live capture + wave-2 evidence: 23 `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT` (node cards S15-S19 + S-APPROVAL); 49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker) |
+| `controls.json` | 29 control records (28 guide surfaces + supplemental `S-APPROVAL`) × 11 hop slots (initial verdicts) | live capture + wave-2 evidence: 23 `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT` (node cards S15-S19 + S-APPROVAL); 1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker) |
 | `traces.json` | append-only captured runs (`TraceRun[]`) | empty (`0 runs`) |
 | `events.json` | emitted/subscribed/delivered parity, payload parity, terminal records | empty arrays; event vocabulary 21 |
 | `terminal-truth.md` | terminal-run truth template (per-run evidence block) | template only, `NOT_COLLECTED` |

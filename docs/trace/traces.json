@@ -4,12 +4,12 @@
     "status": "NO_RUNS",
     "note": "No TraceRun envelope (per-hop captured evidence appended by e2e/helpers/trace.ts) exists in the repo. traces[] stays empty: the W4 replay proof is a Playwright spec run with a mocked transport and only a last-run status file; W3 streaming proof is backend integration tests. Neither is a captured TraceRun. Do not populate this list from docs prose.",
     "generated_at": "2026-11-06T10:56:04.256Z",
-    "recomputed_at": "2026-11-06T14:10:40-0600",
+    "recomputed_at": "2026-11-06T21:57:09.616Z",
     "evidence_index_available": [
       {
         "path": "docs/trace/live/trace-capture.json",
-        "kind": "28-surface browser capture (historical, 1.0 artifact)",
-        "verdicts": "43 WIRED / 260 UNVERIFIED / 5 MISSING"
+        "kind": "EMPTY raw capture after later e2e run (surfaces:[])",
+        "verdicts": "0 usable hops; historical 43 WIRED/260 UNVERIFIED/5 MISSING invalidated by W4"
       },
       {
         "path": "docs/trace/live/live-app/*.json",
@@ -26,8 +26,18 @@
       {
         "path": "docs/audit/evidence/final/live-probe-final.json",
         "kind": "tracked browser-origin WS roundtrips"
+      },
+      {
+        "path": "docs/audit/evidence/final/live-probe-final.json",
+        "kind": "tracked browser-origin WS roundtrips (raw; supports S22/6_service)",
+        "verdicts": "READ by W4"
       }
-    ]
+    ],
+    "w4_correction": {
+      "applied_at": "2026-11-06T21:57:09.616Z",
+      "summary": "trace-capture.json was overwritten with surfaces=[] at 2026-11-06T20:25:04.044Z; 48 WIRED hops downgraded; traces[] intentionally remains empty.",
+      "counts_command": "node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(n)\""
+    }
   },
   "traces": []
 }

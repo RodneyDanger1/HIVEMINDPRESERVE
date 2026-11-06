@@ -1,0 +1,23 @@
+{
+  "schema": "hiverouter.trace.capture-registry/v1",
+  "generated_at": "2026-11-06T22:00:00-0600",
+  "status": "CAPTURE_PLAN_ONLY",
+  "truth_baseline": {
+    "controls": "docs/trace/controls.json",
+    "counts": {"WIRED-AND-WORKS": 1, "PENDING": 264, "MISSING": 5, "UNVERIFIED": 49, "total_hops": 319},
+    "raw_capture_state": {"path": "docs/trace/live/trace-capture.json", "bytes": 286, "generated_at": "2026-11-06T20:25:04.044Z", "surfaces": 0, "status": "EMPTY_RAW_CAPTURE"}
+  },
+  "rules": [
+    "Raw artifact committed under docs/trace/live/captures/<wave>/ with UTC timestamps + producing command",
+    "WIRED only when a raw artifact supports that specific hop; prose/source/test-summary alone does not qualify",
+    "S15-S19 stay MISSING and S-APPROVAL stays PENDING until raw capture exists",
+    "No paid provider call without explicit operator approval and a budget cap"
+  ],
+  "entries": [
+    {"id": "CAP-S10-REPLAY", "surfaces": ["S10"], "hops": ["2_handler", "10_render_back"], "current": "UNVERIFIED", "artifacts": ["WS frame JSONL HISTORY_REVISION_SET->ACK+HISTORY_SNAPSHOT", "post-replay DOM snapshot (banner/revision/inert classes)", "timestamped PNG", "named test result JSON"], "recipe": "npx playwright test specs/replay-state.spec.ts --project=chrome --reporter=json with websocket tap persisted to docs/trace/live/captures/w4/S10-frames.jsonl", "acceptance": "frame pair + inert replay DOM + banner/revision + screenshot + manifest sha256", "owner": "e2e/QA lane", "status": "NOT_CAPTURED"},
+    {"id": "CAP-S15-19-CARDS", "surfaces": ["S15","S16","S17","S18","S19"], "hops": ["1_render"], "current": "MISSING", "artifacts": ["RUN_CREATED/NODE_SPAWN/NODE_STATE frames", "AgentsPanel + canvas card DOM snapshot", "timestamped PNG", "run id (and DB row if live)"], "recipe": "mocked-WS dist harness driving node events, or approved deterministic live run; persist to docs/trace/live/captures/w4/S15-19-frames.jsonl", "acceptance": "one card per kind rendered from captured frames; state label from enum; screenshot+frames committed", "owner": "e2e/QA + backend mock transport", "status": "MISSING_NO_CAPTURE"},
+    {"id": "CAP-S27-STREAMING", "surfaces": ["S27"], "hops": ["6_service","7_store","8_provider","9_response","10_render_back"], "current": "UNVERIFIED", "artifacts": ["ordered REPLY_DELTA frames with seq/UTC", "REPLY_DONE usage", "rendered reply DOM/PNG", "persisted run/usage row snapshot", "provider metadata without key"], "recipe": "live or wiremock-driven run with WS tap + read-only DB row copy; persist to docs/trace/live/captures/w4/S27-frames.jsonl", "acceptance": "delta order + terminal usage matches run row + rendered stream + no fake completion", "owner": "backend/e2e + operator approval if paid", "status": "UNVERIFIED_NO_CAPTURE"},
+    {"id": "CAP-SAPPROVAL", "surfaces": ["S-APPROVAL"], "hops": ["1_render","2_handler","3_client_call","4_request","5_route","6_service","7_store","8_provider","9_response","10_render_back","11_reentry"], "current": "PENDING", "artifacts": ["APPROVAL_REQUEST frame", "overlay DOM + PNG", "APPROVAL_RESOLVE command + ACK/APPROVAL_RESOLVED or ERROR frames", "audit ledger row"], "recipe": "mocked-WS dist harness sending APPROVAL_REQUEST and intercepting APPROVAL_RESOLVE; persist to docs/trace/live/captures/w4/S-APPROVAL-frames.jsonl", "acceptance": "overlay + nonce handling + approve/deny command + ACK/named refusal + no silent effect", "owner": "e2e/QA + backend tools owner", "status": "PENDING_NO_CAPTURE"},
+    {"id": "CAP-S22-RECHECK", "surfaces": ["S22"], "hops": ["6_service","10_render_back"], "current": "6_service WIRED (pre-HEAD tracked raw live-probe); 10_render_back UNVERIFIED", "artifacts": ["fresh FILE_TREE_LIST roundtrip frames", "Data panel DOM/PNG", "file content read"], "recipe": "dist harness or live server capture at current HEAD; persist to docs/trace/live/captures/w4/S22-frames.jsonl", "acceptance": "raw roundtrip + rendered entries on current HEAD with sha256 manifest", "owner": "e2e/QA", "status": "PARTIAL_RAW_PRE_HEAD"}
+  ]
+}

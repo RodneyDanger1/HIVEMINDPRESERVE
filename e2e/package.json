@@ -8,10 +8,11 @@
     "@playwright/test": "1.65.0"
   },
   "scripts": {
-    "e2e": "playwright test",
-    "e2e:chrome": "playwright test --project=chrome",
+    "e2e": "node run-guarded.mjs",
+    "e2e:raw": "playwright test",
+    "e2e:chrome": "node run-guarded.mjs --project=chrome",
     "e2e:guarded": "node run-guarded.mjs",
-    "e2e:msedge": "playwright test --project=msedge",
+    "e2e:msedge": "node run-guarded.mjs --project=msedge",
     "verify:harness": "node ../tools/qa/verify-harness.mjs",
     "verify:figcraft": "node ../tools/qa/figcraft-assets.mjs",
     "seeds": "node ../tools/qa/build-trace-seeds.mjs"

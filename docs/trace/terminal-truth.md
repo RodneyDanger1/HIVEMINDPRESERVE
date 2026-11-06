@@ -44,3 +44,5 @@ Timestamped screenshot: <path or UNVERIFIED — never a mid-run capture mislabel
 2. Failed/budget-exceeded runs must show `cost_usd`/tokens as NULL or INCOMPLETE — **never 0**.
 3. A stale/missing persisted `/events` read after SSE is disabled is a defect, not "probably fine".
 4. Every row above stays `PENDING`/`UNVERIFIED` until the evidence pointer is filled and checked.
+
+> **W4 trace-capture correction (2026-11-06T2026-11-06T21:57:09.616Z).** The raw browser capture `docs/trace/live/trace-capture.json` was overwritten with `surfaces: []` at `2026-11-06T20:25:04.044Z`. Status remains **NOT_COLLECTED**; any WIRED trace verdict that depended on that capture was downgraded (see `docs/trace/controls.json` `_meta.wave2_evidence.w4_correction`). Required terminal artifacts are unchanged: persisted run row (`runs`/`usage`/`traces`), snapshot file, and persisted-events read for the same run — plus a timestamped terminal DOM capture. See `docs/trace/CAPTURE-REGISTRY.md`.

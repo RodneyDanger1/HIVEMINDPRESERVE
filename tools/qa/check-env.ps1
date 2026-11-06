@@ -31,7 +31,7 @@ Write-Output "root_package_json=$(Test-Path -LiteralPath (Join-Path $root 'packa
 Write-Output "root_node_modules=$(Test-Path -LiteralPath (Join-Path $root 'node_modules'))"
 Write-Output "e2e_node_modules=$(Test-Path -LiteralPath (Join-Path $root 'e2e\node_modules'))"
 Write-Output "backend_crates=$((Get-ChildItem -LiteralPath (Join-Path $root 'backend\crates') -Directory).Name -join ',')"
-Write-Output "git_head=$(cmd /c 'cd /d C:\Users\Riley\Desktop\hiverouter-v1 & git rev-parse --short HEAD')"
+Write-Output "git_head=$(& git -C $root rev-parse --short HEAD)"
 Write-Output "disk_free_bytes=$((Get-PSDrive C).Free)"
 
 # Blueprint / contract pins (must match EXECUTION-PROMPT.md §0)
@@ -40,7 +40,7 @@ $pins = @{
   'blueprint\UI-WIRING-GUIDE.md' = '3911C3E5DED6ED4728E00811126E1639C10BDEA281587997837A302A5F1E8104'
   'blueprint\EXTERNAL-DEPENDENCIES.md' = '0C933FBFDD84B68AF89CCD34C2FC27DFC3BC3878A23CD50551870235FBF10308'
 }
-$blueprintRoot = 'C:\Users\Riley\Desktop\hivemind-blueprint'
+$blueprintRoot = Join-Path (Split-Path -Parent $root) 'hivemind-blueprint'
 foreach ($rel in $pins.Keys) {
   $path = Join-Path $blueprintRoot $rel
   if (Test-Path -LiteralPath $path) {

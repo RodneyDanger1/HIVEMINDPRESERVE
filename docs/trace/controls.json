@@ -2,32 +2,43 @@
   "_meta": {
     "schema": "hiverouter.trace.controls/v1",
     "source": "e2e/data/control-matrix.json",
-    "status": "PARTIAL_CAPTURE_APPLIED + WAVE-2 EVIDENCE (W9 trace-truth)",
+    "status": "EVIDENCE_STATE_CORRECTED (W4 trace-capture)",
     "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
     "generated_at": "2026-11-06T10:56:04.256Z",
     "live_capture": {
       "source": "docs/trace/live/trace-capture.json",
-      "generated_at": "2026-11-06T15:24:24.056Z",
-      "base_url": "http://127.0.0.1:8799",
-      "controls_touched": 28,
-      "hops_evidence_backed": 48,
-      "rule": "Only hops with captured DOM/interaction/frame evidence are WIRED-AND-WORKS; all others UNVERIFIED. No fabricated pass."
+      "observed_file_bytes": 286,
+      "observed_generated_at": "2026-11-06T20:25:04.044Z",
+      "surfaces": 0,
+      "status": "EMPTY_RAW_CAPTURE",
+      "prior_reference": {
+        "generated_at": "2026-11-06T15:24:24.056Z",
+        "controls_touched": 28,
+        "hops_evidence_backed": 48,
+        "surfaces": 28,
+        "verdicts": "43 WIRED-AND-WORKS / 260 UNVERIFIED / 5 MISSING"
+      },
+      "invalidated_wired_hops": 43,
+      "hops_evidence_backed": 0,
+      "rule": "A capture file whose surfaces[] is empty supports no hop. WIRED verdicts derived from it were downgraded to UNVERIFIED with w4_correction history preserved."
     },
-    "recomputed_at": "2026-11-06T14:10:40-0600",
+    "recomputed_at": "2026-11-06T21:57:09.616Z",
     "counts": {
       "total_hops": 319,
-      "wired_and_works": 49,
+      "wired_and_works": 1,
       "pending": 264,
       "missing": 5,
-      "unverified": 1,
+      "unverified": 49,
       "refused_by_name": 0,
       "wired_but_dead": 0,
       "non_pending": 55,
-      "evidence_backed_hops": 54,
+      "evidence_backed_hops": 55,
+      "raw_capture_backed_wired": 1,
+      "downgraded_from_wired": 48,
       "controls_partially_verified": 23,
       "controls_pending_app_not_built": 6
     },
-    "counts_note": "Recomputed by W9 from this file: each hop's verdict is counted; non-PENDING hops must carry non-empty evidence[]. live_capture.hops_evidence_backed=48 describes only the 2026-11-06T15:24Z capture application (43 WIRED + 5 MISSING); it is not the controls.json total.",
+    "counts_note": "Recomputed by W4 from this file after the raw capture was overwritten with surfaces=[]; 48 WIRED hops downgraded to UNVERIFIED with w4_correction history; only S22/6_service remains raw-capture-backed. Command: node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(n)\"",
     "wave2_evidence": {
       "applied_at": "2026-11-06T14:10:40-0600",
       "sources": [
@@ -45,12 +56,71 @@
         "S10": "2_handler -> WIRED-AND-WORKS; 10_render_back -> UNVERIFIED (browser proof run exists, no captured DOM artifact)",
         "S22": "6_service MISSING -> WIRED-AND-WORKS (stale pre-fix capture removed; tracked live probe roundtrip)"
       },
-      "not_upgraded": "S10 live round-trip hops, S15-S19 node cards, S27 UI progressive rendering, S-APPROVAL overlay: no captured evidence; kept PENDING/MISSING with named missing evidence."
+      "not_upgraded": "S10 live round-trip hops, S15-S19 node cards, S27 UI progressive rendering, S-APPROVAL overlay: no captured evidence; kept PENDING/MISSING with named missing evidence.",
+      "w4_correction": {
+        "applied_at": "2026-11-06T21:57:09.616Z",
+        "downgraded_hops": [
+          "S01/1_render",
+          "S02/1_render",
+          "S03/1_render",
+          "S03/2_handler",
+          "S04/1_render",
+          "S05/1_render",
+          "S06/1_render",
+          "S07/1_render",
+          "S08/1_render",
+          "S08/2_handler",
+          "S08/10_render_back",
+          "S09/1_render",
+          "S10/1_render",
+          "S10/2_handler",
+          "S11/1_render",
+          "S11/2_handler",
+          "S11/10_render_back",
+          "S12/1_render",
+          "S13/1_render",
+          "S14/1_render",
+          "S20/1_render",
+          "S20/2_handler",
+          "S20/10_render_back",
+          "S21/1_render",
+          "S21/2_handler",
+          "S21/3_client_call",
+          "S21/4_request",
+          "S21/5_route",
+          "S21/9_response",
+          "S22/1_render",
+          "S22/2_handler",
+          "S22/3_client_call",
+          "S22/4_request",
+          "S22/5_route",
+          "S22/9_response",
+          "S22/10_render_back",
+          "S23/1_render",
+          "S24/1_render",
+          "S25/1_render",
+          "S25/2_handler",
+          "S25/10_render_back",
+          "S26/1_render",
+          "S27/1_render",
+          "S27/6_service",
+          "S27/7_store",
+          "S27/8_provider",
+          "S27/9_response",
+          "S28/1_render"
+        ],
+        "downgraded_count": 48,
+        "retained_wired_hops": [
+          "S22/6_service"
+        ],
+        "retained_reason": "tracked raw capture: docs/audit/evidence/final/live-probe-final.json WS roundtrip FILE_TREE_LIST -> ACK+FILE_TREE_RESULT plus docs/trace/live/live-app/14-file-tree.json DOM evidence",
+        "rule": "Do not mark PENDING/MISSING as WIRED without raw capture; an empty capture invalidates verdicts derived from it."
+      }
     },
     "verification": {
-      "recompute_command": "python -c \"import json,collections;d=json.load(open('docs/trace/controls.json'));c=collections.Counter(h['verdict'] for x in d['controls'] for h in x['hops'].values());print(dict(c))\"",
+      "recompute_command": "node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(n)\"",
       "static_validator": "node tools/qa/verify-harness.mjs",
-      "evidence_rule": "a verdict leaves PENDING only with non-empty evidence[] pointing at a repo file/log that was read"
+      "residual_gap": "validator checks evidence[] presence, not pointer content/hash; capture-content validity is enforced by this correction only until tools/qa adds a content gate (out of W4 write scope)"
     }
   },
   "controls": [
@@ -64,12 +134,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S01",
+                "quote": "selector [role=\"application\"][aria-label=\"HiveMind spatial canvas\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S01",
-              "quote": "selector [role=\"application\"][aria-label=\"HiveMind spatial canvas\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S01/1_render is gone"
             }
           ]
         },
@@ -126,12 +208,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S02",
+                "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1; chat visible=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S02",
-              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1; chat visible=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S02/1_render is gone"
             }
           ]
         },
@@ -188,22 +282,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S03",
+                "quote": "composer present; submit disabled on empty=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S03",
-              "quote": "composer present; submit disabled on empty=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S03/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S03",
+                "quote": "composer present; submit disabled on empty=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S03",
-              "quote": "composer present; submit disabled on empty=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S03/2_handler is gone"
             }
           ]
         },
@@ -256,12 +374,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S04",
+                "quote": "control present=true disabled(no run)=true title=No active run"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S04",
-              "quote": "control present=true disabled(no run)=true title=No active run"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S04/1_render is gone"
             }
           ]
         },
@@ -318,12 +448,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S05",
+                "quote": "control present=true disabled(no run)=true title=Select a running worker first"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S05",
-              "quote": "control present=true disabled(no run)=true title=Select a running worker first"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S05/1_render is gone"
             }
           ]
         },
@@ -380,12 +522,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S06",
+                "quote": "control present=true disabled(no run)=true title=null"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S06",
-              "quote": "control present=true disabled(no run)=true title=null"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S06/1_render is gone"
             }
           ]
         },
@@ -442,12 +596,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S07",
+                "quote": "control present=true disabled(no run)=true title=null"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S07",
-              "quote": "control present=true disabled(no run)=true title=null"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S07/1_render is gone"
             }
           ]
         },
@@ -504,22 +670,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S08",
+                "quote": "4 tabs present; click render-back aria-selected=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S08",
-              "quote": "4 tabs present; click render-back aria-selected=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S08/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S08",
+                "quote": "4 tabs present; click render-back aria-selected=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S08",
-              "quote": "4 tabs present; click render-back aria-selected=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S08/2_handler is gone"
             }
           ]
         },
@@ -552,12 +742,24 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S08",
+                "quote": "4 tabs present; click render-back aria-selected=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S08",
-              "quote": "4 tabs present; click render-back aria-selected=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S08/10_render_back is gone"
             }
           ]
         },
@@ -578,12 +780,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S09",
+                "quote": "selector [role=\"status\"][aria-label=\"Swarm throughput\"] count=1 text=—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S09",
-              "quote": "selector [role=\"status\"][aria-label=\"Swarm throughput\"] count=1 text=—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S09/1_render is gone"
             }
           ]
         },
@@ -640,17 +854,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S10",
+                "quote": "selector input#scrubber count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S10",
-              "quote": "selector input#scrubber count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S10/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "file",
+                "pointer": "web/src/flow/Canvas.tsx:114-115,135-136,147-150; web/src/flow/graph.ts:96",
+                "quote": "replay branch projects HISTORY_SNAPSHOT via buildReplayTasks and renders read-only nodes (interactive=false -> draggable/selectable false); onNodeClick guarded when replayGraph set"
+              },
+              {
+                "kind": "log",
+                "pointer": "e2e/specs/replay-state.spec.ts + e2e/test-results/.last-run.json",
+                "quote": "playwright run status=passed failedTests=[] at 2026-11-06T20:02:54Z; spec asserts replay nodes inert and click does not mutate live selection"
+              }
+            ],
+            "reason": "W9 promoted this hop without raw capture (source/test-output pointers only); per Lead rule a PENDING→WIRED promotion requires raw capture",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
               "kind": "file",
@@ -719,22 +962,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S11",
+                "quote": "nav buttons=6; Agents aria-current=page"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S11",
-              "quote": "nav buttons=6; Agents aria-current=page"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S11/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S11",
+                "quote": "nav buttons=6; Agents aria-current=page"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S11",
-              "quote": "nav buttons=6; Agents aria-current=page"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S11/2_handler is gone"
             }
           ]
         },
@@ -767,12 +1034,24 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S11",
+                "quote": "nav buttons=6; Agents aria-current=page"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S11",
-              "quote": "nav buttons=6; Agents aria-current=page"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S11/10_render_back is gone"
             }
           ]
         },
@@ -793,12 +1072,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S12",
+                "quote": "selector aside[aria-label=\"Library panel\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S12",
-              "quote": "selector aside[aria-label=\"Library panel\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S12/1_render is gone"
             }
           ]
         },
@@ -855,12 +1146,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S13",
+                "quote": "selector [data-testid=\"rf__minimap\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S13",
-              "quote": "selector [data-testid=\"rf__minimap\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S13/1_render is gone"
             }
           ]
         },
@@ -917,12 +1220,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S14",
+                "quote": "selector [aria-label=\"Refusals and errors\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S14",
-              "quote": "selector [aria-label=\"Refusals and errors\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S14/1_render is gone"
             }
           ]
         },
@@ -1289,22 +1604,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S20",
+                "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S20",
-              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S20/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S20",
+                "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S20",
-              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S20/2_handler is gone"
             }
           ]
         },
@@ -1337,12 +1676,24 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S20",
+                "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S20",
-              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S20/10_render_back is gone"
             }
           ]
         },
@@ -1363,52 +1714,112 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/2_handler is gone"
             }
           ]
         },
         "3_client_call": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/3_client_call is gone"
             }
           ]
         },
         "4_request": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/4_request is gone"
             }
           ]
         },
         "5_route": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/5_route is gone"
             }
           ]
         },
@@ -1425,12 +1836,24 @@
           "evidence": []
         },
         "9_response": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S21",
+                "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S21",
-              "quote": "settings panel rendered=true; ACK=true; SETTINGS_STATUS_RESULT received=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S21/9_response is gone"
             }
           ]
         },
@@ -1455,52 +1878,112 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/2_handler is gone"
             }
           ]
         },
         "3_client_call": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/3_client_call is gone"
             }
           ]
         },
         "4_request": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/4_request is gone"
             }
           ]
         },
         "5_route": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/5_route is gone"
             }
           ]
         },
@@ -1517,7 +2000,15 @@
               "pointer": "docs/trace/live/live-app/14-file-tree.json",
               "quote": "resultReceived=true; entries README.md, note.txt; noteVisible=1 readmeVisible=1"
             }
-          ]
+          ],
+          "w4_verified": {
+            "reason": "raw tracked capture re-read by W4: live-probe-final.json WS roundtrip + live-app DOM evidence",
+            "verified_at": "2026-11-06T21:57:09.616Z",
+            "pointers": [
+              "docs/audit/evidence/final/live-probe-final.json#ws.roundtrips[FILE_TREE_LIST]",
+              "docs/trace/live/live-app/14-file-tree.json"
+            ]
+          }
         },
         "7_store": {
           "verdict": "PENDING",
@@ -1528,22 +2019,46 @@
           "evidence": []
         },
         "9_response": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/9_response is gone"
             }
           ]
         },
         "10_render_back": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S22",
+                "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S22",
-              "quote": "Data panel rendered=true; FILE_TREE_RESULT received=true; tree entries rendered=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S22/10_render_back is gone"
             }
           ]
         },
@@ -1564,12 +2079,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S23",
+                "quote": "selector nav[aria-label=\"Primary navigation\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S23",
-              "quote": "selector nav[aria-label=\"Primary navigation\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S23/1_render is gone"
             }
           ]
         },
@@ -1626,12 +2153,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S24",
+                "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S24",
-              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S24/1_render is gone"
             }
           ]
         },
@@ -1688,22 +2227,46 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S25",
+                "quote": "decision-gated modal text present=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S25",
-              "quote": "decision-gated modal text present=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S25/1_render is gone"
             }
           ]
         },
         "2_handler": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S25",
+                "quote": "decision-gated modal text present=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S25",
-              "quote": "decision-gated modal text present=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S25/2_handler is gone"
             }
           ]
         },
@@ -1736,12 +2299,24 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S25",
+                "quote": "decision-gated modal text present=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S25",
-              "quote": "decision-gated modal text present=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S25/10_render_back is gone"
             }
           ]
         },
@@ -1762,12 +2337,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S26",
+                "quote": "{\"agentsEmpty\":1,\"scrubberEmpty\":1,\"hudNoMetrics\":1}"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S26",
-              "quote": "{\"agentsEmpty\":1,\"scrubberEmpty\":1,\"hudNoMetrics\":1}"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S26/1_render is gone"
             }
           ]
         },
@@ -1824,12 +2411,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S27",
+                "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S27",
-              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S27/1_render is gone"
             }
           ]
         },
@@ -1850,7 +2449,19 @@
           "evidence": []
         },
         "6_service": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "log",
+                "pointer": "plans/waves/W3-STREAMING.md:143-150",
+                "quote": "run_lifecycle: 7 passed; provider_streaming: 6 passed (engine publishes REPLY_DELTA from the provider read loop before REPLY_DONE, no duplicate emission)"
+              }
+            ],
+            "reason": "W9 promoted this hop without raw capture (source/test-output pointers only); per Lead rule a PENDING→WIRED promotion requires raw capture",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
               "kind": "log",
@@ -1860,7 +2471,24 @@
           ]
         },
         "7_store": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "file",
+                "pointer": "backend/crates/hiverouter-core/tests/provider_streaming.rs (execute_streams_fragments_in_order_and_persists_text)",
+                "quote": "persisted reply.text() equals the concatenation of the streamed fragments; usage measured"
+              },
+              {
+                "kind": "log",
+                "pointer": "plans/waves/W3-STREAMING.md:148-150",
+                "quote": "run_lifecycle: 7 passed; workspace total passed=261 failed=0"
+              }
+            ],
+            "reason": "W9 promoted this hop without raw capture (source/test-output pointers only); per Lead rule a PENDING→WIRED promotion requires raw capture",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
               "kind": "file",
@@ -1875,7 +2503,24 @@
           ]
         },
         "8_provider": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "log",
+                "pointer": "plans/waves/W3-STREAMING.md:143-150",
+                "quote": "cargo test -p hiverouter-provider --test streaming -> test result: ok. 8 passed; 0 failed; 0 ignored; cargo test -p hiverouter-core --test provider_streaming --test run_lifecycle -> 6 passed / 7 passed; cargo test --workspace --locked -> TOTAL passed=261 failed=0 ignored=2; WORKSPACE_TEST_EXIT=0"
+              },
+              {
+                "kind": "file",
+                "pointer": "backend/crates/hiverouter-provider/tests/streaming.rs",
+                "quote": "8 wiremock SSE tests: ordered deltas + [DONE] + usage, malformed SSE, missing [DONE], retry-before-first-byte, no retry after first delta, budget preflight with zero requests, absent usage INCOMPLETE"
+              }
+            ],
+            "reason": "W9 promoted this hop without raw capture (source/test-output pointers only); per Lead rule a PENDING→WIRED promotion requires raw capture",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
               "kind": "log",
@@ -1890,7 +2535,19 @@
           ]
         },
         "9_response": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "file",
+                "pointer": "backend/crates/hiverouter-core/tests/provider_streaming.rs + backend/crates/hiverouter-provider/tests/streaming.rs",
+                "quote": "absent/partial usage -> E_USAGE_INCOMPLETE (never 0); missing [DONE] -> E_PROVIDER_INCOMPLETE; malformed SSE -> named refusal; no retry after first delta"
+              }
+            ],
+            "reason": "W9 promoted this hop without raw capture (source/test-output pointers only); per Lead rule a PENDING→WIRED promotion requires raw capture",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
               "kind": "file",
@@ -1920,12 +2577,24 @@
       "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "WIRED-AND-WORKS",
+          "verdict": "UNVERIFIED",
+          "w4_correction": {
+            "previous_verdict": "WIRED-AND-WORKS",
+            "previous_evidence": [
+              {
+                "kind": "dom",
+                "pointer": "docs/trace/live/trace-capture.json#S28",
+                "quote": "project identity rendered from state=true"
+              }
+            ],
+            "reason": "raw capture docs/trace/live/trace-capture.json is now EMPTY (surfaces=[] generated_at 2026-11-06T20:25:04.044Z, 286 bytes); no captured record remains for this hop",
+            "corrected_at": "2026-11-06T21:57:09.616Z"
+          },
           "evidence": [
             {
-              "kind": "dom",
-              "pointer": "docs/trace/live/trace-capture.json#S28",
-              "quote": "project identity rendered from state=true"
+              "kind": "file",
+              "pointer": "docs/trace/live/trace-capture.json",
+              "quote": "W4 CORRECTION: file currently surfaces=[] (generated_at 2026-11-06T20:25:04.044Z); the historical capture that backed S28/1_render is gone"
             }
           ]
         },

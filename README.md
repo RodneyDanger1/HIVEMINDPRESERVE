@@ -1,4 +1,4 @@
-# HiveMind v1 — implementation workspace
+# HiveMind v1.1.0 — implementation workspace
 
 Built from the verified blueprint (read-only reference: `C:\Users\Riley\Desktop\hivemind-blueprint`).
 
@@ -19,11 +19,36 @@ $env:CARGO_PROFILE_DEV_DEBUG = "0"; $env:CARGO_INCREMENTAL = "0"
 cargo build --release --locked
 ```
 
-## Status — HiveMind 1.0 (2026-11-06)
+## Status — HiveMind 1.1.0 (2026-11-06)
 
-- First official build with the real provider path: `SUBMIT_PROMPT` → planner DAG → leaf reply → `REPLY_DONE` usage → run `completed`. Live evidence: `docs/evidence/key-validation.md` and `docs/evidence/live-provider-smoke.md`.
-- Release artifacts: `target/release/hiverouter.exe` + `hiverouter-cli.exe`; package/checksums in `dist/` (see `docs/RELEASE.md` for the final hashes). Current 1.0.0 values: server `b17eb3d6…062a9a` 13,253,120 B; CLI `49f46e2b…386623` 5,373,952 B; package `dist/HiveMind-1.0.0-win64.zip` `46305fcb…6105ef` 8,444,021 B (`docs/RELEASE-EVIDENCE.md`, `tools/release-manifest.json`). `docs/reports/FINAL-REPORT.md` is the historical pre-1.0.0 report and carries a dated supersession note.
-- Backend: full Rust workspace green after provider wiring; frontend: 46 unit tests, typecheck and production build green.
-- Key: `DEEPSEEK_API_KEY` only, never committed or shown in UI; model/thinking/effort settings documented in `tools/runbook.md`.
-- Known limits (stated, not hidden): leaf replies are returned as one delta after a non-streaming completion; autonomous model tool-calling and full trace/pixel reviews are 1.1; the normal test suite never calls the provider (the `provider_live` test is `#[ignore]` and gated by the key).
-- Audit: `audit/HIVEMIND-AUDIT-PAPER.md`; release notes: `docs/RELEASE.md`.
+- **Current version: `1.1.0`** — `web/package.json` and all four `backend/crates/*/Cargo.toml` agree. The 1.1 wave
+  delivers true SSE streaming on top of the real provider path.
+- **Streaming is real in 1.1.0:** the leaf reply is streamed as ordered `REPLY_DELTA` frames while the provider
+  response arrives (`backend/crates/hiverouter-core/src/provider_executor.rs` `stream_reply`), with usage settled
+  from the documented final chunk and named refusals on malformed/incomplete streams. The offline wiremock matrix
+  `backend/crates/hiverouter-core/tests/provider_streaming.rs` pins ordered fragments, cancellation and
+  pre-first-byte retry without any key or network call. The retired 1.0.0 one-delta behavior is historical only.
+- **Replay and state parity:** `HISTORY_REVISION_SET` returns a read-only `HISTORY_SNAPSHOT`; the web canvas
+  projects snapshot nodes/edges (browser proof in 1.1) and the UI/backend state vocabulary is 16 states including
+  `interrupted`.
+- **Release artifacts / exact hashes:** the authoritative registry is `tools/release-manifest.json`, written by
+  `tools/build-release.ps1` for a sealed build, and summarised in `docs/RELEASE-EVIDENCE.md`. Exact 1.1.0 artifact
+  hashes are recorded there only after the sealed 1.1.0 build runs — do not hand-copy hashes into this README, and
+  do not present 1.0.0 values as current.
+- **Key custody:** `DEEPSEEK_API_KEY` only, never committed or shown in UI; provider type zeroized/redacted; child
+  processes are spawned with an allowlisted environment (no key inheritance). Model/thinking/effort settings are
+  documented in `tools/runbook.md`.
+- **Known limits (stated, not hidden):** autonomous model tool-calling is a recorded decision, not claimed in 1.1.0;
+  a live paid-provider streaming smoke on a sealed 1.1.0 artifact has not yet been run; full trace-ladder/pixel
+  reviews remain partial. `docs/evidence/1.1-backend-tests.log` is the 1.1 backend run log.
+- **Audit / release notes:** `audit/HIVEMIND-AUDIT-PAPER.md`; release notes `docs/RELEASE.md`; exact hash registry
+  `docs/RELEASE-EVIDENCE.md` + `tools/release-manifest.json`.
+
+<!-- docs-truth:historical:start -->
+## Historical: HiveMind 1.0.0 (SUPERSEDED)
+
+- 1.0.0 was the first provider-wired build. Its sealed artifact hashes, live smoke and retired limitations
+  (leaf reply as a single delta after a non-streaming completion) are preserved in the historical section of
+  `docs/RELEASE-EVIDENCE.md` and `docs/claims/CLAIM-REGISTER.csv` (rows marked SUPERSEDED). They are not current
+  and must not be presented as the current release.
+<!-- docs-truth:historical:end -->

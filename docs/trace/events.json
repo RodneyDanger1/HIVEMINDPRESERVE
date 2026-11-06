@@ -11,8 +11,9 @@
       "failed/budget terminal runs: runs.cost_usd/prompt_tokens/completion_tokens must be NULL/incomplete, never 0"
     ],
     "generated_at": "2026-11-06T10:56:04.256Z",
-    "recomputed_at": "2026-11-06T14:10:40-0600",
-    "note": "delivered[] MUST stay empty per tools/qa/verify-harness.mjs (no fabricated deliveries). emitted/subscribed below are READ-level source pointers, not a parity proof; parity remains NOT_COLLECTED."
+    "recomputed_at": "2026-11-06T21:57:09.616Z",
+    "note": "delivered[] MUST stay empty per tools/qa/verify-harness.mjs (no fabricated deliveries). emitted/subscribed below are READ-level source pointers, not a parity proof; parity remains NOT_COLLECTED.",
+    "w4_note": "emitted/subscribed remain source-level READ pointers (1/1), delivered/payload_parity/terminal_records remain empty (0/0/0). No parity claim: a raw delivered-frame capture is still missing (see docs/trace/CAPTURE-REGISTRY.md S27)."
   },
   "emitted": [
     {

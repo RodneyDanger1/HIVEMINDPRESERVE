@@ -1,8 +1,8 @@
 # Live app evidence — HiveMind v1 browser QA (2026-11-06)
 
 > **Dated correction — W9 trace-truth (2026-11-06T14:10:40-0600, HEAD `8a5b583`).** Recomputed from `docs/trace/controls.json`:
-> **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops**; 55 hops carry evidence
-> (non-PENDING), 54 evidence-backed excluding the UNVERIFIED marker. This supersedes the earlier
+> **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**; 55 hops carry evidence
+> (non-PENDING), 55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker. This supersedes the earlier
 > `43 WIRED / 270 PENDING / 6 MISSING` figures (which counted a stale pre-fix `S22 6_service=MISSING` and did not
 > include the 1.1 wave-2 evidence). Applied evidence: W3 streaming tests (S27 6_service/7_store/8_provider/9_response),
 > W4 replay browser proof + source (S10 2_handler WIRED, 10_render_back UNVERIFIED), S22 6_service fixed from the
@@ -15,6 +15,9 @@
 Base URL: <http://127.0.0.1:8799> (embedded UI served by `tools/bin/hiverouter.exe`; final build
 `index-Cbfm1IuM.js`, process PID 33580, binary sha256 `184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9`).
 Harness: Playwright **1.65.0**, installed Chrome channel (no browser download), workers=1, no paid API.
+
+
+> **W4 TRACE-CAPTURE CORRECTION (2026-11-06T21:57:09.616Z).** `docs/trace/live/trace-capture.json` was overwritten with `surfaces: []` at `2026-11-06T20:25:04.044Z`. 48 hops that had been marked WIRED from that capture (43) or promoted from non-raw pointers (5: S10/2_handler, S27/6-9) are now **UNVERIFIED** with `w4_correction` history; only **S22/6_service** stays WIRED (tracked raw live-probe WS roundtrip + DOM evidence). Current counts: **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops**. Capture plan: `docs/trace/CAPTURE-REGISTRY.md`; seat plan: `plans/waves/W4-TRACE-CAPTURE.md`.
 
 ## Final result — 0 failures
 
@@ -29,7 +32,7 @@ npx playwright test --project=chrome --reporter=list,html
 - HTML report: `e2e/playwright-report/index.html`
 - Screenshots/traces for failures: `e2e/test-results/` (no failures in the final run; earlier failure artifacts retained)
 - Per-test evidence: `docs/trace/live/live-app/*.json`; boot/census screenshots `docs/trace/live/live-app/*.png`
-- Trace capture: `docs/trace/live/trace-capture.json` (refreshed 2026-11-06T15:24:24.056Z; 28 surfaces, 43 WIRED-AND-WORKS / 260 UNVERIFIED / 5 MISSING hops). **W9 recompute of `controls.json`: 49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)**
+- Trace capture: `docs/trace/live/trace-capture.json` (EMPTY at 2026-11-06T20:25:04.044Z (surfaces=[]); historical 28 surfaces, 0 usable hop records (surfaces=[]); historical 43 WIRED/260 UNVERIFIED/5 MISSING invalidated hops). **W9 recompute of `controls.json`: 1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker)**
 - Controls: `docs/trace/controls.json` (evidence-backed verdicts applied by `tools/qa/apply-live-trace.mjs`)
 - Static validator: `node tools/qa/verify-harness.mjs` → **27/27 PASS**
 
@@ -55,7 +58,7 @@ npx playwright test --project=chrome --reporter=list,html
 
 `43 × WIRED-AND-WORKS`, `260 × UNVERIFIED` (server hops not provable from the browser / no paid run),
 `5 × MISSING` (S15-S19 node cards need a live run), `0 × WIRED-BUT-DEAD` — capture-level counts.
-`controls.json` after W9 wave-2 evidence: **49 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 1 UNVERIFIED of 319 hops (54 evidence-backed excluding the UNVERIFIED marker)**; 23 controls `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT`.
+`controls.json` after W9 wave-2 evidence: **1 WIRED-AND-WORKS / 264 PENDING / 5 MISSING / 49 UNVERIFIED of 319 hops (55 evidence-backed pointers (1 raw-capture-backed) excluding the UNVERIFIED marker)**; 23 controls `PARTIALLY_VERIFIED`, 6 `PENDING_APP_NOT_BUILT`.
 
 ## History of this live pass (all defects found here were fixed and re-verified)
 

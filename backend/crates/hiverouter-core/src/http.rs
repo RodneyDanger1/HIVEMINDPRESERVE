@@ -10,6 +10,7 @@ use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
+use hiverouter_contract::Refusal;
 use serde::Serialize;
 use tokio::net::TcpListener;
 use uuid::Uuid;
@@ -50,6 +51,56 @@ pub struct AppState {
     pub history: Arc<HistoryReadModel>,
     /// Wired tools capabilities (settings, jailed files, approvals, diagnose).
     pub tools: Arc<ToolsBridge>,
+    /// Named refusal when the embedded prompt assets failed to load.
+    ///
+    /// `None` means the planner template registry loaded from the binary's
+    /// embedded assets. `Some(refusal)` means the boot path is serving with a
+    /// required-and-failed `prompt_assets` check: `/health` reports 503 and the
+    /// error code, and planner renders refuse by name — never a fake success.
+    pub prompt_assets_error: Option<Refusal>,
+}
+
+/// Loads the shipped prompt templates embedded in the binary.
+///
+/// # Errors
+/// Returns the named refusal (`E_TEMPLATE_INVALID`, `E_TEMPLATE_UNKNOWN`,
+/// `E_TEMPLATE_LICENSE_MISSING`, `E_TEMPLATE_REF_FORBIDDEN`) when the embedded
+/// manifest or a template body is missing/malformed.
+pub fn load_prompt_assets() -> Result<Arc<TemplateRegistry>, Refusal> {
+    TemplateRegistry::load_embedded().map(Arc::new)
+}
+
+/// Production prompt-asset load with an explicit failed boot check on error.
+///
+/// A missing/invalid asset must never degrade into an empty registry that
+/// silently answers later with `E_TEMPLATE_UNKNOWN`: the refusal is recorded as
+/// a required failed check (so `/health` is 503), logged, and kept on the state.
+fn prompt_assets_for(checks: &mut Vec<Check>) -> (Arc<TemplateRegistry>, Option<Refusal>) {
+    match load_prompt_assets() {
+        Ok(templates) => (templates, None),
+        Err(refusal) => {
+            tracing::error!(
+                code = refusal.code(),
+                message = refusal.message(),
+                "embedded prompt assets refused at boot; planner renders will refuse by name"
+            );
+            checks.push(Check {
+                name: "prompt_assets",
+                required: true,
+                ok: false,
+                detail: format!(
+                    "embedded template assets refused: {} ({})",
+                    refusal.message(),
+                    refusal.code()
+                ),
+                code: Some(refusal.code()),
+            });
+            // The engine still needs a registry object; it is empty, but the
+            // failure is explicit (required failed check + health code + log),
+            // never silent. The render path refuses with E_TEMPLATE_UNKNOWN.
+            (Arc::new(TemplateRegistry::default()), Some(refusal))
+        }
+    }
 }
 
 fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
@@ -84,8 +135,12 @@ fn build_executor(config: &Config) -> Arc<dyn ProviderExecutor> {
 impl AppState {
     /// Builds state for a running server with a fresh event bus, graph and
     /// session token derived from the configuration.
+    ///
+    /// Loads the embedded prompt templates (production path). A load failure is
+    /// recorded as a required failed `prompt_assets` check and the named refusal
+    /// on the state; it never degrades silently.
     #[must_use]
-    pub fn new(db: Arc<Database>, checks: Vec<Check>, config: Arc<Config>) -> Self {
+    pub fn new(db: Arc<Database>, mut checks: Vec<Check>, config: Arc<Config>) -> Self {
         let session = Arc::new(SessionAuth::new(
             Uuid::now_v7().to_string(),
             config.allowed_origins.clone(),
@@ -93,13 +148,14 @@ impl AppState {
         let bus = Arc::new(EventBus::new());
         let graph = Arc::new(GraphAuthority::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
         let engine = Arc::new(
             RunEngine::new(
                 db.clone(),
                 bus.clone(),
                 graph.clone(),
                 build_executor(&config),
-                Arc::new(TemplateRegistry::default()),
+                templates,
             )
             .with_snapshot_store(snapshots.clone()),
         );
@@ -116,14 +172,19 @@ impl AppState {
             engine,
             history,
             tools,
+            prompt_assets_error,
         }
     }
 
     /// Builds state with an explicitly recovered graph (boot path).
+    ///
+    /// This is the binary's construction path: it loads the embedded prompt
+    /// templates and records a named refusal (`prompt_assets_error` + required
+    /// failed check) if they are missing/invalid.
     #[must_use]
     pub fn with_graph(
         db: Arc<Database>,
-        checks: Vec<Check>,
+        mut checks: Vec<Check>,
         config: Arc<Config>,
         graph: Arc<GraphAuthority>,
     ) -> Self {
@@ -133,13 +194,14 @@ impl AppState {
         ));
         let bus = Arc::new(EventBus::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
         let engine = Arc::new(
             RunEngine::new(
                 db.clone(),
                 bus.clone(),
                 graph.clone(),
                 build_executor(&config),
-                Arc::new(TemplateRegistry::default()),
+                templates,
             )
             .with_snapshot_store(snapshots.clone()),
         );
@@ -156,10 +218,16 @@ impl AppState {
             engine,
             history,
             tools,
+            prompt_assets_error,
         }
     }
 
     /// Builds state with explicitly supplied services (integration tests).
+    ///
+    /// Test-only seam: it keeps the documented empty `TemplateRegistry::default()`
+    /// so unit/integration tests can build an engine without assets. Production
+    /// uses [`AppState::new`] / [`AppState::with_graph`], which load the embedded
+    /// planner template and record a named refusal on failure.
     #[must_use]
     pub fn with_services(
         db: Arc<Database>,
@@ -193,7 +261,14 @@ impl AppState {
             engine,
             history,
             tools,
+            prompt_assets_error: None,
         }
+    }
+
+    /// Whether the production prompt templates loaded successfully.
+    #[must_use]
+    pub fn prompt_assets_loaded(&self) -> bool {
+        self.prompt_assets_error.is_none()
     }
 }
 
@@ -215,6 +290,8 @@ pub struct HealthResponse {
     pub database: DatabaseHealth,
     /// Transport counters.
     pub transport: TransportHealth,
+    /// Embedded prompt-asset load status (planner template registry).
+    pub prompt_assets: PromptAssetsHealth,
 }
 
 /// Database portion of the health payload.
@@ -237,6 +314,15 @@ pub struct TransportHealth {
     pub graph_nodes: Option<usize>,
     /// Origin allowlist size (the values themselves stay out of the payload).
     pub allowed_origins: usize,
+}
+
+/// Prompt-asset portion of the health payload (production boot proof).
+#[derive(Debug, Serialize)]
+pub struct PromptAssetsHealth {
+    /// True when the embedded planner template registry loaded at boot.
+    pub loaded: bool,
+    /// Named refusal code when the embedded assets were missing or invalid.
+    pub error_code: Option<&'static str>,
 }
 
 /// Builds the server router.
@@ -385,6 +471,10 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
             last_seq: state.bus.current_seq(),
             graph_nodes: state.graph.node_count().ok(),
             allowed_origins: state.session.allowed_origins().len(),
+        },
+        prompt_assets: PromptAssetsHealth {
+            loaded: state.prompt_assets_loaded(),
+            error_code: state.prompt_assets_error.map(|refusal| refusal.code()),
         },
     };
     let status_code = if required_ok {

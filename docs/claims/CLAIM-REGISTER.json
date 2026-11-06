@@ -7,6 +7,7 @@
     "unverified": 0,
     "contradicted": 0
   },
+  "current_version": "1.1.0",
   "decision_critical_unverified": [],
   "cross_document": [
     {
@@ -77,5 +78,29 @@
       ]
     }
   ],
-  "notes": "B-Core backend claims are C-301..C-335 with quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md and docs/plans/D2-D3-WIRING-EVIDENCE.md. VERIFIED at this checkpoint: contract 32 passed exit 0; core 83 passed / 0 failed / 1 ignored helper; tools 78 passed. 1.0.0 release artifacts: hiverouter.exe 13,253,120 B sha256 b17eb3d6...062a9a; CLI 49f46e2b...386623 5,373,952 B; package dist/HiveMind-1.0.0-win64.zip 46305fcb...6105ef 8,444,021 B (docs/RELEASE-EVIDENCE.md, tools/release-manifest.json). Live provider/key evidence is recorded READ-level in docs/evidence/key-validation.md and docs/evidence/live-provider-smoke.md (not independently re-run). Current trace totals: 43 WIRED-AND-WORKS / 270 PENDING / 6 MISSING of 319 hops (docs/trace/controls.json). No VERIFIED without observed command evidence."
+  "historical_supersedes": [
+    {
+      "version": "1.0.0",
+      "status": "SUPERSEDED",
+      "note": "Historical sealed 1.0.0 artifacts. Not current; kept for provenance. Current authoritative hashes are the sealed 1.1.0 values in tools/release-manifest.json.",
+      "artifacts": [
+        {
+          "path": "hiverouter.exe",
+          "sha256": "b17eb3d6469c347f623a4dedc94537b15bb633a76215828742624fa6fe062a9a",
+          "bytes": 13253120
+        },
+        {
+          "path": "hiverouter-cli.exe",
+          "sha256": "49f46e2be488dd675280f3dae7e8d455ac5eeec2aa46d7fd44f1c2557c386623",
+          "bytes": 5373952
+        },
+        {
+          "path": "dist/HiveMind-1.0.0-win64.zip",
+          "sha256": "46305fcb1fe1bee23d3645a94a82635a68ee47fbcd3ce0537df747de3c6105ef",
+          "bytes": 8444021
+        }
+      ]
+    }
+  ],
+  "notes": "Current release line is 1.1.0: web/package.json and all four backend crates declare 1.1.0; true SSE streaming is implemented (provider_executor stream_reply + offline tests/provider_streaming.rs, 1.1 backend log) with usage settled from the documented final chunk; replay browser proof and 16-state parity are 1.1.0. Historical: the 1.0.0 sealed artifact hashes, live smoke and the retired one-delta/non-streaming limitation are SUPERSEDED and kept only under historical_supersedes for provenance (see docs/RELEASE-EVIDENCE.md historical section and the rows marked SUPERSEDED in CLAIM-REGISTER.csv). Current exact artifact hashes are authoritative only in tools/release-manifest.json after a sealed 1.1.0 build; no 1.1.0 hash is claimed until that build runs. Backend claims C-301..C-335 retain quoted command output in docs/plans/PHASE-{1,2,3,4,9}-EVIDENCE.md and docs/plans/D2-D3-WIRING-EVIDENCE.md. Current trace totals: 1 WIRED-AND-WORKS / 49 UNVERIFIED / 264 PENDING / 5 MISSING of 319 hops (docs/trace/controls.json). No VERIFIED without observed command evidence."
 }

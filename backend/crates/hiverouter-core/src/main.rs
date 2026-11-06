@@ -99,7 +99,13 @@ async fn run() -> Result<(), ExitCode> {
         }
     }
 
-    let checks = run_checks();
+    let mut checks = run_checks();
+    if let Some(key_check) = hiverouter_core::checks::provider_key_check(
+        config.provider.enabled,
+        hiverouter_provider::ApiKey::present_in_env(),
+    ) {
+        checks.push(key_check);
+    }
     for check in &checks {
         if check.ok {
             tracing::info!(check = check.name, detail = %check.detail, "environment check passed");

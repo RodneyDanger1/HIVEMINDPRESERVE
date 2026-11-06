@@ -3,7 +3,7 @@ import hashlib, json
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(r"C:\Users\Riley\Desktop\hiverouter-v1")
+ROOT = Path(__file__).resolve().parents[1]
 FC = ROOT / "docs" / "ui" / "figcraft"
 
 def sha(p: Path) -> str:

@@ -1,4 +1,4 @@
-﻿//! Production provider adapter: the one place where the tested DeepSeek client
+//! Production provider adapter: the one place where the tested DeepSeek client
 //! meets the run engine. It never invents output, never logs the key and never
 //! sends a call that failed the per-run budget preflight.
 
@@ -192,6 +192,14 @@ impl ProviderExecutorAdapter {
                 );
                 error.refusal()
             })?;
+        if finish_reason.as_deref() == Some("length") {
+            tracing::warn!(
+                finish_reason = ?finish_reason,
+                run_id = %run_id,
+                "provider truncated the reply at the output-token cap"
+            );
+            return Err(Refusal::ProviderIncomplete);
+        }
         if text.is_empty() {
             tracing::warn!(
                 finish_reason = ?finish_reason,

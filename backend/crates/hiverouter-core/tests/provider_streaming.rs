@@ -253,3 +253,34 @@ async fn cancellation_stops_a_streamed_reply() {
         .expect_err("cancelled reply must not succeed");
     assert_eq!(error, Refusal::ToolCancelled);
 }
+
+#[tokio::test]
+async fn length_finish_reason_is_incomplete_not_success() {
+    let server = MockServer::start().await;
+    let body = sse(
+        &[
+            delta_chunk("partial"),
+            format!(
+                r#"{{"id":"c1","choices":[{{"index":0,"delta":{{}},"finish_reason":"length"}}],"usage":{USAGE_JSON}}}"#
+            ),
+        ],
+        true,
+    );
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(body),
+        )
+        .mount(&server)
+        .await;
+    let adapter = adapter_for(&server);
+    let (sink, fragments) = recording_sink();
+    let error = adapter
+        .execute(RunId::new(), &task(RunId::new()), "truncate this", &CancellationToken::new(), &sink)
+        .await
+        .expect_err("truncated reply must be refused");
+    assert_eq!(error, Refusal::ProviderIncomplete);
+    assert_eq!(*fragments.lock().expect("fragments"), vec!["partial".to_owned()]);
+}

@@ -137,9 +137,46 @@ pub fn run_checks() -> Vec<Check> {
     vec![msrv_check(), node_check()]
 }
 
+/// Optional provider-key presence check. The key value is never read here;
+/// only `present` is supplied by the caller.
+#[must_use]
+pub fn provider_key_check(enabled: bool, present: bool) -> Option<Check> {
+    if !enabled {
+        return None;
+    }
+    Some(if present {
+        Check::pass(
+            "deepseek_api_key",
+            false,
+            "DEEPSEEK_API_KEY is present (value never logged)".to_owned(),
+        )
+    } else {
+        Check::fail(
+            "deepseek_api_key",
+            false,
+            "DEEPSEEK_API_KEY is not set; live prompts will refuse E_KEY_MISSING".to_owned(),
+            "E_KEY_MISSING",
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_key_check_is_optional_and_never_reads_the_value() {
+        assert!(provider_key_check(false, true).is_none());
+        assert!(provider_key_check(false, false).is_none());
+        let present = provider_key_check(true, true).expect("present");
+        assert!(present.ok);
+        assert!(!present.required);
+        assert!(present.code.is_none());
+        let absent = provider_key_check(true, false).expect("absent");
+        assert!(!absent.ok);
+        assert!(!absent.required);
+        assert_eq!(absent.code, Some("E_KEY_MISSING"));
+    }
 
     #[test]
     fn parses_node_version_lines() {
