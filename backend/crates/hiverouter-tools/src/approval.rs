@@ -153,7 +153,8 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
             nonce           TEXT NOT NULL UNIQUE,
             decision        TEXT,
             decided_at      TEXT,
-            reason          TEXT
+            reason          TEXT,
+            executed_at     TEXT
         );
         CREATE INDEX IF NOT EXISTS approvals_run_pending
             ON approvals (run_id, tool_name, args_sha256, decision);
@@ -665,14 +666,48 @@ impl ApprovalGate {
         if session_allowed(conn, run_id, tool, &digest)? {
             return Ok(());
         }
-        Err(ToolError::new(
-            Refusal::ApprovalRequired,
-            format!(
-                "no executed approval grant for tool {} with these arguments; \
-                 the call must be approved first",
-                tool.id()
-            ),
-        ))
+
+        // Single-use AllowOnce grant: exactly one execution may consume it.
+        let allowance: Option<(String, Option<String>)> = conn
+            .query_row(
+                "SELECT approval_id, executed_at FROM approvals
+                 WHERE run_id = ?1 AND tool_name = ?2 AND args_sha256 = ?3
+                   AND decision = 'allow_once'
+                 ORDER BY decided_at ASC LIMIT 1",
+                params![run_id.to_string(), tool.id(), digest],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)),
+            )
+            .optional()?;
+        match allowance {
+            Some((approval_id, None)) => {
+                let executed_at = Timestamp::from_unix_secs(now_unix_secs);
+                let changed = conn.execute(
+                    "UPDATE approvals SET executed_at = ?1
+                     WHERE approval_id = ?2 AND executed_at IS NULL",
+                    params![executed_at.as_str(), approval_id],
+                )?;
+                if changed == 1 {
+                    Ok(())
+                } else {
+                    Err(ToolError::new(
+                        Refusal::ApprovalReplay,
+                        "this single-use approval was already executed; replay is refused",
+                    ))
+                }
+            }
+            Some((_, Some(_))) => Err(ToolError::new(
+                Refusal::ApprovalReplay,
+                "this single-use approval was already executed; replay is refused",
+            )),
+            None => Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                format!(
+                    "no executed approval grant for tool {} with these arguments; \
+                     the call must be approved first",
+                    tool.id()
+                ),
+            )),
+        }
     }
 }
 
@@ -724,10 +759,14 @@ mod tests {
             .expect("allowed");
         assert_eq!(resolution.decision, ApprovalDecision::AllowOnce);
         assert_eq!(resolution.request.approval_id, request.approval_id);
-        // A single-use grant verified immediately after the decision.
+        // A single-use grant is consumable exactly once.
         ApprovalGate::default()
             .verify_grant(&conn, request.run_id, ToolId::FileWrite, &args(), now())
-            .expect("session grant verifies through the same run/tool/args");
+            .expect("single-use grant verifies once");
+        let replay = ApprovalGate::default()
+            .verify_grant(&conn, request.run_id, ToolId::FileWrite, &args(), now())
+            .expect_err("second execution of the same grant is refused");
+        assert_eq!(replay.code(), "E_APPROVAL_REPLAY");
     }
 
     #[test]
@@ -878,7 +917,7 @@ mod tests {
             .expect_err("wrong nonce");
         assert_eq!(error.code(), "E_APPROVAL_REPLAY");
 
-        // Correct nonce + approve â†’ resolved once.
+        // Correct nonce + approve Ã¢â€ â€™ resolved once.
         let resolution = gate
             .resolve_command(
                 &conn,
@@ -967,4 +1006,5 @@ mod tests {
         assert_eq!(error.code(), "E_INTERNAL_ERROR");
     }
 }
+
 

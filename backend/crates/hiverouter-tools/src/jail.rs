@@ -178,13 +178,15 @@ impl WorkspaceJail {
     /// Reads a workspace file.
     ///
     /// # Errors
-    /// [`Refusal::PathOutsideJail`] for escapes; [`Refusal::ToolSchema`] when the
-    /// file exceeds [`MAX_READ_BYTES`]; [`Refusal::InternalError`] for I/O.
+    /// [`Refusal::PathOutsideJail`] for escapes, [`Refusal::PathNotFound`] when
+    /// the file does not exist, [`Refusal::FileTooLarge`] when it exceeds
+    /// [`MAX_READ_BYTES`], [`Refusal::ToolSchema`] for a non-regular file, and
+    /// [`Refusal::InternalError`] for I/O failures.
     pub fn read(&self, requested: &str) -> Result<Vec<u8>, ToolError> {
         let path = self.resolve(requested)?;
         let metadata = fs::metadata(&path).map_err(|error| {
             ToolError::new(
-                Refusal::ToolSchema,
+                Refusal::PathNotFound,
                 format!("cannot read {requested:?}: {error}"),
             )
         })?;
@@ -433,6 +435,7 @@ mod tests {
         assert_eq!(fs::read(path).expect("read back"), b"ok");
     }
 }
+
 
 
 

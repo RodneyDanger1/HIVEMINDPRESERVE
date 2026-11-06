@@ -73,6 +73,7 @@ pub fn init_json_audit(log_dir: impl AsRef<Path>) -> Result<AuditGuard, ToolErro
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     let json_layer = tracing_subscriber::fmt::layer()
         .json()
+        .flatten_event(true)
         .with_ansi(false)
         .with_target(true)
         .with_current_span(true)

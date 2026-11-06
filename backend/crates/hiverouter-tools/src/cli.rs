@@ -368,6 +368,7 @@ pub fn dispatch(argv: &[String]) -> CliOutcome {
         "version" => version_outcome(),
         "preflight" => preflight_outcome(),
         "schema" => schema_outcome(&parsed),
+        _ if parsed.positionals.first().map(String::as_str) == Some("schema") => schema_outcome(&parsed),
         "tools.list" => tools_list_outcome(),
         "tools.describe" => tools_describe_outcome(&parsed),
         "capabilities.census" => census_outcome(),
@@ -615,7 +616,7 @@ fn tools_list_outcome() -> CliOutcome {
 }
 
 fn tools_describe_outcome(parsed: &ParsedArgs) -> CliOutcome {
-    let Some(tool_name) = parsed.positionals.get(1) else {
+    let Some(tool_name) = parsed.positionals.get(2) else {
         return argv_error("tools.describe", "missing <tool_id>");
     };
     let Some(id) = ToolId::from_id(tool_name) else {
@@ -1018,3 +1019,4 @@ mod tests {
         assert_eq!(parsed["ok"], false);
     }
 }
+
