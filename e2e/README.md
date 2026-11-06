@@ -1,14 +1,13 @@
 # e2e — HiveMind v1 Playwright QA harness
 
-**Status: SKELETON — the wired app is still being built.** As measured 2026-11-06 04:15–04:55:
-`web/` has `package.json`, `vite.config.ts` (dev server `127.0.0.1:5173`, strictPort), `node_modules/`
-and a `src/` tree that grew **9 → 41 files** while this harness was written (frontend still active at 04:55).
-No dev server is running, `@playwright/test` is not installed anywhere in this project, and no browser
-spec has been executed. Every browser test therefore skips with `APP_NOT_BUILT`; **nothing here claims a pass.**
-
-The static harness (`tools/qa/verify-harness.mjs`) *does* run now: **27/27 checks pass** on the
-28-surface matrix + 1 supplemental approval control against the frozen `docs/contracts/UI-COMMANDS-v1.md`
-(updated 04:30: 14 frozen commands, 21 events, 45 refusal codes).
+**Status: LIVE — browser tests execute against the running server (`http://127.0.0.1:8799`).**
+Playwright **1.65.0** is installed in `e2e/` (package only, installed Chrome channel — no browser download).
+First full run on the live embedded UI: **75 passed, 2 failed, 14 skipped** (91 tests; run log
+`test-results/run-live-2.log`, HTML report `playwright-report/index.html`, evidence `docs/trace/live/`).
+The 2 failures are app/contract defects, not harness skips: `SETTINGS_STATUS` returns `E_INTERNAL_ERROR` (expected
+ACK + `SETTINGS_STATUS_RESULT`), and the shipped Data/Approval copy still claims contract gaps that were frozen
+(`FILE_TREE_LIST`/`FILE_READ`/`APPROVAL_RESOLVE`). Node-card (S15-S19) and streaming (S27) traces remain
+UNVERIFIED because no paid run was started. The static harness (`tools/qa/verify-harness.mjs`) still passes 27/27.
 
 ## Hard rules
 

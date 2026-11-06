@@ -103,8 +103,9 @@ try {
       check('controls.json covers every matrix control', doc.controls?.length === surfaces.length, `got ${doc.controls?.length} vs ${surfaces.length}`);
       const seeded = (doc.controls ?? []).every((c) => Object.keys(c.hops ?? {}).length === 11);
       check('controls.json each control has 11 hop slots', seeded, 'hop keys');
-      const pending = (doc.controls ?? []).every((c) => Object.values(c.hops ?? {}).every((h) => h.verdict === 'PENDING'));
-      check('controls.json verdicts start PENDING (no fake pass)', pending, 'verdict scan');
+      const hopEntries = (doc.controls ?? []).flatMap((c) => Object.values(c.hops ?? {}));
+      const unsupported = hopEntries.filter((h) => h.verdict !== 'PENDING' && (!Array.isArray(h.evidence) || h.evidence.length === 0));
+      check('controls.json verdicts are PENDING or evidence-backed (no fake pass)', unsupported.length === 0, `${unsupported.length} unsupported verdicts`);
     }
     if (file === 'traces.json') check('traces.json has no fabricated runs', Array.isArray(doc.traces), 'traces[]');
     if (file === 'events.json') check('events.json has no fabricated deliveries', Array.isArray(doc.delivered) && doc.delivered.length === 0, 'delivered[] empty until captured');

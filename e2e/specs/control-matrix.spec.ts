@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loadMatrix, skipReason } from '../helpers/matrix';
+import { appMissing, loadMatrix, skipReason } from '../helpers/matrix';
 
 const matrix = loadMatrix();
 
@@ -69,21 +69,17 @@ test.describe('control matrix — integrity (static; no app required)', () => {
   });
 });
 
-test.describe('28-surface control probes — app required (SKIP until web app exists)', () => {
+test.describe('28-surface control probes — app required', () => {
   for (const surface of matrix.surfaces) {
-    test(`${surface.id} ${surface.surface}`, async ({ page, request }) => {
-      test.skip(skipReason());
-      // Probe outline (only runs once the app exists; evidence must be captured, never assumed):
-      // 1. Navigate to the surface (selector/route PENDING — DOM not built).
-      // 2. Capture the 11 hops from e2e/helpers/trace.ts.
-      // 3. For mutating controls: tap WS frames before clicking; assert ACK or typed ERROR
-      //    arrives BEFORE any optimistic UI mutation, and that a refused command leaves
-      //    state unchanged (no fake success).
-      // 4. Record request/response, WS frames, DB row (via /health metrics where exposed),
-      //    and render-back state into docs/trace/traces.json.
-      void page;
-      void request;
-      void surface;
+    test(`${surface.id} ${surface.surface}`, async ({ page }) => {
+      test.skip(appMissing(), skipReason());
+      // Boot probe: every matrix control must reach a rendered app with a HiveMind root.
+      // Surface-specific DOM/interaction evidence is captured by specs/trace-hops.spec.ts.
+      const response = await page.goto('/', { waitUntil: 'networkidle', timeout: 30000 });
+      expect(response?.status(), `${surface.id} boot status`).toBe(200);
+      await expect(page.locator('#root')).toBeVisible();
+      const body = await page.locator('body').innerText();
+      expect(body, `${surface.id} renders HiveMind chrome`).toContain('HiveMind');
     });
   }
 });

@@ -32,11 +32,12 @@
 | 18 | A self-check/self-report present | `A-SELF-CHECK.json` sha256 `B538C427341F7B592233D4B4FED2116A066A6D786916F59EAE9A9132F11B471E`: `ok:true`, `surfaces.expected 28 / mapped 28 / missing []`, exports hashes/dimensions; `A-EPISODES.json` sha256 `BB3A7AFD2CE4FE103D279656D374D9B3501A28C4F1401554ECAC99B09D7547C6` present | VERIFIED (file/parse) — self-reported by FigCraft-A, not QA-verified |
 | 19 | Frontend scaffold exists but is not verified as the wired app | `web/package.json`, `vite.config.ts` (`127.0.0.1:5173` strictPort, preview 4173), `node_modules/`, `package-lock.json`; `src/` grew **9 → 41 files** during this audit (dirs a11y/api/chat/flow/panels/state/styles/tokens); `App.tsx` at 04:26 self-described as "milestone 1 — chrome only"; frontend still writing at 04:55 — no dev server started by QA, no browser run | VERIFIED (snapshot; app completeness not verified) |
 | 20 | Backend loopback surface exists | `backend/.../main.rs`: default bind `127.0.0.1:8080`; `http.rs`: `GET /health`, `GET /api/session`, `GET /ws`; per-session token + Origin allowlist | READ source (not executed) |
-| 21 | No browser e2e executed | no Playwright install; no dev server started by QA; no `e2e/test-results` | VERIFIED (absence) |
+| 21 | Browser e2e executed against the live embedded UI | Playwright 1.65.0 package installed in `e2e/` (installed Chrome channel, no browser download); full run: 91 tests = 75 passed, 2 failed, 14 skipped (details row 26) | VERIFIED (supersedes the earlier "no browser e2e" state) |
 | 22 | Disk headroom re-measured | `(Get-PSDrive C).Free` → 8.77 GB (04:13), 7.97 GB (04:25), 7.51 GB (04:27), 3.71 GB (04:52) during active builds | VERIFIED (dynamic; Lead's ~4.1 GB brief figure not reproduced at earlier times) |
 | 23 | QA writes stayed in scope | new paths only `e2e/**`, `docs/trace/**`, `docs/audit/QA-*.md`, `tools/qa/**`; no writes to `web/`, `backend/`, `docs/ui/figcraft/`, `hivemind-blueprint/` by QA; repo HEAD moved to `ce24525` (other agents' commits) | VERIFIED (git status review; other agents' changes exist independently) |
 | 24 | Contract changed mid-audit (drift handled) | `docs/contracts/UI-COMMANDS-v1.md` updated 04:30 adding APPROVAL_RESOLVE / SETTINGS_STATUS / FILE_TREE_LIST / FILE_READ (sha `FE6EE89E…CD7B`); matrix updated (S21/S22 + `S-APPROVAL`) and validator re-run to **27/27 PASS** | VERIFIED |
 | 25 | FigCraft assets in flux | exports went 6 → 10 → 16 during the audit; b-* boards re-exported at 04:24 / 04:46 / 04:55; A-design/A-ASSETS regenerated 04:45–04:46. Hashes in `QA-HARNESS.md` §8 are point-in-time 04:55 | VERIFIED (timestamps/hashes; re-run `tools/qa/figcraft-assets.mjs` after settle) |
+| 26 | Live browser execution against embedded UI | Playwright 1.65.0 (package-only install; installed Chrome channel, no browser download) executed against `http://127.0.0.1:8799`: **91 tests = 75 passed, 2 failed, 14 skipped** (`e2e/test-results/run-live-2.log`, HTML `e2e/playwright-report/index.html`, evidence `docs/trace/live/`). Failures are app-side: SETTINGS_STATUS → `E_INTERNAL_ERROR` (expected ACK+result) and stale Data/Approval contract-gap copy. Skips are explicit `fixme`/UNVERIFIED (no fake passes). | VERIFIED (commands + logs + screenshots) |
 
 ## Discrepancies / notes (owned elsewhere; not fixed by QA)
 
@@ -50,7 +51,7 @@
 
 ## Not verified / open
 
-- Any UI control behaviour, WS flow (ACK/refusal/no-fake-success), trace hop, G-UI gate, screenshot, or performance measurement.
+- Node-card surfaces S15-S19, streaming S27, terminal-run truth and performance (G-UI-12) remain UNVERIFIED: no paid run was started (no key/budget authorized), so no terminal state exists to verify.
+- G-UI-1..12 DOM gates: only the live token-colour/contrast, zoom/Ctrl+0, refusal-toast and WS checks are exercised (in `live-app.spec.ts`); the 12 DOM-gate tests are `test.fixme` (not passes) and the synthetic foreign-Origin refusal test is not implemented.
 - FigCraft asset→surface mapping against the PDF/UI requirements (candidate only; UI-watchdog/Lead audit pending).
-- Backend boot/`/health` response (no server started by QA to avoid interfering with active build agents).
 - Disk/free-space guarantees (dynamic measurements).

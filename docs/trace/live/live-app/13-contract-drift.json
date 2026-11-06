@@ -1,0 +1,11 @@
+{
+  "dataPanelText": "WORKSPACE\nSWARM\nROUTING\nHISTORY\n—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS\nPROJECT\nHiveMind AI · You\nCONNECTED\nData\nSOMETHING WENT WRONG\n\nThe v1 server exposes no workspace-file API yet; the file tree is a named gap (Phase 6 tool plane), not a fake tree.\n\nThe v1 server exposes no workspace-file API yet; the file tree is a named gap (Phase 6 tool plane), not a fake tree.",
+  "staleDataClaim": true,
+  "staleApprovalClaim": true,
+  "frozenContractHas": {
+    "FILE_TREE_LIST": true,
+    "FILE_READ": true,
+    "APPROVAL_RESOLVE": true,
+    "SETTINGS_STATUS": true
+  }
+}

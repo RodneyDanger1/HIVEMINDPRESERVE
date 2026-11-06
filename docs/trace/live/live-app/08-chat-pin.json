@@ -1,0 +1,14 @@
+{
+  "before": "true",
+  "command": {
+    "name": "CHAT_PIN",
+    "id": "01a1b124-a4f9-7723-b221-476a95df5d81",
+    "correlation_id": "01a1b124-a4f8-7c91-8da8-7fcf8ef85921"
+  },
+  "ack": {
+    "name": "ACK",
+    "correlation_id": "01a1b124-a4f8-7c91-8da8-7fcf8ef85921"
+  },
+  "ackMatchesCommandCorrelation": true,
+  "after": "false"
+}

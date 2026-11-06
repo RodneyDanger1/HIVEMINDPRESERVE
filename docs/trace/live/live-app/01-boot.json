@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "title": "HiveMind — Spatial Execution Environment",
+  "skipLink": {
+    "text": "Skip to canvas",
+    "href": "#hive-canvas"
+  },
+  "screenshot": "docs/trace/live/live-app/boot.png",
+  "bodyTextLen": 1022
+}

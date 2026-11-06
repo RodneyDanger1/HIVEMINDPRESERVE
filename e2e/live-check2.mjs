@@ -1,0 +1,11 @@
+﻿import { chromium } from '@playwright/test';
+const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const page = await browser.newPage();
+const bad = [];
+page.on('response', r => { if (r.status() >= 400) bad.push({ url: r.url(), status: r.status() }); });
+const errors = [];
+page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+await page.goto('http://127.0.0.1:8799/', { waitUntil: 'networkidle', timeout: 30000 });
+const canvasId = await page.locator('#hive-canvas').count();
+console.log(JSON.stringify({ bad, errors, canvasId, skipHref: await page.locator('a.skip-link').getAttribute('href'), title: await page.title() }, null, 2));
+await browser.close();

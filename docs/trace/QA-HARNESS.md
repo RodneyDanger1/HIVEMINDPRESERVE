@@ -1,8 +1,12 @@
 # QA HARNESS — HiveMind v1 (QA / trace engineer)
 
-**Status: HARNESS BUILT + STATIC CHECKS RUNNING; BROWSER EXECUTION BLOCKED (wired UI not delivered).**
-No pass is claimed for any UI control. Every browser spec skips with `APP_NOT_BUILT` until the wired app
-boots; the static harness (27/27 checks) validates the 28-surface matrix against the frozen contract.
+**Status: HARNESS LIVE AGAINST THE SERVER (updated 2026-11-06 08:0x).**
+Playwright **1.65.0** is installed in `e2e/` (package only; installed Chrome channel — no browser download).
+The embedded UI at `http://127.0.0.1:8799` is exercised for real: first full run = **75 passed, 2 failed, 14 skipped**
+(91 tests, run log `e2e/test-results/run-live-2.log`, HTML report `e2e/playwright-report/index.html`).
+The 2 failures are app/contract defects (SETTINGS_STATUS `E_INTERNAL_ERROR`; stale Data/Approval copy), not harness
+skips. Live evidence lives in `docs/trace/live/` (see `docs/trace/live/README.md`); static harness still 27/27.
+Every skipped/fixme test is explicitly **not** a pass; node-card and streaming surfaces stay UNVERIFIED (no run).
 
 ## 1. Role & scope
 

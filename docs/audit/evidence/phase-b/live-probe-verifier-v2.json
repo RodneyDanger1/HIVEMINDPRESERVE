@@ -1,0 +1,176 @@
+{
+  "generated_at": "2026-11-06T13:47:29.844Z",
+  "base": "http://127.0.0.1:8799",
+  "browser": "chrome 156.0.8078.75",
+  "page": {
+    "status": 200,
+    "title": "HiveMind — Spatial Execution Environment",
+    "root": 1,
+    "buttons": 26,
+    "navItems": 6,
+    "tabs": 4,
+    "canvasAria": 1,
+    "chatCoreAria": 2,
+    "minimapTestid": 1,
+    "hudText": "—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS",
+    "scrubberDisabled": true
+  },
+  "network": {
+    "failedResponses": [],
+    "cdp4xx5xx": [],
+    "requestFailures": []
+  },
+  "console": [],
+  "ws": {
+    "session": {
+      "schema": "hiverouter.v1",
+      "token_present": true,
+      "ws": "/ws",
+      "last_seq": 5
+    },
+    "hello": {
+      "schema": "hiverouter.v1",
+      "name": "SERVER_HELLO",
+      "payload": {
+        "last_seq": 5,
+        "schema": "hiverouter.v1"
+      }
+    },
+    "roundtrips": [
+      {
+        "command": "SETTINGS_STATUS",
+        "sent": {
+          "name": "SETTINGS_STATUS",
+          "correlation_id": "39f85b21-0a28-40a1-a600-deacfab7fc4c",
+          "payload": {}
+        },
+        "frames": [
+          {
+            "type": "EVENT",
+            "name": "ERROR",
+            "code": "E_INTERNAL_ERROR",
+            "payload": {
+              "code": "E_INTERNAL_ERROR",
+              "message": "An internal invariant failed; the request was refused rather than faked.",
+              "how_to_fix": "Check the server log for the refusal context and retry after fixing the invariant.",
+              "retryable": true
+            }
+          }
+        ]
+      },
+      {
+        "command": "FILE_TREE_LIST",
+        "sent": {
+          "name": "FILE_TREE_LIST",
+          "correlation_id": "9c90cf9e-5d22-4bf3-b4f6-8a7b2928d124",
+          "payload": {}
+        },
+        "frames": [
+          {
+            "type": "EVENT",
+            "name": "ERROR",
+            "code": "E_INTERNAL_ERROR",
+            "payload": {
+              "code": "E_INTERNAL_ERROR",
+              "message": "An internal invariant failed; the request was refused rather than faked.",
+              "how_to_fix": "Check the server log for the refusal context and retry after fixing the invariant.",
+              "retryable": true
+            }
+          }
+        ]
+      },
+      {
+        "command": "SUBMIT_PROMPT",
+        "sent": {
+          "name": "SUBMIT_PROMPT",
+          "correlation_id": "7ae3d296-4c31-4570-ab84-bf147ae9af85",
+          "payload": {
+            "text": "",
+            "project_id": "p1"
+          }
+        },
+        "frames": [
+          {
+            "type": "EVENT",
+            "name": "ERROR",
+            "code": "E_PROMPT_EMPTY",
+            "payload": {
+              "code": "E_PROMPT_EMPTY",
+              "message": "The submitted prompt text is empty.",
+              "how_to_fix": "Type a prompt of 1..8000 characters.",
+              "retryable": false
+            }
+          }
+        ]
+      },
+      {
+        "command": "SUBMIT_PROMPT",
+        "sent": {
+          "name": "SUBMIT_PROMPT",
+          "correlation_id": "ec14a553-e003-493c-aaf1-272a5f933693",
+          "payload": {
+            "text": "verifier live probe: one tiny run",
+            "project_id": "p1"
+          }
+        },
+        "frames": [
+          {
+            "type": "EVENT",
+            "name": "RUN_CREATED",
+            "code": null,
+            "payload": {
+              "run_id": "01a1b11d-90f3-73b3-bca9-616a21cd2e54",
+              "status": "queued"
+            }
+          },
+          {
+            "type": "EVENT",
+            "name": "ACK",
+            "code": null,
+            "payload": {
+              "command": "SUBMIT_PROMPT",
+              "correlation_id": "ec14a553-e003-493c-aaf1-272a5f933693"
+            }
+          },
+          {
+            "type": "EVENT",
+            "name": "RUN_STATUS",
+            "code": null,
+            "payload": {
+              "run_id": "01a1b11d-90f3-73b3-bca9-616a21cd2e54",
+              "status": "failed",
+              "error_code": "E_KEY_MISSING"
+            }
+          }
+        ]
+      },
+      {
+        "command": "SPAWN_SUB_HIVE",
+        "sent": {
+          "name": "SPAWN_SUB_HIVE",
+          "correlation_id": "a32d6a7a-128f-44e9-912a-213e54236a05",
+          "payload": {
+            "parent_task_id": "00000000-0000-7000-8000-000000000001",
+            "role": "worker"
+          }
+        },
+        "frames": [
+          {
+            "type": "EVENT",
+            "name": "ERROR",
+            "code": "E_TASK_NOT_FOUND",
+            "payload": {
+              "code": "E_TASK_NOT_FOUND",
+              "message": "The referenced task does not exist in this run.",
+              "how_to_fix": "Check the task id returned by NODE_SPAWN.",
+              "retryable": false
+            }
+          }
+        ]
+      }
+    ],
+    "totalFrames": 13,
+    "errors": []
+  },
+  "ok": true
+}

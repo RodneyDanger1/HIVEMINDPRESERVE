@@ -2,3 +2,9 @@
 2026-11-06T13:27:20.638454Z  INFO environment check passed check="node" detail=v26.7.0 (>= 22.12.0)
 hiverouter 0.1.0 listening on http://127.0.0.1:8799 (db C:\Users\Riley\Desktop\hiverouter-v1\runtime-test\data4\hiverouter.db, schema v3, contract hiverouter.v1)
 2026-11-06T13:27:20.643927Z  INFO server booted address=127.0.0.1:8799 db=C:\Users\Riley\Desktop\hiverouter-v1\runtime-test\data4\hiverouter.db schema_version=3
+2026-11-06T13:38:50.899058Z  WARN no handler registered yet for this command (Phase 6) command="SETTINGS_STATUS"
+2026-11-06T13:38:50.900336Z  WARN no handler registered yet for this command (Phase 6) command="SETTINGS_STATUS"
+2026-11-06T13:39:13.289919Z  WARN no handler registered yet for this command (Phase 6) command="SETTINGS_STATUS"
+2026-11-06T13:39:13.294530Z  WARN no handler registered yet for this command (Phase 6) command="SETTINGS_STATUS"
+2026-11-06T13:42:45.132837Z  WARN no handler registered yet for this command (Phase 6) command="SETTINGS_STATUS"
+2026-11-06T13:42:50.136566Z  WARN no handler registered yet for this command (Phase 6) command="FILE_TREE_LIST"

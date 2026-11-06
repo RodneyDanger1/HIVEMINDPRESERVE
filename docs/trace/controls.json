@@ -4,7 +4,15 @@
     "source": "e2e/data/control-matrix.json",
     "status": "PENDING_APP_NOT_BUILT",
     "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
-    "generated_at": "2026-11-06T10:56:04.256Z"
+    "generated_at": "2026-11-06T10:56:04.256Z",
+    "live_capture": {
+      "source": "docs/trace/live/trace-capture.json",
+      "generated_at": "2026-11-06T13:57:03.882Z",
+      "base_url": "http://127.0.0.1:8799",
+      "controls_touched": 28,
+      "hops_evidence_backed": 45,
+      "rule": "Only hops with captured DOM/interaction/frame evidence are WIRED-AND-WORKS; all others UNVERIFIED. No fabricated pass."
+    }
   },
   "controls": [
     {
@@ -14,11 +22,17 @@
       "command": null,
       "owner": "Phase 7 (P3/P25); Phase 8 (MP-18)",
       "acceptance": "e2e: pan/zoom bounds + Ctrl+0",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S01",
+              "quote": "selector [role=\"application\"][aria-label=\"HiveMind spatial canvas\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -60,7 +74,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector [role=\"application\"][aria-label=\"HiveMind spatial canvas\"] count=1"
     },
     {
       "surface_id": "S02",
@@ -69,11 +84,17 @@
       "command": "CHAT_PIN",
       "owner": "Phase 10 (UI-ADD-16) + Phase 4 MP-09",
       "acceptance": "pinned core stays centred through pan/zoom; messages persist",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S02",
+              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1; chat visible=true"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -115,7 +136,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1; chat visible=true"
     },
     {
       "surface_id": "S03",
@@ -124,15 +146,27 @@
       "command": "SUBMIT_PROMPT",
       "owner": "Phase 10 (UI-ADD-16); Phase 4 MP-09; Phase 1 UI-ADD-14",
       "acceptance": "empty text -> E_PROMPT_EMPTY; valid -> run row + streamed reply",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S03",
+              "quote": "composer present; submit disabled on empty=true"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S03",
+              "quote": "composer present; submit disabled on empty=true"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -170,7 +204,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "composer present; submit disabled on empty=true | Valid SUBMIT_PROMPT not sent (would start a provider run; no paid API). Empty-prompt refusal proven in live-app.spec.ts 09."
     },
     {
       "surface_id": "S04",
@@ -179,11 +214,17 @@
       "command": "SPAWN_SUB_HIVE",
       "owner": "Phase 4 MP-08; Phase 2 command bus; Phase 1 UI-ADD-14",
       "acceptance": "depth/fan-out over cap -> E_SPAWN_DEPTH / E_FANOUT_LIMIT; ACK before render",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S04",
+              "quote": "control present=true disabled(no run)=true title=No active run"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -225,7 +266,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "control present=true disabled(no run)=true title=No active run | Mutating control disabled without an active run (correct no-fake-success gating); not clicked."
     },
     {
       "surface_id": "S05",
@@ -234,11 +276,17 @@
       "command": "REWIRE_TASK",
       "owner": "Phase 2 (P2.2/EXT-R3-01); Phase 10; Phase 1 UI-ADD-14",
       "acceptance": "cycle -> E_CYCLE; streaming worker -> E_REWIRE_IN_FLIGHT (refusal toast)",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S05",
+              "quote": "control present=true disabled(no run)=true title=Select a running worker first"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -280,7 +328,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "control present=true disabled(no run)=true title=Select a running worker first | Mutating control disabled without an active run (correct no-fake-success gating); not clicked."
     },
     {
       "surface_id": "S06",
@@ -289,11 +338,17 @@
       "command": "CANCEL_RUN",
       "owner": "Phase 4 MP-09/EXT-R3-03; Phase 10; Phase 1 UI-ADD-14",
       "acceptance": "run -> Cancelled; partial state preserved; no further provider calls",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S06",
+              "quote": "control present=true disabled(no run)=true title=null"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -335,7 +390,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "control present=true disabled(no run)=true title=null | Mutating control disabled without an active run (correct no-fake-success gating); not clicked."
     },
     {
       "surface_id": "S07",
@@ -344,11 +400,17 @@
       "command": "KILL_WORKER",
       "owner": "Phase 6 MP-06/EXT-R1-03; Phase 10; Phase 1 UI-ADD-14",
       "acceptance": "child+grandchild gone; Cancelled/Killed state broadcast; ledger row",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S07",
+              "quote": "control present=true disabled(no run)=true title=null"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -390,7 +452,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "control present=true disabled(no run)=true title=null | Mutating control disabled without an active run (correct no-fake-success gating); not clicked."
     },
     {
       "surface_id": "S08",
@@ -399,15 +462,27 @@
       "command": null,
       "owner": "Phase 10 UI-ADD-05 (owner conflict R-U11)",
       "acceptance": "one owner rule; deep-link state",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S08",
+              "quote": "4 tabs present; click render-back aria-selected=true"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S08",
+              "quote": "4 tabs present; click render-back aria-selected=true"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -438,14 +513,21 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S08",
+              "quote": "4 tabs present; click render-back aria-selected=true"
+            }
+          ]
         },
         "11_reentry": {
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "4 tabs present; click render-back aria-selected=true"
     },
     {
       "surface_id": "S09",
@@ -454,11 +536,17 @@
       "command": null,
       "owner": "Phase 10 MP-15",
       "acceptance": "changing graph changes numbers; delta window labelled",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S09",
+              "quote": "selector [role=\"status\"][aria-label=\"Swarm throughput\"] count=1 text=—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -500,7 +588,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector [role=\"status\"][aria-label=\"Swarm throughput\"] count=1 text=—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS"
     },
     {
       "surface_id": "S10",
@@ -509,11 +598,17 @@
       "command": "HISTORY_REVISION_SET",
       "owner": "Phase 9 MP-14; Phase 10",
       "acceptance": "scrubber replays a real revision; no write-only store",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S10",
+              "quote": "selector input#scrubber count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -555,7 +650,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector input#scrubber count=1 | disabled(no history)=true"
     },
     {
       "surface_id": "S11",
@@ -564,15 +660,27 @@
       "command": null,
       "owner": "Phase 10 MP-17",
       "acceptance": "all six destinations exist; Settings shows key status/refusal",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S11",
+              "quote": "nav buttons=6; Agents aria-current=page"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S11",
+              "quote": "nav buttons=6; Agents aria-current=page"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -603,14 +711,21 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S11",
+              "quote": "nav buttons=6; Agents aria-current=page"
+            }
+          ]
         },
         "11_reentry": {
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "nav buttons=6; Agents aria-current=page"
     },
     {
       "surface_id": "S12",
@@ -619,11 +734,17 @@
       "command": "TEMPLATE_INSERT",
       "owner": "Phase 10 MP-17 + EXT-R2-02/03",
       "acceptance": "templates resolve from manifest; licence row present",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S12",
+              "quote": "selector aside[aria-label=\"Library panel\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -665,7 +786,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector aside[aria-label=\"Library panel\"] count=1"
     },
     {
       "surface_id": "S13",
@@ -674,11 +796,17 @@
       "command": null,
       "owner": "Phase 7 (P65; @xyflow MiniMap)",
       "acceptance": "minimap reflects viewport; single minimap owner",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S13",
+              "quote": "selector [data-testid=\"rf__minimap\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -720,7 +848,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector [data-testid=\"rf__minimap\"] count=1 | minimap accessible name nodes=0 (MiniMap ariaLabel from STRINGS.minimap.aria)"
     },
     {
       "surface_id": "S14",
@@ -729,11 +858,17 @@
       "command": null,
       "owner": "Phase 1 MP-07; Phase 10 UI-ADD-04",
       "acceptance": "refusal shows code+how_to_fix; dismissed state; no fake success",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S14",
+              "quote": "selector [aria-label=\"Refusals and errors\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -775,7 +910,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector [aria-label=\"Refusals and errors\"] count=1 | Toast region is empty until a refusal is raised; empty-prompt refusal proven in live-app.spec.ts 09."
     },
     {
       "surface_id": "S15",
@@ -787,8 +923,14 @@
       "status": "PENDING_APP_NOT_BUILT",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S15",
+              "quote": "react-flow nodes=0; no run was executed in this capture"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -830,7 +972,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "react-flow nodes=0; no run was executed in this capture"
     },
     {
       "surface_id": "S16",
@@ -842,8 +985,14 @@
       "status": "PENDING_APP_NOT_BUILT",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S16",
+              "quote": "react-flow nodes=0; no run was executed in this capture"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -885,7 +1034,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "react-flow nodes=0; no run was executed in this capture"
     },
     {
       "surface_id": "S17",
@@ -897,8 +1047,14 @@
       "status": "PENDING_APP_NOT_BUILT",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S17",
+              "quote": "react-flow nodes=0; no run was executed in this capture"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -940,7 +1096,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "react-flow nodes=0; no run was executed in this capture"
     },
     {
       "surface_id": "S18",
@@ -952,8 +1109,14 @@
       "status": "PENDING_APP_NOT_BUILT",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S18",
+              "quote": "react-flow nodes=0; no run was executed in this capture"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -995,7 +1158,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "react-flow nodes=0; no run was executed in this capture"
     },
     {
       "surface_id": "S19",
@@ -1007,8 +1171,14 @@
       "status": "PENDING_APP_NOT_BUILT",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S19",
+              "quote": "react-flow nodes=0; no run was executed in this capture"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1050,7 +1220,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "react-flow nodes=0; no run was executed in this capture"
     },
     {
       "surface_id": "S20",
@@ -1059,15 +1230,27 @@
       "command": "VIEWPORT_SET",
       "owner": "Phase 8 MP-18",
       "acceptance": "Ctrl+0 Windows; bounds; button disabled states",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S20",
+              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S20",
+              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -1098,14 +1281,21 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S20",
+              "quote": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
+            }
+          ]
         },
         "11_reentry": {
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "zoom controls present; transforms matrix(1, 0, 0, 1, 0, 0) -> matrix(1.2, 0, 0, 1.2, -94.8, -53.9) -> matrix(1.2, 0, 0, 1.2, 474, 269.5)"
     },
     {
       "surface_id": "S21",
@@ -1114,27 +1304,57 @@
       "command": "SETTINGS_STATUS",
       "owner": "Phase 10 MP-17; Phase 5",
       "acceptance": "key_present bool from SETTINGS_STATUS_RESULT (never the key); no key -> named refusal from composer; never fake run",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "3_client_call": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "4_request": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "5_route": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "6_service": {
           "verdict": "PENDING",
@@ -1149,8 +1369,14 @@
           "evidence": []
         },
         "9_response": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-BUT-DEAD",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S21",
+              "quote": "settings panel rendered; \"Provider key status\" present=true"
+            }
+          ]
         },
         "10_render_back": {
           "verdict": "PENDING",
@@ -1160,7 +1386,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "settings panel rendered; \"Provider key status\" present=true | SETTINGS_STATUS sent twice but server answered E_INTERNAL_ERROR (proven in live-app.spec.ts 12); client call/route exist, response is wrong."
     },
     {
       "surface_id": "S22",
@@ -1169,15 +1396,27 @@
       "command": "FILE_TREE_LIST",
       "owner": "Phase 10 MP-17; Phase 6 jail",
       "acceptance": "tree from workspace; traversal outside root refused E_PATH_OUTSIDE_JAIL; file >1 MiB refused",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S22",
+              "quote": "Data panel rendered; named-gap copy present=true"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S22",
+              "quote": "Data panel rendered; named-gap copy present=true"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -1188,12 +1427,24 @@
           "evidence": []
         },
         "5_route": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S22",
+              "quote": "Data panel rendered; named-gap copy present=true"
+            }
+          ]
         },
         "6_service": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "MISSING",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S22",
+              "quote": "Data panel rendered; named-gap copy present=true"
+            }
+          ]
         },
         "7_store": {
           "verdict": "PENDING",
@@ -1215,7 +1466,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "Data panel rendered; named-gap copy present=true | FILE_TREE_LIST/FILE_READ are frozen in the contract but the UI/server exposes no file API; panel shows a named gap (honest, not fake)."
     },
     {
       "surface_id": "S23",
@@ -1224,11 +1476,17 @@
       "command": null,
       "owner": "Phase 7 (design system); Phase 10 UI-ADD-05",
       "acceptance": "asset set present; min-size rules enforced",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S23",
+              "quote": "selector nav[aria-label=\"Primary navigation\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1270,7 +1528,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector nav[aria-label=\"Primary navigation\"] count=1 | brand glyph is inline HM text; FigCraft A brand assets verified separately by the asset inventory."
     },
     {
       "surface_id": "S24",
@@ -1279,11 +1538,17 @@
       "command": null,
       "owner": "Phase 7 UI-ADD-05",
       "acceptance": "per-tier shadow spec decided or UNVERIFIED",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S24",
+              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1325,7 +1590,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | computed box-shadow=rgba(40, 32, 16, 0.13) 0px 12px 34px 0px"
     },
     {
       "surface_id": "S25",
@@ -1334,15 +1600,27 @@
       "command": null,
       "owner": "Phase 6 MP-05; Phase 10 UI-ADD-06",
       "acceptance": "decision-gated; diff renders real Phase-6 patch; denial leaves bytes unchanged",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S25",
+              "quote": "decision-gated modal text present=true"
+            }
+          ]
         },
         "2_handler": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S25",
+              "quote": "decision-gated modal text present=true"
+            }
+          ]
         },
         "3_client_call": {
           "verdict": "PENDING",
@@ -1373,14 +1651,21 @@
           "evidence": []
         },
         "10_render_back": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S25",
+              "quote": "decision-gated modal text present=true"
+            }
+          ]
         },
         "11_reentry": {
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "decision-gated modal text present=true"
     },
     {
       "surface_id": "S26",
@@ -1389,11 +1674,17 @@
       "command": null,
       "owner": "Phase 10 UI-ADD-04",
       "acceptance": "each state has copy + action; no blank success",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S26",
+              "quote": "{\"agentsEmpty\":1,\"scrubberEmpty\":1,\"hudNoMetrics\":1}"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1435,7 +1726,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "{\"agentsEmpty\":1,\"scrubberEmpty\":1,\"hudNoMetrics\":1} | Only empty/no-metrics states observed; loading/error/replay/missing-key states were not forced in this capture."
     },
     {
       "surface_id": "S27",
@@ -1444,11 +1736,17 @@
       "command": null,
       "owner": "Phase 4 MP-09; Phase 2 MP-13; Phase 10",
       "acceptance": "stream renders progressively; terminal event clears thinking",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S27",
+              "quote": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1490,7 +1788,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "selector section[aria-label=\"HyperAgent hive chat core\"] count=1 | Streaming reply requires a run; not exercised (no paid API). UNVERIFIED."
     },
     {
       "surface_id": "S28",
@@ -1499,11 +1798,17 @@
       "command": null,
       "owner": "Phase 4 MP-09; Phase 10 UI-ADD-11",
       "acceptance": "identity from state, not hardcoded",
-      "status": "PENDING_APP_NOT_BUILT",
+      "status": "PARTIALLY_VERIFIED",
       "hops": {
         "1_render": {
-          "verdict": "PENDING",
-          "evidence": []
+          "verdict": "WIRED-AND-WORKS",
+          "evidence": [
+            {
+              "kind": "dom",
+              "pointer": "docs/trace/live/trace-capture.json#S28",
+              "quote": "project identity rendered from state=true"
+            }
+          ]
         },
         "2_handler": {
           "verdict": "PENDING",
@@ -1545,7 +1850,8 @@
           "verdict": "PENDING",
           "evidence": []
         }
-      }
+      },
+      "notes": "project identity rendered from state=true"
     },
     {
       "surface_id": "S-APPROVAL",

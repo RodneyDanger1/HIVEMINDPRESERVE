@@ -1,0 +1,436 @@
+{
+  "generated_at": "2026-11-06T13:37:42.398Z",
+  "base": "http://127.0.0.1:8799",
+  "status": 200,
+  "session": {
+    "token_present": true,
+    "schema": "hiverouter.v1",
+    "last_seq": 0,
+    "ws": "/ws"
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "pageErrors": [],
+  "badResponses": [],
+  "websockets": [
+    {
+      "url": "ws://127.0.0.1:8799/ws?token=01a1b10a-d93f-7778-8e94-227cedade0b7&last_seq=0",
+      "token_in_url": true,
+      "sent_count": 1,
+      "received_count": 1,
+      "sent_first": [
+        "{\"type\":\"hello\",\"last_seq\":0}"
+      ],
+      "received_first": [
+        "{\"schema\":\"hiverouter.v1\",\"type\":\"EVENT\",\"name\":\"SERVER_HELLO\",\"id\":\"01a1b114-4d10-774f-8160-ee914e04628e\",\"correlation_id\":\"01a1b114-4d10-774f-8160-ee914e04628e\",\"run_id\":null,\"task_id\":null,\"seq\":null,\"ts\":\"2026-11-06T"
+      ]
+    }
+  ],
+  "info": {
+    "title": "HiveMind — Spatial Execution Environment",
+    "root": true,
+    "bodyTextLen": 1022,
+    "skipLink": {
+      "text": "Skip to canvas",
+      "href": "#hive-canvas"
+    },
+    "nav": {
+      "label": "NAV",
+      "items": [
+        {
+          "text": "Workspace",
+          "current": "page",
+          "testid": null
+        },
+        {
+          "text": "Agents",
+          "current": null,
+          "testid": null
+        },
+        {
+          "text": "Data",
+          "current": null,
+          "testid": null
+        },
+        {
+          "text": "Models",
+          "current": null,
+          "testid": null
+        },
+        {
+          "text": "Routing",
+          "current": null,
+          "testid": null
+        },
+        {
+          "text": "Settings",
+          "current": null,
+          "testid": null
+        }
+      ]
+    },
+    "tabs": {
+      "label": "DIV",
+      "items": [
+        {
+          "text": "Workspace",
+          "selected": "true",
+          "testid": null
+        },
+        {
+          "text": "Swarm",
+          "selected": "false",
+          "testid": null
+        },
+        {
+          "text": "Routing",
+          "selected": "false",
+          "testid": null
+        },
+        {
+          "text": "History",
+          "selected": "false",
+          "testid": null
+        }
+      ]
+    },
+    "chat": {
+      "core": true,
+      "text": "Hive AI AssistantPinned to hive centre · ConnectedUnpin chatCloseDrop a repository into the core hive and the HyperAgent maps its architecture before a single worker spawns.Type your prompt...Submit promptEnter submits · Shift+Enter newline · Ctrl+0 recentres",
+      "input": [
+        {
+          "tag": "textarea",
+          "text": "",
+          "aria": null,
+          "role": null,
+          "testid": null,
+          "id": "composer",
+          "disabled": false,
+          "placeholder": "Type your prompt..."
+        },
+        {
+          "tag": "input",
+          "text": "",
+          "aria": "Time-travel scrubber",
+          "role": null,
+          "testid": null,
+          "id": "scrubber",
+          "disabled": true,
+          "placeholder": "Type your prompt..."
+        }
+      ]
+    },
+    "composerPlaceholder": "Type your prompt...",
+    "buttons": [
+      {
+        "tag": "button",
+        "text": "Workspace",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Agents",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Data",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Models",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Routing",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Settings",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Workspace",
+        "aria": null,
+        "role": "tab",
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Swarm",
+        "aria": null,
+        "role": "tab",
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Routing",
+        "aria": null,
+        "role": "tab",
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "History",
+        "aria": null,
+        "role": "tab",
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "+",
+        "aria": "Zoom in",
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "−",
+        "aria": "Zoom out",
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "0",
+        "aria": "Recentre hive (Ctrl+0)",
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "⤢",
+        "aria": "Fit swarm",
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Unpin chat",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Close",
+        "aria": "Hide the chat core (the hive stays)",
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Submit prompt",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "Spawn sub-hive",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "Re-route",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "Cancel",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "Kill worker",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "live",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": true
+      },
+      {
+        "tag": "button",
+        "text": "Content Writer",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Data Analyst",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Code Reviewer",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      },
+      {
+        "tag": "button",
+        "text": "Chatbot",
+        "aria": null,
+        "role": null,
+        "testid": null,
+        "id": null,
+        "disabled": false
+      }
+    ],
+    "countButtons": 26,
+    "hud": {
+      "el": true,
+      "text": "— SUPERAGENTS · — WORKERS · — GREENno metrics"
+    },
+    "scrubber": {
+      "el": true,
+      "text": ""
+    },
+    "library": {
+      "el": true,
+      "text": "ProjectHiveMind AI01a1b114ACTIVE AGENTS · 0No active agentsTEMPLATESContent WriterData AnalystCode ReviewerChatbotFigCraft A+B exports accepted by UI watchdog (PASS-WITH-NOTES, FAIL 0). Values come from the token module, never sampled pixels; pixel-layout fidelity remains UNVERIFIED.Drag a worker onto another super-agent to re-route its context stream live."
+    },
+    "minimap": {
+      "el": false,
+      "svg": false
+    },
+    "canvas": {
+      "hiveCanvasId": false,
+      "reactFlowNodes": 0,
+      "edges": 0,
+      "svgs": 2
+    },
+    "connection": null,
+    "tokenColorProbe": {
+      "body": {
+        "color": "rgb(40, 32, 16)",
+        "backgroundColor": "rgb(248, 244, 235)",
+        "fontFamily": "\"Inter Variable\", Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "fontSize": "17px"
+      },
+      "canvasRoot": {
+        "color": "rgb(40, 32, 16)",
+        "backgroundColor": "rgb(248, 244, 235)",
+        "fontFamily": "\"Inter Variable\", Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "fontSize": "17px"
+      },
+      "panel": {
+        "color": "rgb(40, 32, 16)",
+        "backgroundColor": "rgb(255, 255, 255)",
+        "fontFamily": "\"Inter Variable\", Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+        "fontSize": "17px"
+      },
+      "meta": {
+        "color": "rgb(117, 102, 63)",
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "fontFamily": "Consolas, \"JetBrains Mono\", \"Cascadia Mono\", monospace",
+        "fontSize": "11px"
+      }
+    },
+    "allAriaLabels": [
+      "Primary navigation",
+      "Workspace tabs",
+      "Swarm throughput",
+      "HiveMind spatial canvas",
+      "React Flow attribution",
+      "Zoom controls",
+      "Zoom in",
+      "Zoom out",
+      "Recentre hive (Ctrl+0)",
+      "Fit swarm",
+      "HyperAgent hive chat core",
+      "Hide the chat core (the hive stays)",
+      "HyperAgent hive chat core",
+      "WORKER: Re-route",
+      "Re-route",
+      "Time-travel scrubber",
+      "Library panel",
+      "Refusals and errors"
+    ],
+    "testids": [
+      "rf__wrapper",
+      "rf__minimap"
+    ]
+  }
+}

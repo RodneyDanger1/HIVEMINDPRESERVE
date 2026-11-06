@@ -1,0 +1,8 @@
+{
+  "bodyColor": "rgb(40, 32, 16)",
+  "bodyBg": "rgb(248, 244, 235)",
+  "panelColor": "rgb(63, 49, 21)",
+  "panelBg": "rgb(255, 255, 255)",
+  "fontFamily": "\"Inter Variable\", Inter, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+  "bodyContrast": 14.6677
+}

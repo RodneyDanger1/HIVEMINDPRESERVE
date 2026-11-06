@@ -1,0 +1,10 @@
+{
+  "views": [
+    "Agents",
+    "Data",
+    "Models",
+    "Routing",
+    "Settings"
+  ],
+  "returnedToWorkspace": true
+}

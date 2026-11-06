@@ -1,0 +1,35 @@
+{
+  "navItems": [
+    "Workspace",
+    "Agents",
+    "Data",
+    "Models",
+    "Routing",
+    "Settings"
+  ],
+  "tabs": [
+    "WORKSPACE",
+    "SWARM",
+    "ROUTING",
+    "HISTORY"
+  ],
+  "hudText": "—\nSUPERAGENTS ·\n—\nWORKERS ·\n—\nGREEN\nNO METRICS",
+  "scrubberDisabled": true,
+  "libraryTemplates": [
+    "Content Writer",
+    "Data Analyst",
+    "Code Reviewer",
+    "Chatbot"
+  ],
+  "minimap": {
+    "testid": "rf__minimap",
+    "ariaLabel": null
+  },
+  "zoomButtons": [
+    "Zoom in",
+    "Zoom out",
+    "Recentre hive (Ctrl+0)",
+    "Fit swarm"
+  ],
+  "screenshot": "docs/trace/live/live-app/surface-census.png"
+}

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { contrastRatio, EXPECTED_CONTRAST, KNOWN_FAILURES } from '../helpers/contrast';
-import { skipReason } from '../helpers/matrix';
+import { appMissing, skipReason } from '../helpers/matrix';
 
 /**
  * G-UI-1..12 plan (reports/ui/UI-REQUIREMENTS.md §4, UI-WIRING-GUIDE.md §4).
@@ -41,9 +41,12 @@ test.describe('G-UI-1..12 — DOM gates (app required)', () => {
 
   for (const [gate, check] of gates) {
     test(`${gate}: ${check}`, async ({ page }) => {
-      test.skip(skipReason());
+      test.skip(appMissing(), skipReason());
       void page;
-      // PENDING: implement against the built app; capture DOM/computed-style/console evidence.
+      // DOM gate implementation is pending; the live token/contrast, zoom/Ctrl+0, refusal,
+      // WS and render-back evidence currently lives in specs/live-app.spec.ts. Marking this
+      // fixme (not passed) so the suite cannot claim a gate it did not execute.
+      test.fixme(true, 'DOM gate not implemented yet — see specs/live-app.spec.ts and docs/trace/live/');
     });
   }
 });

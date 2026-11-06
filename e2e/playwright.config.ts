@@ -7,10 +7,11 @@
 // Do NOT run `npx playwright install`. If a channel is missing, the run must
 // fail loudly with a named refusal; it must not fall back to a downloaded browser.
 //
-// Current status: the web app does not exist yet (`web/src/` is empty, no
-// package.json, no dev server). Specs skip with APP_NOT_BUILT until it does.
-// `webServer` is intentionally not configured; add it only when `npm run dev`
-// (or the Rust binary serving the embedded web build) is reproducible.
+// Current status (2026-11-06 08:0x): the release binary serves the embedded UI at
+// http://127.0.0.1:8799; run with E2E_BASE_URL=http://127.0.0.1:8799 and
+// E2E_APP_READY=1. `webServer` is still intentionally not configured (the server is
+// started by the build/Lead, not by Playwright), and browser tests must never start a
+// paid provider run.
 import { defineConfig } from '@playwright/test';
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:8080';

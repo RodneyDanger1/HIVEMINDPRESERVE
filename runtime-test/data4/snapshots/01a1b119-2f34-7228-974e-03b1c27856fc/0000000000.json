@@ -1,0 +1,13 @@
+{
+  "schema_version": "hivemind.snapshot.v2",
+  "run_id": "01a1b119-2f34-7228-974e-03b1c27856fc",
+  "revision": 0,
+  "created_at": "2026-11-06T13:43:00Z",
+  "graph": {
+    "revision": 0,
+    "nodes": [],
+    "edges": [],
+    "toposort": []
+  },
+  "run_status": "failed"
+}
