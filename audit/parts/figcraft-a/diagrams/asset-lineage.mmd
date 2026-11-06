@@ -1,0 +1,27 @@
+flowchart LR
+  subgraph EXT[external blueprint evidence]
+    PDF[pages.txt PDF text layer] --> ABRIEF & BBRIEF
+    GUIDE[UI-WIRING-GUIDE S01-S28] --> ABRIEF & BBRIEF
+    REQ[UI-REQUIREMENTS corrections] --> ABRIEF & BBRIEF
+  end
+  subgraph A[docs/ui/figcraft/A]
+    ABRIEF[BRIEF-A.md] --> AGEN[A/build/*.py generators] --> ASCR[A/scripts 00..10] --> ADOC[A-design.figcraft]
+    ADOC --> AEXP[ASSETS/a-* svg+png x8]
+    ADOC --> AMAN[A-ASSETS.json 28 rows] & AEP[A-EPISODES.json 12] & ACHK[A-SELF-CHECK.json]
+  end
+  subgraph B[docs/ui/figcraft/B]
+    BBRIEF[BRIEF-B.md] --> BGEN[B/build/*.py] --> BSCR[B/scripts 00..06]
+    BSCR --> BDOC[B-canvas.figcraft] --> BEXP[ASSETS/b-* svg+png x8] --> BMAN[B-ASSETS.json 27]
+  end
+  AMAN --> IDX[ASSETS-INDEX.json 55 assets]
+  BMAN --> IDX
+  ADOC -.-> IDX
+  BDOC -.-> IDX
+  AEXP -.-> LED[ledgers/ui-watchdog.json+md PASS]
+  BEXP -.-> LED
+  IDX --> LED
+  LED -. external claim .-> BPCHK[blueprint BUILD-CHECKS.json UNVERIFIED]
+  classDef ignored fill:#fdd,stroke:#b23a2e
+  class ADOC,AEXP,BDOC,BEXP ignored
+  classDef stale fill:#ffe9b0,stroke:#b7791f
+  class IDX stale

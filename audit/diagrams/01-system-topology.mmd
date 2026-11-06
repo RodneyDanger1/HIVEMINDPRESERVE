@@ -1,0 +1,38 @@
+flowchart LR
+  subgraph Browser["Browser (localhost origin)"]
+    UI["React 19 SPA<br/>canvas · chat · panels"]
+    WSC["partysocket WS client<br/>hello{last_seq}"]
+    HC["fetch /api/session · /health"]
+  end
+  subgraph Binary["hiverouter.exe — Rust single binary (loopback only)"]
+    AX["axum router"]
+    WSG["WS handler<br/>Origin allowlist + per-session token"]
+    STATIC["rust-embed static UI<br/>web/dist"]
+    DIAG["/diagnose"]
+    CONTRACT["hiverouter.v1 contract<br/>14 commands · 21 events · 65 refusals"]
+    BUS["event bus / fan-out"]
+    GRAPH["GraphAuthority<br/>petgraph · single owner"]
+    EXEC["run lifecycle / dispatch<br/>caps · cancellation"]
+    PROV["provider client<br/>DeepSeek · budget"]
+    TOOLS["tool registry · approval · jail · shell"]
+    DB["SQLite (rusqlite bundled)"]
+    SNAP["snapshot store<br/>versioned JSON"]
+    AUDIT["JSONL audit ledger"]
+  end
+  DEEPSEEK["DeepSeek API<br/>api.deepseek.com"]
+  CLI["hiverouter-cli<br/>agent-native JSON"]
+  UI --> WSC
+  UI --> HC
+  WSC --> WSG
+  HC --> AX
+  AX --> STATIC
+  AX --> DIAG
+  WSG --> CONTRACT --> BUS --> EXEC
+  EXEC --> GRAPH
+  EXEC --> PROV --> DEEPSEEK
+  EXEC --> TOOLS
+  EXEC --> DB
+  EXEC --> SNAP
+  TOOLS --> DB
+  AUDIT --> DB
+  CLI --> AX

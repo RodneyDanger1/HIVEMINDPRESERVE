@@ -1,0 +1,97 @@
+{
+  "seats": {
+    "b-core": {
+      "files_scored": 54,
+      "means": {
+        "correctness": 4.85,
+        "maintainability": 4.76,
+        "modularity": 4.96,
+        "error_handling": 4.8,
+        "security": 4.87,
+        "docs": 4.81
+      },
+      "evidence_cells": 54
+    },
+    "b-provider": {
+      "files_scored": 33,
+      "means": {
+        "correctness": 4.55,
+        "maintainability": 4.42,
+        "modularity": 4.36,
+        "error_handling": 4.27,
+        "security": 4.61,
+        "docs": 3.58
+      },
+      "evidence_cells": 33
+    },
+    "figcraft-a": {
+      "files_scored": 103,
+      "means": {
+        "correctness": 4.5,
+        "maintainability": 3.45,
+        "modularity": 3.37,
+        "error_handling": 3.67,
+        "security": 3.53,
+        "docs": 3.31
+      },
+      "evidence_cells": 103
+    },
+    "figcraft-b": {
+      "files_scored": 91,
+      "means": {
+        "correctness": 4.2,
+        "maintainability": 3.44,
+        "modularity": 2.57,
+        "error_handling": 3.38,
+        "security": 5.0,
+        "docs": 2.97
+      },
+      "evidence_cells": 91
+    },
+    "ui-watchdog": {
+      "files_scored": 49,
+      "means": {
+        "correctness": 3.92,
+        "maintainability": 3.84,
+        "modularity": 3.24,
+        "error_handling": 2.57,
+        "security": 3.9,
+        "docs": 3.69
+      },
+      "evidence_cells": 49
+    },
+    "watchdog-1": {
+      "files_scored": 55,
+      "means": {
+        "correctness": 4.47,
+        "maintainability": 4.24,
+        "modularity": 4.36,
+        "error_handling": 4.29,
+        "security": 3.78,
+        "docs": 3.98
+      },
+      "evidence_cells": 55
+    },
+    "watchdog-2": {
+      "files_scored": 122,
+      "means": {
+        "correctness": 3.74,
+        "maintainability": 3.22,
+        "modularity": 3.22,
+        "error_handling": 3.22,
+        "security": 3.47,
+        "docs": 2.51
+      },
+      "evidence_cells": 122
+    }
+  },
+  "total_files_scored": 507,
+  "dimension_means": {
+    "correctness": 4.24,
+    "maintainability": 3.72,
+    "modularity": 3.52,
+    "error_handling": 3.63,
+    "security": 4.06,
+    "docs": 3.34
+  }
+}

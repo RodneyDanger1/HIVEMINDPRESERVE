@@ -1,0 +1,508 @@
+path,bytes,sha256,ext,language,category,subcategory,seat,depth,loc,is_code
+.cargo/config.toml,407,7E2C7429B2BFB246661EBA6BA6B07D2DB7B4D0A89085A5AA11699A59D3CC00A8,.toml,TOML,other,uncategorized,G,standard,13,False
+.gitignore,158,FCA124B10A7E08A0A6F07BDA4ACB829A2A985D09D5C75FED12D20C087A1BC60A,,unknown,other,uncategorized,G,standard,0,False
+CHANGE-LEDGER-IMPL.md,2393,3995499955B942F397F072A848130BB4A1E50B3551DD7F052A4800D474637307,.md,Markdown,other,uncategorized,G,standard,14,False
+README.md,1742,B60FAC5A2A7DDFB22B4ED50A0C2AD265DA3D7687E659ABDCA3FABB6542010852,.md,Markdown,other,uncategorized,G,standard,27,False
+backend/Cargo.lock,100124,7B704C18E67F56DA0AF26FEB3914DB0AAA841A2B66F2066DE206A915FF7C859A,.lock,Lockfile,config-manifest,build/dependency/config,B,deep,4047,False
+backend/Cargo.toml,1765,323A5865A3ED81F1D2BBD00131195E7CC5EAD96ACE998606D640461AFC258F10,.toml,TOML,config-manifest,build/dependency/config,B,deep,55,False
+backend/crates/hiverouter-contract/Cargo.toml,517,643E9584B91078F833A7232CA772ED0CA31F9E320F92932FD9AA49776ADB293C,.toml,TOML,config-manifest,build/dependency/config,A,standard,20,False
+backend/crates/hiverouter-contract/schemas/contract-v1.json,48340,F139CDEC673657253A6F2525664DF0D7AA4337BBE12A590A52F32A596197BADC,.json,JSON,config-manifest,build/dependency/config,A,standard,1634,False
+backend/crates/hiverouter-contract/src/command.rs,21334,2EEAFCDD4CE7BEFB576566C740B87EE9063341F2AE7DAA29BAF093845973964F,.rs,Rust,source,first-party code,A,deep,570,True
+backend/crates/hiverouter-contract/src/envelope.rs,6352,A8C647E94B9CBBFDC04E8A7CA00E32FA5450DCDDF0A82962144FEC8213880646,.rs,Rust,source,first-party code,A,deep,192,True
+backend/crates/hiverouter-contract/src/event.rs,18156,359B0D4A87BE316A02F460EC6F781CC21FA7CC0085C5DC2D66D5C7CEE36DE2E5,.rs,Rust,source,first-party code,A,deep,516,True
+backend/crates/hiverouter-contract/src/ids.rs,3251,2AB28A180DC0225CDA937C199EF339102A076CF9649A81D763E79B25DAFB1AFC,.rs,Rust,source,first-party code,A,standard,116,True
+backend/crates/hiverouter-contract/src/lib.rs,1845,E9C7C87F61048644C9CF4EA45D2E4957EA78F658F35BDD7077F3F3CD4650BB7B,.rs,Rust,source,first-party code,A,deep,48,True
+backend/crates/hiverouter-contract/src/refusal.rs,17229,9C99C4475DF6CBCBA52D75EEB1A870484AC81EC842E3E0B72150A9779ABE9F97,.rs,Rust,source,first-party code,A,deep,337,True
+backend/crates/hiverouter-contract/src/schema.rs,13690,5734E4B19316C977DF14CE0BED56AC4B58415A91DF7DF5D5A60189ACD846C25C,.rs,Rust,source,first-party code,A,deep,382,True
+backend/crates/hiverouter-contract/src/state.rs,4791,DEA156DD9764D00E0745F496F60038442E030E1314F6BAD8104E60372BEA134B,.rs,Rust,source,first-party code,A,deep,158,True
+backend/crates/hiverouter-contract/src/timestamp.rs,11106,43BB8EC910F258A235C5D6219DFCFB20EB8E79BD75DAF06485F3EF6612AF4D6E,.rs,Rust,source,first-party code,A,standard,298,True
+backend/crates/hiverouter-contract/src/usage.rs,3698,C2A945135482FE2BF1F031BA32ADB6AA44EF5A348273E7B8799348A779D509C2,.rs,Rust,source,first-party code,A,standard,104,True
+backend/crates/hiverouter-contract/tests/common/mod.rs,13211,CB6BF9136203369EFA191B2A4015FE3A6B2FAF8DB2CC50745DDA8E44B8AEBCEF,.rs,Rust,source,first-party code,A,standard,381,True
+backend/crates/hiverouter-contract/tests/golden_schemas.rs,3873,E2ED3D34BBB89EF55BABB01086947E7857D51F573C4818161C497355AEEE720D,.rs,Rust,source,first-party code,A,standard,107,True
+backend/crates/hiverouter-contract/tests/schema_roundtrip.rs,6636,9BE68275D57376994F73A0529F30075E0502DAA54593801575F6CEC0342C9E2D,.rs,Rust,source,first-party code,A,standard,169,True
+backend/crates/hiverouter-contract/tests/ui_command_matrix.rs,4931,DFEDBE3BACB9C00668CE3AF409D8480C5EBFEF2F5017E95397F83F12E007DED5,.rs,Rust,source,first-party code,A,standard,123,True
+backend/crates/hiverouter-core/Cargo.toml,1020,8A0DCCE75A0FEF2C82E3DF49078122B0252EED324B2CA8694E410E7605D213C1,.toml,TOML,config-manifest,build/dependency/config,A,standard,40,False
+backend/crates/hiverouter-core/assets/prompts/manifest.json,192,487C00282A9B99558A7F104FBCD2CBCE1C28D2CD6211228ABE13F77384082AAD,.json,JSON,config-manifest,build/dependency/config,A,standard,10,False
+backend/crates/hiverouter-core/assets/prompts/personas.json,214,CA16628EBABE80EC36B7BF569C6A3454115C837F99D07537E38C418AE0B54AAE,.json,JSON,config-manifest,build/dependency/config,A,standard,12,False
+backend/crates/hiverouter-core/assets/prompts/planner.prompty,462,15239626AA4AE2A9657ACBD7D860489B0B4ABA48844098A8142C9311A83B22CD,.prompty,Prompty,source,first-party code,A,standard,21,False
+backend/crates/hiverouter-core/build.rs,2097,AA5EA8BD665FCA0B528F952E58F3425ABC7824125897A582D055B5AA391690C3,.rs,Rust,source,first-party code,A,standard,50,True
+backend/crates/hiverouter-core/src/bus.rs,9135,5E8E966806DCC49CCC8EB3621C81814F83E5A6C2B3D1B5426675D2269AF90DFE,.rs,Rust,source,first-party code,A,deep,280,True
+backend/crates/hiverouter-core/src/caps.rs,2918,D21061F2FA3C5A530B1AB786B7E3C4F72C9395E5BC6D5F67E43EB73EBA704782,.rs,Rust,source,first-party code,A,standard,97,True
+backend/crates/hiverouter-core/src/checks.rs,5824,FFECF02B43CD9B511B595838EBFA733112BE7E81FE62E315BD7A5BC327C3A925,.rs,Rust,source,first-party code,A,standard,183,True
+backend/crates/hiverouter-core/src/config.rs,10707,D4112CC86721A3CF6DF651E41AC986B9541589D56973A4395B540731A1B4AFD2,.rs,Rust,source,first-party code,A,standard,278,True
+backend/crates/hiverouter-core/src/context.rs,9310,B09D11F3AF246223B166A97BB992614F6EB7CADD880B1D29425288718FFB01F4,.rs,Rust,source,first-party code,A,deep,275,True
+backend/crates/hiverouter-core/src/db.rs,15761,1822162A2D11E89DAE2D625A4FCC8D898A8E7A782758C642BD6A6A9A40E8A47C,.rs,Rust,source,first-party code,A,deep,450,True
+backend/crates/hiverouter-core/src/entities.rs,2735,8F6DC673E06F1AB0ECAB10D7BF9C9457E8D9CF04B936D6C42CBE7F7ED9A9F970,.rs,Rust,source,first-party code,A,standard,100,True
+backend/crates/hiverouter-core/src/execution.rs,20243,A7E0F403AA6D437EB88AB7AEA51DD1E6EF98EB93CAC2909466A4CF9C2818E8C9,.rs,Rust,source,first-party code,A,deep,612,True
+backend/crates/hiverouter-core/src/graph.rs,12281,16F3AB2B4C8C8927FF5B42117DFDE4DDC56DAFBD8A008D7E60309D3AC00897C7,.rs,Rust,source,first-party code,A,deep,355,True
+backend/crates/hiverouter-core/src/handshake.rs,8430,D7647B54EAB33122B218E5DE1F2EB4354C210EF17E2416CCA1A03E28C24AC416,.rs,Rust,source,first-party code,A,deep,256,True
+backend/crates/hiverouter-core/src/history.rs,3630,FC236BCBB0D4DCE3B6C49F18A15CDC40007EDF842CB4BE8C1B971997AD0ED026,.rs,Rust,source,first-party code,A,standard,117,True
+backend/crates/hiverouter-core/src/http.rs,14376,A1E819DD1B800042E367A2BB666EB18FEE0B0FDBB89D172B2135E2D390031BB0,.rs,Rust,source,first-party code,A,deep,429,True
+backend/crates/hiverouter-core/src/lib.rs,1493,30887021C00C7E84DCCC175A5FEF38834BC59D98CD44F8D4E638EB006845D8A8,.rs,Rust,source,first-party code,A,standard,48,True
+backend/crates/hiverouter-core/src/main.rs,6588,3A03F2219BF577B3AB016C1BED6F99D64F9A3FB1EAEF8FC1F57CC54E301D8A59,.rs,Rust,source,first-party code,A,deep,210,True
+backend/crates/hiverouter-core/src/planner.rs,6053,4BAD5AAC1CD6928408D5CFCD8745DBB2F58DD52A69FADF5841C45B686DE850EE,.rs,Rust,source,first-party code,A,standard,187,True
+backend/crates/hiverouter-core/src/prompts.rs,11326,FF6A40E5F3C26D8B5C5E6AF532B50923AD5FD8C0E8CDB31D35CBCE4436EC9867,.rs,Rust,source,first-party code,A,deep,332,True
+backend/crates/hiverouter-core/src/recovery.rs,2787,4B3C7098B71143F0CC55A90096A9EE8B1360B52550B4744AE43406EEF9842DF3,.rs,Rust,source,first-party code,A,deep,84,True
+backend/crates/hiverouter-core/src/snapshot.rs,10033,4811CC72A354E50C8561526B40E983A0A3A93080A7C7A1CCF5C163538197796E,.rs,Rust,source,first-party code,A,deep,273,True
+backend/crates/hiverouter-core/src/static_ui.rs,3795,C53A13CAF93B87452E611B25A1F57710089029752F76BA5CEC1F8CC92FCECC4C,.rs,Rust,source,first-party code,A,deep,105,True
+backend/crates/hiverouter-core/src/store.rs,15733,CA2BC6DDE0663F6C9769D5AAAF06E8856A2FED6C5D154E686ED1B2B45FDF9EBF,.rs,Rust,source,first-party code,A,standard,455,True
+backend/crates/hiverouter-core/src/tools_bridge.rs,6788,4767E3E083ED7741A3F264E8A52683F1D4877C2C5A9FCAF2F4D020B870DC5F8E,.rs,Rust,source,first-party code,A,deep,186,True
+backend/crates/hiverouter-core/src/ws.rs,19462,D4679001A0D997486871AD662D7568F191BA0D7527444D7387BA8811628514DE,.rs,Rust,source,first-party code,A,deep,537,True
+backend/crates/hiverouter-core/tests/chat_store.rs,5209,42CEDF2FBBFF732265DE2F787E460643986DDCE32AF24EDFB70EB000776592D0,.rs,Rust,source,first-party code,A,standard,148,True
+backend/crates/hiverouter-core/tests/context_switch.rs,2326,284BB4B96503945BF64EE1E84B818A068A8FBA0EC0ABD6DA9AEE7018C848A95D,.rs,Rust,source,first-party code,A,standard,69,True
+backend/crates/hiverouter-core/tests/graph_authority.rs,4265,DAF11FD613C19715261DEE31956D9BCEF180E0F28516861D65F9CF3E9A6D6DFD,.rs,Rust,source,first-party code,A,standard,121,True
+backend/crates/hiverouter-core/tests/handshake.rs,2906,954B65E0AAA239D64980E143A3B8FF2310368A9387ABF68E6A86F5F09BA4578E,.rs,Rust,source,first-party code,A,standard,79,True
+backend/crates/hiverouter-core/tests/http_boot.rs,8847,7E7D597443DDF98E3436FCFD8145A86BC463E640616F0B0192602BF590AE02D3,.rs,Rust,source,first-party code,A,standard,233,True
+backend/crates/hiverouter-core/tests/kill_restore.rs,4803,B76470D6BF83023A5B3BC61910C466822260DE3BF8F4EEB78D377CD8C6CDCCC1,.rs,Rust,source,first-party code,A,standard,118,True
+backend/crates/hiverouter-core/tests/prompt_assets.rs,4523,BDA3C600C1E7CED509122FE7BE7F0C3DF3176F18A3FCE00BB64C6042C4CCCBC0,.rs,Rust,source,first-party code,A,standard,114,True
+backend/crates/hiverouter-core/tests/run_lifecycle.rs,10846,8B2B780FCD2FD56CCE0560552B91D51F8C2C5E71550BF25F4852EE9F3DC270B6,.rs,Rust,source,first-party code,A,standard,328,True
+backend/crates/hiverouter-core/tests/snapshot_history.rs,7833,A348BC8DE1A5DBC58A445CD3EEB1C16F2CFA7B6F0E9C52FB8991D65E077B38B4,.rs,Rust,source,first-party code,A,standard,191,True
+backend/crates/hiverouter-core/tests/support/mod.rs,12697,6457B80F8DBED03BB5FEB2B89462A0BC77AB7F2E7FBE331244E3214DC76599C6,.rs,Rust,source,first-party code,A,standard,352,True
+backend/crates/hiverouter-core/tests/ws_transport.rs,19177,2B21D3EFA093AEE06D3FA5D2C2E0F578FA6265A9F7FD621A20740AD77CADDC1C,.rs,Rust,source,first-party code,A,standard,484,True
+backend/crates/hiverouter-provider/Cargo.toml,752,6F32DD277F25B2627D2696D740513069C832098A93A529245F3BBA0317209F4D,.toml,TOML,config-manifest,build/dependency/config,B,standard,30,False
+backend/crates/hiverouter-provider/src/accounting.rs,17056,7BDA95F2A98177ED6E12FBEE898E1B809B1CDA4F392475FA514828A7BD2CC8D0,.rs,Rust,source,first-party code,B,deep,470,True
+backend/crates/hiverouter-provider/src/budget.rs,23965,0B685A5ED36B97DC4D3BEC729CC5F844E3A0CD80AE82D182EE88F779A6CD038C,.rs,Rust,source,first-party code,B,deep,711,True
+backend/crates/hiverouter-provider/src/client.rs,27461,A8B0A5F88C86F2942155CC52F2E9924CB291609ADB38A8307F0A008D0D19A705,.rs,Rust,source,first-party code,B,deep,753,True
+backend/crates/hiverouter-provider/src/dto.rs,24305,A1C0E0587814058506B85A8E70261D0A13BF2A52F11C43EB0BE80D4698017FF8,.rs,Rust,source,first-party code,B,deep,743,True
+backend/crates/hiverouter-provider/src/error.rs,4483,56E7116E9155C315AF52CE7C623464B03683C0A1458DB06AFEF70CE15EE1EC09,.rs,Rust,source,first-party code,B,standard,153,True
+backend/crates/hiverouter-provider/src/lib.rs,2408,83343C8A7FA13A58AD3EB2199186464593F2331AC465A4F7218112D644E6F704,.rs,Rust,source,first-party code,B,standard,54,True
+backend/crates/hiverouter-provider/src/pricing.rs,9959,28E627929595016A02C74949FAC4EB6A48003003D24F3BCB2DA5ADCC53D55F24,.rs,Rust,source,first-party code,B,deep,274,True
+backend/crates/hiverouter-provider/src/secret.rs,3349,297E6A7E4A783DD253E6E358870D2E01C2CB227D600253763B615D1F721D059A,.rs,Rust,source,first-party code,B,standard,105,True
+backend/crates/hiverouter-provider/tests/refusal_matrix.rs,11475,80389102FB8A2CC3142CD0071839CAAE43F2306BB1870738504D24F576767E6E,.rs,Rust,source,first-party code,B,standard,309,True
+backend/crates/hiverouter-tools/Cargo.toml,1198,179D5B83474FB430FF1B81E5A9B69D39F77B8ECC53C2606E0423763F4B433057,.toml,TOML,config-manifest,build/dependency/config,B,standard,51,False
+backend/crates/hiverouter-tools/benches/engine_benches.rs,3270,2CE34ADF5B6C3B57EE106AE1DB861B209FAB44C013F08974AA235B6A9DF78A92,.rs,Rust,source,first-party code,B,standard,91,True
+backend/crates/hiverouter-tools/src/approval.rs,34944,E32411E62FFEC925A2C2F9FFDCC6BCB6C7BC16FBA42944253DACA70A35652C22,.rs,Rust,source,first-party code,B,deep,1011,True
+backend/crates/hiverouter-tools/src/audit.rs,10695,960E793A5369765F7476D593C99B822349BE2E495E65DA0545B8656A19E7BE35,.rs,Rust,source,first-party code,B,standard,318,True
+backend/crates/hiverouter-tools/src/bin/hiverouter.rs,579,6A0FA448CA080530ED96D2EF407EC8C81FE1DEE4816231CF206DD865EB77D057,.rs,Rust,source,first-party code,B,standard,13,True
+backend/crates/hiverouter-tools/src/cancel.rs,10411,61C76D60BBF75E97EC4C782295AB978D584C9679EB5C86873E69299F3C9F9141,.rs,Rust,source,first-party code,B,standard,306,True
+backend/crates/hiverouter-tools/src/census.rs,9205,3F67B9D0C66155E7FF209F2BC04F230B9974C835CCB3302129DA2856C5EEB4F7,.rs,Rust,source,first-party code,B,deep,263,True
+backend/crates/hiverouter-tools/src/cli.rs,37923,A9F583EECAFB19611D58BE384F5F7DAB69EFDF16B28D132507C4DDB18721E704,.rs,Rust,source,first-party code,B,deep,1023,True
+backend/crates/hiverouter-tools/src/cli_support.rs,6270,54AAF4ABE2872C280202A04F036A29C22AA442FB2BF97B95E1D994D1889AD556,.rs,Rust,source,first-party code,B,standard,160,True
+backend/crates/hiverouter-tools/src/commands.rs,7350,639E2376892FD4622B4506916D18ADECB87B91EC1A870770D86FE7FAAE84AE2E,.rs,Rust,source,first-party code,B,standard,213,True
+backend/crates/hiverouter-tools/src/error.rs,2717,D987C3E066AA08C68D55C887BDF2F725AF43B9FEE7FBBB7D0DBF74A4B77F2858,.rs,Rust,source,first-party code,B,standard,108,True
+backend/crates/hiverouter-tools/src/health.rs,15752,91AFD4D1FA92A032B6783067CFCB179A2B3C868539FD483B2CE4449AECBF2B2D,.rs,Rust,source,first-party code,B,deep,453,True
+backend/crates/hiverouter-tools/src/jail.rs,16815,1F6072AD7622971B271DBB2404AD32B9FEFB612A6D864721F5263B8164AB0949,.rs,Rust,source,first-party code,B,deep,442,True
+backend/crates/hiverouter-tools/src/ledger.rs,13381,F5878DA79A93C394C780E92FD73E9D03450E2F9584810FAA27B6D5C97164CE5F,.rs,Rust,source,first-party code,B,deep,398,True
+backend/crates/hiverouter-tools/src/lib.rs,3397,406B7D19BCD243281CC7F7F327047A5DDFA0F0919A326B8EBBA10BC88266495D,.rs,Rust,source,first-party code,B,standard,80,True
+backend/crates/hiverouter-tools/src/settings.rs,2027,BE807D709B7564019D23B6957159BA75DB450A8DF2957B9CBB1C2117C04140A4,.rs,Rust,source,first-party code,B,standard,63,True
+backend/crates/hiverouter-tools/src/sha256.rs,5379,8135BCDC28EA121522D793004B75FA4F91467DE76D665A5D9BCBA5BB0314170D,.rs,Rust,source,first-party code,B,standard,147,True
+backend/crates/hiverouter-tools/src/shell.rs,16201,00E19826DC6970B04D4FF158C0574C16D736A20B1A874C3BB982149688EDDE68,.rs,Rust,source,first-party code,B,deep,464,True
+backend/crates/hiverouter-tools/src/tool.rs,19612,353AB4E67695C7AAD0B1C04E059B4D77F1F7DCBF25FF3DF70E131AE082319765,.rs,Rust,source,first-party code,B,deep,610,True
+backend/crates/hiverouter-tools/src/watcher.rs,7947,1D894543C17557228CEE3BBC46C60073CF99FB0EEBA79A0EB7B5BAE8F25ED763,.rs,Rust,source,first-party code,B,standard,233,True
+backend/crates/hiverouter-tools/tests/audit_jsonl.rs,2163,336D4431A0545AE8C231DD1B32593661D647CD6421DB5F0D7426091F5FA61E2A,.rs,Rust,source,first-party code,B,standard,60,True
+docs/audit/BASELINE-VERIFICATION.md,15071,DC11F4811F4E12563B74B63F5CCD58B0A3791BC39F1CD3100D8A55C66FE1692A,.md,Markdown,documentation,report/plan/evidence,F,standard,124,False
+docs/audit/FINAL-CLOSEOUT.md,3218,81D45A5C4615AF15A7C1895524A70013C7832FB02741B4E74C83FED9A8A85AEB,.md,Markdown,documentation,report/plan/evidence,F,standard,43,False
+docs/audit/FINAL-DELTA-VERIFICATION.md,13168,A4ACBCBB1D17DA924B4B8B99C219B4F4DA3AA41700338C5380EE93E298F54EC3,.md,Markdown,documentation,report/plan/evidence,F,standard,82,False
+docs/audit/PHASE-B-VERIFICATION.md,19881,CA6E76D1C942EF8579C5572E9711122964CFA9C91D56B4B70E836C5893789E6C,.md,Markdown,documentation,report/plan/evidence,F,standard,107,False
+docs/audit/QA-ENV.md,6608,E3ED721740DAF0E204C78CD8B8138D4611C41F57A1A68B500A644670FE317FDE,.md,Markdown,documentation,report/plan/evidence,F,standard,55,False
+docs/audit/evidence/controls-verifier-skeleton.json,39735,2AE3C3F74A8CD378EC42CF73D776742E90F39465AE68E9285290834411EFD2CF,.json,JSON,documentation,report/plan/evidence,F,standard,970,False
+docs/audit/evidence/final/cli-diagnose-final.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/final/cli-diagnose-final.out,6246,6596AD0FDE6AE8C044B417902240A5267A9DF895E46CBC7035B8C0618590B78A,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/final/cli-health-final.out,1452,FC5FE6F367A1D692FF4993CBF7C97DDEB2E143A0F648992AFE1BB69F200DCBD3,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/final/live-probe-final.json,5877,5AE601760ACFA8FC9B145864B9B85450AAF532BCE6D0D003C91813D23B50E190,.json,JSON,documentation,report/plan/evidence,F,standard,223,False
+docs/audit/evidence/final/live-probe-final.mjs,6788,854F35D3F669663505EEC82AE21E9349AFD60DAF2ED948D0373C2DE6B368996A,.mjs,JavaScript,documentation,report/plan/evidence,F,standard,108,True
+docs/audit/evidence/final/live-probe-final.out.txt,7786,9FF94FE9FEB7494E7F3D8E09BF172AB6952D3CACE030E9245CE7A74D73C17A54,.txt,Text,documentation,report/plan/evidence,F,standard,419,False
+docs/audit/evidence/final/pw-out/.last-run.json,96,9C10E541B3FF84B211BF2FF8DC0D531241D515BFFF256630609FFB09D745C5AA,.json,JSON,documentation,report/plan/evidence,F,standard,6,False
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md,3113,BDF922489455595EEA0B3DD455122EAF7CA357FC2F8DC4ADFA738240597995BC,.md,Markdown,documentation,report/plan/evidence,F,standard,67,False
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png,4254,3878570F4A62A0D65F57CF1754E0269E56EC797F4E36E26B44C172EB6E800401,.png,PNG,documentation-asset,design/evidence asset,F,standard,0,False
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip,11204,7835BF048A538279FD112967CAFE49CD827C9F44522755422E36CE22126E889C,.zip,Zip,documentation-asset,design/evidence asset,F,standard,0,False
+docs/audit/evidence/gen_controls.py,15934,8EBC94962F25917A6BBD72E902A3BD0B3DDC3E3B5C416AC87E5447F7BF830E88,.py,Python,documentation,report/plan/evidence,F,standard,245,True
+docs/audit/evidence/phase-b/cli/census-verify.json,4968,1E0139F367D7BD1A4D4D028C4908251BDD981CF172B21C2E71358E17C90AF755,.json,JSON,documentation,report/plan/evidence,F,standard,3,False
+docs/audit/evidence/phase-b/cli/census.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/census.out,4968,1E0139F367D7BD1A4D4D028C4908251BDD981CF172B21C2E71358E17C90AF755,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/diagnose_live.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/diagnose_live.out,964,45750E20D2529F12850F1130277A1BE24B411FB2188D715109C92F137E77F109,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/health_dryrun.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/health_dryrun.out,568,B687C7DF18B9EACE6E5FB96853F67FFFBE716ADDA97C3B20FE9BF6B097473243,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/health_live.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/health_live.out,1450,594B46239D6A2183ABFC866E23E04C5B2BA08A43B6B692B306847A5358C99DE8,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/preflight-path.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/preflight-path.out,1374,C39AF6AF2C1B26456B6E75B048D245FC147C9E5B8196F1BB4672A22F5D2091BA,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/preflight.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/preflight.out,1640,2457B48AB44CF0698EA734428169F8C097E2F74969A1CA7D8525AF02914E0189,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/provider_offpeak.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/provider_offpeak.out,1824,D04DFCA68B01BB11F04C4C93B28B546FA1E83AD41D5B0AEB55BA828992829666,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/provider_peak.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/provider_peak.out,1816,0FBE228F6B9AF4BB027310ACE1A9ECD8D0DA06D310E6CEA514CD302D2D6FC3CC,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/schema.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/schema.out,4000,BB9F478733F49FE56EF845D46BFBCAB486BCB1E702349F874B9AB1F90FE2CE67,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tool_missing.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tool_missing.out,834,C9411A2CA776C312D565701B46A22B65461304408B024B2A70FA8E1A16AFB489,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tools_describe.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tools_describe.out,1934,3C3D6EFE7B6F3814FD9AF738269031214B06A3A5302D1CAA283C53009C7AC201,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tools_list.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/tools_list.out,2432,877888142359985676B4020697DB84FC27072240257E167EEABC4096A0CAD042,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/unknown.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/unknown.out,824,F89A0CEB8515EA8D9D143D023521C623E386559C06268ECC9A1E1EBE84CE3D86,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/usage_error.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/usage_error.out,704,F621505E51474A1FD6CBBAD40A092B2913752A1E6A2E62CF7732D8C6486084D9,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/version-human.err,726,23CF6824D5209A9717934E8CE3DDA1A752664252D008FD9B508010AB8CB44290,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/version-human.out,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/version.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/cli/version.out,818,84BEFDB61A976C7D26D3AD31787F698CBF80059E2D70785D92DD6B15FFFB2E09,.out,Log,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/phase-b/live-probe-verifier-v2.json,4890,19D660FBEBB3C9EAC611F6E523C3A4657D1EA5891594112821D02A25E2DFA695,.json,JSON,documentation,report/plan/evidence,F,standard,176,False
+docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt,8882,8A87F5D00137028CD9EEBC438F874B0652F0587F48958C959D366D4095683C9A,.txt,Text,documentation,report/plan/evidence,F,standard,323,False
+docs/audit/evidence/phase-b/live-probe-verifier.json,4890,19D660FBEBB3C9EAC611F6E523C3A4657D1EA5891594112821D02A25E2DFA695,.json,JSON,documentation,report/plan/evidence,F,standard,176,False
+docs/audit/evidence/phase-b/live-probe-verifier.mjs,6414,5C21CD473E430DE4D290591B7AD7730B7E2DA756BF75619387BA477DB6359964,.mjs,JavaScript,documentation,report/plan/evidence,F,standard,131,True
+docs/audit/evidence/phase-b/live-probe-verifier.out.txt,9416,25B4CE4E8AEFF40D3529670463E3BBC31F7D988E7AE902AC9D0A9F83F6AA6DC8,.txt,Text,documentation,report/plan/evidence,F,standard,345,False
+docs/audit/evidence/toolchain/hello.c,75,1567B81E13E47B8AAFA199A1199022360B4B82279A84E56284503747AAF05DEB,.c,C,documentation,report/plan/evidence,F,standard,3,True
+docs/audit/evidence/toolchain/hello.exe,49876,8F186FF8B9B159DD6107C4D2F5C57362B0679733EB1E688BB4E995B3B257F119,.exe,PE-binary,documentation,report/plan/evidence,F,standard,0,False
+docs/audit/evidence/toolchain/hello.rs,45,913D97C057D169DA67B212EDC78D10AA472627FDC21C77B29E98C1060E4CC3D4,.rs,Rust,documentation,report/plan/evidence,F,standard,2,True
+docs/audit/evidence/toolchain/hello_rs.exe,5088192,8DF34E8A4D2C71099027DDD263FE52F040969F3F4E02CFAA26D252A173230ED3,.exe,PE-binary,documentation,report/plan/evidence,F,standard,0,False
+docs/claims/CLAIM-REGISTER.csv,24292,1518294B77D253239069F26A19C9EFC2A3FB955E43E4F0ABEFF1C40BB61C9AD7,.csv,CSV,documentation,report/plan/evidence,F,standard,82,False
+docs/claims/CLAIM-REGISTER.json,2717,C58869DAE44D8476AEC722FCE324957390642A18D88CE4B7C05B605595EA5603,.json,JSON,documentation,report/plan/evidence,F,standard,87,False
+docs/claims/SKILL-USE.md,1532,7D649CACB3A441DD1205343BAF40811B2F244B7BD9BD6281263BE4F86D9513A7,.md,Markdown,documentation,report/plan/evidence,F,standard,21,False
+docs/contracts/ADAPTERS.md,10628,ED7FEEE4747CF8980A915D9B9112190DD57A5BBA336D7736551C3EC81A4B5714,.md,Markdown,documentation,report/plan/evidence,F,standard,114,False
+docs/contracts/UI-COMMANDS-v1.md,6887,B7A50E8EAAF13F8EF8802B7AFD79DBF723CF46515F2CA8B97898E630123F757C,.md,Markdown,documentation,report/plan/evidence,F,standard,80,False
+docs/diagrams/agent-lifecycle-state.mmd,1660,E8DCD06FB84CEB22A389656EB7288A469F53E8B4E7B74EFF1F5803A642E35317,.mmd,Mermaid,documentation,report/plan/evidence,G,standard,46,False
+docs/diagrams/agent-lifecycle-state.png,136871,97F3984D1F22D64A8F6D0CDD688EBD5C038A31286AC6D90F51A63E50AB1571BF,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/agent-lifecycle-state.svg,72503,559347BD2DD440DDC6E8EFD14B8F4CB5568BA3D11C3F90073014B58DFAC34352,.svg,SVG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/architecture.mmd,2080,4A1F683DC05275F5AE95F13DADBFE42CFB45C3D482F2B56FD1C704EAAC9571FD,.mmd,Mermaid,documentation,report/plan/evidence,G,standard,51,False
+docs/diagrams/architecture.png,120208,05475658BC89C592BA59AE60EC8D58B4F1BB1C004CFD59084922CA4B7DFE4B52,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/architecture.svg,41481,89E8A0C76C25577EECF6CB5CDF0453F3A3527798CF66395FA6126606E9FFBE55,.svg,SVG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/er-schema.mmd,2725,B6E82A96FD19AEF19E62A45215F1531FF734936F76387221F4B58F2A4D86F80C,.mmd,Mermaid,documentation,report/plan/evidence,G,standard,92,False
+docs/diagrams/er-schema.png,119367,075A77FC69CABF60CB066CE66A5F3CCDF31358654E863034CB77DE7FDE4BBF58,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/er-schema.svg,218998,47A4C5844B6B426F2D1EE6AD43DF94B7165BA37FB7E4B946D40FC84093D49AA7,.svg,SVG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/run-sequence.mmd,2201,18FF2A7FE8AFBA17D40CBED182DE7D4EDC3C39185977C8638B03519D25CE1566,.mmd,Mermaid,documentation,report/plan/evidence,G,standard,48,False
+docs/diagrams/run-sequence.png,149891,E9703E3E6B0B3A1C89B555359864F2D1C61FC3CE99A2E6F69791C46F8F92F638,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/run-sequence.svg,47817,F4AB892C62692347FB4D7C1442696AE5DEDD37FD8D5B75A67BC7593FB8056E3C,.svg,SVG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/ui-control-event-sequence.mmd,1880,1CB4689E29310FCE2DD0588AAF19A9A1F9B1EFE05893F54129C9600571ED2595,.mmd,Mermaid,documentation,report/plan/evidence,G,standard,40,False
+docs/diagrams/ui-control-event-sequence.png,98011,0C71C776FFC17A9C4B4CF4E74093CB55D0757176E078CB60F59ED9556CBA8CC3,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/diagrams/ui-control-event-sequence.svg,43918,6CC5DA36A603A2DE2503F28C98E55C923CE48A41F1977B3801C8F392D3B5D9D1,.svg,SVG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/plans/D2-D3-WIRING-EVIDENCE.md,7031,77F6D5CD0BFD350534F430C9E37CC10735E50CEB6B760BB71F19C1BDB1D1BCB8,.md,Markdown,documentation,report/plan/evidence,F,standard,107,False
+docs/plans/FRONTEND-STATUS.md,10244,475A57BFDB9C3867F9FFC9AF5BC9C69D840A2CA59DFF894DA29CACEA5EF8BACD,.md,Markdown,documentation,report/plan/evidence,F,standard,111,False
+docs/plans/HASH-VERIFICATION.md,2978,1CAECEA3CF33F0AD0BC7A392F69BF968E939E8B531FFE06F73C7C966AA528E7A,.md,Markdown,documentation,report/plan/evidence,F,standard,43,False
+docs/plans/PHASE-0-RECON.md,1388,D52E9EF05217D661766CD5AE0DAC4695C5A838536491B7E43E9CE404821107A3,.md,Markdown,documentation,report/plan/evidence,F,standard,16,False
+docs/plans/PHASE-1-EVIDENCE.md,12164,AF6C28D6543CE2B259CF29E1295FACEE9C1F7929AF69DCE7C3D001929F93FF43,.md,Markdown,documentation,report/plan/evidence,F,standard,227,False
+docs/plans/PHASE-1-RECON.md,4990,9745DB35A2055C239E617151BFBCCE20CF188935DDDFC1A02D155A39C3F10C82,.md,Markdown,documentation,report/plan/evidence,F,standard,56,False
+docs/plans/PHASE-11-EVIDENCE.md,6616,2CE0F35EF15ABABD4A1C3332B414148F5CAD564419049FA9B145EB1F09F408C4,.md,Markdown,documentation,report/plan/evidence,F,standard,94,False
+docs/plans/PHASE-11-RECON.md,3989,52113636EC3839E56C7441E033CF2A940DA32C66299DAE494308319F80AE743D,.md,Markdown,documentation,report/plan/evidence,F,standard,48,False
+docs/plans/PHASE-12-EVIDENCE.md,9448,74CA606808C286DF94D638A6AC15F937602332AEC275FAB45F8406BEA51D169F,.md,Markdown,documentation,report/plan/evidence,F,standard,144,False
+docs/plans/PHASE-12-RECON.md,3738,83DE50FDF69C33EC721C84D3C82F60F879CB9F1238DE0D0CCBA4F16B4DB56005,.md,Markdown,documentation,report/plan/evidence,F,standard,45,False
+docs/plans/PHASE-2-EVIDENCE.md,8178,5AB509605FA86CDF626F61811E410296829E1AD371104FE2125770323549D2DB,.md,Markdown,documentation,report/plan/evidence,F,standard,133,False
+docs/plans/PHASE-2-RECON.md,5473,F0FFC149B0BD0D036080AAC211682159DD4E2EBA303FF16E40BF95590B8C5B7E,.md,Markdown,documentation,report/plan/evidence,F,standard,60,False
+docs/plans/PHASE-3-EVIDENCE.md,5624,E7E398223C8CE99DBE09AEBCF6F516881568151EBE70372F8D2F4288D7282648,.md,Markdown,documentation,report/plan/evidence,F,standard,86,False
+docs/plans/PHASE-3-RECON.md,4563,F21666ECF1CEA59F20E146F17A6010FC6AE6818FB3689B1514F0F6E5A6986413,.md,Markdown,documentation,report/plan/evidence,F,standard,52,False
+docs/plans/PHASE-4-EVIDENCE.md,6243,274EFBB4FB512A585F2796ED815FFE9CC16166171B77F8506106B7DC5BC24FE0,.md,Markdown,documentation,report/plan/evidence,F,standard,88,False
+docs/plans/PHASE-4-RECON.md,4161,24F408B03AC901D769C5770D1D700F514C4063B164E679303DF1FDEB7DEADEA4,.md,Markdown,documentation,report/plan/evidence,F,standard,48,False
+docs/plans/PHASE-5-EVIDENCE.md,6521,4A176CD2BEFF7774CA37F02B0AA5E5B04FA5CA61734570F0D7D9D64C30A7C390,.md,Markdown,documentation,report/plan/evidence,F,standard,107,False
+docs/plans/PHASE-5-RECON.md,4101,C930023A320BDE7F4191368BED8F095FD159DA3CD2C70888D28D576C66D1BB25,.md,Markdown,documentation,report/plan/evidence,F,standard,50,False
+docs/plans/PHASE-6-EVIDENCE.md,10265,DE6EEFB3E8040B061E5CEBCF8574E06B12AE6D43F6207ECB9E4BE5AF94AFDDB3,.md,Markdown,documentation,report/plan/evidence,F,standard,165,False
+docs/plans/PHASE-6-RECON.md,4254,E43CE35A863126385FB12BB82A0282AA8D776F24FCE0BD6D1DE57DDB63790365,.md,Markdown,documentation,report/plan/evidence,F,standard,49,False
+docs/plans/PHASE-7-8-10-EVIDENCE.md,11738,8714D474F62BFE79916D21F63B775FCF5D6AA59F4238395EC485E4CE561E490A,.md,Markdown,documentation,report/plan/evidence,F,standard,158,False
+docs/plans/PHASE-7-8-10-RECON.md,4784,A707E9314D4C867DD3382A40150657B90DCC34832BE5A8A900144CE801E8BCC3,.md,Markdown,documentation,report/plan/evidence,F,standard,55,False
+docs/plans/PHASE-9-EVIDENCE.md,5612,699E1DE3DDE3F669A10350EABF9C80596BD5F77611433ADDBD82AC670C5DB076,.md,Markdown,documentation,report/plan/evidence,F,standard,79,False
+docs/plans/PHASE-9-RECON.md,3912,920896015BD7C6019AC1ED4DD29ABF7F0B24354ECC169F1E2497610FBFEC2D1F,.md,Markdown,documentation,report/plan/evidence,F,standard,46,False
+docs/plans/SESSION-PLAN.md,2829,839B691CE96AE57FA60742ACF8E638FF956A6EAC01FBF402BC1D55AA69F518C8,.md,Markdown,documentation,report/plan/evidence,F,standard,34,False
+docs/plans/TOOLCHAIN.md,2022,86F2B9C21EB8C318CA5BAEA255FF02FEC6B2D9FA2D6A02A9857AE08214C74765,.md,Markdown,documentation,report/plan/evidence,F,standard,34,False
+docs/reports/FINAL-REPORT.md,6121,978271BE811ACDFD97FD55F5A9F3E694E18FA78CCC9DC8F4F893073B0148514D,.md,Markdown,documentation,report/plan/evidence,F,standard,76,False
+docs/trace/A11Y-CONTRAST-PLAN.md,5837,8DB0269DA711AE2C9924753EB39BC2B9D8A2FB5A207ED6F5FD472072F0037094,.md,Markdown,documentation,report/plan/evidence,G,standard,64,False
+docs/trace/QA-HARNESS.md,19296,09734D2A94E73373606269B52FD5B8CFA40D70CB3F69A7DB64CE8608DA5BB75C,.md,Markdown,documentation,report/plan/evidence,G,standard,232,False
+docs/trace/TRACE-SCHEMA.md,6984,836CA29B8976A406AF18724E2C7B4616C02986531BC4A6D003D3706BE835BC86,.md,Markdown,documentation,report/plan/evidence,G,standard,116,False
+docs/trace/controls.json,73765,D364512D98EEEF50D50A0855307DB65E6FB7876FE59BD131EC89EBFE9DCD2856,.json,JSON,documentation,report/plan/evidence,G,standard,1937,False
+docs/trace/events.json,1272,1037643C7D56A6CF8975AEA6ECE545C55B42D42234C6E9B7093AA3AA74326350,.json,JSON,documentation,report/plan/evidence,G,standard,44,False
+docs/trace/live/README.md,6081,DE5A193B6D24ED3E3FDA7B60BE3B706ABE44F59E09E3E8B6B4A5F282303C247C,.md,Markdown,documentation,report/plan/evidence,G,standard,85,False
+docs/trace/live/app-boot-full.png,112923,6368078AE15D3B99310BF68771E44E2529EE2D4887CDEF038EFCEEAF11436D24,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/trace/live/app-boot.png,112876,E0C1B0AD6C9815BF00FD958AF9975E401C1A881FF10996E1AD4F4FEA064FE855,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/trace/live/inspect.json,10462,CA23AD61B0E8E56957F80727C19D5ED8715483F816BB3A01FF845B90A5739C8A,.json,JSON,documentation,report/plan/evidence,G,standard,437,False
+docs/trace/live/live-app/01-boot.json,231,B3DED1CD14658DAFE2DB5D98B118B9E780F80054141AE1403EE936D8928292FE,.json,JSON,documentation,report/plan/evidence,G,standard,11,False
+docs/trace/live/live-app/02-skip-link.json,131,1246C1EA54B02384737A77E35A4F9665F391563EAAFD07E98EE05AA381846F66,.json,JSON,documentation,report/plan/evidence,G,standard,6,False
+docs/trace/live/live-app/03-console.json,46,4E768728E3A6785221F219D056CF4EA9120CACCE6A06CB227A52F422EC9C27FD,.json,JSON,documentation,report/plan/evidence,G,standard,5,False
+docs/trace/live/live-app/04-census.json,639,B2E5124A529DC8C4200A5B6D56253849E24E2789EC9B3E51BA4D93C8A06A6B7E,.json,JSON,documentation,report/plan/evidence,G,standard,36,False
+docs/trace/live/live-app/05-tabs.json,56,81DE340B8378D8A1FBF8386E1E2B7D1BF78D556B360E4629D074BCCA4342094A,.json,JSON,documentation,report/plan/evidence,G,standard,5,False
+docs/trace/live/live-app/06-nav.json,122,B92DEBDBB0B57E3BD80FDC2DBE1EB8EF60621763CC37DE98D152F7B20D38D27B,.json,JSON,documentation,report/plan/evidence,G,standard,11,False
+docs/trace/live/live-app/07-zoom.json,197,8E27D5EF0DBEBC52080BCC02F714F449837152BBF7039A848E920221AA96CB0C,.json,JSON,documentation,report/plan/evidence,G,standard,7,False
+docs/trace/live/live-app/08-chat-pin.json,334,892CC160997F0901D54A508A32E70E8A3CD873AF186A87FAB23CB216AC81C1DF,.json,JSON,documentation,report/plan/evidence,G,standard,15,False
+docs/trace/live/live-app/09-empty-prompt.json,50,1CED73CEF3179D73F6459E3483DAC6EE43911F2571BBDCBAC7C4B4C50BBA4F54,.json,JSON,documentation,report/plan/evidence,G,standard,5,False
+docs/trace/live/live-app/10-ws-handshake.json,200,9F4B564EA9CE146BAFB4C263D28C9E27161270DA412678ACF5180E1FBDAB6CF9,.json,JSON,documentation,report/plan/evidence,G,standard,13,False
+docs/trace/live/live-app/11-colours.json,265,70B0F44C187C3CC5679529510C90ABBE649810CA1E461085846C948FF4C72BF6,.json,JSON,documentation,report/plan/evidence,G,standard,9,False
+docs/trace/live/live-app/12-settings-status.json,266,5BA61E4C91D46141EE6EADCC0CFCCDB548697319E9A3C7F7B7A09EF0440885C2,.json,JSON,documentation,report/plan/evidence,G,standard,14,False
+docs/trace/live/live-app/13-contract-drift.json,443,4D93E38D8F022589B9AC56207E1BB4BE3AA29736FBAF5808F7D39264DD08A978,.json,JSON,documentation,report/plan/evidence,G,standard,12,False
+docs/trace/live/live-app/14-file-tree.json,504,7D8A09750959415C88569D78D0C142BAE9C8D28908AA4EAFF345ADEE1CF14306,.json,JSON,documentation,report/plan/evidence,G,standard,19,False
+docs/trace/live/live-app/15-data-size.json,678,4E026FD90D1A53EACEC3AA3B7706A156A5A95A0F8DE9585A8FC6D16C91D932CF,.json,JSON,documentation,report/plan/evidence,G,standard,13,False
+docs/trace/live/live-app/boot.png,99367,9EA23060505B5C65697A2DD735035FFE844FD17F1BCB76DC9372D8D6CD8D6DE7,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/trace/live/live-app/surface-census.png,99367,9EA23060505B5C65697A2DD735035FFE844FD17F1BCB76DC9372D8D6CD8D6DE7,.png,PNG,documentation-asset,design/evidence asset,G,standard,0,False
+docs/trace/live/trace-capture.json,22492,2D22C75E3A6F2D2E1CC96525FFD017281108DAB44CD9241FB591AF81A898236D,.json,JSON,documentation,report/plan/evidence,G,standard,675,False
+docs/trace/terminal-truth.md,2548,BBC7C40EDE3E70383E7F51001686E062EC08A57706E3FFFC5B47BDD5FEF69A69,.md,Markdown,documentation,report/plan/evidence,G,standard,39,False
+docs/trace/traces.json,279,D0BA5A066CD07A4D90F2937842EF7CA3EA149FBD46C8CE927555E2890CDF9A43,.json,JSON,documentation,report/plan/evidence,G,standard,10,False
+docs/ui/figcraft/A/A-ASSETS.json,18534,88832272CB6C81DDFF234D77F5ABBDF4D9811AE1E8D787B7B02F1C07F11E77F1,.json,JSON,documentation,report/plan/evidence,E,standard,683,False
+docs/ui/figcraft/A/A-EPISODES.json,3895,BD7593F710483C82FCC221EB714E05C4ECA3868E2FE3EA6AD83CC26B0D4A1730,.json,JSON,documentation,report/plan/evidence,E,standard,100,False
+docs/ui/figcraft/A/A-SELF-CHECK.json,11246,063066BF47E14579A4EC0EBC49926752D7AAB813842B82E2A0C86AB07F710F3D,.json,JSON,documentation,report/plan/evidence,E,standard,613,False
+docs/ui/figcraft/A/build/build-state.json,103383,7874F3459D50AEA714C1E43A008FC0B92555ED266E470282B4359ED44DFB86C6,.json,JSON,documentation,report/plan/evidence,E,standard,5690,False
+docs/ui/figcraft/A/build/c4.png,86238,956DD5BAFFDE6849A728F7461D6EF7E974B63EB2F029BB44160138086C754C11,.png,PNG,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/fig.py,3380,7793BF9656FA40DA1DD029B14E35D007B01A89E5EC60BEAD2ED95C22122F3782,.py,Python,documentation,report/plan/evidence,E,standard,93,True
+docs/ui/figcraft/A/build/gen_build.py,10259,156CC41465354353D3400E30E98900DFA30EB5877820C524BC0E4DC96065230C,.py,Python,documentation,report/plan/evidence,E,standard,263,True
+docs/ui/figcraft/A/build/gen_common.py,21202,697CB7B80527C02721CAE7A745601D270602F7F050BB781D86CAF5692F9AEC25,.py,Python,documentation,report/plan/evidence,E,standard,436,True
+docs/ui/figcraft/A/build/gen_manifest.py,17760,61D800CF7E0A4929CADB9004A933A33AC1A507A5F13268D1AC7FA6E5039CD893,.py,Python,documentation,report/plan/evidence,E,standard,410,True
+docs/ui/figcraft/A/build/page00.figcraft,78099,1AEBF14DF36AAB0D7F172A28FC6F1256561A1596D9BFEF0C1017FB6047E90FC2,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page00g.figcraft,78540,2E17E137D321912032529DD6D024F36570223B6C698F127F2518BA07D62BA783,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page01.figcraft,88448,8FA909A270925F44E8E9994D483052158F92411AEA74898CD6A5A853F59BE165,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page01g.figcraft,88784,3B1FAF4B0E788CF3832C79A84A6F65917AE3A5048DDBC350601FDD9C283E9543,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page02.figcraft,115696,5A23DFA3B9D9DB04D39F25F1CFE309BFDB01FDDB669E0F3D921D0D732FCBFE2B,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page02g.figcraft,116787,08E11CDB797F184530CC17D86D720E4C9BFA7FDC3398A5F2806862F533F282E5,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page03.figcraft,126837,F22935BB1D259DF77D6179F60C0B8580C9C6AC3382D18AA73E0E4585BE4789F1,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/page03g.figcraft,127191,3C5531ABA40ABD2C98B2855818CDA85475FB46985FB9146EF97C537CC1D8D6C0,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/pages_brand.py,16379,6A0DBFC4C77E98D62A4B1F5D75BC5BB1D2879ED2C2B2E384618B0735B2B64850,.py,Python,documentation,report/plan/evidence,E,standard,266,True
+docs/ui/figcraft/A/build/pages_components.py,43816,BFE7DED25A8CBEC9893D8A7760D79900BB091613B1848CCD96D3C8A791DCECF1,.py,Python,documentation,report/plan/evidence,E,standard,799,True
+docs/ui/figcraft/A/build/pages_foundations.py,13873,AA365521DD750549B6E2927E9DFDBF3969DDCB4A7F6064565FEE05B5344B4417,.py,Python,documentation,report/plan/evidence,E,standard,254,True
+docs/ui/figcraft/A/build/pages_specimens.py,18950,3FEDB4165D41CEDF16A00635DDA535C234900DAF0726A8B8F17FF34F89E9F794,.py,Python,documentation,report/plan/evidence,E,standard,356,True
+docs/ui/figcraft/A/build/probe-s04c.png,23088,28EB4E30D1CDFB5A6AFE35C515294DDB9C611F3D50EA763C1ED14AD940402C8C,.png,PNG,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/stage0.figcraft,1086,4E7F14ECD87D467E4DD27A8241C5D526E37BE7FB0CE55A8A858BA4C8ECCBB892,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/stage1.figcraft,4967,475466F7CF702EBE41B41A8D0BAA29F67644D1BA95E6414965DE9810E1437BB6,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/build/styles.figcraft,80405,3132F03047E7F2044717AACE634B15CA76DDB5567B54B3A327E327245B040187,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/A/scripts/00_setup_pages.json,3681,622B84004114282A408C44CEA435B2934B298586F3663D207F44782D95105698,.json,JSON,documentation,report/plan/evidence,E,standard,224,False
+docs/ui/figcraft/A/scripts/01_frames.json,1473,2CD4F67CD7D82D9ADC3A533CDBE2BF94F2BF5C2638535036FCD33DBC6E647340,.json,JSON,documentation,report/plan/evidence,E,standard,119,False
+docs/ui/figcraft/A/scripts/02_foundations.json,76384,6886D2EE933F861C9199CB11F4DEDFCB3BC1FFF625D511067F94685D3F21D515,.json,JSON,documentation,report/plan/evidence,E,standard,4355,False
+docs/ui/figcraft/A/scripts/03_foundations_groups.json,2879,9D9D0034A550CC0ED34845DA99D31E6AC22DFB55D561266FDA889D2777860949,.json,JSON,documentation,report/plan/evidence,E,standard,304,False
+docs/ui/figcraft/A/scripts/04_styles.json,4911,3D1E3EDC382832ED191510283E47083C2DB13CF4F19CEDE130B6CA98BD583B4B,.json,JSON,documentation,report/plan/evidence,E,standard,359,False
+docs/ui/figcraft/A/scripts/05_brand.json,49111,DDAE3EC1779C62E92CA98ABB1DBFDBD942332B26B3B499343F9CA2D561BE55C3,.json,JSON,documentation,report/plan/evidence,E,standard,2785,False
+docs/ui/figcraft/A/scripts/06_brand_groups.json,1867,7FC718D847F507C4E621336E591B9D76DEA9999679F8F87A6C19743C54C1CA3C,.json,JSON,documentation,report/plan/evidence,E,standard,197,False
+docs/ui/figcraft/A/scripts/07_components.json,200344,1401820BF674C6CC484E5EA7CFE2147172ADA3E0B232173F489E12FC87FD6BC5,.json,JSON,documentation,report/plan/evidence,E,standard,11489,False
+docs/ui/figcraft/A/scripts/08_components_groups.json,7306,40CFB4D040DBD8FAE4F9881BD73D792E5065EEFDDC242DAA0E8FD0859750B0A4,.json,JSON,documentation,report/plan/evidence,E,standard,746,False
+docs/ui/figcraft/A/scripts/09_specimens.json,68015,5B968CDA478FAF53877973046DEF05F3963B951C48A3FAA830064778E7E3D287,.json,JSON,documentation,report/plan/evidence,E,standard,3984,False
+docs/ui/figcraft/A/scripts/10_specimens_groups.json,3539,0FA384767F11747818025E36539975115CD9CE105B9D1E06CDBD65CED9779D21,.json,JSON,documentation,report/plan/evidence,E,standard,331,False
+docs/ui/figcraft/ASSETS-INDEX.json,35998,C5763BFA74A82C1D4E0BDD454786D0E46EEC10C543F37B5A99F0DF487FAC8E41,.json,JSON,documentation,report/plan/evidence,E,standard,1253,False
+docs/ui/figcraft/B/B-ASSETS.json,26809,A8A81E74BFBFBB3B9BCA9150DB734E8A1444D9B9E04F82CEF5C71A17F55D1F4D,.json,JSON,documentation,report/plan/evidence,E,standard,1043,False
+docs/ui/figcraft/B/build/__pycache__/board_default.cpython-314.pyc,29494,2F6955F9A0A593714AF73A175B862A484F0734B2E01A66E3A3E5B8B862CA2DF3,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/__pycache__/board_hero.cpython-314.pyc,15308,3E36B8B717F04FB17218BD82F2701B0D7D3CAE3C54B85225A8A814E54E180404,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/__pycache__/board_interaction.cpython-314.pyc,25009,90B8E94E740D88EA1DDF8617638AEB7D6D082DF7F8FBC757957B8E5138898DF9,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/__pycache__/board_zoom.cpython-314.pyc,16839,A8BFF67F3F04AB58092134150BDEF00BB6B6C51166A27D6387AB7A9AF19CCC18,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/__pycache__/boards_common.cpython-314.pyc,26082,BA2199207293EAF6932E66945F0A0A13EFAC423A8D174F11F545EB8DAA2C68D4,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/__pycache__/fig_b.cpython-314.pyc,4996,3E2FD13EF12BE71C38291D0463E68CC11BA434AAA63CE30F489C75FD88857077,.pyc,Python-bytecode,documentation,report/plan/evidence,E,standard,0,False
+docs/ui/figcraft/B/build/_run.json,17355,55FAD1FBD94AF2CFAD7FFDF8CACFBEC8D67FB1A171CF08DC40537286B65D86CB,.json,JSON,documentation,report/plan/evidence,E,standard,1334,False
+docs/ui/figcraft/B/build/board_default.py,22086,1C30304D871CF883A874CDBFEA627B3CCA6E3067B817B40D5B40ED714024305E,.py,Python,documentation,report/plan/evidence,E,standard,403,True
+docs/ui/figcraft/B/build/board_hero.py,11816,8B1A2393C1CE34620DF5B8682270B7350B80EC36BC428A6461DA6CEDE7D479E4,.py,Python,documentation,report/plan/evidence,E,standard,220,True
+docs/ui/figcraft/B/build/board_interaction.py,19172,B371F88C0FB8168040D315EAC4ACF91F48C08FCDFB78FDB6094AE06B1D72763F,.py,Python,documentation,report/plan/evidence,E,standard,331,True
+docs/ui/figcraft/B/build/board_zoom.py,11922,6BB6352EC2BD21E10431048A172F481967D3DC188261AD859BDA0BDDD95647BC,.py,Python,documentation,report/plan/evidence,E,standard,204,True
+docs/ui/figcraft/B/build/boards_common.py,19072,1AD83890997DF604C4988777E32976B0680AA017D89F4E90F9167B4D44E2FF4C,.py,Python,documentation,report/plan/evidence,E,standard,438,True
+docs/ui/figcraft/B/build/build-state.json,29301,44E3EF35F9A03932BFAD23ACFC328C067E367FB8E5BC18AFA22362555B4BE555,.json,JSON,documentation,report/plan/evidence,E,standard,1028,False
+docs/ui/figcraft/B/build/build_b.py,9962,DF43373E99874076477A6912CBE7E0C275B874F8EB69F9DFE82951F70DE9F10A,.py,Python,documentation,report/plan/evidence,E,standard,237,True
+docs/ui/figcraft/B/build/fig_b.py,2776,0E0BF626F49FE0ECB228CA98C17B468C11611706E45552FAFB07127895A6A63F,.py,Python,documentation,report/plan/evidence,E,standard,75,True
+docs/ui/figcraft/B/build/info-B.json,1468,A6C32597C3BF666DF1AC3222B2671F1D59276D7176E397BEBAE451918D653012,.json,JSON,documentation,report/plan/evidence,E,standard,74,False
+docs/ui/figcraft/B/build/make_manifest.py,14329,46AC706599D473029BB82907BB33D5489DAA6F725194ACDDE2A17DD92589134E,.py,Python,documentation,report/plan/evidence,E,standard,292,True
+docs/ui/figcraft/B/build/patch3.py,15487,C94F86CFBDE18B0B09E25F21606AC5D31226D59315D53BE93D67D8BA4FD4A574,.py,Python,documentation,report/plan/evidence,E,standard,209,True
+docs/ui/figcraft/B/build/patch4.py,8394,625EE45B7E2EAC9A8ACAB27441EEA210267B627392C5D96C69820D9358AC3AA8,.py,Python,documentation,report/plan/evidence,E,standard,135,True
+docs/ui/figcraft/B/build/patch5.py,2467,1B6CB7C71FC3DF3CD3DAC80B156C1148218BF00689B983AA704A548D1D08277E,.py,Python,documentation,report/plan/evidence,E,standard,48,True
+docs/ui/figcraft/B/build/patch_default.py,7268,A5CC8AF47EF7C9B54BD74CF5A987EE65AE31A9C45465F28885351C083A3D7F70,.py,Python,documentation,report/plan/evidence,E,standard,136,True
+docs/ui/figcraft/B/build/patch_default2.py,3177,BBB639AC2891DF0B5B7118AAED78E81262A07238753156C859D594B0B7A205F3,.py,Python,documentation,report/plan/evidence,E,standard,65,True
+docs/ui/figcraft/B/build/patch_manifest.py,832,85BC4269A30C0041E47624DAB672C635810E15339B83A0EB42E5E0E6FF698667,.py,Python,documentation,report/plan/evidence,E,standard,22,True
+docs/ui/figcraft/B/build/patch_manifest2.py,1387,9898A90C0F8420732BF8637DDC3CC235F8CE686660048E40150A828BB5454231,.py,Python,documentation,report/plan/evidence,E,standard,30,True
+docs/ui/figcraft/B/build/patch_verify.py,2801,35866B160EBC1A32A464FB223E69F3CFAA029F2E61E931B71685D6A7A7F35E2F,.py,Python,documentation,report/plan/evidence,E,standard,63,True
+docs/ui/figcraft/B/build/tmp/board00.figcraft,96529,CB67EF889CE96AB72FCE9702AF7A5A167BE2F78D64CA03AB3117589D1BBD6922,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/board01.figcraft,154725,30B82B71DFCB74F9EAA7F7057DD6E44A59D933B736ED0C3277BCC844F453A41F,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/board02.figcraft,184409,E15F74A99F70E65154A39185DAB182E8237579D9FE60E877F8D335F673639767,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/board03.figcraft,220688,43CB51073086B629CF4845B9CDC2FC83068CBF3357F4C8594DB837FD5786ABD0,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/effects.figcraft,226734,DAE6068926E30C99E89A43A1B15257FF8F16B1FD6C943AE990A4F383C0418288,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/step0.figcraft,479,E1A337C46B6F9579923D6A95D795F65EB95DB32672255DC4F9A192A33E06633E,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/tmp/step1.figcraft,3500,55F239BC554356C57DE286952AB9BC3624CB1CA4D944C610F2DAD73276D5A5AB,.figcraft,FigCraft,documentation-asset,design/evidence asset,E,standard,0,False
+docs/ui/figcraft/B/build/verify_b.py,8954,F1CA91F75590597AA6BB9F9753AE0E16F22552831770728CCD10398383CE003A,.py,Python,documentation,report/plan/evidence,E,standard,195,True
+docs/ui/figcraft/B/scripts/00_setup_pages.json,483,B4CB27577B250AEE985030B02B3FF5662BB212EB111884E126CE89FEC25EE4BC,.json,JSON,documentation,report/plan/evidence,E,standard,38,False
+docs/ui/figcraft/B/scripts/01_frames.json,1471,12FC72E51658F42822759021231C53A6B14D7813760C910D1783A38B053B0AF9,.json,JSON,documentation,report/plan/evidence,E,standard,119,False
+docs/ui/figcraft/B/scripts/02_canvas_default.json,98178,B7E3B8506254CCDE4654317E93CF639ED42C450EB3F41D8F750044D117C9069B,.json,JSON,documentation,report/plan/evidence,E,standard,3777,False
+docs/ui/figcraft/B/scripts/03_zoom_states.json,104367,72BA962F41293411444FE0049273F8B610DD5125ED816AAE2F0AE8C9B5EF5A54,.json,JSON,documentation,report/plan/evidence,E,standard,1637,False
+docs/ui/figcraft/B/scripts/04_interaction.json,83317,12279E3A5F9A24A680995DF8CFEB80C76E5F0EFDC89D1D0C08AF4042645474C2,.json,JSON,documentation,report/plan/evidence,E,standard,3046,False
+docs/ui/figcraft/B/scripts/05_hero.json,74872,912F15B627B251B747D5857082A501D8E02D42CD58259A7CBE44F0A570A441C4,.json,JSON,documentation,report/plan/evidence,E,standard,1797,False
+docs/ui/figcraft/B/scripts/06_effects.json,17356,68FD956DDC8E23D6497A5E3C10B67B3CC72D3D6E1AF96253E9D37934622AEB9D,.json,JSON,documentation,report/plan/evidence,E,standard,1335,False
+docs/ui/figcraft/BRIEF-A.md,5806,F8EBA08A454854653583A1557D7AD65A1B28DB5E691D2911EC3889135697BC28,.md,Markdown,documentation,report/plan/evidence,E,standard,68,False
+docs/ui/figcraft/BRIEF-B.md,3225,1028F4548476E3F193DE1884A663726ECB879EE3AA1BB5CA3911271D57D1FE89,.md,Markdown,documentation,report/plan/evidence,E,standard,44,False
+docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json,3011,A9074BAC5EDE735B802C9C65DE64ED275F4377B0C36BB56BBFDA5B9A9D97D09C,.json,JSON,documentation,report/plan/evidence,E,standard,91,False
+docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json,1702,9BC9EA665C31F95826A4968A43F31441FD74EE81D699A06E933E73312C2D1949,.json,JSON,documentation,report/plan/evidence,E,standard,68,False
+docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json,1704,D3BD839378EE6C555D31F4DD62E8E7AEC37214B9BAD1E7525E6DEA01F914D17E,.json,JSON,documentation,report/plan/evidence,E,standard,67,False
+docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json,1694,7212B7DDD0CF7CF97ADC8E02B3CF2934A40FC3C67A3DE545453161FA8C8F0A5E,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json,1679,1CAC392CAFB69A4AF459A207752B074CBCAF5C9A883474DE01F6CC9E848DFC2E,.json,JSON,documentation,report/plan/evidence,E,standard,67,False
+docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json,1720,62E14A06C79E9E3DA418E6AB992AE2856D600AAB60A32C8ABA57B06461963CF1,.json,JSON,documentation,report/plan/evidence,E,standard,69,False
+docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json,1668,C63AA5DC342790A65557BFED29D2124FF1FC780392ED9A8894D7B8652110CD41,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json,1741,823CB7DED9BF9E8122F5425F6EF7F4D89040F8568EDD5BC4E24FED3E7154F0DB,.json,JSON,documentation,report/plan/evidence,E,standard,69,False
+docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json,1689,917168E3D7FAD732439F7ABC4A05EA2DFB291317C017666C5C8F9EB2114E3EE4,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json,1737,2F0D52054E04BE6FA1012B26F72BF6F7536BC61B76E5C982DC2F1E6A1D0A28FB,.json,JSON,documentation,report/plan/evidence,E,standard,69,False
+docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json,1685,2799C4B396BC169E4E1A67EDD03A80046421593D71035DD330A85157B2FE6C19,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/a-a-exports.json,14280,958BCE12BFC978EA2E37C1F491CDEFC63FAF377866EE10FDF197BA4D2C987594,.json,JSON,documentation,report/plan/evidence,E,standard,692,False
+docs/ui/figcraft/EPISODES/b-00_setup_pages.json,1559,3E4901E24386D9D2D0271687C5CA273518526AA87B0CC2AB98C300445AC69B76,.json,JSON,documentation,report/plan/evidence,E,standard,64,False
+docs/ui/figcraft/EPISODES/b-01_frames.json,1658,D23F056CE12BBCF4A1D6F88BF7805DE928C7570C72FFF02CC112ECFB8B7E2515,.json,JSON,documentation,report/plan/evidence,E,standard,64,False
+docs/ui/figcraft/EPISODES/b-02_canvas_default.json,1681,9FB241E8A755345D71D81634BE7F9176F837B7CB4A39ABDDBE6C0751905D3B07,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/b-03_zoom_states.json,1638,9FE70D6AE9414785105F417693E49185AF31187CA6A44963EBA8B90F5E2BE1B5,.json,JSON,documentation,report/plan/evidence,E,standard,63,False
+docs/ui/figcraft/EPISODES/b-04_interaction.json,1688,BB8B9B393232EB441D731DE82F91A0DD868E7ECE7D65891AE531E3BFD4E64C29,.json,JSON,documentation,report/plan/evidence,E,standard,65,False
+docs/ui/figcraft/EPISODES/b-05_hero.json,1636,2BF94673AC84148BAD803BBE73E88B9E66803D4204B38C6BC610AA39CED9764B,.json,JSON,documentation,report/plan/evidence,E,standard,64,False
+docs/ui/figcraft/EPISODES/b-06_effects.json,1624,D2ACA9B04DF4C3276D297DECC7C84830A326658EC347AC956C849FCE5125352A,.json,JSON,documentation,report/plan/evidence,E,standard,62,False
+docs/ui/figcraft/EPISODES/b-exports.json,2929,CE54FCBC5A52FA40396E849E1BCE5B10AAAC3DABC9C5EDAB06778A89B7A6828E,.json,JSON,documentation,report/plan/evidence,E,standard,127,False
+docs/ui/figcraft/WATCHDOG-BRIEF.md,3074,916C743FF1A695347F54DE7D4EA51FBD06F0BD14D7580713535141912D8DD4E8,.md,Markdown,documentation,report/plan/evidence,E,standard,41,False
+e2e/.gitignore,125,EC621CAF388828C9A865137362779A41E7DCEB44D365D71A1DB6C974BC6DB333,,unknown,other,uncategorized,D,standard,0,False
+e2e/README.md,4722,566522894E805A08096C3F4D356672FB6D387430592AFDBFBCDAC455223D7ED3,.md,Markdown,other,uncategorized,D,standard,80,False
+e2e/data-probe.mjs,1022,E0E5A045390F6D6D5E5CA41DE83BA16C16325A8B5A01DAF9FFFB266326C336C6,.mjs,JavaScript,source,first-party code,D,standard,18,True
+e2e/data/control-matrix.json,14979,D42E3342DC3175B8B7B73B67F6D3D039FD6C8091C0BED94767F2FDD10CA99375,.json,JSON,config-manifest,build/dependency/config,D,standard,67,False
+e2e/helpers/app.ts,2044,CB9AE9F946471B6FA443CD22AD31E618127EFBAD7BD5070AC7E8A2FF1F798F8C,.ts,TypeScript,source,first-party code,D,standard,63,True
+e2e/helpers/contrast.ts,2214,646ED79DF15D2A303933194C4C8D9F51FFDD11D9B4FCCC1DCCCEC10C5ED0726A,.ts,TypeScript,source,first-party code,D,standard,49,True
+e2e/helpers/evidence.ts,2921,066430F0A36E9F9A63B555AD9858A3FFCE108A068CCB8CEBF6AC7CF7C672E482,.ts,TypeScript,source,first-party code,D,standard,83,True
+e2e/helpers/matrix.ts,2004,BC101B3505E1F98BB258CCA037790A6B660C4876316B60D73778870849C0D472,.ts,TypeScript,source,first-party code,D,standard,74,True
+e2e/helpers/trace.ts,1299,404CE7202A8C8A5557C88CA7F132D2C3C4CF8F05468F3F211A5E7F5396664E97,.ts,TypeScript,source,first-party code,D,standard,38,True
+e2e/helpers/ws-tap.ts,1790,4E667F62D942B736C4F452B5A01F86B0DF21AFA49F36FF54E1F1E6FE3E1069F8,.ts,TypeScript,source,first-party code,D,standard,61,True
+e2e/live-check2.mjs,712,042EACC4F2919579B83E6A509CFA5B53321A9A5E8C0ED40B346101882F1C4E78,.mjs,JavaScript,source,first-party code,D,standard,12,True
+e2e/live-inspect.mjs,6568,DDD46289FF4EB7601EBC1222CD92C8633D74F81E6AC403C4E4A6946117F0D74A,.mjs,JavaScript,source,first-party code,D,standard,128,True
+e2e/live-probe.mjs,1019,6C90EE5C0B7FDA7C179ADFB95EE6C55A9D67158BD7ECD77998291C54628AE285,.mjs,JavaScript,source,first-party code,D,standard,17,True
+e2e/live-shot.mjs,529,349E459DBFB88EC740A695F652793AAACD26E53B3EF0CF467B90C86540DA1A0C,.mjs,JavaScript,source,first-party code,D,standard,9,True
+e2e/live-smoke.mjs,1064,50E507618D831B6C2B4B6295E71BF3730A61746DF05F3A8404314674CEE20259,.mjs,JavaScript,source,first-party code,D,standard,20,True
+e2e/package-lock.json,1748,883C7A729F40D01BA20B7C2FF3AF9D787B59FC070094F6CFE5C47F3A0EB3CB68,.json,JSON,config-manifest,build/dependency/config,D,standard,64,False
+e2e/package.json,659,F5D3D35E1C3F4FCC395F2849E3F1F073EA4CE11BAF071CDB1F787122863C0A28,.json,JSON,config-manifest,build/dependency/config,D,standard,22,False
+e2e/playwright.config.ts,1917,E414A391049EB04C8A2865188C9457185FF525919BCF19FF4E5C83EDB1EA3698,.ts,TypeScript,source,first-party code,D,deep,48,True
+e2e/specs/a11y-gates.spec.ts,2769,9F5DE694757DCF044C2D6B553482F08290674CE2831AE56C5D7976C9190E8C4F,.ts,TypeScript,source,first-party code,D,standard,53,True
+e2e/specs/control-matrix.spec.ts,3755,E4B16D3E05BD57AEAB2DC460032B9A304AE8EF9044A704122879487076B38407,.ts,TypeScript,source,first-party code,D,standard,86,True
+e2e/specs/live-app.spec.ts,19833,CB3A5E8D70EF35F937D4ECDC3266D6A91265329720E9C5B1F385B8299BC7C54C,.ts,TypeScript,source,first-party code,D,deep,335,True
+e2e/specs/trace-hops.spec.ts,17640,03B8B6A4F1122F494BEF9DCFE8D227C189928771462942090B5639EF7D7E9270,.ts,TypeScript,source,first-party code,D,deep,319,True
+e2e/specs/ws-contract.spec.ts,2188,025EB2901FF4DD490F468CE75FF7AFD13F6553500570D55FA5BB1F34CBEF8599,.ts,TypeScript,source,first-party code,D,standard,45,True
+e2e/tsconfig.json,228,6D92AE9D89B3F28E9EDE5F180059DB48D5571AAE49EA5696D203F71337C3730C,.json,JSON,config-manifest,build/dependency/config,D,standard,13,False
+ledgers/ui-watchdog.json,8655,810A5AA01E648857BAC89B2FAA563AC8517C57205EE988F09704F7FE4067EA39,.json,JSON,documentation,report/plan/evidence,E,standard,320,False
+ledgers/ui-watchdog.md,6315,3EA59E7CDE69DA53814FA002ABCDE69BA5633ED96761CEF1617A2B1B8CCC1580,.md,Markdown,documentation,report/plan/evidence,E,standard,55,False
+runtime-test/data/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data/hiverouter.db-shm,32768,F6FCFFAF91E43D08B3945DCDB332FB8E40AA14A7FEE0FF98F8F447AE8EF8ABE7,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data/hiverouter.db-wal,94792,90A60CD79BA2DA4C9C1963ABB0BBE8E3629535CD5EF23686D515CB0DD6BF516A,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data2/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data2/hiverouter.db-shm,32768,B86EDA07432C5F9282B06C85BCA16BE947D5D278F96CDE1A907454BC27CC34A2,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data2/hiverouter.db-wal,94792,66B34BF73C5CB37954B9BC8215013A4D2A0461F4FA9792248DD44B02213D875B,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data3/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data3/hiverouter.db-shm,32768,AC5ED03284D6ADB47B966A2CDEE315E341EE811FBF7E433EE6218B362270476E,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data3/hiverouter.db-wal,94792,DFDBC19177BD835C248BF45B48448FC6C4DE5428BB6DAD48FC9BD47226B82FBC,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data4/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data4/hiverouter.db-shm,32768,A7AD9AA038535D86B7EA98CA6ED07B932CC607072850A9DFB7F83DD1970C0F77,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data4/hiverouter.db-wal,152472,A258EBD0FF9F7F1DA7857BFE208D05192137218C380D17C7B217050B5F68F8CA,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data4/snapshots/01a1b119-2f34-7228-974e-03b1c27856fc/0000000000.json,271,B3384389368E413687C88F3C462AE81CE62E7AFD61AD07DC2B8B2B443C39E05B,.json,JSON,runtime-artifact,generated/test-output,D,standard,13,False
+runtime-test/data5/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data5/hiverouter.db-shm,32768,48EDB60FE77A761302738713142C382846E8A863AC51A50F3A15C9E6F85F555D,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data5/hiverouter.db-wal,94792,6CB19A0BB68C37C6396828E0CEA5EC713C2550A8F1FAA09C64245FA30E5B4752,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data6/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data6/hiverouter.db-shm,32768,41607360C495452BD680C280BD6F0B16A437ECD344E92BA058F20266C61D2AD6,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data6/hiverouter.db-wal,152472,FCF13BB6D6C7F60774FE7F487AB9F38FE0DA67819E5A26F084308ABEEF3D0D08,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data6/snapshots/01a1b11d-90f3-73b3-bca9-616a21cd2e54/0000000000.json,271,208D3889264A830EE08C8D95ADE7E02E35C3C6D6F890721FBC4C9246F33AC820,.json,JSON,runtime-artifact,generated/test-output,D,standard,13,False
+runtime-test/data7/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data7/hiverouter.db-shm,32768,6202D05B99FCCF258B1A56FED7260F8952A1E040AB46E0C719C2A08423F53BD8,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data7/hiverouter.db-wal,127752,DBFA36BC2423DD8C3F54B7FCF2EA3362D9AB5709C158AEC0B12F3FB23EED7B03,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data8/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data8/hiverouter.db-shm,32768,94D110727614C178AADC22EF676EFE5B4875B69653EBB59DC66E64038E88687E,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data8/hiverouter.db-wal,127752,705014ADDA043F550D06B9C742731FBD577C5475B50E7AD11A940B6DE6A43AF7,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data9/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data9/hiverouter.db-shm,32768,E8620D36D8403129F81BA7211A88B2B07BCC187034B614827C295147D62EE1DB,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data9/hiverouter.db-wal,185432,655543F8FBC42F1048CF01C0BC236E27E4FCF176CA05DC799CBB5FCCD49B6F60,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/data9/snapshots/01a1b16d-7530-75e4-b51e-83b6bc3fdcca/0000000000.json,271,BD2270F596523038B41956A54C338D1842E10507083D3AD7B1D3E1543983F958,.json,JSON,runtime-artifact,generated/test-output,D,standard,13,False
+runtime-test/pkg-cli-final/CHECKSUMS.txt,712,842E44C7439268B5114EE8A5A7F0E556DBB24D4AB958FD61ECD780D5F3380CB4,.txt,Text,runtime-artifact,generated/test-output,D,standard,9,False
+runtime-test/pkg-cli-final/README.md,1276,CFA567329EDC9E6C52EF02C8620E2FD27C5917BC92C3EFC1794EA26DBF0BEBA3,.md,Markdown,runtime-artifact,generated/test-output,D,standard,25,False
+runtime-test/pkg-cli-final/RUNBOOK.md,4396,E7FBA10F3332CA65FD3F81873AA2916916ADA14EA7F889BE8172C805C5B72CFC,.md,Markdown,runtime-artifact,generated/test-output,D,standard,83,False
+runtime-test/pkg-cli-final/data/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-cli-final/data/hiverouter.db-shm,32768,B0C2485EC9EC9C17B8C858ED5FFB618F61E1DCB33880F6C50A846EE9E4E5726C,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-cli-final/data/hiverouter.db-wal,127752,779BAE5FE7BF0A3471D6D623F7E029FD49AE0DF88FE98564F2802236E632424E,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-cli-final/hiverouter-cli.exe,5364224,51E1ABA6DC7349BFB8904014D7007015E13642EA9710F04D380525DCCBD9B9AD,.exe,PE-binary,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-cli-final/hiverouter.exe,9329152,184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9,.exe,PE-binary,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/CHECKSUMS.txt,477,9193A5B4F365B2945BA31E984FAC41C5C6AB650EC31A78859DCFA2EB80834051,.txt,Text,runtime-artifact,generated/test-output,D,standard,7,False
+runtime-test/pkg-final/README.md,1276,CFA567329EDC9E6C52EF02C8620E2FD27C5917BC92C3EFC1794EA26DBF0BEBA3,.md,Markdown,runtime-artifact,generated/test-output,D,standard,25,False
+runtime-test/pkg-final/RUNBOOK.md,4396,E7FBA10F3332CA65FD3F81873AA2916916ADA14EA7F889BE8172C805C5B72CFC,.md,Markdown,runtime-artifact,generated/test-output,D,standard,83,False
+runtime-test/pkg-final/data/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/data/hiverouter.db-shm,32768,400EBFD736D798597F39E7FB278881D6E26A9A26950B5BB90A43D5023329A97B,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/data/hiverouter.db-wal,127752,3622E5BBF27033FD4D2B9D28BE69FF237A365495B8C8D5A99D4B21321CE057D7,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/pkg-final/hiverouter.exe,9329152,184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9,.exe,PE-binary,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/out.txt,571,8BF54E0F7B765DA4C55F4FC80D2466067637307C94119CE5340CA751663E9737,.txt,Text,runtime-artifact,generated/test-output,D,standard,5,False
+runtime-test/pkg-final/smoke-data/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/smoke-data/hiverouter.db-shm,32768,114C6549E7E78B0BBB2C584E966E8127F7353602F5248A79104789C0DD1FEAB5,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/smoke-data/hiverouter.db-wal,127752,4C9089758F4F0F34FC70DB1D2B0A28DB9DFAC9EEA4E83007ADE7EE330DFFA22F,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/smoke.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-final/smoke.out,583,6208165E1BB6BFD66E0329C66B6543071729AFA2016472058383159CC83C3211,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-smoke/CHECKSUMS.txt,451,C95EF561BF047DBDD341DEFED1907D4E684F472A13DA92EFBBF66C838CAD96E2,.txt,Text,runtime-artifact,generated/test-output,D,standard,8,False
+runtime-test/pkg-smoke/README.md,1276,CFA567329EDC9E6C52EF02C8620E2FD27C5917BC92C3EFC1794EA26DBF0BEBA3,.md,Markdown,runtime-artifact,generated/test-output,D,standard,25,False
+runtime-test/pkg-smoke/RUNBOOK.md,4396,E7FBA10F3332CA65FD3F81873AA2916916ADA14EA7F889BE8172C805C5B72CFC,.md,Markdown,runtime-artifact,generated/test-output,D,standard,83,False
+runtime-test/pkg-smoke/data/hiverouter.db,4096,89A2318C76452BE80E1D743F163F3DD96623B2B05604AA06985C6B5501238362,.db,SQLite,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-smoke/data/hiverouter.db-shm,32768,B58903D1BFC4664F3B7E0BBC3AF564B1CC1C619E4C4B53371BDFEB010E10A0A7,.db-shm,SQLite-SHM,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-smoke/data/hiverouter.db-wal,94792,277C9B5895EBBB6C7E99DDE864376EBF3FCFC198AFBC2714A84E364023E4B0E0,.db-wal,SQLite-WAL,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-smoke/err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/pkg-smoke/hiverouter.exe,9099776,71B229B587A909A6D8C2BDB9B8978B6087CECBF0609B176A9D46CA69717C38FC,.exe,PE-binary,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/pkg-smoke/out.txt,571,3EF24FC0C9F6D7DF41A666CDDEE32CE6F88EB977124DFE8AB45FF55A932803C7,.txt,Text,runtime-artifact,generated/test-output,D,standard,5,False
+runtime-test/root.html,46,71BC055475BEE0BE10CBC6A5B23DA158D9E7DD3C9D5C90C5CB975CB699CA5757,.html,HTML,runtime-artifact,generated/test-output,D,standard,1,True
+runtime-test/s5.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s5.out,553,CB540A4A3A9CD322E44F591C5E3ABAEB3BE77D061E4214AE2A4EEAE159B1F046,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s6.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s6.out,4836,EFAA576CC176079CFFDED6CE758E9FF4B2ED8E40C8CE0AAB128577DBE8597143,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s7.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s7.out,553,F5FA99B678B606C6FA99797BEF53D853764A8F27CEB28892DF598D16DAD8C7A0,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s8.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s8.out,553,40442AAFD3EA9E42128F091BC2E545BCDDD516537FA4F716411EC11A551864B1,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s9.err,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.err,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/s9.out,553,7F7FA6E1C65C12B9C322E4440540934CB1DBED40D85FD6CEEEB05AE25DD374B4,.out,Log,runtime-artifact,generated/test-output,D,standard,0,False
+runtime-test/server.err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/server.out.txt,551,11B42121DD424B017C047FD5ACC03475B550E657077EC1E296329924D5C09F86,.txt,Text,runtime-artifact,generated/test-output,D,standard,5,False
+runtime-test/server2.err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/server2.out.txt,553,838F1917D697F9EBC1E80EDDDD45FA5F9B18C71F3960CC7A70D5434492E35AD1,.txt,Text,runtime-artifact,generated/test-output,D,standard,5,False
+runtime-test/server3.err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/server3.out.txt,553,6B953D16D09BC692295C22B2D23707E5DEE75D0CB79C1F12A4E13BD6A3F2BC26,.txt,Text,runtime-artifact,generated/test-output,D,standard,5,False
+runtime-test/server4.err.txt,0,E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855,.txt,Text,runtime-artifact,generated/test-output,D,standard,1,False
+runtime-test/server4.out.txt,1230,8C42F12E13BD62C24A454FFA1454358DC20C934FC8887A351261AED43600216B,.txt,Text,runtime-artifact,generated/test-output,D,standard,11,False
+runtime-test/workspace/README.md,44,B0BD9D5596577EF6DBFFAB3E859EB64895742C1411DA9CBC14C09ACAE80A3313,.md,Markdown,runtime-artifact,generated/test-output,D,standard,3,False
+runtime-test/workspace/note.txt,20,987F6FD43C751A63D17CE41EAD84EF493A389D1E5F91BF655FE629117D630F71,.txt,Text,runtime-artifact,generated/test-output,D,standard,2,False
+rust-toolchain.toml,108,6F03E2211329AC20362187D0BBD913279569E4F45F3D60C2F43F09851468F7E0,.toml,TOML,other,uncategorized,G,standard,5,False
+tools/bin/hiverouter-cli.exe,5364224,51E1ABA6DC7349BFB8904014D7007015E13642EA9710F04D380525DCCBD9B9AD,.exe,PE-binary,generated-artifact,test/evidence artifact,D,standard,0,False
+tools/bin/hiverouter.exe,9329152,184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9,.exe,PE-binary,generated-artifact,test/evidence artifact,D,standard,0,False
+tools/build-release.ps1,2051,2B465B0D05F1C7B3F6689C2625F43B35AA747EBD379F6BAA5F83D5395EC375E5,.ps1,PowerShell,source,first-party code,D,standard,52,True
+tools/build_assets_index.py,3349,34A725D984F4A39A1BD065D886F26AF2DB129555FC33F521257ED1C31C090D42,.py,Python,source,first-party code,D,standard,68,True
+tools/cc-test/r.exe,5088156,DB801A07B6FD5194E84C49E68E9E640EF9DA51ECA2CE1B74656E6A016340C660,.exe,PE-binary,generated-artifact,test/evidence artifact,D,standard,0,False
+tools/cc-test/r.rs,47,0D2CAAE627FD973CFDDE04AC64960E6634B7A03E849EFA6D8467DA6DF52C3236,.rs,Rust,source,first-party code,D,standard,2,True
+tools/cc-test/t.c,70,29838A3AAB694B42F1BED72FEB531E83CE280952382CDDE2D9F331683A464990,.c,C,source,first-party code,D,standard,3,True
+tools/cc-test/t.exe,49876,2840568E7B7D4C227ED05E3C4CD41E2932E3692636D6D88DF2ACA5A510F83A81,.exe,PE-binary,generated-artifact,test/evidence artifact,D,standard,0,False
+tools/qa/README.md,1200,F8F253AAE35FE5020CDECB933D80CF8587E515558C8ACEC3C8E1D8CA639E4BA0,.md,Markdown,other,uncategorized,D,standard,14,False
+tools/qa/apply-live-trace.mjs,2483,D5E49DA85ECF22929B9FD2B0D246D5F8615BFD4587D7225A080A4338462C3EF6,.mjs,JavaScript,source,first-party code,D,standard,60,True
+tools/qa/build-trace-seeds.mjs,3608,E1C67D22AD002CA22848F1C9F48890E4237DDF618CDDCB89CC5A6A12C22DA99C,.mjs,JavaScript,source,first-party code,D,standard,88,True
+tools/qa/check-env.ps1,3747,469514E2777207D1858CB452550A321EDD0DD84C7F508E9335C6F1B4E39BC30F,.ps1,PowerShell,source,first-party code,D,standard,69,True
+tools/qa/figcraft-assets.mjs,3556,48FFA47248259DA4148EFE91A734B8DC9B2529AAFAE8832188E2811EF097D49D,.mjs,JavaScript,source,first-party code,D,standard,75,True
+tools/qa/verify-harness.mjs,8167,08B84C782F0E76737CDCE5628A8733669FAEDB6683782D4A155687463EFDDBD3,.mjs,JavaScript,source,first-party code,D,deep,132,True
+tools/runbook.md,4396,E7FBA10F3332CA65FD3F81873AA2916916ADA14EA7F889BE8172C805C5B72CFC,.md,Markdown,other,uncategorized,D,standard,83,False
+tools/test.ps1,2531,210AD6393AFD743234ADDB41184895092C15A370E4C4C56960170915CBA979A5,.ps1,PowerShell,source,first-party code,D,standard,77,True
+web/index.html,676,BC8E7E4D9AFEFAC2A39F20E20AB3DFB77E68AB1585D86CAB5EA1127FC1702D2A,.html,HTML,source,first-party code,C,standard,16,True
+web/package-lock.json,78338,2F141BD0E8CBE08ABCB6F004FC9C08657331F23BC5AC1E372328777A9373D3BB,.json,JSON,config-manifest,build/dependency/config,C,standard,2396,False
+web/package.json,929,A80E90B9F0182EDA2AAA5AAFF138F99A4BCDD7794D717696291E1F9BF2353D36,.json,JSON,config-manifest,build/dependency/config,C,deep,37,False
+web/src/App.tsx,3961,BC93C009D101C0409458ABB758E606C4219A8CD7ACA9149452587CE457175224,.tsx,TypeScript/TSX,source,first-party code,C,deep,122,True
+web/src/a11y/keyboard.ts,2976,72BAE334D9D7A4AAD2CDD4C54746774F89165AA985C46DAEC540428D9A5BA967,.ts,TypeScript,source,first-party code,C,deep,107,True
+web/src/a11y/reducedMotion.ts,1051,45231D4FEB659362CDE475D94AB32281B225979ACB68532B0CE892B89F10BC52,.ts,TypeScript,source,first-party code,C,standard,30,True
+web/src/api/client.ts,15930,6EFA1C7D1DEE8D045C31AA3F326DA1E6B9080DEDB913973ECF03A5F3082E8CA7,.ts,TypeScript,source,first-party code,C,deep,498,True
+web/src/api/contract.ts,28868,4C43F563D0967E3786F27E11C9F4146056EA7382B82A45FE4E9D529D493979DA,.ts,TypeScript,source,first-party code,C,deep,862,True
+web/src/api/health.ts,1885,84963F8C645ED6C04272C69977A343EBF1E9151F3FC89FE23EE89A31739058F8,.ts,TypeScript,source,first-party code,C,standard,55,True
+web/src/api/ids.ts,1607,9D7D8D755A5EB863E16FBCCD56573CD8A06C4D78A091EDE25D845A9EC852DADC,.ts,TypeScript,source,first-party code,C,standard,47,True
+web/src/api/index.ts,751,6D6E3618DC4918CC974344FB3DCA84A1E7FFF0695FCC5485D93D391DA5906A76,.ts,TypeScript,source,first-party code,C,standard,20,True
+web/src/api/mock.ts,12437,A149A4E36350E0CBF655E7182095CC3C0133BDF1A3104549EFA9490662EC69C8,.ts,TypeScript,source,first-party code,C,standard,364,True
+web/src/api/refusals.ts,1582,DC715B3AE248014448B64C8FD58FD917680D3D31CBC2D9CD97BA908F920D9AEF,.ts,TypeScript,source,first-party code,C,standard,53,True
+web/src/assets/manifest.ts,4888,C0DA46D37948D5C6344D5681C14B5D0EF944115C5E1062CAE59395BDEC6C72EF,.ts,TypeScript,source,first-party code,C,standard,113,True
+web/src/chat/ChatCore.tsx,6270,E924BB44FA76476B2342EF7554E9026D7523DC432C8A869F07FFF4869FA78FBE,.tsx,TypeScript/TSX,source,first-party code,C,deep,155,True
+web/src/flow/BeeEdge.tsx,1686,96C4E65A6BB24120887722674F5657EDF2C769C2F60E86E02B0227C150FC9321,.tsx,TypeScript/TSX,source,first-party code,C,standard,58,True
+web/src/flow/Canvas.tsx,8823,5751824B68466EB5334209787D2D3FB03EF4FFEB3BAFCC58E4CAA5E51DEC0FB1,.tsx,TypeScript/TSX,source,first-party code,C,deep,248,True
+web/src/flow/graph.ts,3232,2357DCB03F698A6B2D693DF7E258DD2492BBC831DCFEFD4FD5344FF164C28FEB,.ts,TypeScript,source,first-party code,C,standard,102,True
+web/src/flow/nodes.tsx,6451,5DE1969AE23615BCD71579F0CB57FBCB02549D87E5DBFF8BB20BB3C12A0DAD9C,.tsx,TypeScript/TSX,source,first-party code,C,deep,174,True
+web/src/main.tsx,404,2BC1AA6AAF5A25FDDF1A35C49D9BF053A07C45437160CE7878D01D8572D9452D,.tsx,TypeScript/TSX,source,first-party code,C,standard,17,True
+web/src/panels/AgentsPanel.tsx,2038,0A452EE172371E85A59D28BE600A0D0817CCB9B826E51EFAEE8CC99A06B8210F,.tsx,TypeScript/TSX,source,first-party code,C,standard,48,True
+web/src/panels/ApprovalOverlay.tsx,2857,EB1595B3150B400D9CF7FB0BE3DCBD189B242B6FA7D7CC8DD965FC87030A37BF,.tsx,TypeScript/TSX,source,first-party code,C,standard,67,True
+web/src/panels/ControlBar.tsx,5023,A22B87B6D259C2FB9B4DC34D0449AE5D7CA9DB8AA2F720FCD230FC5346FACF92,.tsx,TypeScript/TSX,source,first-party code,C,standard,126,True
+web/src/panels/DataPanel.tsx,3077,58A77EDED98E06776F43F50D039F1E4FA2029C522BDE9EC145B51A85FB383F12,.tsx,TypeScript/TSX,source,first-party code,C,deep,71,True
+web/src/panels/DevGallery.tsx,1044,5D6645467E54865F50E989613708D5171BC4DB0B0E26761FCCDA27F53140D7FC,.tsx,TypeScript/TSX,source,first-party code,C,standard,26,True
+web/src/panels/DiffDecisionModal.tsx,1265,6C2DDD6BFD6F800C57F01CBEE0F3C0A16C10E902D7E95ECF8A749A33337412D0,.tsx,TypeScript/TSX,source,first-party code,C,standard,35,True
+web/src/panels/Header.tsx,3268,8285642357B7B8F660075742A3E8CA58E5AAD991545777E3B9BEBAA0241394BA,.tsx,TypeScript/TSX,source,first-party code,C,standard,81,True
+web/src/panels/LibraryPanel.tsx,2994,85B059387AC942ADC44980CB698AE338522B94927F9709382CF98B24429D114E,.tsx,TypeScript/TSX,source,first-party code,C,standard,74,True
+web/src/panels/ModelsPanel.tsx,1195,231A22A7228E632CF4DF6E937A1448031EAB6220A1855B44EFB105F92A5F4858,.tsx,TypeScript/TSX,source,first-party code,C,standard,25,True
+web/src/panels/NavRail.tsx,2251,DC54427F99FC00972A99DAA8C824C67AA5BFD1FA8F366C87F7BD74D3C91BF94E,.tsx,TypeScript/TSX,source,first-party code,C,standard,62,True
+web/src/panels/RoutingPanel.tsx,1888,F0269705A18A93B587EB5C9B887737E4DEFE3F5C7453DCBEB14F06103FFEB1B9,.tsx,TypeScript/TSX,source,first-party code,C,standard,40,True
+web/src/panels/Scrubber.tsx,1782,1D491793C3F8179994BE7C58AE9909C7168CBED670DE81071166B90AC2225824,.tsx,TypeScript/TSX,source,first-party code,C,standard,53,True
+web/src/panels/SettingsPanel.tsx,5186,DFBF40970F72B05C9677DE65D4BF4991F24B7CD7B5886D7ECC689B110D5A52BF,.tsx,TypeScript/TSX,source,first-party code,C,deep,123,True
+web/src/panels/StatePack.tsx,1816,ED3FBDC6EBE78C27BA69CB454C38E7B2A19803EC5F6649F016B71EADF730C677,.tsx,TypeScript/TSX,source,first-party code,C,standard,53,True
+web/src/panels/ToastRegion.tsx,2072,403D24C553BF9F07E7EBA5A94671AA00F98D20CE31DC7EA71B8D4FA3ED6E8A4A,.tsx,TypeScript/TSX,source,first-party code,C,standard,50,True
+web/src/state/agentState.ts,4509,88CFB66BBAAE9F077230884078D586F517CAA41057FA998E4CD54C75962A5CDB,.ts,TypeScript,source,first-party code,C,deep,127,True
+web/src/state/context.ts,811,2CE91B7243F156602DB34C23B9B9144E80C52876EF4AD8CC80381641E917EC85,.ts,TypeScript,source,first-party code,C,standard,26,True
+web/src/state/metrics.ts,1710,15FC2EB1729032A8A159244CC6A368E57F0415B465EED2B9B9C6B80C77C0644D,.ts,TypeScript,source,first-party code,C,standard,49,True
+web/src/state/store.ts,23407,6289459A98C9BD6E875100B4D13559E511EBF2EB6E90DA44AD1B638F749990EE,.ts,TypeScript,source,first-party code,C,deep,741,True
+web/src/state/strings.ts,12692,D6C9E9420D9280D1E9142733C4DED11E050E09EDEB9BA256C36D7B19230033C3,.ts,TypeScript,source,first-party code,C,deep,375,True
+web/src/state/useAppReducedMotion.ts,388,CB9A8F53F90D2BA173BB273C4872DA9F6E5CD933B6C8E539226D2FC4279E5591,.ts,TypeScript,source,first-party code,C,standard,12,True
+web/src/styles/index.css,3601,E3925C3E6BFEA2A59D7B2DCEE0640C2CE3BA6BB559C675D64CA382162E102C6F,.css,CSS,source,first-party code,C,standard,150,True
+web/src/styles/tokens.css,2858,43A0B8E4C07E5DB70F5F6DF54F29D4BA19D929128A3EB076E3BC35DCA78B2084,.css,CSS,source,first-party code,C,standard,93,True
+web/src/tokens/contrast.ts,1683,C3193DB4403CC32A0B95AA7D1DA985760E872C548B399AD121E188ABC131725F,.ts,TypeScript,source,first-party code,C,deep,64,True
+web/src/tokens/tokens.ts,7070,078354A37D8AC7549A980E1F7FEE2625868B6ED1E953C0D298CC97145F9CD069,.ts,TypeScript,source,first-party code,C,deep,160,True
+web/tests/agentState.test.ts,1819,D2B3849B5F282D8353298AD83C3DB1BB7945B5899A3B60D62DBBC13BA56CF433,.ts,TypeScript,source,first-party code,C,standard,55,True
+web/tests/apiClient.test.ts,4998,1BBAB1FE55DEDCA8BFC210098ED60BDD19BD9CE6834BFC347DF982C36D947F75,.ts,TypeScript,source,first-party code,C,standard,146,True
+web/tests/contract.test.ts,4472,7790F09690295F6FE6693E24B4403D5CB214915949C56AFD90BEE9D10817FDC3,.ts,TypeScript,source,first-party code,C,standard,138,True
+web/tests/keyboard.test.ts,2409,FC05F6443800BF2C2F192D5319D5F1DB1B2155A43021DC3C24327B517A16A934,.ts,TypeScript,source,first-party code,C,standard,81,True
+web/tests/metrics.test.ts,1484,16AAAC10CA47EE6ACE0B5AF9F7EF379DBE0F2CA75CBFAD65230789504210CFB3,.ts,TypeScript,source,first-party code,C,standard,48,True
+web/tests/noHardcoded.test.ts,2228,45D5B407FBA4108F2857D318AD71F78F2B02F9279A4BECA487084101AD553B66,.ts,TypeScript,source,first-party code,C,standard,64,True
+web/tests/store.test.ts,7331,8945EF17B632EDB3717557406BEA6E0D4F10267576A090E78D8AA3BA38D7C3BC,.ts,TypeScript,source,first-party code,C,standard,189,True
+web/tests/tokens.test.ts,2170,80B68A13EA77F61A5423342DE67C5AE178CA5F3E3D770AACFF16CD579E238646,.ts,TypeScript,source,first-party code,C,standard,58,True
+web/tsconfig.json,618,A50AC07820F94752D62FBB14FC6CEA5C2CF1A483B28D56C3F7EADF63D682A8BE,.json,JSON,config-manifest,build/dependency/config,C,standard,24,False
+web/vite.config.ts,798,4C0BF654D4C48B24B13C960327C080A5B32544F78E1BE2DC810D07611CDDC09F,.ts,TypeScript,source,first-party code,C,deep,32,True

@@ -1,0 +1,22 @@
+sequenceDiagram
+  autonumber
+  participant U as Operator
+  participant UI as React UI
+  participant WS as WS transport
+  participant H as WS dispatch
+  participant S as Run service
+  participant T as Tools / Provider
+  participant D as SQLite / snapshots
+  participant E as Event fan-out
+  U->>UI: gesture (submit / spawn / rewire / cancel / kill / files)
+  UI->>WS: COMMAND frame {schema hiverouter.v1, correlation_id}
+  WS->>H: Origin allowlist + session token check
+  H->>H: schema validation + named refusal path
+  H->>S: dispatch (ACK only after acceptance)
+  S->>T: tool execution and/or provider call (bounded)
+  T->>D: persist ledger/run/approval rows
+  D-->>S: success or typed refusal
+  S->>E: ACK + EVENT frames (monotonic seq)
+  E-->>WS: fan-out to all clients
+  WS-->>UI: typed result or Error{code,how_to_fix}
+  UI-->>U: render-back from server events (no optimistic success)

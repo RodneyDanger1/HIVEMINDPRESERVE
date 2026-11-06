@@ -1,0 +1,50 @@
+path,correctness,maintainability,modularity,error_handling,security,docs,evidence,notes
+.cargo/config.toml,4,2,3,3,3,3,FILE-MANIFEST.csv sha256 + read of file,machine-specific absolute toolchain paths
+.gitignore,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+CHANGE-LEDGER-IMPL.md,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+README.md,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.mmd,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.svg,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.mmd,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.svg,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.mmd,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.svg,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.mmd,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.svg,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.mmd,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.svg,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/A11Y-CONTRAST-PLAN.md,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,stale 'UI not delivered'; DOM gates blocked
+docs/trace/QA-HARNESS.md,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/TRACE-SCHEMA.md,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/controls.json,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,_meta.status stale vs per-control statuses
+docs/trace/events.json,4,4,4,2,4,3,FILE-MANIFEST.csv sha256 + read of file,NOT_COLLECTED; empty parity arrays
+docs/trace/live/README.md,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/app-boot-full.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/app-boot.png,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/inspect.json,3,4,3,3,4,3,FILE-MANIFEST.csv sha256 + read of file,records one 404 console error
+docs/trace/live/live-app/01-boot.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/02-skip-link.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/03-console.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/04-census.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/05-tabs.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/06-nav.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/07-zoom.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/08-chat-pin.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/09-empty-prompt.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/10-ws-handshake.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/11-colours.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/12-settings-status.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/13-contract-drift.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/14-file-tree.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/15-data-size.json,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/boot.png,3,3,2,2,4,3,FILE-MANIFEST.csv sha256 + read of file,same sha256 as surface-census.png
+docs/trace/live/live-app/surface-census.png,3,3,2,2,4,3,FILE-MANIFEST.csv sha256 + read of file,byte-identical to boot.png (duplicate capture?)
+docs/trace/live/trace-capture.json,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/terminal-truth.md,3,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,stale 'app does not exist yet'; template only
+docs/trace/traces.json,4,4,4,2,4,3,FILE-MANIFEST.csv sha256 + read of file,NO_RUNS
+rust-toolchain.toml,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,

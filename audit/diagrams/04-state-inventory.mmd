@@ -1,0 +1,9 @@
+flowchart TB
+  subgraph Declared["Declared AgentState inventory (contract/state.rs:18-51; 16 variants)"]
+    direction LR
+    persistent["Persistent / run states<br/>healthy · running · queued · planning · thinking<br/>awaiting_approval · streaming"]
+    terminal["Terminal states (is_terminal=true)<br/>failed · completed · cancelled · killed · interrupted"]
+    server["Server/client surface states<br/>reconnecting · replay · empty · loading"]
+  end
+  note["Transitions are enforced by execution/run code paths,<br/>not enumerated in state.rs; this diagram lists declarations only."]
+  Declared --- note

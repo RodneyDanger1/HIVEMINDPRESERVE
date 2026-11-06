@@ -1,0 +1,81 @@
+{
+  "total_scored": 507,
+  "code_scored": 184,
+  "non_code_scored": 323,
+  "overall_code_means": {
+    "correctness": 4.43,
+    "maintainability": 4.25,
+    "modularity": 4.32,
+    "error_handling": 4.15,
+    "security": 4.11,
+    "docs": 3.84
+  },
+  "by_seat": {
+    "b-core": {
+      "files": 48,
+      "means": {
+        "correctness": 4.94,
+        "maintainability": 4.79,
+        "modularity": 4.96,
+        "error_handling": 4.9,
+        "security": 4.85,
+        "docs": 4.92
+      }
+    },
+    "b-provider": {
+      "files": 29,
+      "means": {
+        "correctness": 4.59,
+        "maintainability": 4.45,
+        "modularity": 4.41,
+        "error_handling": 4.34,
+        "security": 4.69,
+        "docs": 3.62
+      }
+    },
+    "figcraft-a": {
+      "files": 25,
+      "means": {
+        "correctness": 4.0,
+        "maintainability": 4.0,
+        "modularity": 4.0,
+        "error_handling": 3.0,
+        "security": 3.0,
+        "docs": 3.0
+      }
+    },
+    "figcraft-b": {
+      "files": 5,
+      "means": {
+        "correctness": 3.8,
+        "maintainability": 3.0,
+        "modularity": 3.0,
+        "error_handling": 3.0,
+        "security": 5.0,
+        "docs": 3.0
+      }
+    },
+    "watchdog-1": {
+      "files": 49,
+      "means": {
+        "correctness": 4.47,
+        "maintainability": 4.29,
+        "modularity": 4.41,
+        "error_handling": 4.39,
+        "security": 3.78,
+        "docs": 4.04
+      }
+    },
+    "watchdog-2": {
+      "files": 28,
+      "means": {
+        "correctness": 3.82,
+        "maintainability": 3.5,
+        "modularity": 3.5,
+        "error_handling": 3.5,
+        "security": 3.68,
+        "docs": 2.79
+      }
+    }
+  }
+}

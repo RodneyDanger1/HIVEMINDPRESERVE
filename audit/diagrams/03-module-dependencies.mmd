@@ -1,0 +1,15 @@
+flowchart TD
+  C["hiverouter-contract<br/>envelope · commands · events · refusals · state"]
+  P["hiverouter-provider<br/>DeepSeek client · DTOs · pricing · budget"]
+  T["hiverouter-tools<br/>registry · approval · jail · shell · ledger · census · CLI"]
+  K["hiverouter-core<br/>main · http · ws · graph · runs · snapshots · static_ui"]
+  W["web/dist (embedded)<br/>React SPA"]
+  CLI["hiverouter-cli (bin in tools)"]
+  P --> C
+  T --> C
+  T --> P
+  K --> C
+  K --> T
+  K --> W
+  CLI --> P
+  CLI --> T

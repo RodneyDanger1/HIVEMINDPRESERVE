@@ -1,0 +1,92 @@
+path,correctness,maintainability,modularity,error_handling,security,docs,evidence,notes
+docs/audit/BASELINE-VERIFICATION.md,4,4,3,3,5,4,sha256 match manifest; 123 lines read,9 UNVERIFIED mentions
+docs/audit/FINAL-CLOSEOUT.md,3,4,3,3,5,4,sha256 match manifest; 42 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/audit/FINAL-DELTA-VERIFICATION.md,3,4,3,3,5,4,sha256 match manifest; 81 lines read,self-declared FAIL/BLOCKED present; 10 UNVERIFIED mentions
+docs/audit/PHASE-B-VERIFICATION.md,3,4,3,3,5,4,sha256 match manifest; 106 lines read,self-declared FAIL/BLOCKED present; 11 UNVERIFIED mentions
+docs/audit/QA-ENV.md,3,4,3,3,5,4,sha256 match manifest; 54 lines read,self-declared FAIL/BLOCKED present; 1 UNVERIFIED mentions
+docs/audit/evidence/controls-verifier-skeleton.json,3,4,3,3,5,3,sha256 match manifest; 970 lines read,341 UNVERIFIED mentions
+docs/audit/evidence/final/cli-diagnose-final.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/final/cli-diagnose-final.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/final/cli-health-final.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/final/live-probe-final.json,3,4,3,3,5,3,sha256 match manifest; 223 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/audit/evidence/final/live-probe-final.mjs,4,3,3,3,5,3,sha256 match manifest; 107 lines read,no failure markers
+docs/audit/evidence/final/live-probe-final.out.txt,4,3,3,3,5,3,sha256 match manifest; 419 lines read,no failure markers
+docs/audit/evidence/final/pw-out/.last-run.json,4,4,3,3,5,3,sha256 match manifest; 6 lines read,no failure markers
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md,4,4,3,3,5,4,sha256 match manifest; 67 lines read,no failure markers
+docs/audit/evidence/gen_controls.py,3,3,3,3,5,3,sha256 match manifest; 244 lines read,17 UNVERIFIED mentions
+docs/audit/evidence/phase-b/cli/census-verify.json,4,4,3,3,5,3,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/census.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/census.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/diagnose_live.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/diagnose_live.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/health_dryrun.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/health_dryrun.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/health_live.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/health_live.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/preflight-path.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/preflight-path.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/preflight.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/preflight.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/provider_offpeak.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/provider_offpeak.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/provider_peak.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/provider_peak.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/schema.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/schema.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tool_missing.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tool_missing.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tools_describe.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tools_describe.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tools_list.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tools_list.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/unknown.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/unknown.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/usage_error.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/usage_error.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version-human.err,5,3,2,4,5,2,sha256 match manifest; 15 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version-human.out,5,3,2,4,5,2,sha256 match manifest; 0 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version.err,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/version.out,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier-v2.json,4,4,3,3,5,3,sha256 match manifest; 176 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt,4,3,3,3,5,3,sha256 match manifest; 323 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.json,4,4,3,3,5,3,sha256 match manifest; 176 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.mjs,4,3,3,3,5,3,sha256 match manifest; 130 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.out.txt,4,3,3,3,5,3,sha256 match manifest; 345 lines read,no failure markers
+docs/audit/evidence/toolchain/hello.c,4,3,3,3,5,3,sha256 match manifest; 2 lines read,no failure markers
+docs/audit/evidence/toolchain/hello.rs,4,3,3,3,5,3,sha256 match manifest; 1 lines read,no failure markers
+docs/claims/CLAIM-REGISTER.csv,4,4,3,3,5,3,sha256 match manifest; 81 lines read,3 UNVERIFIED mentions
+docs/claims/CLAIM-REGISTER.json,4,4,3,3,5,3,sha256 match manifest; 87 lines read,1 UNVERIFIED mentions
+docs/claims/SKILL-USE.md,4,4,3,3,5,4,sha256 match manifest; 20 lines read,no failure markers
+docs/contracts/ADAPTERS.md,3,4,3,3,5,4,sha256 match manifest; 113 lines read,self-declared FAIL/BLOCKED present
+docs/contracts/UI-COMMANDS-v1.md,4,4,3,3,5,4,sha256 match manifest; 79 lines read,no failure markers
+docs/plans/D2-D3-WIRING-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 106 lines read,no failure markers
+docs/plans/FRONTEND-STATUS.md,3,4,3,3,5,4,sha256 match manifest; 110 lines read,self-declared FAIL/BLOCKED present; 5 UNVERIFIED mentions
+docs/plans/HASH-VERIFICATION.md,4,4,3,3,5,4,sha256 match manifest; 42 lines read,no failure markers
+docs/plans/PHASE-0-RECON.md,4,4,3,3,5,4,sha256 match manifest; 15 lines read,no failure markers
+docs/plans/PHASE-1-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 226 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-1-RECON.md,4,4,3,3,5,4,sha256 match manifest; 55 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-11-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 93 lines read,4 UNVERIFIED mentions
+docs/plans/PHASE-11-RECON.md,4,4,3,3,5,4,sha256 match manifest; 47 lines read,4 UNVERIFIED mentions
+docs/plans/PHASE-12-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 143 lines read,5 UNVERIFIED mentions
+docs/plans/PHASE-12-RECON.md,4,4,3,3,5,4,sha256 match manifest; 44 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-2-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 132 lines read,no failure markers
+docs/plans/PHASE-2-RECON.md,4,4,3,3,5,4,sha256 match manifest; 59 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-3-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 85 lines read,no failure markers
+docs/plans/PHASE-3-RECON.md,4,4,3,3,5,4,sha256 match manifest; 51 lines read,no failure markers
+docs/plans/PHASE-4-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 87 lines read,no failure markers
+docs/plans/PHASE-4-RECON.md,4,4,3,3,5,4,sha256 match manifest; 47 lines read,no failure markers
+docs/plans/PHASE-5-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 106 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-5-RECON.md,4,4,3,3,5,4,sha256 match manifest; 49 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-6-EVIDENCE.md,3,4,3,3,5,4,sha256 match manifest; 164 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/plans/PHASE-6-RECON.md,3,4,3,3,5,4,sha256 match manifest; 48 lines read,self-declared FAIL/BLOCKED present
+docs/plans/PHASE-7-8-10-EVIDENCE.md,3,4,3,3,5,4,sha256 match manifest; 157 lines read,self-declared FAIL/BLOCKED present; 10 UNVERIFIED mentions
+docs/plans/PHASE-7-8-10-RECON.md,4,4,3,3,5,4,sha256 match manifest; 54 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-9-EVIDENCE.md,4,4,3,3,5,4,sha256 match manifest; 78 lines read,no failure markers
+docs/plans/PHASE-9-RECON.md,4,4,3,3,5,4,sha256 match manifest; 45 lines read,no failure markers
+docs/plans/SESSION-PLAN.md,4,4,3,3,5,4,sha256 match manifest; 33 lines read,no failure markers
+docs/plans/TOOLCHAIN.md,4,4,3,3,5,4,sha256 match manifest; 33 lines read,no failure markers
+docs/reports/FINAL-REPORT.md,3,4,3,3,5,4,sha256 match manifest; 75 lines read,self-declared FAIL/BLOCKED present; 3 UNVERIFIED mentions
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png,3,2,2,3,5,2,"sha256 match manifest; binary, 4254 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip,3,2,2,3,5,2,"sha256 match manifest; binary, 11204 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/toolchain/hello.exe,3,2,2,3,5,2,"sha256 match manifest; binary, 49876 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/toolchain/hello_rs.exe,3,2,2,3,5,2,"sha256 match manifest; binary, 5088192 bytes",raw binary evidence; content not prose-readable

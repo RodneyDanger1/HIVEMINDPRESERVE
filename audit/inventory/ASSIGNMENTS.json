@@ -1,0 +1,3058 @@
+{
+  "ui-watchdog": [
+    {
+      "path": ".cargo/config.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "other"
+    },
+    {
+      "path": ".gitignore",
+      "depth": "standard",
+      "language": "unknown",
+      "category": "other"
+    },
+    {
+      "path": "CHANGE-LEDGER-IMPL.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "other"
+    },
+    {
+      "path": "README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "other"
+    },
+    {
+      "path": "docs/diagrams/agent-lifecycle-state.mmd",
+      "depth": "standard",
+      "language": "Mermaid",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/diagrams/agent-lifecycle-state.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/agent-lifecycle-state.svg",
+      "depth": "standard",
+      "language": "SVG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/architecture.mmd",
+      "depth": "standard",
+      "language": "Mermaid",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/diagrams/architecture.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/architecture.svg",
+      "depth": "standard",
+      "language": "SVG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/er-schema.mmd",
+      "depth": "standard",
+      "language": "Mermaid",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/diagrams/er-schema.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/er-schema.svg",
+      "depth": "standard",
+      "language": "SVG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/run-sequence.mmd",
+      "depth": "standard",
+      "language": "Mermaid",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/diagrams/run-sequence.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/run-sequence.svg",
+      "depth": "standard",
+      "language": "SVG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/ui-control-event-sequence.mmd",
+      "depth": "standard",
+      "language": "Mermaid",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/diagrams/ui-control-event-sequence.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/diagrams/ui-control-event-sequence.svg",
+      "depth": "standard",
+      "language": "SVG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/trace/A11Y-CONTRAST-PLAN.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/QA-HARNESS.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/TRACE-SCHEMA.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/controls.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/events.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/app-boot-full.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/trace/live/app-boot.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/trace/live/inspect.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/01-boot.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/02-skip-link.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/03-console.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/04-census.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/05-tabs.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/06-nav.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/07-zoom.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/08-chat-pin.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/09-empty-prompt.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/10-ws-handshake.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/11-colours.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/12-settings-status.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/13-contract-drift.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/14-file-tree.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/15-data-size.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/live/live-app/boot.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/trace/live/live-app/surface-census.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/trace/live/trace-capture.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/terminal-truth.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/trace/traces.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "other"
+    }
+  ],
+  "b-provider": [
+    {
+      "path": "backend/Cargo.lock",
+      "depth": "deep",
+      "language": "Lockfile",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/Cargo.toml",
+      "depth": "deep",
+      "language": "TOML",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/Cargo.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/accounting.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/budget.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/client.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/dto.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/error.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/lib.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/pricing.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/src/secret.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-provider/tests/refusal_matrix.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/Cargo.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/benches/engine_benches.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/approval.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/audit.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/bin/hiverouter.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/cancel.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/census.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/cli.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/cli_support.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/commands.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/error.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/health.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/jail.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/ledger.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/lib.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/settings.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/sha256.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/shell.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/tool.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/src/watcher.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-tools/tests/audit_jsonl.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    }
+  ],
+  "b-core": [
+    {
+      "path": "backend/crates/hiverouter-contract/Cargo.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/schemas/contract-v1.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/command.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/envelope.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/event.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/ids.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/lib.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/refusal.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/schema.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/state.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/timestamp.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/src/usage.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/tests/common/mod.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/tests/golden_schemas.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/tests/schema_roundtrip.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-contract/tests/ui_command_matrix.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/Cargo.toml",
+      "depth": "standard",
+      "language": "TOML",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/assets/prompts/manifest.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/assets/prompts/personas.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/assets/prompts/planner.prompty",
+      "depth": "standard",
+      "language": "Prompty",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/build.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/bus.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/caps.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/checks.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/config.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/context.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/db.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/entities.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/execution.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/graph.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/handshake.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/history.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/http.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/lib.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/main.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/planner.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/prompts.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/recovery.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/snapshot.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/static_ui.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/store.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/tools_bridge.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/src/ws.rs",
+      "depth": "deep",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/chat_store.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/context_switch.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/graph_authority.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/handshake.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/http_boot.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/kill_restore.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/prompt_assets.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/run_lifecycle.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/snapshot_history.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/support/mod.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "backend/crates/hiverouter-core/tests/ws_transport.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    }
+  ],
+  "figcraft-b": [
+    {
+      "path": "docs/audit/BASELINE-VERIFICATION.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/FINAL-CLOSEOUT.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/FINAL-DELTA-VERIFICATION.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/PHASE-B-VERIFICATION.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/QA-ENV.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/controls-verifier-skeleton.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/cli-diagnose-final.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/cli-diagnose-final.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/cli-health-final.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/live-probe-final.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/live-probe-final.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/live-probe-final.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/pw-out/.last-run.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip",
+      "depth": "standard",
+      "language": "Zip",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/audit/evidence/gen_controls.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/census-verify.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/census.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/census.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/diagnose_live.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/diagnose_live.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/health_dryrun.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/health_dryrun.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/health_live.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/health_live.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/preflight-path.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/preflight-path.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/preflight.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/preflight.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/provider_offpeak.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/provider_offpeak.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/provider_peak.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/provider_peak.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/schema.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/schema.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tool_missing.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tool_missing.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tools_describe.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tools_describe.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tools_list.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/tools_list.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/unknown.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/unknown.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/usage_error.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/usage_error.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/version-human.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/version-human.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/version.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/cli/version.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/live-probe-verifier-v2.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/live-probe-verifier.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/live-probe-verifier.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/phase-b/live-probe-verifier.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/toolchain/hello.c",
+      "depth": "standard",
+      "language": "C",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/toolchain/hello.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/toolchain/hello.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/audit/evidence/toolchain/hello_rs.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/claims/CLAIM-REGISTER.csv",
+      "depth": "standard",
+      "language": "CSV",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/claims/CLAIM-REGISTER.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/claims/SKILL-USE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/contracts/ADAPTERS.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/contracts/UI-COMMANDS-v1.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/D2-D3-WIRING-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/FRONTEND-STATUS.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/HASH-VERIFICATION.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-0-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-1-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-1-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-11-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-11-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-12-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-12-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-2-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-2-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-3-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-3-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-4-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-4-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-5-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-5-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-6-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-6-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-7-8-10-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-7-8-10-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-9-EVIDENCE.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/PHASE-9-RECON.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/SESSION-PLAN.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/plans/TOOLCHAIN.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/reports/FINAL-REPORT.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    }
+  ],
+  "figcraft-a": [
+    {
+      "path": "docs/ui/figcraft/A/A-ASSETS.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/A-EPISODES.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/A-SELF-CHECK.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/build-state.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/c4.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/fig.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/gen_build.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/gen_common.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/gen_manifest.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page00.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page00g.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page01.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page01g.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page02.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page02g.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page03.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/page03g.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/pages_brand.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/pages_components.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/pages_foundations.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/pages_specimens.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/probe-s04c.png",
+      "depth": "standard",
+      "language": "PNG",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/stage0.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/stage1.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/build/styles.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/00_setup_pages.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/01_frames.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/02_foundations.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/03_foundations_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/04_styles.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/05_brand.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/06_brand_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/07_components.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/08_components_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/09_specimens.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/A/scripts/10_specimens_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/ASSETS-INDEX.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/B-ASSETS.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/board_default.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/board_hero.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/board_interaction.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/board_zoom.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/boards_common.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/__pycache__/fig_b.cpython-314.pyc",
+      "depth": "standard",
+      "language": "Python-bytecode",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/_run.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/board_default.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/board_hero.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/board_interaction.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/board_zoom.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/boards_common.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/build-state.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/build_b.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/fig_b.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/info-B.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/make_manifest.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch3.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch4.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch5.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch_default.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch_default2.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch_manifest.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch_manifest2.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/patch_verify.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/board00.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/board01.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/board02.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/board03.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/effects.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/step0.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/tmp/step1.figcraft",
+      "depth": "standard",
+      "language": "FigCraft",
+      "category": "documentation-asset"
+    },
+    {
+      "path": "docs/ui/figcraft/B/build/verify_b.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/00_setup_pages.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/01_frames.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/02_canvas_default.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/03_zoom_states.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/04_interaction.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/05_hero.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/B/scripts/06_effects.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/BRIEF-A.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/BRIEF-B.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/a-a-exports.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-00_setup_pages.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-01_frames.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-02_canvas_default.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-03_zoom_states.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-04_interaction.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-05_hero.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-06_effects.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/EPISODES/b-exports.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "docs/ui/figcraft/WATCHDOG-BRIEF.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    },
+    {
+      "path": "ledgers/ui-watchdog.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "documentation"
+    },
+    {
+      "path": "ledgers/ui-watchdog.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "documentation"
+    }
+  ],
+  "watchdog-2": [
+    {
+      "path": "e2e/.gitignore",
+      "depth": "standard",
+      "language": "unknown",
+      "category": "other"
+    },
+    {
+      "path": "e2e/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "other"
+    },
+    {
+      "path": "e2e/data-probe.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/data/control-matrix.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "e2e/helpers/app.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/helpers/contrast.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/helpers/evidence.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/helpers/matrix.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/helpers/trace.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/helpers/ws-tap.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/live-check2.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/live-inspect.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/live-probe.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/live-shot.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/live-smoke.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/package-lock.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "e2e/package.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "e2e/playwright.config.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/specs/a11y-gates.spec.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/specs/control-matrix.spec.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/specs/live-app.spec.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/specs/trace-hops.spec.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/specs/ws-contract.spec.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "e2e/tsconfig.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "runtime-test/data/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data2/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data2/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data2/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data3/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data3/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data3/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data4/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data4/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data4/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data4/snapshots/01a1b119-2f34-7228-974e-03b1c27856fc/0000000000.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data5/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data5/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data5/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data6/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data6/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data6/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data6/snapshots/01a1b11d-90f3-73b3-bca9-616a21cd2e54/0000000000.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data7/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data7/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data7/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data8/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data8/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data8/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data9/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data9/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data9/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/data9/snapshots/01a1b16d-7530-75e4-b51e-83b6bc3fdcca/0000000000.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/CHECKSUMS.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/RUNBOOK.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/data/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/data/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/data/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/hiverouter-cli.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-cli-final/hiverouter.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/CHECKSUMS.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/RUNBOOK.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/data/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/data/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/data/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/hiverouter.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/smoke-data/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/smoke-data/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/smoke-data/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/smoke.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-final/smoke.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/CHECKSUMS.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/RUNBOOK.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/data/hiverouter.db",
+      "depth": "standard",
+      "language": "SQLite",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/data/hiverouter.db-shm",
+      "depth": "standard",
+      "language": "SQLite-SHM",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/data/hiverouter.db-wal",
+      "depth": "standard",
+      "language": "SQLite-WAL",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/hiverouter.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/pkg-smoke/out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/root.html",
+      "depth": "standard",
+      "language": "HTML",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s5.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s5.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s6.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s6.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s7.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s7.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s8.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s8.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s9.err",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/s9.out",
+      "depth": "standard",
+      "language": "Log",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server.err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server2.err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server2.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server3.err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server3.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server4.err.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/server4.out.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/workspace/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "runtime-test/workspace/note.txt",
+      "depth": "standard",
+      "language": "Text",
+      "category": "runtime-artifact"
+    },
+    {
+      "path": "tools/bin/hiverouter-cli.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "generated-artifact"
+    },
+    {
+      "path": "tools/bin/hiverouter.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "generated-artifact"
+    },
+    {
+      "path": "tools/build-release.ps1",
+      "depth": "standard",
+      "language": "PowerShell",
+      "category": "source"
+    },
+    {
+      "path": "tools/build_assets_index.py",
+      "depth": "standard",
+      "language": "Python",
+      "category": "source"
+    },
+    {
+      "path": "tools/cc-test/r.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "generated-artifact"
+    },
+    {
+      "path": "tools/cc-test/r.rs",
+      "depth": "standard",
+      "language": "Rust",
+      "category": "source"
+    },
+    {
+      "path": "tools/cc-test/t.c",
+      "depth": "standard",
+      "language": "C",
+      "category": "source"
+    },
+    {
+      "path": "tools/cc-test/t.exe",
+      "depth": "standard",
+      "language": "PE-binary",
+      "category": "generated-artifact"
+    },
+    {
+      "path": "tools/qa/README.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "other"
+    },
+    {
+      "path": "tools/qa/apply-live-trace.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "tools/qa/build-trace-seeds.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "tools/qa/check-env.ps1",
+      "depth": "standard",
+      "language": "PowerShell",
+      "category": "source"
+    },
+    {
+      "path": "tools/qa/figcraft-assets.mjs",
+      "depth": "standard",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "tools/qa/verify-harness.mjs",
+      "depth": "deep",
+      "language": "JavaScript",
+      "category": "source"
+    },
+    {
+      "path": "tools/runbook.md",
+      "depth": "standard",
+      "language": "Markdown",
+      "category": "other"
+    },
+    {
+      "path": "tools/test.ps1",
+      "depth": "standard",
+      "language": "PowerShell",
+      "category": "source"
+    }
+  ],
+  "watchdog-1": [
+    {
+      "path": "web/index.html",
+      "depth": "standard",
+      "language": "HTML",
+      "category": "source"
+    },
+    {
+      "path": "web/package-lock.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "web/package.json",
+      "depth": "deep",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "web/src/App.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/a11y/keyboard.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/a11y/reducedMotion.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/client.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/contract.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/health.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/ids.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/index.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/mock.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/api/refusals.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/assets/manifest.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/chat/ChatCore.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/flow/BeeEdge.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/flow/Canvas.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/flow/graph.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/flow/nodes.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/main.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/AgentsPanel.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/ApprovalOverlay.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/ControlBar.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/DataPanel.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/DevGallery.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/DiffDecisionModal.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/Header.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/LibraryPanel.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/ModelsPanel.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/NavRail.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/RoutingPanel.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/Scrubber.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/SettingsPanel.tsx",
+      "depth": "deep",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/StatePack.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/panels/ToastRegion.tsx",
+      "depth": "standard",
+      "language": "TypeScript/TSX",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/agentState.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/context.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/metrics.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/store.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/strings.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/state/useAppReducedMotion.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/styles/index.css",
+      "depth": "standard",
+      "language": "CSS",
+      "category": "source"
+    },
+    {
+      "path": "web/src/styles/tokens.css",
+      "depth": "standard",
+      "language": "CSS",
+      "category": "source"
+    },
+    {
+      "path": "web/src/tokens/contrast.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/src/tokens/tokens.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/agentState.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/apiClient.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/contract.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/keyboard.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/metrics.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/noHardcoded.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/store.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tests/tokens.test.ts",
+      "depth": "standard",
+      "language": "TypeScript",
+      "category": "source"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "depth": "standard",
+      "language": "JSON",
+      "category": "config-manifest"
+    },
+    {
+      "path": "web/vite.config.ts",
+      "depth": "deep",
+      "language": "TypeScript",
+      "category": "source"
+    }
+  ]
+}

@@ -1,0 +1,508 @@
+path,seat,correctness,maintainability,modularity,error_handling,security,docs,evidence,notes
+backend/crates/hiverouter-contract/Cargo.toml,b-core,5,5,5,5,5,5,hash MATCH + compile of 3 dependent crates,minimal pinned manifest
+backend/crates/hiverouter-contract/schemas/contract-v1.json,b-core,4,3,5,3,5,3,golden_schemas.rs:49,"generated 1633-line schema; drift-gated, not line-audited"
+backend/crates/hiverouter-contract/src/command.rs,b-core,5,5,5,5,4,5,contract 32 tests; ui_command_matrix.rs:15-113,frozen 17 commands; manual ALL/test-list duplication
+backend/crates/hiverouter-contract/src/envelope.rs,b-core,5,5,5,5,4,5,schema_roundtrip.rs:13-128,wire envelope; schema/kind/id gates
+backend/crates/hiverouter-contract/src/event.rs,b-core,5,4,5,5,4,5,schema_roundtrip + golden event tests,21 events; no TS parity test
+backend/crates/hiverouter-contract/src/ids.rs,b-core,5,5,5,5,5,5,schema_roundtrip.rs:143,uuid-v7 newtypes; transparent serde
+backend/crates/hiverouter-contract/src/lib.rs,b-core,5,4,5,5,5,5,compile of contract/core/tools/provider,"re-export surface, manual list"
+backend/crates/hiverouter-contract/src/refusal.rs,b-core,5,5,5,5,4,5,refusal unit tests; /diagnose census 65 codes,single refusal table
+backend/crates/hiverouter-contract/src/schema.rs,b-core,5,4,5,5,4,5,ui_command_matrix 5 tests,schema_version + matrix; validator cache
+backend/crates/hiverouter-contract/src/state.rs,b-core,5,5,5,4,5,5,state unit tests; run lifecycle,16-state enum; DB string fallback F-06 context
+backend/crates/hiverouter-contract/src/timestamp.rs,b-core,5,5,5,5,4,5,timestamp unit tests,RFC3339 parser + civil date math
+backend/crates/hiverouter-contract/src/usage.rs,b-core,5,5,5,5,5,5,usage unit tests,NULL stays NULL invariant
+backend/crates/hiverouter-contract/tests/common/mod.rs,b-core,5,5,5,5,5,4,used by 4 contract test binaries,fixtures only
+backend/crates/hiverouter-contract/tests/golden_schemas.rs,b-core,4,4,5,4,5,4,3/3 passed,UPDATE_GOLDEN regeneration path
+backend/crates/hiverouter-contract/tests/schema_roundtrip.rs,b-core,5,5,5,5,5,5,6/6 passed,roundtrip + refusal fixtures
+backend/crates/hiverouter-contract/tests/ui_command_matrix.rs,b-core,5,5,5,5,5,5,5/5 passed,frozen §7 acceptance gate
+backend/crates/hiverouter-core/Cargo.toml,b-core,4,4,5,4,5,4,hash MATCH; dep graph,no provider dep -> F-01
+backend/crates/hiverouter-core/assets/prompts/manifest.json,b-core,4,5,5,4,5,4,prompt_assets licence tests,Rule-19 provenance
+backend/crates/hiverouter-core/assets/prompts/personas.json,b-core,4,5,5,4,5,4,prompt_assets persona test,test fixture only
+backend/crates/hiverouter-core/assets/prompts/planner.prompty,b-core,4,5,5,4,5,4,prompt_assets.rs:27,dead in product path F-02
+backend/crates/hiverouter-core/build.rs,b-core,5,5,5,5,5,5,builds exit 0; /health MSRV,build-time MSRV gate
+backend/crates/hiverouter-core/src/bus.rs,b-core,5,5,5,4,5,5,ws_transport fan-out/replay/1000 rewires,single-writer seq
+backend/crates/hiverouter-core/src/caps.rs,b-core,5,5,5,5,5,5,caps unit + caps_refused_by_name,hard caps by name
+backend/crates/hiverouter-core/src/checks.rs,b-core,5,5,5,5,5,5,health test; live /health,node floor + MSRV reporting
+backend/crates/hiverouter-core/src/config.rs,b-core,5,5,5,5,5,5,config unit tests; non-loopback binary test,"loopback-only, workspace root"
+backend/crates/hiverouter-core/src/context.rs,b-core,5,5,5,5,5,5,context_switch 2/2,correct; not wired to live rewire F-03
+backend/crates/hiverouter-core/src/db.rs,b-core,5,4,5,5,5,5,migration/idempotency/persistence tests,v1 literal drift risk F-04
+backend/crates/hiverouter-core/src/entities.rs,b-core,5,5,5,5,5,5,used across 83 core tests,plain DTOs
+backend/crates/hiverouter-core/src/execution.rs,b-core,5,4,5,5,4,5,run_lifecycle 6/6,"unconfigured executor F-01, empty templates F-02"
+backend/crates/hiverouter-core/src/graph.rs,b-core,5,5,5,5,5,5,graph 7/7 + ws cycle test,atomic cycle refusal
+backend/crates/hiverouter-core/src/handshake.rs,b-core,5,5,5,5,5,5,handshake 2/2,not wired into WS/engine F-03
+backend/crates/hiverouter-core/src/history.rs,b-core,4,4,5,4,5,4,snapshot_history 4/4,corrupt revision degrades to None F-05
+backend/crates/hiverouter-core/src/http.rs,b-core,5,4,4,5,5,5,http_boot 6/6; live probe,three duplicate constructors F-07
+backend/crates/hiverouter-core/src/lib.rs,b-core,5,5,5,5,5,5,compile of binary+tests,re-export surface
+backend/crates/hiverouter-core/src/main.rs,b-core,5,5,5,5,5,5,live boot; help/version/non-loopback tests,fail-closed boot
+backend/crates/hiverouter-core/src/planner.rs,b-core,5,5,5,5,5,5,planner unit + lifecycle,"DAG validation, 40-node cap"
+backend/crates/hiverouter-core/src/prompts.rs,b-core,5,5,5,5,5,5,prompt_assets 2/2,licence/ref gates; production empty registry F-02
+backend/crates/hiverouter-core/src/recovery.rs,b-core,5,5,5,5,5,5,kill_restore 2/2,real hard-kill recovery
+backend/crates/hiverouter-core/src/snapshot.rs,b-core,5,5,5,5,5,5,snapshot_history 4/4 + kill_restore,versioned JSON + migration
+backend/crates/hiverouter-core/src/static_ui.rs,b-core,5,5,5,5,5,5,http_boot static test; live GET /,embed/SPA/404/traversal
+backend/crates/hiverouter-core/src/store.rs,b-core,4,4,5,4,5,4,chat_store 5/5,silent row fallbacks F-06
+backend/crates/hiverouter-core/src/tools_bridge.rs,b-core,5,5,5,5,5,5,ws commands 4 tests; live probe,D-2/D-3 seam; no key leakage
+backend/crates/hiverouter-core/src/ws.rs,b-core,5,4,4,5,5,5,ws_transport 13/13; live ClientWebSocket,mixed concerns F-09
+backend/crates/hiverouter-core/tests/chat_store.rs,b-core,5,5,5,5,5,5,5/5 passed,store durability/migrations
+backend/crates/hiverouter-core/tests/context_switch.rs,b-core,5,5,5,5,5,5,2/2 passed,leak assertion
+backend/crates/hiverouter-core/tests/graph_authority.rs,b-core,5,5,5,5,5,5,7/7 passed,allowed/refused boundary pairs
+backend/crates/hiverouter-core/tests/handshake.rs,b-core,5,5,5,5,5,5,2/2 passed,idempotency + malformed result
+backend/crates/hiverouter-core/tests/http_boot.rs,b-core,5,5,5,5,5,5,6/6 passed,health/static/diagnose/binary paths
+backend/crates/hiverouter-core/tests/kill_restore.rs,b-core,5,5,5,5,5,5,2/2 (+1 helper),real abort + corrupt refusal
+backend/crates/hiverouter-core/tests/prompt_assets.rs,b-core,5,5,5,5,5,5,2/2 passed,licence/ref/render/refusal
+backend/crates/hiverouter-core/tests/run_lifecycle.rs,b-core,5,5,5,5,5,5,6/6 passed,mock test-only; caps/partial/cancel
+backend/crates/hiverouter-core/tests/snapshot_history.rs,b-core,5,5,5,5,5,5,4/4 passed,migration equality + HTTP API
+backend/crates/hiverouter-core/tests/support/mod.rs,b-core,5,5,5,5,5,5,used by 13 ws + history tests,test-only RFC6455 client
+backend/crates/hiverouter-core/tests/ws_transport.rs,b-core,5,5,5,5,5,5,13/13 passed; live probe,transport acceptance
+backend/Cargo.lock,b-provider,4,4,3,3,4,3,3,405 pkgs; 26 duplicate names incl thiserror 1/2 and tower-http 0.6/0.7; hash matches manifest 7B704C18
+backend/Cargo.toml,b-provider,5,5,4,4,4,4,4,"27 exact pins; MSRV 1.89.0; release panic=abort+strip; reqwest features json,rustls,http2"
+backend/crates/hiverouter-provider/Cargo.toml,b-provider,4,4,5,4,4,3,3,async-trait declared with zero uses (H-5); wiremock dev-only correct
+backend/crates/hiverouter-provider/src/accounting.rs,b-provider,4,3,5,4,5,3,4,Decimal-only; recount price() overflow -> Decimal::ZERO (H-1); status() dead branch (H-7)
+backend/crates/hiverouter-provider/src/budget.rs,b-provider,4,4,5,5,5,4,5,preflight before send; spent_usd masks incomplete run as ZERO (H-2); 9 unit tests + wiremock zero-request proof
+backend/crates/hiverouter-provider/src/client.rs,b-provider,4,4,4,5,5,4,5,"401/402 no-retry, 429 cap, timeout/malformed named; 5xx non-retry (debt); stream-without-DONE untested (H-4)"
+backend/crates/hiverouter-provider/src/dto.rs,b-provider,5,5,4,4,5,4,5,F1-faithful; validate() pre-send; absent usage stays absent; 6 tests
+backend/crates/hiverouter-provider/src/error.rs,b-provider,5,5,5,5,5,4,4,single Refusal identity; log_line secret-free
+backend/crates/hiverouter-provider/src/lib.rs,b-provider,5,5,4,4,5,4,3,crate-wide float/unsafe lint fence; re-export surface only
+backend/crates/hiverouter-provider/src/pricing.rs,b-provider,5,5,4,4,5,4,5,provenance enforced at lookup; 4 F1 rows + UTC window boundaries tested
+backend/crates/hiverouter-provider/src/secret.rs,b-provider,5,5,5,5,5,4,4,Zeroizing + Debug redacted; E_KEY_MISSING named
+backend/crates/hiverouter-provider/tests/refusal_matrix.rs,b-provider,5,5,4,5,4,4,5,11 offline wiremock tests; no live call; request-count assertions
+backend/crates/hiverouter-tools/Cargo.toml,b-provider,4,4,4,4,4,3,3,async-trait unused (H-5); criterion inline dev-only pin (H-16)
+backend/crates/hiverouter-tools/benches/engine_benches.rs,b-provider,3,4,3,3,4,2,2,instrument exists; measurement UNVERIFIED at hand-off (no number claimed)
+backend/crates/hiverouter-tools/src/approval.rs,b-provider,5,4,4,5,5,4,5,UNIQUE(nonce)+single-use+TTL+args binding tested; pub resolve(nonce-less) still exported (H-3); caller-supplied permission class (H-14)
+backend/crates/hiverouter-tools/src/audit.rs,b-provider,5,5,4,4,5,4,4,real JSON layer + rolling writer; secret probe; single global subscriber by design
+backend/crates/hiverouter-tools/src/bin/hiverouter.rs,b-provider,5,5,5,5,5,3,2,thin argv->run_main wrapper; artifact name avoids server collision
+backend/crates/hiverouter-tools/src/cancel.rs,b-provider,5,5,4,4,5,3,4,token registry + kill semantics tested; in-process only
+backend/crates/hiverouter-tools/src/census.rs,b-provider,4,4,5,4,4,4,5,strum-derived counts; drift fails by name; tier-blind set equality (H-11)
+backend/crates/hiverouter-tools/src/cli.rs,b-provider,4,3,3,4,4,4,5,agent-native JSON/exit codes; duplicate floor constants (H-9); hand-rolled parser
+backend/crates/hiverouter-tools/src/cli_support.rs,b-provider,4,4,5,4,4,4,4,bounded version probe + HTTP fetch; floor helpers duplicate cli.rs (H-9)
+backend/crates/hiverouter-tools/src/commands.rs,b-provider,5,5,5,4,5,3,4,contract-typed handlers; jailed file read; settings boolean only
+backend/crates/hiverouter-tools/src/error.rs,b-provider,5,5,5,4,5,4,3,ToolError single refusal identity; rusqlite/io conversions
+backend/crates/hiverouter-tools/src/health.rs,b-provider,4,4,4,4,5,4,5,null-vs-zero tested; derived census; handle_count not implemented (H-15)
+backend/crates/hiverouter-tools/src/jail.rs,b-provider,5,4,5,5,5,4,5,6 escape vectors refused incl junction; refuse-not-clamp; tilde over-refusal (H-8)
+backend/crates/hiverouter-tools/src/ledger.rs,b-provider,4,4,4,5,4,4,5,"append-only, arg body impossible, refusing rows need code; unbounded growth (H-12)"
+backend/crates/hiverouter-tools/src/lib.rs,b-provider,5,5,5,4,5,4,3,module map + dependency-direction rule + lint fences
+backend/crates/hiverouter-tools/src/settings.rs,b-provider,5,5,5,5,5,3,3,key presence boolean only; contract payload reused
+backend/crates/hiverouter-tools/src/sha256.rs,b-provider,5,4,5,4,4,3,4,NIST vectors pass; hand-rolled primitive is a maintenance risk (documented)
+backend/crates/hiverouter-tools/src/shell.rs,b-provider,4,4,4,5,5,3,5,allowlist+JobObject+timeout+cancel tested; cargo.exe breadth (H-10); PATH-shadowing test fixed
+backend/crates/hiverouter-tools/src/tool.rs,b-provider,5,5,5,5,4,4,5,schemars single schema source; tier allowlists; additionalProperties false
+backend/crates/hiverouter-tools/src/watcher.rs,b-provider,4,4,4,3,4,3,4,150ms coalesce tested (5 writes->1); no ignore list or stop token
+backend/crates/hiverouter-tools/tests/audit_jsonl.rs,b-provider,5,5,4,4,5,3,5,real sink roundtrip + secret probe in own process
+docs/ui/figcraft/A/A-ASSETS.json,figcraft-a,5,5,5,4,5,4,5,manifest/ledger cross-checked line-by-line vs disk
+docs/ui/figcraft/A/A-EPISODES.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/A/A-SELF-CHECK.json,figcraft-a,5,5,5,4,5,4,5,manifest/ledger cross-checked line-by-line vs disk
+docs/ui/figcraft/A/build/build-state.json,figcraft-a,4,4,4,4,4,4,4,document
+docs/ui/figcraft/A/build/c4.png,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/fig.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/gen_build.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/gen_common.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/gen_manifest.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/page00.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page00g.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page01.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page01g.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page02.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page02g.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page03.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/page03g.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/pages_brand.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/pages_components.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/pages_foundations.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/pages_specimens.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/A/build/probe-s04c.png,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/stage0.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/stage1.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/build/styles.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/A/scripts/00_setup_pages.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/01_frames.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/02_foundations.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/03_foundations_groups.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/04_styles.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/05_brand.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/06_brand_groups.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/07_components.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/08_components_groups.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/09_specimens.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/A/scripts/10_specimens_groups.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/ASSETS-INDEX.json,figcraft-a,4,4,4,4,4,3,4,B rows lack sha256; watchdog.non_blocking stale vs ledger
+docs/ui/figcraft/B/B-ASSETS.json,figcraft-a,5,5,5,4,5,4,5,manifest/ledger cross-checked line-by-line vs disk
+docs/ui/figcraft/B/build/__pycache__/board_default.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/__pycache__/board_hero.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/__pycache__/board_interaction.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/__pycache__/board_zoom.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/__pycache__/boards_common.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/__pycache__/fig_b.cpython-314.pyc,figcraft-a,3,1,1,1,1,1,5,generated bytecode tracked in VCS; cpython-314 vs audit python 3.12.14
+docs/ui/figcraft/B/build/_run.json,figcraft-a,3,1,1,1,1,1,5,scratch run script accidentally tracked
+docs/ui/figcraft/B/build/board_default.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/board_hero.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/board_interaction.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/board_zoom.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/boards_common.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/build-state.json,figcraft-a,4,4,4,4,4,4,4,document
+docs/ui/figcraft/B/build/build_b.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/fig_b.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/info-B.json,figcraft-a,4,4,4,4,4,4,4,document
+docs/ui/figcraft/B/build/make_manifest.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch3.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch4.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch5.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch_default.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch_default2.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch_manifest.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch_manifest2.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/patch_verify.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/build/tmp/board00.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/board01.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/board02.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/board03.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/effects.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/step0.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/tmp/step1.figcraft,figcraft-a,5,2,2,5,5,3,2,generated binary/asset; sha256 recorded in manifest/ledger
+docs/ui/figcraft/B/build/verify_b.py,figcraft-a,4,4,4,3,3,3,4,generator source with docstrings and asserts
+docs/ui/figcraft/B/scripts/00_setup_pages.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/01_frames.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/02_canvas_default.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/03_zoom_states.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/04_interaction.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/05_hero.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/B/scripts/06_effects.json,figcraft-a,5,4,4,4,3,4,5,transactional stage script; executed by figcraft-cli run
+docs/ui/figcraft/BRIEF-A.md,figcraft-a,5,4,4,4,4,5,5,requirements/narrative document
+docs/ui/figcraft/BRIEF-B.md,figcraft-a,5,4,4,4,4,5,5,requirements/narrative document
+docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/a-a-exports.json,figcraft-a,5,4,4,4,4,4,5,episode schema with command ids + artifact hashes
+docs/ui/figcraft/EPISODES/b-00_setup_pages.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-01_frames.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-02_canvas_default.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-03_zoom_states.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-04_interaction.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-05_hero.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-06_effects.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/EPISODES/b-exports.json,figcraft-a,4,4,3,3,3,3,4,outcome=stage-ok non-standard; plan.steps lack command ids
+docs/ui/figcraft/WATCHDOG-BRIEF.md,figcraft-a,5,4,4,4,4,5,5,requirements/narrative document
+ledgers/ui-watchdog.json,figcraft-a,5,5,5,4,5,4,5,manifest/ledger cross-checked line-by-line vs disk
+ledgers/ui-watchdog.md,figcraft-a,5,4,4,4,4,5,5,requirements/narrative document
+docs/audit/BASELINE-VERIFICATION.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 123 lines read,9 UNVERIFIED mentions
+docs/audit/FINAL-CLOSEOUT.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 42 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/audit/FINAL-DELTA-VERIFICATION.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 81 lines read,self-declared FAIL/BLOCKED present; 10 UNVERIFIED mentions
+docs/audit/PHASE-B-VERIFICATION.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 106 lines read,self-declared FAIL/BLOCKED present; 11 UNVERIFIED mentions
+docs/audit/QA-ENV.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 54 lines read,self-declared FAIL/BLOCKED present; 1 UNVERIFIED mentions
+docs/audit/evidence/controls-verifier-skeleton.json,figcraft-b,3,4,3,3,5,3,sha256 match manifest; 970 lines read,341 UNVERIFIED mentions
+docs/audit/evidence/final/cli-diagnose-final.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/final/cli-diagnose-final.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/final/cli-health-final.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/final/live-probe-final.json,figcraft-b,3,4,3,3,5,3,sha256 match manifest; 223 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/audit/evidence/final/live-probe-final.mjs,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 107 lines read,no failure markers
+docs/audit/evidence/final/live-probe-final.out.txt,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 419 lines read,no failure markers
+docs/audit/evidence/final/pw-out/.last-run.json,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 6 lines read,no failure markers
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 67 lines read,no failure markers
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png,figcraft-b,3,2,2,3,5,2,"sha256 match manifest; binary, 4254 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip,figcraft-b,3,2,2,3,5,2,"sha256 match manifest; binary, 11204 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/gen_controls.py,figcraft-b,3,3,3,3,5,3,sha256 match manifest; 244 lines read,17 UNVERIFIED mentions
+docs/audit/evidence/phase-b/cli/census-verify.json,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/census.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/census.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/diagnose_live.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/diagnose_live.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/health_dryrun.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/health_dryrun.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/health_live.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/health_live.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/preflight-path.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/preflight-path.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/preflight.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/preflight.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/provider_offpeak.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/provider_offpeak.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/provider_peak.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/provider_peak.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/schema.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/schema.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tool_missing.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tool_missing.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tools_describe.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tools_describe.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/tools_list.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/tools_list.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/unknown.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/unknown.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/usage_error.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/usage_error.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version-human.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 15 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version-human.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,no failure markers
+docs/audit/evidence/phase-b/cli/version.err,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 0 lines read,empty stderr (expected for a clean command)
+docs/audit/evidence/phase-b/cli/version.out,figcraft-b,5,3,2,4,5,2,sha256 match manifest; 3 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier-v2.json,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 176 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 323 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.json,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 176 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.mjs,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 130 lines read,no failure markers
+docs/audit/evidence/phase-b/live-probe-verifier.out.txt,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 345 lines read,no failure markers
+docs/audit/evidence/toolchain/hello.c,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 2 lines read,no failure markers
+docs/audit/evidence/toolchain/hello.exe,figcraft-b,3,2,2,3,5,2,"sha256 match manifest; binary, 49876 bytes",raw binary evidence; content not prose-readable
+docs/audit/evidence/toolchain/hello.rs,figcraft-b,4,3,3,3,5,3,sha256 match manifest; 1 lines read,no failure markers
+docs/audit/evidence/toolchain/hello_rs.exe,figcraft-b,3,2,2,3,5,2,"sha256 match manifest; binary, 5088192 bytes",raw binary evidence; content not prose-readable
+docs/claims/CLAIM-REGISTER.csv,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 81 lines read,3 UNVERIFIED mentions
+docs/claims/CLAIM-REGISTER.json,figcraft-b,4,4,3,3,5,3,sha256 match manifest; 87 lines read,1 UNVERIFIED mentions
+docs/claims/SKILL-USE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 20 lines read,no failure markers
+docs/contracts/ADAPTERS.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 113 lines read,self-declared FAIL/BLOCKED present
+docs/contracts/UI-COMMANDS-v1.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 79 lines read,no failure markers
+docs/plans/D2-D3-WIRING-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 106 lines read,no failure markers
+docs/plans/FRONTEND-STATUS.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 110 lines read,self-declared FAIL/BLOCKED present; 5 UNVERIFIED mentions
+docs/plans/HASH-VERIFICATION.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 42 lines read,no failure markers
+docs/plans/PHASE-0-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 15 lines read,no failure markers
+docs/plans/PHASE-1-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 226 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-1-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 55 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-11-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 93 lines read,4 UNVERIFIED mentions
+docs/plans/PHASE-11-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 47 lines read,4 UNVERIFIED mentions
+docs/plans/PHASE-12-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 143 lines read,5 UNVERIFIED mentions
+docs/plans/PHASE-12-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 44 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-2-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 132 lines read,no failure markers
+docs/plans/PHASE-2-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 59 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-3-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 85 lines read,no failure markers
+docs/plans/PHASE-3-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 51 lines read,no failure markers
+docs/plans/PHASE-4-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 87 lines read,no failure markers
+docs/plans/PHASE-4-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 47 lines read,no failure markers
+docs/plans/PHASE-5-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 106 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-5-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 49 lines read,1 UNVERIFIED mentions
+docs/plans/PHASE-6-EVIDENCE.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 164 lines read,self-declared FAIL/BLOCKED present; 2 UNVERIFIED mentions
+docs/plans/PHASE-6-RECON.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 48 lines read,self-declared FAIL/BLOCKED present
+docs/plans/PHASE-7-8-10-EVIDENCE.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 157 lines read,self-declared FAIL/BLOCKED present; 10 UNVERIFIED mentions
+docs/plans/PHASE-7-8-10-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 54 lines read,2 UNVERIFIED mentions
+docs/plans/PHASE-9-EVIDENCE.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 78 lines read,no failure markers
+docs/plans/PHASE-9-RECON.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 45 lines read,no failure markers
+docs/plans/SESSION-PLAN.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 33 lines read,no failure markers
+docs/plans/TOOLCHAIN.md,figcraft-b,4,4,3,3,5,4,sha256 match manifest; 33 lines read,no failure markers
+docs/reports/FINAL-REPORT.md,figcraft-b,3,4,3,3,5,4,sha256 match manifest; 75 lines read,self-declared FAIL/BLOCKED present; 3 UNVERIFIED mentions
+.cargo/config.toml,ui-watchdog,4,2,3,3,3,3,FILE-MANIFEST.csv sha256 + read of file,machine-specific absolute toolchain paths
+.gitignore,ui-watchdog,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+CHANGE-LEDGER-IMPL.md,ui-watchdog,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+README.md,ui-watchdog,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.mmd,ui-watchdog,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/agent-lifecycle-state.svg,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.mmd,ui-watchdog,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/architecture.svg,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.mmd,ui-watchdog,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/er-schema.svg,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.mmd,ui-watchdog,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/run-sequence.svg,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.mmd,ui-watchdog,4,4,4,2,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/diagrams/ui-control-event-sequence.svg,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/A11Y-CONTRAST-PLAN.md,ui-watchdog,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,stale 'UI not delivered'; DOM gates blocked
+docs/trace/QA-HARNESS.md,ui-watchdog,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/TRACE-SCHEMA.md,ui-watchdog,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/controls.json,ui-watchdog,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,_meta.status stale vs per-control statuses
+docs/trace/events.json,ui-watchdog,4,4,4,2,4,3,FILE-MANIFEST.csv sha256 + read of file,NOT_COLLECTED; empty parity arrays
+docs/trace/live/README.md,ui-watchdog,4,4,4,3,4,5,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/app-boot-full.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/app-boot.png,ui-watchdog,4,4,3,2,4,3,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/inspect.json,ui-watchdog,3,4,3,3,4,3,FILE-MANIFEST.csv sha256 + read of file,records one 404 console error
+docs/trace/live/live-app/01-boot.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/02-skip-link.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/03-console.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/04-census.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/05-tabs.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/06-nav.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/07-zoom.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/08-chat-pin.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/09-empty-prompt.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/10-ws-handshake.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/11-colours.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/12-settings-status.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/13-contract-drift.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/14-file-tree.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/15-data-size.json,ui-watchdog,4,4,3,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/live/live-app/boot.png,ui-watchdog,3,3,2,2,4,3,FILE-MANIFEST.csv sha256 + read of file,same sha256 as surface-census.png
+docs/trace/live/live-app/surface-census.png,ui-watchdog,3,3,2,2,4,3,FILE-MANIFEST.csv sha256 + read of file,byte-identical to boot.png (duplicate capture?)
+docs/trace/live/trace-capture.json,ui-watchdog,4,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,
+docs/trace/terminal-truth.md,ui-watchdog,3,4,4,3,4,4,FILE-MANIFEST.csv sha256 + read of file,stale 'app does not exist yet'; template only
+docs/trace/traces.json,ui-watchdog,4,4,4,2,4,3,FILE-MANIFEST.csv sha256 + read of file,NO_RUNS
+rust-toolchain.toml,ui-watchdog,4,3,3,3,3,4,FILE-MANIFEST.csv sha256 + read of file,
+web/index.html,watchdog-1,4,4,4,3,3,3,4,read; shell only; favicon hex outside token module (F-07)
+web/package-lock.json,watchdog-1,5,4,4,3,4,3,5,"manifest sha verified; generated file, not hand-edited"
+web/package.json,watchdog-1,5,4,4,3,4,4,5,exact-pin manifest; scripts tsc/vite/vitest; no lint/format script
+web/src/App.tsx,watchdog-1,4,4,4,4,3,4,4,"read; tests cover store, not mount lifecycle"
+web/src/a11y/keyboard.ts,watchdog-1,5,5,5,5,4,4,5,read + tests/keyboard.test.ts (7 tests)
+web/src/a11y/reducedMotion.ts,watchdog-1,5,5,5,5,4,4,4,read; used by useAppReducedMotion + CSS
+web/src/api/client.ts,watchdog-1,4,3,4,4,4,4,4,read; tests/apiClient.test.ts 5 tests (fake transport)
+web/src/api/contract.ts,watchdog-1,5,4,3,5,4,5,5,read; tests/contract.test.ts 8 tests
+web/src/api/health.ts,watchdog-1,4,4,4,4,3,4,4,read; no timeout/AbortController (F-05)
+web/src/api/ids.ts,watchdog-1,5,5,5,5,4,4,5,read; contract tests validate version/variant
+web/src/api/index.ts,watchdog-1,4,5,5,4,3,4,5,read; static mock import = F-02
+web/src/api/mock.ts,watchdog-1,4,3,4,4,3,3,4,read; dev-only guard at lines 68-69
+web/src/api/refusals.ts,watchdog-1,4,4,5,5,4,4,4,read; no invented causes
+web/src/assets/manifest.ts,watchdog-1,4,4,4,4,4,5,5,read; gate wired allow_frontend=true
+web/src/chat/ChatCore.tsx,watchdog-1,4,4,4,4,3,4,4,"read; store tests cover submit/stream indirectly, no component test"
+web/src/flow/BeeEdge.tsx,watchdog-1,4,5,5,4,4,4,4,read; direction uses tested beeAngle
+web/src/flow/Canvas.tsx,watchdog-1,4,3,4,3,3,4,4,read; keyboard/minimap fixes audited in live e2e; replay path untested
+web/src/flow/graph.ts,watchdog-1,4,4,5,4,4,4,4,"read; layout is deterministic, no cycle guard beyond dagre"
+web/src/flow/nodes.tsx,watchdog-1,4,4,4,4,3,4,5,read; node registry/shape cues indirectly tested via agentState tests
+web/src/main.tsx,watchdog-1,5,5,5,5,4,3,5,read; StrictMode interacts with effect lifecycle (F-18)
+web/src/panels/AgentsPanel.tsx,watchdog-1,4,4,4,4,4,4,4,read; read-only derived view
+web/src/panels/ApprovalOverlay.tsx,watchdog-1,4,4,4,4,3,4,5,read; nonce-missing gap state honest
+web/src/panels/ControlBar.tsx,watchdog-1,4,3,4,4,4,4,5,read; disable logic + named refusals
+web/src/panels/DataPanel.tsx,watchdog-1,4,4,4,4,4,4,5,"read; store file actions unit-covered, live API e2e owned by e2e seat"
+web/src/panels/DevGallery.tsx,watchdog-1,5,5,5,5,4,3,4,read; import.meta.env.DEV guard
+web/src/panels/DiffDecisionModal.tsx,watchdog-1,5,5,5,5,4,4,5,read; S25 gate respected
+web/src/panels/Header.tsx,watchdog-1,4,4,4,4,4,4,5,read; deriveHud unit-tested
+web/src/panels/LibraryPanel.tsx,watchdog-1,4,4,4,4,3,4,4,read; inserts TEMPLATE_INSERT
+web/src/panels/ModelsPanel.tsx,watchdog-1,5,5,5,5,4,4,4,read; no fabricated model config
+web/src/panels/NavRail.tsx,watchdog-1,4,4,4,4,4,4,4,read; a11y keyboard tested via helper
+web/src/panels/RoutingPanel.tsx,watchdog-1,4,5,4,4,4,4,4,read; no invented routes
+web/src/panels/Scrubber.tsx,watchdog-1,3,4,4,3,4,4,4,read; commits only on pointer/key release; replay render dead (F-12)
+web/src/panels/SettingsPanel.tsx,watchdog-1,4,4,4,5,2,4,5,read; store test 'one SETTINGS_STATUS per open'
+web/src/panels/StatePack.tsx,watchdog-1,5,5,5,4,4,4,5,read; pure presentation
+web/src/panels/ToastRegion.tsx,watchdog-1,4,4,4,5,4,4,5,read; motion respects reduced motion
+web/src/state/agentState.ts,watchdog-1,5,5,5,5,4,5,5,read; tests/agentState.test.ts 5 tests
+web/src/state/context.ts,watchdog-1,5,5,5,5,4,4,4,read; throws outside provider
+web/src/state/metrics.ts,watchdog-1,5,5,5,5,4,4,5,read; tests/metrics.test.ts 3 tests
+web/src/state/store.ts,watchdog-1,4,3,4,5,4,4,5,read; tests/store.test.ts 8 tests
+web/src/state/strings.ts,watchdog-1,5,4,5,4,4,5,5,read; noHardcoded test enforces table usage for banned literals
+web/src/state/useAppReducedMotion.ts,watchdog-1,5,5,5,5,4,4,4,read; trivial composition
+web/src/styles/index.css,watchdog-1,4,4,4,4,4,4,4,"read; global CSS, no hex outside tokens import"
+web/src/styles/tokens.css,watchdog-1,4,3,4,4,4,4,4,"read; duplicated hex with tokens.ts (F-04), fonts absent (F-01)"
+web/src/tokens/contrast.ts,watchdog-1,5,5,5,5,4,5,5,read; tests/tokens.test.ts contrast rows/corrections
+web/src/tokens/tokens.ts,watchdog-1,5,4,4,4,4,5,5,read; tests/tokens.test.ts (20 swatches/provenance/contrast)
+web/tests/agentState.test.ts,watchdog-1,5,5,5,4,4,4,5,read; 5 tests pass (FINAL-REPORT)
+web/tests/apiClient.test.ts,watchdog-1,5,4,4,5,4,4,5,read; 5 tests pass
+web/tests/contract.test.ts,watchdog-1,5,4,4,5,4,4,5,read; 8 tests pass
+web/tests/keyboard.test.ts,watchdog-1,5,4,4,5,4,4,5,read; 7 tests pass
+web/tests/metrics.test.ts,watchdog-1,5,5,5,4,4,4,5,read; 3 tests pass
+web/tests/noHardcoded.test.ts,watchdog-1,4,4,4,4,4,4,5,read; 4 tests pass; scans src only (F-07)
+web/tests/store.test.ts,watchdog-1,5,4,4,5,4,4,5,read; 8 tests pass
+web/tests/tokens.test.ts,watchdog-1,5,5,5,4,4,4,5,read; 6 tests pass
+web/tsconfig.json,watchdog-1,5,4,4,4,4,3,5,read; typecheck exit 0 evidence
+web/vite.config.ts,watchdog-1,5,4,4,4,4,3,5,"read; build log evidence (FINAL-REPORT, typecheck/build)"
+e2e/.gitignore,watchdog-2,4,4,4,4,4,3,4,standard; other; tracked=true; flags=none; sha-match
+e2e/README.md,watchdog-2,4,4,4,4,3,3,4,standard; other; tracked=true; flags=skipped-test|mock-data|hardcoded-host; sha-match
+e2e/data-probe.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|hardcoded-host|ad-hoc-probe; sha-match
+e2e/data/control-matrix.json,watchdog-2,4,4,4,4,4,3,4,standard; config-manifest; tracked=true; flags=generated-marker; sha-match
+e2e/helpers/app.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=none; sha-match
+e2e/helpers/contrast.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=none; sha-match
+e2e/helpers/evidence.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=fs-write; sha-match
+e2e/helpers/matrix.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=process.env; sha-match
+e2e/helpers/trace.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=fs-write; sha-match
+e2e/helpers/ws-tap.ts,watchdog-2,5,4,4,4,4,4,4,standard; source; tracked=true; flags=none; sha-match
+e2e/live-check2.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|hardcoded-host|ad-hoc-probe; sha-match
+e2e/live-inspect.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|process.env|hardcoded-host|fs-write|generated-marker|ad-hoc-probe; sha-match
+e2e/live-probe.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|hardcoded-host|ad-hoc-probe; sha-match
+e2e/live-shot.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|hardcoded-host|ad-hoc-probe; sha-match
+e2e/live-smoke.mjs,watchdog-2,2,2,2,2,3,1,2,standard; source; tracked=true; flags=console.log|hardcoded-host|ad-hoc-probe; sha-match
+e2e/package-lock.json,watchdog-2,4,4,4,4,4,3,4,standard; config-manifest; tracked=true; flags=none; sha-match
+e2e/package.json,watchdog-2,4,4,4,4,4,3,4,standard; config-manifest; tracked=true; flags=none; sha-match
+e2e/playwright.config.ts,watchdog-2,5,4,4,4,3,4,5,deep; source; tracked=true; flags=process.env|hardcoded-host; sha-match
+e2e/specs/a11y-gates.spec.ts,watchdog-2,4,4,4,4,4,3,5,standard; source; tracked=true; flags=skipped-test; sha-match
+e2e/specs/control-matrix.spec.ts,watchdog-2,4,4,4,4,4,3,5,standard; source; tracked=true; flags=skipped-test; sha-match
+e2e/specs/live-app.spec.ts,watchdog-2,5,4,4,4,3,3,5,deep; source; tracked=true; flags=skipped-test|process.env|hardcoded-host; sha-match
+e2e/specs/trace-hops.spec.ts,watchdog-2,5,4,4,4,3,3,5,deep; source; tracked=true; flags=skipped-test|process.env|hardcoded-host|fs-write|generated-marker; sha-match
+e2e/specs/ws-contract.spec.ts,watchdog-2,4,4,4,4,4,3,5,standard; source; tracked=true; flags=skipped-test; sha-match
+e2e/tsconfig.json,watchdog-2,4,4,4,4,4,3,4,standard; config-manifest; tracked=true; flags=none; sha-match
+runtime-test/data/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data2/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data2/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data2/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data3/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data3/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data3/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data4/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data4/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data4/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data4/snapshots/01a1b119-2f34-7228-974e-03b1c27856fc/0000000000.json,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/data5/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data5/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data5/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data6/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data6/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data6/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data6/snapshots/01a1b11d-90f3-73b3-bca9-616a21cd2e54/0000000000.json,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/data7/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data7/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data7/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data8/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data8/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data8/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data9/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data9/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data9/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/data9/snapshots/01a1b16d-7530-75e4-b51e-83b6bc3fdcca/0000000000.json,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/pkg-cli-final/CHECKSUMS.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/pkg-cli-final/README.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/pkg-cli-final/RUNBOOK.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|secret-ish|runtime-artifact; sha-match
+runtime-test/pkg-cli-final/data/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-cli-final/data/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-cli-final/data/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-cli-final/hiverouter-cli.exe,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-cli-final/hiverouter.exe,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/CHECKSUMS.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/pkg-final/README.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/pkg-final/RUNBOOK.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|secret-ish|runtime-artifact; sha-match
+runtime-test/pkg-final/data/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/data/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/data/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/hiverouter.exe,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/pkg-final/smoke-data/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/smoke-data/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/smoke-data/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/smoke.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-final/smoke.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|ad-hoc-probe|runtime-artifact; sha-match
+runtime-test/pkg-smoke/CHECKSUMS.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/pkg-smoke/README.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/pkg-smoke/RUNBOOK.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|secret-ish|runtime-artifact; sha-match
+runtime-test/pkg-smoke/data/hiverouter.db,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-smoke/data/hiverouter.db-shm,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-smoke/data/hiverouter.db-wal,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-smoke/err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-smoke/hiverouter.exe,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/pkg-smoke/out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/root.html,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/s5.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/s5.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/s6.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/s6.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/s7.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/s7.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/s8.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/s8.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/s9.err,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/s9.out,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/server.err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/server.out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/server2.err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/server2.out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/server3.err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/server3.out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/server4.err.txt,watchdog-2,4,4,4,4,4,3,4,standard; runtime-artifact; tracked=true; flags=none; sha-match
+runtime-test/server4.out.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=hardcoded-host|runtime-artifact; sha-match
+runtime-test/workspace/README.md,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+runtime-test/workspace/note.txt,watchdog-2,3,1,1,1,2,1,2,standard; runtime-artifact; tracked=true; flags=runtime-artifact; sha-match
+tools/bin/hiverouter-cli.exe,watchdog-2,4,4,4,4,4,3,4,standard; generated-artifact; tracked=true; flags=none; sha-match
+tools/bin/hiverouter.exe,watchdog-2,4,4,4,4,4,3,4,standard; generated-artifact; tracked=true; flags=none; sha-match
+tools/build-release.ps1,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=none; sha-match
+tools/build_assets_index.py,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=generated-marker; sha-match
+tools/cc-test/r.exe,watchdog-2,4,4,4,4,4,3,4,standard; generated-artifact; tracked=true; flags=none; sha-match
+tools/cc-test/r.rs,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=none; sha-match
+tools/cc-test/t.c,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=none; sha-match
+tools/cc-test/t.exe,watchdog-2,4,4,4,4,4,3,4,standard; generated-artifact; tracked=true; flags=none; sha-match
+tools/qa/README.md,watchdog-2,4,4,4,4,4,3,4,standard; other; tracked=true; flags=none; sha-match
+tools/qa/apply-live-trace.mjs,watchdog-2,2,2,2,2,4,1,2,standard; source; tracked=true; flags=console.log|fs-write|generated-marker|ad-hoc-probe; sha-match
+tools/qa/build-trace-seeds.mjs,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=console.log|fs-write|generated-marker; sha-match
+tools/qa/check-env.ps1,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=none; sha-match
+tools/qa/figcraft-assets.mjs,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=console.log|generated-marker; sha-match
+tools/qa/verify-harness.mjs,watchdog-2,4,4,4,4,4,4,5,deep; source; tracked=true; flags=console.log; sha-match
+tools/runbook.md,watchdog-2,4,4,4,4,3,3,4,standard; other; tracked=true; flags=hardcoded-host|secret-ish; sha-match
+tools/test.ps1,watchdog-2,4,4,4,4,4,3,4,standard; source; tracked=true; flags=none; sha-match
