@@ -9,7 +9,8 @@ Blueprint source of truth: `C:\Users\Riley\Desktop\hivemind-blueprint` (read-onl
 |---|---|
 | Binary | `tools\bin\hiverouter.exe` — 9,329,152 B, sha256 `184D51A7C3CCA7B9D50954B677C5AD8A14472700A651FDF0D270441BE3EAC9A9` |
 | Embedded UI | built after final frontend commit; served asset `index-Cbfm1IuM.js`; `/` 200 with `<div id="root">` |
-| Deployment package | `dist\HiveMind-v1-win64.zip` — 4,065,104 B, sha256 `9B2ED5A7B785F1E8422A79BD26672DF176325F982DB9BC68778C7050EBC2B144` |
+| Deployment package | `dist\HiveMind-v1-win64.zip` — 6,571,928 B, sha256 `BC7A2BAD98FAB1C849E3340D195C26F165581350B630F7BA37D89EE7CB27FEE7` |
+| CLI | 	ools\bin\hiverouter-cli.exe — 5,364,224 B, sha256 51E1ABA6DC7349BFB8904014D7007015E13642EA9710F04D380525DCCBD9B9AD |
 | Runtime | `hiverouter.exe --bind 127.0.0.1:8080 --data-dir data [--workspace-root <dir>]`; open `http://127.0.0.1:8080/` |
 | Toolchain | Rust 1.99.1 `stable-x86_64-pc-windows-gnu`, w64devkit GCC 16.2.0, Node v26.7.0; no Python/Docker/cloud |
 
