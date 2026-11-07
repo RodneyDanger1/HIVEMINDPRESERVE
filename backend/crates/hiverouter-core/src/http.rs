@@ -428,6 +428,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
+        .route("/api/agents/profiles", get(agent_profiles))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -601,6 +602,26 @@ async fn agent_messages(
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
+    let profiles: Vec<serde_json::Value> = state
+        .engine
+        .personas()
+        .into_iter()
+        .map(|persona| {
+            serde_json::json!({
+                "id": persona.id,
+                "display_name": persona.display_name,
+                "tier": persona.tier,
+                "template_id": persona.template_id,
+                "allowed_tool_ids": persona.allowed_tool_ids,
+                "output_schema_id": persona.output_schema_id,
+                "refusal_policy": persona.refusal_policy,
+            })
+        })
+        .collect();
+    (StatusCode::OK, Json(serde_json::json!({ "profiles": profiles }))).into_response()
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

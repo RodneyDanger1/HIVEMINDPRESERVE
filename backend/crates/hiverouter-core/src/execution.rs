@@ -479,6 +479,14 @@ impl RunEngine {
         self
     }
 
+    /// Returns the boot-loaded personas in stable id order.
+    #[must_use]
+    pub fn personas(&self) -> Vec<Persona> {
+        let mut personas: Vec<Persona> = self.personas.values().cloned().collect();
+        personas.sort_by(|left, right| left.id.cmp(&right.id));
+        personas
+    }
+
     /// Injects the approval clock (tests; production uses the system clock).
     #[must_use]
     pub fn with_clock(mut self, clock: Clock) -> Self {

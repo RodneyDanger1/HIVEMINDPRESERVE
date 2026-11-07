@@ -221,6 +221,24 @@ async fn binary_help_and_version_are_successful() {
 }
 
 #[tokio::test]
+async fn agent_profiles_route_returns_embedded_registry() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (status, body) = http_get(server.addr, "/api/agents/profiles").await;
+    assert_eq!(status, 200, "profiles route: {body}");
+    let value: Value = serde_json::from_str(&body).expect("profiles JSON");
+    let profiles = value["profiles"].as_array().expect("profiles array");
+    assert_eq!(profiles.len(), 5, "embedded persona registry");
+    let ids: Vec<&str> = profiles
+        .iter()
+        .filter_map(|profile| profile["id"].as_str())
+        .collect();
+    assert!(ids.contains(&"planner"));
+    assert!(ids.contains(&"content-writer"));
+    assert!(ids.contains(&"code-reviewer"));
+}
+
+#[tokio::test]
 async fn agent_messages_route_returns_durable_mailbox() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
