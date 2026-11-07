@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use hiverouter_contract::event::{
-    NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunStatusPayload,
+    NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunMetrics, RunStatusPayload,
 };
 use hiverouter_contract::{AgentState, ApprovalId, Event, Refusal, RunId, TaskId, Timestamp, Usage};
 use hiverouter_provider::tool_assembler::AssembledToolCall;
@@ -384,6 +384,8 @@ pub struct RunEngine {
     /// Tasks created after planning (command or model spawn) awaiting dispatch.
     spawn_queue: Mutex<Vec<TaskId>>,
     active_run: Mutex<Option<RunId>>,
+    /// Last published green percentage per run (delta provenance).
+    metrics_last: Mutex<HashMap<RunId, f64>>,
 }
 
 impl std::fmt::Debug for RunEngine {
@@ -430,6 +432,7 @@ impl RunEngine {
             task_state_lock: Mutex::new(()),
             spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
+            metrics_last: Mutex::new(HashMap::new()),
         }
     }
 
@@ -527,6 +530,7 @@ impl RunEngine {
             task_state_lock: Mutex::new(()),
             spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
+            metrics_last: Mutex::new(HashMap::new()),
         }
     }
 
@@ -548,6 +552,51 @@ impl RunEngine {
         }
     }
 
+    /// Publishes the authoritative run metric frame from persisted task rows.
+    ///
+    /// The delta is the difference from the last frame for this run; unknown
+    /// counts are never fabricated (a task whose kind cannot be read is skipped).
+    fn publish_run_metrics(&self, run_id: RunId) {
+        let Ok(tasks) = self.store.tasks_for_run(run_id) else {
+            return;
+        };
+        let superagents = tasks
+            .iter()
+            .filter(|task| node_kind(task_agent_tier(task)) == "superagent")
+            .count();
+        let workers = tasks
+            .iter()
+            .filter(|task| node_kind(task_agent_tier(task)) == "worker")
+            .count();
+        let completed = tasks
+            .iter()
+            .filter(|task| task.state == AgentState::Completed)
+            .count();
+        let green_pct = if tasks.is_empty() {
+            0.0
+        } else {
+            (completed as f64 / tasks.len() as f64) * 100.0
+        };
+        let delta = {
+            let mut last = match self.metrics_last.lock() {
+                Ok(last) => last,
+                Err(_) => return,
+            };
+            let previous = last.insert(run_id, green_pct).unwrap_or(green_pct);
+            green_pct - previous
+        };
+        self.publish(
+            Event::RunMetrics(RunMetrics {
+                superagents: u32::try_from(superagents).unwrap_or(u32::MAX),
+                workers: u32::try_from(workers).unwrap_or(u32::MAX),
+                green_pct,
+                delta,
+            }),
+            Some(run_id),
+            None,
+        );
+    }
+
     fn publish_node(&self, run_id: RunId, task_id: TaskId, state: AgentState) {
         let node = self.graph.node(task_id).ok().flatten();
         let kind = self
@@ -566,6 +615,7 @@ impl RunEngine {
             Some(run_id),
             None,
         );
+        self.publish_run_metrics(run_id);
     }
 
     /// Publishes the `NODE_SPAWN` frame with the node's authoritative topology.
@@ -582,6 +632,7 @@ impl RunEngine {
             Some(run_id),
             None,
         );
+        self.publish_run_metrics(run_id);
     }
 
     /// Registers a per-task child of `run_token` and returns it.

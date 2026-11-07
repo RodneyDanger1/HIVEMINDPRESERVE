@@ -233,12 +233,14 @@ async fn run_lifecycle_plans_and_dispatches() {
     let mut reply_deltas = 0;
     let mut reply_done = 0;
     let mut node_spawns = 0;
+    let mut run_metrics = 0;
     let final_status = loop {
         let event = wait_for(&mut receiver, |_| true).await;
         match event_name(&event) {
             "REPLY_DELTA" => reply_deltas += 1,
             "REPLY_DONE" => reply_done += 1,
             "NODE_SPAWN" => node_spawns += 1,
+            "RUN_METRICS" => run_metrics += 1,
             "RUN_STATUS" if event.envelope.payload["status"] != "running" => break event,
             _ => {}
         }
@@ -247,6 +249,7 @@ async fn run_lifecycle_plans_and_dispatches() {
     assert_eq!(reply_done, 2, "one REPLY_DONE per executed leaf task");
     assert!(reply_deltas >= 2, "streamed reply chunks missing");
     assert_eq!(node_spawns, 3, "root + two planned nodes");
+    assert!(run_metrics >= 1, "RUN_METRICS must have a producer");
 
     let stored_run = harness.store.get_run(run.id).expect("run row");
     assert_eq!(stored_run.status, AgentState::Completed);
