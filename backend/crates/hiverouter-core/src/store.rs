@@ -717,6 +717,82 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Lists persisted imported profiles as `(id, profile JSON, source)`.
+    ///
+    /// # Errors
+    /// Database or stored-JSON refusal.
+    pub fn agent_profiles(
+        &self,
+    ) -> Result<Vec<(String, serde_json::Value, String)>, Refusal> {
+        let rows = self
+            .db
+            .with_connection(|connection| {
+                let mut statement =
+                    connection.prepare("SELECT id, profile_json, source FROM agent_profiles")?;
+                let rows = statement.query_map([], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                })?;
+                let mut profiles = Vec::new();
+                for row in rows {
+                    profiles.push(row?);
+                }
+                Ok(profiles)
+            })
+            .map_err(map)?;
+        let mut decoded = Vec::new();
+        for (id, json, source) in rows {
+            let value = serde_json::from_str(&json).map_err(|_| Refusal::SchemaInvalid)?;
+            decoded.push((id, value, source));
+        }
+        Ok(decoded)
+    }
+
+    /// Upserts one imported profile as validated JSON.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn upsert_agent_profile(
+        &self,
+        id: &str,
+        profile: &serde_json::Value,
+        source: &str,
+    ) -> Result<(), Refusal> {
+        let json = serde_json::to_string(profile).map_err(|_| Refusal::SchemaInvalid)?;
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO agent_profiles(id, profile_json, source, imported_at)
+                     VALUES (?1, ?2, ?3, ?4)
+                     ON CONFLICT(id) DO UPDATE SET
+                        profile_json = excluded.profile_json,
+                        source = excluded.source,
+                        imported_at = excluded.imported_at",
+                    params![id, json, source, Timestamp::now().as_str()],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Deletes one imported profile; returns whether a row was removed.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn delete_agent_profile(&self, id: &str) -> Result<bool, Refusal> {
+        let removed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute("DELETE FROM agent_profiles WHERE id = ?1", params![id])
+            })
+            .map_err(map)?;
+        Ok(removed > 0)
+    }
+
     /// Clears one role's durable memories.
     ///
     /// # Errors

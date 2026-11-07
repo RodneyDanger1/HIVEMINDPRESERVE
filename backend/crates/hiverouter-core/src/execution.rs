@@ -401,7 +401,7 @@ pub struct RunEngine {
     /// Prompt template registry (planning prompt).
     pub templates: Arc<TemplateRegistry>,
     /// Boot-loaded personas keyed by role/template id.
-    personas: HashMap<String, Persona>,
+    personas: std::sync::RwLock<HashMap<String, Persona>>,
     /// Hard caps.
     pub caps: Caps,
     /// Durable snapshot store; when present a snapshot is written after every
@@ -469,7 +469,7 @@ impl RunEngine {
             tokens: Arc::new(RunRegistry::default()),
             executor,
             templates,
-            personas: HashMap::new(),
+            personas: std::sync::RwLock::new(HashMap::new()),
             caps: Caps::default(),
             snapshots: None,
             tool_workspace: None,
@@ -517,18 +517,45 @@ impl RunEngine {
 
     /// Attaches the boot-loaded persona registry.
     #[must_use]
-    pub fn with_personas(mut self, personas: Vec<Persona>) -> Self {
-        self.personas = personas
+    pub fn with_personas(self, personas: Vec<Persona>) -> Self {
+        let installed: HashMap<String, Persona> = personas
             .into_iter()
             .map(|persona| (persona.id.clone(), persona))
             .collect();
+        *self
+            .personas
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = installed;
         self
+    }
+
+    /// Inserts or replaces one profile in the live registry.
+    pub fn upsert_persona(&self, persona: Persona) {
+        self.personas
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(persona.id.clone(), persona);
+    }
+
+    /// Removes one profile from the live registry; returns whether it existed.
+    pub fn remove_persona(&self, id: &str) -> bool {
+        self.personas
+            .write()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(id)
+            .is_some()
     }
 
     /// Returns the boot-loaded personas in stable id order.
     #[must_use]
     pub fn personas(&self) -> Vec<Persona> {
-        let mut personas: Vec<Persona> = self.personas.values().cloned().collect();
+        let mut personas: Vec<Persona> = self
+            .personas
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .values()
+            .cloned()
+            .collect();
         personas.sort_by(|left, right| left.id.cmp(&right.id));
         personas
     }
@@ -576,7 +603,7 @@ impl RunEngine {
             tokens,
             executor,
             templates,
-            personas: HashMap::new(),
+            personas: std::sync::RwLock::new(HashMap::new()),
             caps,
             snapshots: None,
             tool_workspace: None,
@@ -830,7 +857,12 @@ impl RunEngine {
                 context.facts = parent.facts;
             }
         }
-        if let Some(persona) = self.personas.get(&task.role) {
+        if let Some(persona) = self
+            .personas
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(&task.role)
+        {
             context.allowed_tool_ids = persona.allowed_tool_ids.clone();
             context.output_schema_id = persona.output_schema_id.clone();
         }

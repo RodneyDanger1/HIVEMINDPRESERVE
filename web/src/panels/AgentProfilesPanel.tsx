@@ -1,9 +1,9 @@
 /**
- * Read-only boot-loaded agent profiles. A profile is a persona/template binding;
- * the editor/import surface is a later wave, but the shipped registry must be
- * visible rather than hidden behind task cards.
+ * Agent profile registry: the boot profiles plus validated imported profiles.
+ * Import is a real POST (server validates template/tools and persists); delete
+ * removes the persisted row and restores any embedded profile it overrode.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { EmptyState } from './StatePack';
 
 interface AgentProfileRow {
@@ -17,58 +17,109 @@ interface AgentProfileRow {
 }
 
 type Status = 'loading' | 'ok' | 'error';
+const BUILTIN_IDS = new Set(['planner', 'content-writer', 'data-analyst', 'code-reviewer', 'chatbot']);
+const EXAMPLE_PROFILE = `{
+  "id": "custom-writer",
+  "display_name": "Custom Writer",
+  "tier": "worker",
+  "template_id": "content-writer",
+  "allowed_tool_ids": ["file_read", "ask_parent", "finish"],
+  "output_schema_id": null,
+  "refusal_policy": "strict"
+}`;
 
 export function AgentProfilesPanel() {
   const [status, setStatus] = useState<Status>('loading');
   const [profiles, setProfiles] = useState<readonly AgentProfileRow[]>([]);
+  const [importText, setImportText] = useState(EXAMPLE_PROFILE);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+
+  const loadProfiles = useCallback(async () => {
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/agents/profiles', {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error(`profiles HTTP ${response.status}`);
+      }
+      const body = (await response.json()) as { profiles?: unknown };
+      if (!Array.isArray(body.profiles)) {
+        throw new Error('profiles payload has no profiles array');
+      }
+      const decoded: AgentProfileRow[] = [];
+      for (const entry of body.profiles) {
+        if (typeof entry !== 'object' || entry === null) {
+          continue;
+        }
+        const item = entry as Record<string, unknown>;
+        if (typeof item.id !== 'string' || typeof item.display_name !== 'string') {
+          continue;
+        }
+        decoded.push({
+          id: item.id,
+          display_name: item.display_name,
+          tier: typeof item.tier === 'string' ? item.tier : 'unknown',
+          template_id: typeof item.template_id === 'string' ? item.template_id : '',
+          allowed_tool_ids: Array.isArray(item.allowed_tool_ids)
+            ? item.allowed_tool_ids.filter((tool): tool is string => typeof tool === 'string')
+            : [],
+          output_schema_id: typeof item.output_schema_id === 'string' ? item.output_schema_id : null,
+          refusal_policy: typeof item.refusal_policy === 'string' ? item.refusal_policy : '',
+        });
+      }
+      setProfiles(decoded);
+      setStatus('ok');
+    } catch {
+      setProfiles([]);
+      setStatus('error');
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/agents/profiles', { headers: { Accept: 'application/json' } })
+    void loadProfiles();
+  }, [loadProfiles]);
+
+  const importProfile = (): void => {
+    setImportStatus(null);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(importText);
+    } catch {
+      setImportStatus('Import refused: the text is not valid JSON.');
+      return;
+    }
+    fetch('/api/agents/profiles/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ profile: parsed }),
+    })
+      .then(async (response) => {
+        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        if (!response.ok) {
+          throw new Error(body.code ?? `import HTTP ${response.status}`);
+        }
+        setImportStatus('Imported.');
+        await loadProfiles();
+      })
+      .catch((error: unknown) => {
+        setImportStatus(`Import refused: ${error instanceof Error ? error.message : 'unknown error'}`);
+      });
+  };
+
+  const removeProfile = (profileId: string): void => {
+    fetch(`/api/agents/profiles/${encodeURIComponent(profileId)}`, { method: 'DELETE' })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`profiles HTTP ${response.status}`);
+          const body = (await response.json().catch(() => ({}))) as { code?: string };
+          throw new Error(body.code ?? `delete HTTP ${response.status}`);
         }
-        const body = (await response.json()) as { profiles?: unknown };
-        if (!Array.isArray(body.profiles)) {
-          throw new Error('profiles payload has no profiles array');
-        }
-        const decoded: AgentProfileRow[] = [];
-        for (const entry of body.profiles) {
-          if (typeof entry !== 'object' || entry === null) {
-            continue;
-          }
-          const item = entry as Record<string, unknown>;
-          if (typeof item.id !== 'string' || typeof item.display_name !== 'string') {
-            continue;
-          }
-          decoded.push({
-            id: item.id,
-            display_name: item.display_name,
-            tier: typeof item.tier === 'string' ? item.tier : 'unknown',
-            template_id: typeof item.template_id === 'string' ? item.template_id : '',
-            allowed_tool_ids: Array.isArray(item.allowed_tool_ids)
-              ? item.allowed_tool_ids.filter((tool): tool is string => typeof tool === 'string')
-              : [],
-            output_schema_id: typeof item.output_schema_id === 'string' ? item.output_schema_id : null,
-            refusal_policy: typeof item.refusal_policy === 'string' ? item.refusal_policy : '',
-          });
-        }
-        if (!cancelled) {
-          setProfiles(decoded);
-          setStatus('ok');
-        }
+        await loadProfiles();
       })
-      .catch(() => {
-        if (!cancelled) {
-          setProfiles([]);
-          setStatus('error');
-        }
+      .catch((error: unknown) => {
+        setImportStatus(`Delete refused: ${error instanceof Error ? error.message : 'unknown error'}`);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  };
 
   return (
     <section aria-label="Agent profiles" className="mt-4 border-t border-hairline pt-4">
@@ -92,9 +143,39 @@ export function AgentProfilesPanel() {
             <div className="type-mono-meta mt-1 text-meta">
               {profile.template_id} · {profile.allowed_tool_ids.length} tools · {profile.refusal_policy}
             </div>
+            {BUILTIN_IDS.has(profile.id) ? null : (
+              <button
+                type="button"
+                className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
+                onClick={() => removeProfile(profile.id)}
+              >
+                Delete imported profile
+              </button>
+            )}
           </li>
         ))}
       </ul>
+      <div className="mt-3">
+        <label className="type-mono-meta block text-meta" htmlFor="profile-import">
+          Import native profile JSON
+        </label>
+        <textarea
+          id="profile-import"
+          className="mt-1 h-32 w-full rounded-[var(--radius-sm)] border border-hairline bg-recessed p-2 type-mono-code text-ink-900"
+          value={importText}
+          onChange={(event) => setImportText(event.target.value)}
+        />
+        <button
+          type="button"
+          className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
+          onClick={importProfile}
+        >
+          Import profile
+        </button>
+        {importStatus === null ? null : (
+          <p className="type-mono-meta mt-1 text-meta">{importStatus}</p>
+        )}
+      </div>
     </section>
   );
 }

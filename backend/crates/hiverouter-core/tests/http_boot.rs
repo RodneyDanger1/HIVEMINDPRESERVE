@@ -85,6 +85,103 @@ async fn http_get(addr: SocketAddr, path: &str) -> (u16, String) {
     (status, body)
 }
 
+async fn http_json(
+    addr: SocketAddr,
+    method: &str,
+    path: &str,
+    body: Option<&str>,
+) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).await.expect("connect");
+    let body = body.unwrap_or_default();
+    let request = format!(
+        "{method} {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\nAccept: application/json\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+        body.len()
+    );
+    stream.write_all(request.as_bytes()).await.expect("write request");
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).await.expect("read response");
+    let text = String::from_utf8_lossy(&raw).into_owned();
+    let status = text
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+        .expect("http status line");
+    let body = text
+        .split("\r\n\r\n")
+        .nth(1)
+        .unwrap_or_default()
+        .to_owned();
+    (status, body)
+}
+
+#[tokio::test]
+async fn agent_profiles_import_validates_persists_and_deletes() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let profile = serde_json::json!({
+        "id": "custom-writer",
+        "display_name": "Custom Writer",
+        "tier": "worker",
+        "template_id": "content-writer",
+        "allowed_tool_ids": ["file_read", "ask_parent", "finish"],
+        "output_schema_id": null,
+        "refusal_policy": "strict"
+    });
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        "/api/agents/profiles/import",
+        Some(&serde_json::json!({ "profile": profile }).to_string()),
+    )
+    .await;
+    assert_eq!(status, 200, "profile import: {body}");
+    let (_, list) = http_get(server.addr, "/api/agents/profiles").await;
+    let value: Value = serde_json::from_str(&list).expect("profiles JSON");
+    let profiles = value["profiles"].as_array().expect("profiles");
+    assert_eq!(profiles.len(), 6, "five embedded + one imported");
+    assert!(profiles.iter().any(|profile| profile["id"] == "custom-writer"));
+
+    let (status, body) = http_json(
+        server.addr,
+        "DELETE",
+        "/api/agents/profiles/custom-writer",
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "profile delete: {body}");
+    let (_, list) = http_get(server.addr, "/api/agents/profiles").await;
+    let value: Value = serde_json::from_str(&list).expect("profiles JSON");
+    assert_eq!(
+        value["profiles"].as_array().expect("profiles").len(),
+        5,
+        "delete removes the imported profile"
+    );
+}
+
+#[tokio::test]
+async fn agent_profiles_import_refuses_unknown_template() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let profile = serde_json::json!({
+        "id": "bad-writer",
+        "display_name": "Bad Writer",
+        "tier": "worker",
+        "template_id": "not-a-template",
+        "allowed_tool_ids": [],
+        "output_schema_id": null,
+        "refusal_policy": "strict"
+    });
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        "/api/agents/profiles/import",
+        Some(&serde_json::json!({ "profile": profile }).to_string()),
+    )
+    .await;
+    assert_eq!(status, 400, "unknown template must refuse: {body}");
+}
+
 #[tokio::test]
 async fn health_endpoint_reports_boot_checks_and_database() {
     let temp = tempfile::tempdir().expect("temp dir");
@@ -101,7 +198,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 8);
+    assert_eq!(health["database"]["schema_version"], 9);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));

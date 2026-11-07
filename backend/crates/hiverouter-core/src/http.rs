@@ -8,7 +8,7 @@ use std::time::Instant;
 use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get};
+use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
 use hiverouter_tools::jail::WorkspaceJail;
@@ -130,6 +130,55 @@ fn persona_assets_for(
             Vec::new()
         }
     }
+}
+
+fn merge_persisted_personas(
+    db: &Arc<Database>,
+    templates: &TemplateRegistry,
+    mut personas: Vec<Persona>,
+) -> Vec<Persona> {
+    let store = crate::store::RunStore::new(db.clone());
+    let persisted = match store.agent_profiles() {
+        Ok(profiles) => profiles,
+        Err(error) => {
+            tracing::warn!(
+                code = error.code(),
+                "persisted agent profiles refused; embedded profiles only"
+            );
+            return personas;
+        }
+    };
+    for (id, value, source) in persisted {
+        let persona: Persona = match serde_json::from_value(value) {
+            Ok(persona) => persona,
+            Err(_) => {
+                tracing::warn!(profile_id = %id, %source, "persisted profile is invalid JSON");
+                continue;
+            }
+        };
+        if persona.id != id {
+            tracing::warn!(
+                profile_id = %id,
+                profile_inner_id = %persona.id,
+                "persisted profile id does not match its row id"
+            );
+            continue;
+        }
+        if let Err(refusal) = persona.validate(templates) {
+            tracing::warn!(
+                profile_id = %id,
+                code = refusal.code(),
+                "persisted profile failed validation; embedded profile retained"
+            );
+            continue;
+        }
+        if let Some(existing) = personas.iter_mut().find(|existing| existing.id == id) {
+            *existing = persona;
+        } else {
+            personas.push(persona);
+        }
+    }
+    personas
 }
 
 fn tools_migration_check(db: &Database, checks: &mut Vec<Check>) {
@@ -260,7 +309,11 @@ impl AppState {
         let graph = Arc::new(GraphAuthority::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let personas = persona_assets_for(&templates, &mut checks);
+        let personas = merge_persisted_personas(
+            &db,
+            &templates,
+            persona_assets_for(&templates, &mut checks),
+        );
         tools_migration_check(&db, &mut checks);
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
@@ -300,7 +353,11 @@ impl AppState {
         let bus = Arc::new(EventBus::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let personas = persona_assets_for(&templates, &mut checks);
+        let personas = merge_persisted_personas(
+            &db,
+            &templates,
+            persona_assets_for(&templates, &mut checks),
+        );
         tools_migration_check(&db, &mut checks);
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
@@ -429,6 +486,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/api/agents/profiles", get(agent_profiles))
+        .route("/api/agents/profiles/import", post(import_agent_profile))
+        .route("/api/agents/profiles/{profile_id}", delete(delete_agent_profile))
         .route("/api/agents/memory", get(agent_memory_list))
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
@@ -605,6 +664,82 @@ async fn agent_messages(
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+async fn import_agent_profile(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let profile_value = body.get("profile").cloned().unwrap_or(body);
+    let persona: Persona = match serde_json::from_value(profile_value.clone()) {
+        Ok(persona) => persona,
+        Err(_) => {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        }
+    };
+    if let Err(refusal) = persona.validate(&state.engine.templates) {
+        return refusal_response(StatusCode::BAD_REQUEST, &refusal);
+    }
+    if let Err(refusal) = state
+        .engine
+        .store
+        .upsert_agent_profile(&persona.id, &profile_value, "api")
+    {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    state.engine.upsert_persona(persona.clone());
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "profile": {
+                "id": persona.id,
+                "display_name": persona.display_name,
+                "tier": persona.tier,
+                "template_id": persona.template_id,
+                "allowed_tool_ids": persona.allowed_tool_ids,
+                "output_schema_id": persona.output_schema_id,
+                "refusal_policy": persona.refusal_policy,
+            },
+            "source": "api",
+        })),
+    )
+        .into_response()
+}
+
+async fn delete_agent_profile(
+    State(state): State<Arc<AppState>>,
+    Path(profile_id): Path<String>,
+) -> Response {
+    let id = profile_id.trim();
+    if id.is_empty() || id.chars().count() > 128 {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let removed = match state.engine.store.delete_agent_profile(id) {
+        Ok(removed) => removed,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    if !removed {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "code": "E_PROFILE_NOT_FOUND",
+                "message": "no imported profile with that id",
+            })),
+        )
+            .into_response();
+    }
+    state.engine.remove_persona(id);
+    // Deleting an override restores the embedded profile without a restart.
+    if let Ok(builtins) = load_personas_embedded(&state.engine.templates) {
+        if let Some(builtin) = builtins.into_iter().find(|persona| persona.id == id) {
+            state.engine.upsert_persona(builtin);
+        }
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "id": id, "removed": true })),
+    )
+        .into_response()
 }
 
 async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
