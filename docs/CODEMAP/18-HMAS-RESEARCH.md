@@ -150,5 +150,7 @@ two of three; (4) no first-party LICENSE/NOTICE and an incomplete census (`09-RI
 - Profiles: migration v9 `agent_profiles` stores validated imported profiles; import/delete API + UI;
   boot merges persisted profiles over embedded ones; delete restores built-ins. No full visual editor yet.
 - Memory controls: `GET /api/agents/memory` + `DELETE /api/agents/memory/{role}` + AgentMemoryPanel.
+- UI: `AgentHierarchy` renders the real parent-link tree with depth indentation and selection; this is the
+  first topology view, not a full org-chart/controller UI.
 - Still **not** done: full profile editor, cross-branch approval gate, semantic retrieval, HMAS controller,
   full HMAS UI, per-run cap profiles. Do not claim HMAS complete.
