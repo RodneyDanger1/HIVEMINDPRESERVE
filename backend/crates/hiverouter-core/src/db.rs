@@ -156,6 +156,26 @@ Migration {
         DROP TABLE IF EXISTS task_results;
     "#,
 },
+Migration {
+    version: 6,
+    name: "agent_messages",
+    up: r#"
+        CREATE TABLE IF NOT EXISTS agent_messages (
+            id             TEXT PRIMARY KEY NOT NULL,
+            run_id         TEXT NOT NULL,
+            from_task_id   TEXT NOT NULL,
+            to_task_id     TEXT NOT NULL,
+            kind           TEXT NOT NULL,
+            text           TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            FOREIGN KEY(run_id) REFERENCES runs(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_agent_messages_run ON agent_messages(run_id);
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS agent_messages;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -682,10 +702,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 5);
-        assert_eq!(database.migrate().expect("second migrate"), 5);
+        assert_eq!(database.migrate().expect("first migrate"), 6);
+        assert_eq!(database.migrate().expect("second migrate"), 6);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 5);
+        assert_eq!(applied.len(), 6);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -696,6 +716,8 @@ mod tests {
         assert_eq!(applied[3].1, "tool_turns");
         assert_eq!(applied[4].0, 5);
         assert_eq!(applied[4].1, "task_results");
+        assert_eq!(applied[5].0, 6);
+        assert_eq!(applied[5].1, "agent_messages");
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -710,7 +732,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 5);
+        assert_eq!(database.migrate().expect("re-migrate"), 6);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -726,7 +748,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 5);
+        assert_eq!(reopened.schema_version().expect("version"), 6);
         assert_eq!(reopened.path(), path);
     }
 
@@ -856,7 +878,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 5);
+        assert_eq!(database.migrate().expect("migrate"), 6);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -891,7 +913,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 5);
+        assert_eq!(database.migrate().expect("re-migrate"), 6);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),

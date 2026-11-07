@@ -108,6 +108,10 @@ impl AgentTier {
 pub enum ToolId {
     /// Spawn a child agent.
     SpawnAgent,
+    /// Send a short message to this task's parent.
+    AskParent,
+    /// Send a short message to a sibling under the same parent.
+    SendToSibling,
     /// Report a task result to the parent.
     ReportResult,
     /// Finish the current task.
@@ -128,6 +132,8 @@ impl ToolId {
     pub fn id(self) -> &'static str {
         match self {
             ToolId::SpawnAgent => "spawn_agent",
+            ToolId::AskParent => "ask_parent",
+            ToolId::SendToSibling => "send_to_sibling",
             ToolId::ReportResult => "report_result",
             ToolId::Finish => "finish",
             ToolId::FileRead => "file_read",
@@ -212,6 +218,24 @@ pub struct SpawnAgentArgs {
     /// Parent task id (the run row is authoritative; this is a claim only).
     #[serde(default)]
     pub parent_task_id: Option<String>,
+}
+
+/// Arguments for `ask_parent`.
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AskParentArgs {
+    /// Bounded message text.
+    pub text: String,
+}
+
+/// Arguments for `send_to_sibling`.
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct SendToSiblingArgs {
+    /// Sibling task id; must share this task's parent and run.
+    pub target_task_id: String,
+    /// Bounded message text.
+    pub text: String,
 }
 
 /// Arguments for `report_result`.
@@ -313,6 +337,18 @@ impl ToolRegistry {
                 schema_of!(SpawnAgentArgs),
             ),
             contract(
+                ToolId::AskParent,
+                "Send a bounded message to this task's parent.",
+                PermissionClass::Read,
+                schema_of!(AskParentArgs),
+            ),
+            contract(
+                ToolId::SendToSibling,
+                "Send a bounded message to a sibling under the same parent (no cross-branch leak).",
+                PermissionClass::Read,
+                schema_of!(SendToSiblingArgs),
+            ),
+            contract(
                 ToolId::ReportResult,
                 "Report a task result to the parent task.",
                 PermissionClass::Read,
@@ -361,6 +397,8 @@ impl ToolRegistry {
             AgentTier::SuperAgent,
             vec![
                 ToolId::SpawnAgent,
+                ToolId::AskParent,
+                ToolId::SendToSibling,
                 ToolId::ReportResult,
                 ToolId::Finish,
                 ToolId::FileRead,
@@ -370,6 +408,8 @@ impl ToolRegistry {
         allowlists.insert(
             AgentTier::WorkerAgent,
             vec![
+                ToolId::AskParent,
+                ToolId::SendToSibling,
                 ToolId::ReportResult,
                 ToolId::Finish,
                 ToolId::FileRead,

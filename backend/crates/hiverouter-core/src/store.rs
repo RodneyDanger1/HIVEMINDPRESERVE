@@ -477,6 +477,58 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Records one durable agent-to-agent message.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_agent_message(
+        &self,
+        run_id: RunId,
+        from_task_id: TaskId,
+        to_task_id: TaskId,
+        kind: &str,
+        text: &str,
+    ) -> Result<Uuid, Refusal> {
+        let id = Uuid::now_v7();
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO agent_messages(id, run_id, from_task_id, to_task_id, kind, text, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                    params![
+                        id.to_string(),
+                        run_id.to_string(),
+                        from_task_id.to_string(),
+                        to_task_id.to_string(),
+                        kind,
+                        text,
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(id)
+    }
+
+    /// Number of durable messages recorded in a run.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_message_count(&self, run_id: RunId) -> Result<u64, Refusal> {
+        let count: i64 = self
+            .db
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT COUNT(*) FROM agent_messages WHERE run_id = ?1",
+                    params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .map_err(map)?;
+        Ok(u64::try_from(count).unwrap_or(0))
+    }
+
 
     /// Records a mutating command receipt (idempotency by correlation id).
     ///
@@ -706,5 +758,21 @@ mod tests {
             store.update_task_state(TaskId::new(), AgentState::Running),
             Err(Refusal::TaskNotFound)
         );
+    }
+
+    #[test]
+    fn agent_messages_are_durable_and_counted_per_run() {
+        let store = store();
+        let run = store
+            .create_run("p", "message", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        let message_id = store
+            .record_agent_message(run.id, from, to, "ask_parent", "hello")
+            .expect("message");
+        assert_ne!(message_id, Uuid::nil());
+        assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
+        assert_eq!(store.agent_message_count(RunId::new()).expect("other"), 0);
     }
 }

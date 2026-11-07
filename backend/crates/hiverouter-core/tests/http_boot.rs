@@ -101,7 +101,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 5);
+    assert_eq!(health["database"]["schema_version"], 6);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));

@@ -22,8 +22,8 @@ use hiverouter_provider::tool_assembler::AssembledToolCall;
 use hiverouter_tools::approval::{ApprovalDecision, ApprovalResolution};
 use hiverouter_tools::shell::ShellPolicy;
 use hiverouter_tools::{
-    execute_read_only, AgentTier, ExecutedTool as ToolsExecutedTool, PermissionClass,
-    SpawnAgentArgs, ToolId, ToolRegistry, WorkspaceJail,
+    execute_read_only, AgentTier, AskParentArgs, ExecutedTool as ToolsExecutedTool,
+    PermissionClass, SendToSiblingArgs, SpawnAgentArgs, ToolId, ToolRegistry, WorkspaceJail,
 };
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -56,6 +56,11 @@ fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String 
         None => prompt.to_owned(),
     }
 }
+
+/// Maximum visible characters in one inter-agent message.
+const MAX_AGENT_MESSAGE_CHARS: usize = 2_000;
+/// Per-run agent-message budget (prevents peer loops).
+const MAX_AGENT_MESSAGES_PER_RUN: u64 = 32;
 
 /// One time source for approval timestamps/CAS (tests inject a fixed clock).
 pub type Clock = Arc<dyn Fn() -> u64 + Send + Sync>;
@@ -1521,6 +1526,10 @@ impl RunEngine {
                                     // workspace side effect.
                                     self.execute_spawn_agent(run, task, &plan, token)
                                         .await
+                                } else if plan.tool == "ask_parent" {
+                                    self.execute_ask_parent(run, task, &plan)
+                                } else if plan.tool == "send_to_sibling" {
+                                    self.execute_send_to_sibling(run, task, &plan)
                                 } else if tool_loop::requires_approval(&self.tool_registry, &plan.tool)
                                     && self.tools.is_some()
                                     && self.tool_workspace.is_some()
@@ -2212,7 +2221,175 @@ impl RunEngine {
         Err(Refusal::ToolCancelled)
     }
 
-    /// Executes one model-originated `spawn_agent` call (M-010).
+    /// Executes one model-originated `ask_parent` call.
+    fn execute_ask_parent(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+    ) -> ToolExecution {
+        let args: AskParentArgs = match serde_json::from_value(plan.args.clone()) {
+            Ok(args) => args,
+            Err(error) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::ToolSchema.code(),
+                    format!("ask_parent arguments do not match the schema: {error}"),
+                );
+            }
+        };
+        let Some(parent) = task.parent_task_id else {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::TaskNotFound.code(),
+                "ask_parent refused: the calling task has no parent".to_owned(),
+            );
+        };
+        let text = args.text.trim();
+        if text.is_empty() || text.chars().count() > MAX_AGENT_MESSAGE_CHARS {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolSchema.code(),
+                "ask_parent text must be non-empty and bounded".to_owned(),
+            );
+        }
+        match self.store.agent_message_count(run.id) {
+            Ok(count) if count >= MAX_AGENT_MESSAGES_PER_RUN => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::CallLimit.code(),
+                    "ask_parent refused: the per-run agent-message budget is exhausted".to_owned(),
+                );
+            }
+            Ok(_) => {}
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    refusal.message().to_owned(),
+                );
+            }
+        }
+        match self
+            .store
+            .record_agent_message(run.id, task.id, parent, "ask_parent", text)
+        {
+            Ok(message_id) => ToolExecution::ok(
+                plan.tool_call_id.clone(),
+                serde_json::json!({
+                    "message_id": message_id.to_string(),
+                    "to_task_id": parent.to_string(),
+                    "kind": "ask_parent",
+                })
+                .to_string(),
+            ),
+            Err(refusal) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                refusal.message().to_owned(),
+            ),
+        }
+    }
+
+    /// Executes one model-originated `send_to_sibling` call.
+    ///
+    /// Same-parent only: this is the narrow, non-leaking peer route until a
+    /// profile-level cross-branch approval gate lands.
+    fn execute_send_to_sibling(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+    ) -> ToolExecution {
+        let args: SendToSiblingArgs = match serde_json::from_value(plan.args.clone()) {
+            Ok(args) => args,
+            Err(error) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::ToolSchema.code(),
+                    format!("send_to_sibling arguments do not match the schema: {error}"),
+                );
+            }
+        };
+        let Ok(target_id) = args.target_task_id.parse::<TaskId>() else {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::SchemaInvalid.code(),
+                "send_to_sibling target_task_id is not a task id".to_owned(),
+            );
+        };
+        if target_id == task.id {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::SchemaInvalid.code(),
+                "send_to_sibling cannot target the calling task".to_owned(),
+            );
+        }
+        let target = match self.store.get_task(target_id) {
+            Ok(target) => target,
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    refusal.message().to_owned(),
+                );
+            }
+        };
+        if target.run_id != task.run_id || target.parent_task_id != task.parent_task_id {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolNotAllowed.code(),
+                "send_to_sibling is limited to the same run and the same parent".to_owned(),
+            );
+        }
+        let text = args.text.trim();
+        if text.is_empty() || text.chars().count() > MAX_AGENT_MESSAGE_CHARS {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolSchema.code(),
+                "send_to_sibling text must be non-empty and bounded".to_owned(),
+            );
+        }
+        match self.store.agent_message_count(run.id) {
+            Ok(count) if count >= MAX_AGENT_MESSAGES_PER_RUN => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::CallLimit.code(),
+                    "send_to_sibling refused: the per-run agent-message budget is exhausted"
+                        .to_owned(),
+                );
+            }
+            Ok(_) => {}
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    refusal.message().to_owned(),
+                );
+            }
+        }
+        match self
+            .store
+            .record_agent_message(run.id, task.id, target_id, "send_to_sibling", text)
+        {
+            Ok(message_id) => ToolExecution::ok(
+                plan.tool_call_id.clone(),
+                serde_json::json!({
+                    "message_id": message_id.to_string(),
+                    "to_task_id": target_id.to_string(),
+                    "kind": "send_to_sibling",
+                })
+                .to_string(),
+            ),
+            Err(refusal) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                refusal.message().to_owned(),
+            ),
+        }
+    }
+
+
     ///
     /// Resolves the calling task, enforces the parent/depth/fan-out/agent caps
     /// through [`Self::spawn_sub_hive`] before any child row is created, runs the

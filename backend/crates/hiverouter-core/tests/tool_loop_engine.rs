@@ -293,6 +293,31 @@ fn read_call(id: &str, path: &str, index: u32) -> AssembledToolCall {
 }
 
 #[tokio::test]
+async fn ask_parent_writes_a_durable_message() {
+    let harness = harness(
+        ScriptedExecutor::new(vec![AssembledToolCall {
+            index: 0,
+            id: "call_msg".to_owned(),
+            name: "ask_parent".to_owned(),
+            arguments: serde_json::json!({ "text": "need the parent decision" }),
+        }]),
+        None,
+    );
+    let (run, collected) = drive(&harness, "message the parent").await;
+    assert_eq!(collected.final_status["status"], "completed");
+    assert_eq!(collected.tool_results.len(), 1);
+    assert_eq!(collected.tool_results[0]["outcome"], "ok");
+    assert_eq!(
+        harness
+            .engine
+            .store
+            .agent_message_count(run.id)
+            .expect("message count"),
+        1
+    );
+}
+
+#[tokio::test]
 async fn read_only_tool_call_executes_publishes_and_persists() {
     let workspace = tempfile::tempdir().expect("workspace");
     std::fs::write(workspace.path().join("note.txt"), NOTE_TEXT.as_bytes()).expect("write note");

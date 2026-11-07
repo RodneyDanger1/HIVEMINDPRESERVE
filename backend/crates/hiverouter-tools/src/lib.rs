@@ -86,7 +86,8 @@ pub use shell::{
 };
 pub use settings::{require_provider_key, settings_status};
 pub use tool::{
-    AgentTier, FinishArgs, FileListArgs, FileReadArgs, FileWriteArgs, PermissionClass,
-    ReportResultArgs, ShellExecArgs, SpawnAgentArgs, ToolContract, ToolId, ToolRegistry,
+    AgentTier, AskParentArgs, FinishArgs, FileListArgs, FileReadArgs, FileWriteArgs,
+    PermissionClass, ReportResultArgs, SendToSiblingArgs, ShellExecArgs, SpawnAgentArgs,
+    ToolContract, ToolId, ToolRegistry,
 };
 pub use watcher::{FsChanged, WorkspaceWatcher, WATCH_DEBOUNCE};

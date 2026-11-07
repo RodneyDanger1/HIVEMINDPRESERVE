@@ -19,6 +19,8 @@ use crate::tool::{AgentTier, PermissionClass, ToolContract, ToolId, ToolRegistry
 /// comparison would be tautological).
 pub const PROMPT_CLAIMED_TOOL_IDS: &[&str] = &[
     "spawn_agent",
+    "ask_parent",
+    "send_to_sibling",
     "report_result",
     "finish",
     "file_read",
@@ -38,6 +40,8 @@ pub const EXECUTOR_DISPOSITIONS: &[(&str, &str)] = &[
     ("file_write", "approval_executor"),
     ("shell_exec", "approval_executor"),
     ("spawn_agent", "loop_owned"),
+    ("ask_parent", "loop_owned"),
+    ("send_to_sibling", "loop_owned"),
 ];
 
 /// Schema id of the census payload.
@@ -221,7 +225,7 @@ mod tests {
         assert!(census.refusal_count >= 40, "the frozen table is complete");
         assert_eq!(census.tier_count, 4);
         assert_eq!(census.permission_class_count, 4);
-        assert_eq!(census.grant_count(), 3 + 5 + 6 + 4);
+        assert_eq!(census.grant_count(), 3 + 7 + 8 + 4);
         assert!(census.tools_by_tier.contains_key("hyper_agent"));
         assert_eq!(census.executor_dispositions.len(), census.registry_tool_ids.len());
         assert_eq!(
