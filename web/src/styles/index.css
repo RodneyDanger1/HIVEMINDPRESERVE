@@ -130,6 +130,18 @@
    bottom, and the viewport mask is not a grey veil. */
 .react-flow__minimap {
   margin: 0 100px 120px 0;
+  background-image: radial-gradient(circle, var(--color-hairline) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.hive-minimap-empty::after {
+  content: 'no nodes yet';
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  font: 9px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-500);
 }
 .react-flow__minimap-mask {
   fill: transparent;

@@ -378,6 +378,7 @@ function CanvasInner() {
         <MiniMap
           pannable
           zoomable
+          className={Object.keys(visibleTasks).length === 0 ? 'hive-minimap-empty' : undefined}
           ariaLabel={STRINGS.minimap.aria}
           nodeColor={(node: Node) => {
             const kind = (node.data as { task?: { kind?: string } } | undefined)?.task?.kind;
