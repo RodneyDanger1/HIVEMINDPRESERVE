@@ -146,7 +146,7 @@ two of three; (4) no first-party LICENSE/NOTICE and an incomplete census (`09-RI
   text is remembered when it carries no obvious secret marker. No editor/clear/consent UI yet.
 - Usage: migration v8 `run_usage`; measured token totals persist with NULL-not-zero; cost is not settled.
 - Hierarchy policy: Workers may spawn `subagent` only; Super escalation from a Worker is refused by `spawn_sub_hive`;
-  Hyper/Super retain broader spawn rights; caps still global (no per-profile cap yet).
+  Hyper/Super retain broader spawn rights. Profiles may tighten `max_children`/`max_depth`; per-run cap profiles still absent.
 - Profiles: migration v9 `agent_profiles` stores validated imported profiles; import/delete API + UI;
   boot merges persisted profiles over embedded ones; delete restores built-ins. No full visual editor yet.
 - Memory controls: `GET /api/agents/memory` + `DELETE /api/agents/memory/{role}` + AgentMemoryPanel.
