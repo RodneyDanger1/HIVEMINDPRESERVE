@@ -48,9 +48,9 @@ pub mod tool;
 pub mod watcher;
 
 pub use approval::{
-    hash_args, migrate as migrate_approvals, request_tool_approval, resolve_with_nonce,
-    session_allowed, ApprovalDecision, ApprovalGate, ApprovalRequest, ApprovalResolution,
-    APPROVAL_TTL_SECS,
+    cancel_pending, count_for_run, decision_label, expire, hash_args, migrate as migrate_approvals,
+    request_tool_approval, resolve_with_nonce, session_allowed, ApprovalDecision, ApprovalGate,
+    ApprovalRequest, ApprovalResolution, APPROVAL_TTL_SECS,
 };
 pub use audit::{
     init_json_audit, probe_audit_dir, probe_audit_file, read_audit_rows, record_refusal,

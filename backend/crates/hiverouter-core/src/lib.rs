@@ -1,10 +1,11 @@
-//! HiveMind v1 backend core: localhost axum server, environment checks, SQLite
+﻿//! HiveMind v1 backend core: localhost axum server, environment checks, SQLite
 //! bootstrap. Phase 1 surface only; later phases add transport, graph and stores
 //! without duplicating these owners.
 
 #![forbid(unsafe_code)]
 #![warn(missing_debug_implementations)]
 
+pub mod approval_wait;
 pub mod bus;
 pub mod caps;
 pub mod checks;
@@ -29,6 +30,7 @@ pub mod tool_loop;
 pub mod tools_bridge;
 pub mod ws;
 
+pub use approval_wait::{ApprovalWaiters, ApprovalWake};
 pub use bus::{EventBus, Replay, SequencedEvent};
 pub use caps::Caps;
 pub use checks::{run_checks, Check};
@@ -60,3 +62,4 @@ pub use tool_loop::{
 };
 pub use tools_bridge::ToolsBridge;
 pub use ws::SessionAuth;
+

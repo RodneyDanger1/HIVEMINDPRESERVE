@@ -101,6 +101,82 @@ impl ToolsBridge {
         })
     }
 
+    /// Builder for tests: a bridge whose approval TTL differs from the default.
+    #[must_use]
+    pub fn with_approval_ttl(mut self, ttl_secs: u64) -> Self {
+        self.gate = hiverouter_tools::approval::ApprovalGate::with_ttl(ttl_secs);
+        self
+    }
+
+    /// Marks one pending approval expired (live-wait timeout).
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the approval row cannot be updated.
+    pub fn expire_approval(&self, approval_id: &str, now_unix_secs: u64) -> Result<bool, Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            hiverouter_tools::approval::expire(conn, approval_id, now_unix_secs)
+                .map_err(|error| error.refusal())
+        })
+    }
+
+    /// Marks one pending approval cancelled (run/task cancellation).
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the approval row cannot be updated.
+    pub fn cancel_approval(
+        &self,
+        approval_id: &str,
+        now_unix_secs: u64,
+    ) -> Result<bool, Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            hiverouter_tools::approval::cancel_pending(conn, approval_id, now_unix_secs)
+                .map_err(|error| error.refusal())
+        })
+    }
+
+    /// Stored decision label for an approval (`None` when pending/unknown).
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the approval row cannot be read.
+    pub fn approval_decision(&self, approval_id: &str) -> Result<Option<String>, Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            hiverouter_tools::approval::decision_label(conn, approval_id)
+                .map_err(|error| error.refusal())
+        })
+    }
+
+    /// Number of approval rows ever created for a run.
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the count cannot be read.
+    pub fn approval_count_for_run(&self, run_id: RunId) -> Result<u64, Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            hiverouter_tools::approval::count_for_run(conn, run_id)
+                .map_err(|error| error.refusal())
+        })
+    }
+
+    /// Verifies and consumes the execution grant for one side-effect tool call.
+    ///
+    /// This is the only execution authority: the caller must have completed all
+    /// read-only pre-checks first so a doomed call never burns consent.
+    ///
+    /// # Errors
+    /// `E_APPROVAL_REQUIRED`, `E_APPROVAL_TIMEOUT`, `E_APPROVAL_REPLAY`.
+    pub fn verify_tool_grant(
+        &self,
+        run_id: RunId,
+        tool: hiverouter_tools::ToolId,
+        args: &serde_json::Value,
+        now_unix_secs: u64,
+    ) -> Result<(), Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            self.gate
+                .verify_grant(conn, run_id, tool, args, now_unix_secs)
+                .map_err(|error| error.refusal())
+        })
+    }
+
     /// Workspace root the jail was opened against.
     #[must_use]
     pub fn workspace_root(&self) -> &Path {

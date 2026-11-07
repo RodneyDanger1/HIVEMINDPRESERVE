@@ -136,8 +136,16 @@ pub fn hash_args(args: &serde_json::Value) -> String {
 /// Creates the approval table (idempotent). Core calls this from its migration
 /// path; it never opens its own connection.
 ///
+/// The one-pending-per-call unique index is created only when the legacy table
+/// contains no duplicate pending `(run_id, tool_call_id)` groups. Duplicates are
+/// never deleted (audit truth); migration instead refuses with the existing
+/// unique-violation refusal so the boot log names the condition and a later boot
+/// (after the boot orphan reaper has consumed pending rows) can create the index.
+///
 /// # Errors
-/// [`Refusal::InternalError`] when SQLite rejects the DDL.
+/// [`Refusal::InternalError`] when SQLite rejects the base DDL; the existing
+/// [`Refusal::ApprovalReplay`] refusal when duplicate pending rows block the
+/// unique partial index.
 pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS approvals (
@@ -161,7 +169,39 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
         CREATE INDEX IF NOT EXISTS approvals_session
             ON approvals (run_id, tool_name, args_sha256, decision);",
     )?;
-    Ok(())
+    let duplicate_groups: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM (
+             SELECT 1 FROM approvals WHERE decision IS NULL
+             GROUP BY run_id, tool_call_id HAVING COUNT(*) > 1
+         )",
+        [],
+        |row| row.get(0),
+    )?;
+    if duplicate_groups > 0 {
+        return Err(ToolError::new(
+            Refusal::ApprovalReplay,
+            format!(
+                "{duplicate_groups} duplicate pending approval group(s) for one \
+                 (run_id, tool_call_id) block the one-pending-per-call index; audit/expire \
+                 them and retry (no rows were deleted)"
+            ),
+        ));
+    }
+    match conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS approvals_one_pending_per_call
+            ON approvals (run_id, tool_call_id) WHERE decision IS NULL",
+        [],
+    ) {
+        Ok(_) => Ok(()),
+        Err(error) if is_unique_violation(&error) => Err(ToolError::new(
+            Refusal::ApprovalReplay,
+            format!(
+                "duplicate pending approval rows block the one-pending-per-call index; \
+                 no rows were deleted ({error})"
+            ),
+        )),
+        Err(error) => Err(error.into()),
+    }
 }
 
 /// Commits an approval request before any side effect.
@@ -561,6 +601,75 @@ fn expired_decision_refusal() -> ToolError {
     )
 }
 
+/// Marks one pending approval expired (live-wait timeout path).
+///
+/// Returns `true` only when this call won the `decision IS NULL` CAS.
+///
+/// # Errors
+/// Database failure, reported as `E_INTERNAL_ERROR`.
+pub fn expire(conn: &Connection, approval_id: &str, now_unix_secs: u64) -> Result<bool, ToolError> {
+    let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+    let changed = conn.execute(
+        "UPDATE approvals SET decision = 'expired', decided_at = ?1
+         WHERE approval_id = ?2 AND decision IS NULL",
+        params![decided_at.as_str(), approval_id],
+    )?;
+    Ok(changed == 1)
+}
+
+/// Marks one pending approval cancelled (run/task cancellation path).
+///
+/// Returns `true` only when this call won the `decision IS NULL` CAS.
+///
+/// # Errors
+/// Database failure, reported as `E_INTERNAL_ERROR`.
+pub fn cancel_pending(
+    conn: &Connection,
+    approval_id: &str,
+    now_unix_secs: u64,
+) -> Result<bool, ToolError> {
+    let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+    let changed = conn.execute(
+        "UPDATE approvals SET decision = 'cancelled', decided_at = ?1
+         WHERE approval_id = ?2 AND decision IS NULL",
+        params![decided_at.as_str(), approval_id],
+    )?;
+    Ok(changed == 1)
+}
+
+/// Reads the stored decision label for one approval (`None` when undecided/unknown).
+///
+/// # Errors
+/// Database failure, reported as `E_INTERNAL_ERROR`.
+pub fn decision_label(conn: &Connection, approval_id: &str) -> Result<Option<String>, ToolError> {
+    conn.query_row(
+        "SELECT decision FROM approvals WHERE approval_id = ?1",
+        params![approval_id],
+        |row| row.get::<_, Option<String>>(0),
+    )
+    .optional()
+    .map(|row| row.flatten())
+    .map_err(ToolError::from)
+}
+
+/// Number of approval rows ever created for a run (all decisions).
+///
+/// # Errors
+/// Database failure, reported as `E_INTERNAL_ERROR`.
+pub fn count_for_run(conn: &Connection, run_id: RunId) -> Result<u64, ToolError> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM approvals WHERE run_id = ?1",
+        params![run_id.to_string()],
+        |row| row.get(0),
+    )?;
+    u64::try_from(count).map_err(|_| {
+        ToolError::new(
+            Refusal::InternalError,
+            "approval row count exceeded u64 range",
+        )
+    })
+}
+
 /// Consumes every still-pending approval at boot.
 ///
 /// No in-process waiter survives a restart, so every pending row is
@@ -621,13 +730,11 @@ pub fn expire_pending(conn: &Connection, now_unix_secs: u64) -> Result<u64, Tool
         if !is_expired {
             continue;
         }
-        let decided_at = Timestamp::from_unix_secs(now_unix_secs);
-        let changed = conn.execute(
-            "UPDATE approvals SET decision = 'expired', decided_at = ?1
-             WHERE approval_id = ?2 AND decision IS NULL",
-            params![decided_at.as_str(), approval_id],
-        )?;
-        expired = expired.saturating_add(u64::try_from(changed).unwrap_or(1));
+        // Reuse the single per-row CAS primitive so the TTL/boot paths share one
+        // `decision IS NULL` predicate (WP-01 merge requirement).
+        if expire(conn, &approval_id, now_unix_secs)? {
+            expired = expired.saturating_add(1);
+        }
     }
     Ok(expired)
 }
@@ -992,6 +1099,63 @@ mod tests {
             )
             .expect_err("late decision after boot expiry");
         assert_eq!(error.code(), "E_APPROVAL_TIMEOUT");
+    }
+
+    #[test]
+    fn expire_cancel_and_decision_labels_are_cas_guarded() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let run_id = RunId::new();
+        let task_id = TaskId::new();
+        let request = gate
+            .request(
+                &conn,
+                run_id,
+                task_id,
+                "call-label-1",
+                ToolId::FileWrite,
+                PermissionClass::Mutate,
+                &args(),
+                now(),
+            )
+            .expect("request");
+        assert_eq!(
+            decision_label(&conn, &request.approval_id.to_string()).expect("label"),
+            None
+        );
+        assert_eq!(
+            count_for_run(&conn, run_id).expect("count"),
+            1,
+            "one approval row for the run"
+        );
+        assert!(expire(&conn, &request.approval_id.to_string(), now()).expect("expire"));
+        assert!(
+            !expire(&conn, &request.approval_id.to_string(), now()).expect("second expire"),
+            "the CAS wins exactly once"
+        );
+        assert_eq!(
+            decision_label(&conn, &request.approval_id.to_string()).expect("label"),
+            Some("expired".to_owned())
+        );
+
+        let second = gate
+            .request(
+                &conn,
+                run_id,
+                task_id,
+                "call-label-2",
+                ToolId::FileWrite,
+                PermissionClass::Mutate,
+                &args(),
+                now(),
+            )
+            .expect("second request");
+        assert!(cancel_pending(&conn, &second.approval_id.to_string(), now()).expect("cancel"));
+        assert_eq!(
+            decision_label(&conn, &second.approval_id.to_string()).expect("label"),
+            Some("cancelled".to_owned())
+        );
+        assert_eq!(count_for_run(&conn, run_id).expect("count"), 2);
     }
 
     #[test]
