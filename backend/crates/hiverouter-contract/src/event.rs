@@ -10,6 +10,7 @@ use crate::envelope::{Envelope, FrameKind};
 use crate::ids::{ApprovalId, RunId, TaskId};
 use crate::refusal::Refusal;
 use crate::state::AgentState;
+use crate::timestamp::Timestamp;
 use crate::usage::Usage;
 
 /// Event names of the frozen vocabulary.
@@ -62,6 +63,8 @@ pub enum EventName {
     ToolCall,
     /// A tool call finished with its outcome (1.2 additive).
     ToolResult,
+    /// One durable agent-to-agent message (HMAS additive).
+    AgentMessage,
 }
 
 impl EventName {
@@ -90,6 +93,7 @@ impl EventName {
         EventName::Pong,
         EventName::ToolCall,
         EventName::ToolResult,
+        EventName::AgentMessage,
     ];
 
     /// Stable wire name (SCREAMING_SNAKE_CASE).
@@ -119,6 +123,7 @@ impl EventName {
             EventName::Pong => "PONG",
             EventName::ToolCall => "TOOL_CALL",
             EventName::ToolResult => "TOOL_RESULT",
+            EventName::AgentMessage => "AGENT_MESSAGE",
         }
     }
 
@@ -599,6 +604,23 @@ pub struct ToolResultPayload {
     pub sha256: Option<String>,
 }
 
+/// `AGENT_MESSAGE` payload (HMAS): one durable agent-to-agent message.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AgentMessagePayload {
+    /// Run the message belongs to.
+    pub run_id: RunId,
+    /// Sender task.
+    pub from_task_id: TaskId,
+    /// Recipient task.
+    pub to_task_id: TaskId,
+    /// Message kind (`ask_parent` / `send_to_sibling`).
+    pub kind: String,
+    /// Bounded text.
+    pub text: String,
+    /// RFC3339 creation time.
+    pub created_at: Timestamp,
+}
+
 /// `APPROVAL_RESOLVED` payload.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ApprovalResolved {
@@ -728,6 +750,8 @@ pub enum Event {
     ToolCall(ToolCallPayload),
     /// See [`ToolResultPayload`].
     ToolResult(ToolResultPayload),
+    /// See [`AgentMessagePayload`].
+    AgentMessage(AgentMessagePayload),
 }
 
 impl Event {
@@ -758,6 +782,7 @@ impl Event {
             Event::Pong(_) => EventName::Pong,
             Event::ToolCall(_) => EventName::ToolCall,
             Event::ToolResult(_) => EventName::ToolResult,
+            Event::AgentMessage(_) => EventName::AgentMessage,
         }
     }
 
@@ -797,6 +822,7 @@ impl Event {
             EventName::Pong => Event::Pong(envelope.decode_payload()?),
             EventName::ToolCall => Event::ToolCall(envelope.decode_payload()?),
             EventName::ToolResult => Event::ToolResult(envelope.decode_payload()?),
+            EventName::AgentMessage => Event::AgentMessage(envelope.decode_payload()?),
         };
         Ok(event)
     }
@@ -830,6 +856,7 @@ impl Event {
             Event::Pong(payload) => serde_json::to_value(payload),
             Event::ToolCall(payload) => serde_json::to_value(payload),
             Event::ToolResult(payload) => serde_json::to_value(payload),
+            Event::AgentMessage(payload) => serde_json::to_value(payload),
         };
         value.map_err(|_| Refusal::SchemaInvalid)
     }
@@ -874,6 +901,7 @@ mod tests {
             "PONG",
             "TOOL_CALL",
             "TOOL_RESULT",
+            "AGENT_MESSAGE",
         ];
         assert_eq!(EventName::ALL.len(), frozen.len());
         for (name, expected) in EventName::ALL.iter().zip(frozen) {

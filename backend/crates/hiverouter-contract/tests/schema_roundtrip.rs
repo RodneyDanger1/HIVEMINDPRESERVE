@@ -156,7 +156,7 @@ fn ids_are_uuid_v7_and_roundtrip_on_the_wire() {
 #[test]
 fn event_and_command_name_sets_are_stable() {
     assert_eq!(CommandName::ALL.len(), 17);
-    assert_eq!(EventName::ALL.len(), 23);
+    assert_eq!(EventName::ALL.len(), 24);
     let mut names: Vec<&str> = CommandName::ALL.iter().map(CommandName::as_str).collect();
     names.sort_unstable();
     names.dedup();
@@ -164,5 +164,5 @@ fn event_and_command_name_sets_are_stable() {
     let mut events: Vec<&str> = EventName::ALL.iter().map(EventName::as_str).collect();
     events.sort_unstable();
     events.dedup();
-    assert_eq!(events.len(), 23, "duplicate event wire names");
+    assert_eq!(events.len(), 24, "duplicate event wire names");
 }

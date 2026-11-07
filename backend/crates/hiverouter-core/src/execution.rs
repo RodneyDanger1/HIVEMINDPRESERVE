@@ -15,7 +15,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use hiverouter_contract::event::{
-    NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunMetrics, RunStatusPayload,
+    AgentMessagePayload, NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunMetrics, RunStatusPayload,
 };
 use hiverouter_contract::{AgentState, ApprovalId, Event, Refusal, RunId, TaskId, Timestamp, Usage};
 use hiverouter_provider::tool_assembler::AssembledToolCall;
@@ -642,6 +642,28 @@ impl RunEngine {
                 );
             }
         }
+    }
+
+    fn publish_agent_message(
+        &self,
+        run_id: RunId,
+        from_task_id: TaskId,
+        to_task_id: TaskId,
+        kind: &str,
+        text: &str,
+    ) {
+        self.publish(
+            Event::AgentMessage(AgentMessagePayload {
+                run_id,
+                from_task_id,
+                to_task_id,
+                kind: kind.to_owned(),
+                text: text.to_owned(),
+                created_at: Timestamp::now(),
+            }),
+            Some(run_id),
+            None,
+        );
     }
 
     fn publish_node(&self, run_id: RunId, task_id: TaskId, state: AgentState) {
@@ -2322,15 +2344,18 @@ impl RunEngine {
             .store
             .record_agent_message(run.id, task.id, parent, "ask_parent", text)
         {
-            Ok(message_id) => ToolExecution::ok(
-                plan.tool_call_id.clone(),
-                serde_json::json!({
-                    "message_id": message_id.to_string(),
-                    "to_task_id": parent.to_string(),
-                    "kind": "ask_parent",
-                })
-                .to_string(),
-            ),
+            Ok(message_id) => {
+                self.publish_agent_message(run.id, task.id, parent, "ask_parent", text);
+                ToolExecution::ok(
+                    plan.tool_call_id.clone(),
+                    serde_json::json!({
+                        "message_id": message_id.to_string(),
+                        "to_task_id": parent.to_string(),
+                        "kind": "ask_parent",
+                    })
+                    .to_string(),
+                )
+            }
             Err(refusal) => ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),
@@ -2420,15 +2445,18 @@ impl RunEngine {
             .store
             .record_agent_message(run.id, task.id, target_id, "send_to_sibling", text)
         {
-            Ok(message_id) => ToolExecution::ok(
-                plan.tool_call_id.clone(),
-                serde_json::json!({
-                    "message_id": message_id.to_string(),
-                    "to_task_id": target_id.to_string(),
-                    "kind": "send_to_sibling",
-                })
-                .to_string(),
-            ),
+            Ok(message_id) => {
+                self.publish_agent_message(run.id, task.id, target_id, "send_to_sibling", text);
+                ToolExecution::ok(
+                    plan.tool_call_id.clone(),
+                    serde_json::json!({
+                        "message_id": message_id.to_string(),
+                        "to_task_id": target_id.to_string(),
+                        "kind": "send_to_sibling",
+                    })
+                    .to_string(),
+                )
+            }
             Err(refusal) => ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),

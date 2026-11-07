@@ -142,6 +142,7 @@ pub fn event_payload_schema(name: EventName) -> Option<Result<Value, Refusal>> {
         EventName::Ping | EventName::Pong => to_schema_value::<crate::event::EmptyPayload>(),
         EventName::ToolCall => to_schema_value::<crate::event::ToolCallPayload>(),
         EventName::ToolResult => to_schema_value::<crate::event::ToolResultPayload>(),
+        EventName::AgentMessage => to_schema_value::<crate::event::AgentMessagePayload>(),
     };
     Some(schema)
 }

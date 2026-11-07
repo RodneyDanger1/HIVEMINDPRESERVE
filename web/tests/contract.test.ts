@@ -47,9 +47,9 @@ describe('frozen contract (UI-COMMANDS-v1)', () => {
     }
   });
 
-  it('declares all 23 events (21 pre-1.2 + additive TOOL_CALL/TOOL_RESULT)', () => {
-    // OLD→NEW: 21 → 23 for the 1.2 additive tool-call vocabulary (W10 B1/W11).
-    expect(EVENT_NAMES).toHaveLength(23);
+  it('declares all 24 events (21 pre-1.2 + additive TOOL_CALL/TOOL_RESULT/AGENT_MESSAGE)', () => {
+    // OLD→NEW: 21 → 23 → 24 for tool-call and agent-message vocabulary.
+    expect(EVENT_NAMES).toHaveLength(24);
     expect(EVENT_NAMES).toContain('SETTINGS_STATUS_RESULT');
     expect(EVENT_NAMES).toContain('FILE_TREE_RESULT');
     expect(EVENT_NAMES).toContain('FILE_CONTENT');

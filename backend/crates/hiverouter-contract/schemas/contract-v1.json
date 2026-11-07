@@ -1992,6 +1992,60 @@
           ]
         }
       }
+    },
+    "AGENT_MESSAGE": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "AgentMessagePayload",
+      "description": "`AGENT_MESSAGE` payload (HMAS): one durable agent-to-agent message.",
+      "type": "object",
+      "properties": {
+        "run_id": {
+          "description": "Run the message belongs to.",
+          "$ref": "#/$defs/RunId"
+        },
+        "from_task_id": {
+          "description": "Sender task.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "to_task_id": {
+          "description": "Recipient task.",
+          "$ref": "#/$defs/TaskId"
+        },
+        "kind": {
+          "description": "Message kind (`ask_parent` / `send_to_sibling`).",
+          "type": "string"
+        },
+        "text": {
+          "description": "Bounded text.",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "RFC3339 creation time.",
+          "$ref": "#/$defs/Timestamp"
+        }
+      },
+      "required": [
+        "run_id",
+        "from_task_id",
+        "to_task_id",
+        "kind",
+        "text",
+        "created_at"
+      ],
+      "$defs": {
+        "RunId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "TaskId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "Timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     }
   }
 }

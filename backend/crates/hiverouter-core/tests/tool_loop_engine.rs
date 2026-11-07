@@ -229,6 +229,7 @@ fn harness(executor: Arc<dyn ProviderExecutor>, workspace: Option<&std::path::Pa
 struct Collected {
     tool_calls: Vec<serde_json::Value>,
     tool_results: Vec<serde_json::Value>,
+    agent_messages: Vec<serde_json::Value>,
     reply_deltas: Vec<String>,
     sequence: Vec<String>,
     final_status: serde_json::Value,
@@ -264,6 +265,10 @@ async fn drive(harness: &Harness, prompt: &str) -> (Run, Collected) {
             "TOOL_RESULT" => {
                 collected.sequence.push("TOOL_RESULT".to_owned());
                 collected.tool_results.push(event.envelope.payload.clone());
+            }
+            "AGENT_MESSAGE" => {
+                collected.sequence.push("AGENT_MESSAGE".to_owned());
+                collected.agent_messages.push(event.envelope.payload.clone());
             }
             "REPLY_DELTA" => {
                 if let Some(text) = event.envelope.payload["text_delta"].as_str() {
@@ -315,6 +320,9 @@ async fn ask_parent_writes_a_durable_message() {
             .expect("message count"),
         1
     );
+    assert_eq!(collected.agent_messages.len(), 1);
+    assert_eq!(collected.agent_messages[0]["kind"], "ask_parent");
+    assert_eq!(collected.agent_messages[0]["text"], "need the parent decision");
 }
 
 #[tokio::test]

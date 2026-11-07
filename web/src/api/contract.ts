@@ -311,6 +311,15 @@ export interface ToolResultPayload {
   readonly bytes?: number | null;
   readonly sha256?: string | null;
 }
+/** HMAS additive: one durable agent-to-agent message. */
+export interface AgentMessagePayload {
+  readonly run_id: string;
+  readonly from_task_id: string;
+  readonly to_task_id: string;
+  readonly kind: string;
+  readonly text: string;
+  readonly created_at: string;
+}
 export interface HistorySnapshotPayload {
   readonly run_id: string;
   readonly revision: number;
@@ -368,6 +377,7 @@ export interface EventPayloads {
   readonly PONG: EmptyPayload;
   readonly TOOL_CALL: ToolCallPayload;
   readonly TOOL_RESULT: ToolResultPayload;
+  readonly AGENT_MESSAGE: AgentMessagePayload;
 }
 
 export type EventName = keyof EventPayloads;
@@ -396,6 +406,7 @@ export const EVENT_NAMES = [
   'PONG',
   'TOOL_CALL',
   'TOOL_RESULT',
+  'AGENT_MESSAGE',
 ] as const satisfies readonly EventName[];
 
 export function isEventName(value: unknown): value is EventName {
@@ -593,7 +604,8 @@ export type DecodedEvent =
   | { readonly name: 'PING'; readonly payload: EmptyPayload }
   | { readonly name: 'PONG'; readonly payload: EmptyPayload }
   | { readonly name: 'TOOL_CALL'; readonly payload: ToolCallPayload }
-  | { readonly name: 'TOOL_RESULT'; readonly payload: ToolResultPayload };
+  | { readonly name: 'TOOL_RESULT'; readonly payload: ToolResultPayload }
+  | { readonly name: 'AGENT_MESSAGE'; readonly payload: AgentMessagePayload };
 
 function invalid(detail: string): { ok: false; code: string; detail: string } {
   return { ok: false, code: 'E_SCHEMA_INVALID', detail };
@@ -928,6 +940,31 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
             code,
             bytes,
             sha256,
+          },
+        },
+      };
+    }
+    case 'AGENT_MESSAGE': {
+      const runId = readString(payload, 'run_id');
+      const fromTaskId = readString(payload, 'from_task_id');
+      const toTaskId = readString(payload, 'to_task_id');
+      const kind = readString(payload, 'kind');
+      const text = readString(payload, 'text');
+      const createdAt = readString(payload, 'created_at');
+      if (!runId || !fromTaskId || !toTaskId || !kind || !text || !createdAt) {
+        return invalid('AGENT_MESSAGE payload');
+      }
+      return {
+        ok: true,
+        value: {
+          name,
+          payload: {
+            run_id: runId,
+            from_task_id: fromTaskId,
+            to_task_id: toTaskId,
+            kind,
+            text,
+            created_at: createdAt,
           },
         },
       };

@@ -226,6 +226,14 @@ pub fn event_samples() -> Vec<Event> {
             bytes: Some(0),
             sha256: None,
         }),
+        Event::AgentMessage(hiverouter_contract::event::AgentMessagePayload {
+            run_id,
+            from_task_id: task_id,
+            to_task_id: TaskId::new(),
+            kind: "ask_parent".to_owned(),
+            text: "need input".to_owned(),
+            created_at: Timestamp::parse("2026-11-07T10:00:00Z").expect("valid timestamp"),
+        }),
     ]
 }
 
