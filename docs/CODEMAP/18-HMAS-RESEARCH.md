@@ -140,7 +140,8 @@ two of three; (4) no first-party LICENSE/NOTICE and an incomplete census (`09-RI
 - Personas: embedded `EMBEDDED_PERSONAS`, boot load, `with_personas`, allowlist seeding; five shipped
   profiles (`planner` + four Library roles) exposed at `/api/agents/profiles` and in the read-only UI.
 - Messaging: migration v6 `agent_messages`; `ask_parent`/`send_to_sibling`; same-parent/run auth; 32-message
-  per-run budget; store test + tool-loop test; `/api/agents/runs/{id}/messages` + AgentMessagesPanel.
+  per-run budget; store + tool-loop tests; `AGENT_MESSAGE` contract event (24 events) emitted on write;
+  `/api/agents/runs/{id}/messages` + AgentMessagesPanel.
 - Memory: migration v7 `agent_memory`; role-scoped upsert/recall (latest 8) into task context; terminal task
   text is remembered when it carries no obvious secret marker. No editor/clear/consent UI yet.
 - Usage: migration v8 `run_usage`; measured token totals persist with NULL-not-zero; cost is not settled.

@@ -1,7 +1,7 @@
 # 17 — Claim Register (post-wave 3)
 
 Status: `VERIFIED` (command/test/proof), `READ` (source read), `UNVERIFIED`, `CONTRADICTED`.
-This register is rebuilt from the current tree after commits up to `8350560`; it is not the frozen census.
+This register is rebuilt from the current tree after commits up to `42763d2`; it is not the frozen census.
 
 | ID | Claim | Status | Evidence |
 |---|---|---|---|
@@ -22,7 +22,7 @@ This register is rebuilt from the current tree after commits up to `8350560`; it
 | C-15 | File tree supports path scoping and measured size | VERIFIED | contract/command/tools tests; `DataPanel` expand |
 | C-16 | `RUN_METRICS` has a producer | VERIFIED | lifecycle test counts `RUN_METRICS` |
 | C-17 | `ask_parent` writes a durable message | VERIFIED | `ask_parent_writes_a_durable_message`; `agent_messages` migration v6 |
-| C-18 | `send_to_sibling` is same-parent/run only | READ (positive path) / UNVERIFIED (negative) | `execute_send_to_sibling`; no foreign-parent test yet |
+| C-18 | `send_to_sibling` is same-parent/run only and emits `AGENT_MESSAGE` | VERIFIED (positive) / UNVERIFIED (negative) | `ask_parent` test asserts event + row; no foreign-parent test |
 | C-19 | Side effects are Config-owned and visible in `/diagnose` | READ | `Config.side_effects_enabled`; `ToolsBridge` builder; diagnose field; no env-parsing test yet |
 | C-20 | HMAS/AWN is complete | **CONTRADICTED** | Profiles are read-only (5 boot personas); no import/editor, controller, cross-branch approval, or full HMAS UI |
 | C-21 | Four-level Agent→Subagent spawning exists | **CONTRADICTED** | Current spawn remains Hyper/Super and 3-tier; profiles/H2 pending |

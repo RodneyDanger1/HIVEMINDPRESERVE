@@ -5,12 +5,12 @@ Freeze date: 2026-11-06. Source: `blueprint/HIVEMIND-BLUEPRINT-v1.md` Phase 1 (M
 FigCraft surface work. Changing a name here requires a `CHANGE-LEDGER-IMPL.md` row and re-running the command matrix test.
 
 > **1.2 additive update — 2026-11-06 (W12 interface freeze). OLD → NEW:**
-> **21 → 23 events** (adds `TOOL_CALL`, `TOOL_RESULT`) and **15 → 16 agent states** (adds `interrupted`).
+> **21 → 24 events** (adds `TOOL_CALL`, `TOOL_RESULT`, `AGENT_MESSAGE`) and **15 → 16 agent states** (adds `interrupted`).
 > `APPROVAL_REQUEST` gains **optional** `nonce`, `run_id`, `task_id`, `tool_call_id`, `args_sha256`, `expires_at`;
 > a producer must populate all six for model-originated side effects, but the fields stay optional on the wire in this
 > wave. No command or refusal code is added (14 frozen commands, 65 refusal codes; `CommandName::ALL` = 17 including the
 > 3 decision-gated `DIFF_*` names). Sources of truth: `backend/crates/hiverouter-contract/src/event.rs`
-> (`EventName::ALL` = 23), `src/state.rs` (`AgentState` = 16), pinned by `tests/schema_roundtrip.rs` and
+> (`EventName::ALL` = 24), `src/state.rs` (`AgentState` = 16), pinned by `tests/schema_roundtrip.rs` and
 > `web/tests/contract.test.ts`; the "21 events / 15 states" wording in the freeze paragraph above and in historical
 > evidence docs is retained only as history.
 
@@ -57,9 +57,10 @@ schema mismatch → `E_SCHEMA_INVALID`; refusal is a typed `Error` event, never 
 `HISTORY_SNAPSHOT` (`run_id`, `revision`, `graph`) ·
 `TOOL_CALL` (`run_id`, `task_id`, `tool_call_id`, `tool`, `args_sha256`, `turn`) ·
 `TOOL_RESULT` (`run_id`, `task_id`, `tool_call_id`, `outcome` = `ok`/`refused`/`denied`/`timeout`/`cancelled`, `code?`, `bytes?`, `sha256?`) ·
+`AGENT_MESSAGE` (`run_id`, `from_task_id`, `to_task_id`, `kind`, `text`, `created_at`) ·
 `PING` / `PONG`.
 
-Event count: **23** (`EventName::ALL`). `APPROVAL_REQUEST` carries the optional 1.2 fields `nonce`, `run_id`,
+Event count: **24** (`EventName::ALL`). `APPROVAL_REQUEST` carries the optional 1.2 fields `nonce`, `run_id`,
 `task_id`, `tool_call_id`, `args_sha256`, `expires_at` (producer populates for model-originated approvals; optional on
 the wire during the coding waves). E2E/model-tool tests: `web/tests/contract.test.ts` (`TOOL_CALL`/`TOOL_RESULT`
 decode) and `backend/crates/hiverouter-contract/tests/common/mod.rs` (wire samples).
