@@ -100,6 +100,10 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 connection.execute(
+                    "INSERT OR IGNORE INTO projects(id, name, created_at) VALUES (?1, ?1, ?2)",
+                    params![run.project_id, run.created_at.as_str()],
+                )?;
+                connection.execute(
                     "INSERT INTO runs(id, project_id, prompt, status, error_code, created_at, updated_at)
                      VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6)",
                     params![
@@ -115,6 +119,27 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(run)
+    }
+
+    /// Lists durable projects in creation order.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn projects(&self) -> Result<Vec<(String, String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement =
+                    connection.prepare("SELECT id, name, created_at FROM projects ORDER BY created_at ASC, id ASC")?;
+                let rows = statement.query_map([], |row| {
+                    Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                })?;
+                let mut projects = Vec::new();
+                for row in rows {
+                    projects.push(row?);
+                }
+                Ok(projects)
+            })
+            .map_err(map)
     }
 
     /// Reads a run by id.
@@ -1068,6 +1093,24 @@ mod tests {
         let memories = store.agent_memory("worker", 8).expect("recall");
         assert_eq!(memories, vec![("task:1".to_owned(), "updated".to_owned())]);
         assert!(store.agent_memory("other", 8).expect("other").is_empty());
+    }
+
+    #[test]
+    fn create_run_materializes_its_project_once() {
+        let store = store();
+        store
+            .create_run("project-a", "first", AgentState::Running)
+            .expect("first run");
+        store
+            .create_run("project-a", "second", AgentState::Running)
+            .expect("second run");
+        store
+            .create_run("project-b", "third", AgentState::Running)
+            .expect("third run");
+        let projects = store.projects().expect("projects");
+        assert_eq!(projects.len(), 2);
+        assert!(projects.iter().any(|(id, _, _)| id == "project-a"));
+        assert!(projects.iter().any(|(id, _, _)| id == "project-b"));
     }
 
     #[test]

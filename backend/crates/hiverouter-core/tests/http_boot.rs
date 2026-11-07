@@ -225,7 +225,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 9);
+    assert_eq!(health["database"]["schema_version"], 10);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -413,6 +413,24 @@ async fn agent_memory_route_lists_and_clears_role_memory() {
             .expect("memory")
             .is_empty()
     );
+}
+
+#[tokio::test]
+async fn projects_route_lists_created_projects() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    server
+        .state
+        .engine
+        .store
+        .create_run("project-a", "run", hiverouter_contract::AgentState::Completed)
+        .expect("run");
+    let (status, body) = http_get(server.addr, "/api/projects").await;
+    assert_eq!(status, 200, "projects route: {body}");
+    let value: Value = serde_json::from_str(&body).expect("projects JSON");
+    let projects = value["projects"].as_array().expect("projects array");
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects[0]["id"], "project-a");
 }
 
 #[tokio::test]

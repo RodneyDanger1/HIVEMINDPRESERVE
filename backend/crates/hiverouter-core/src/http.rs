@@ -491,6 +491,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/memory", get(agent_memory_list))
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
+        .route("/api/projects", get(projects))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -833,6 +834,23 @@ async fn run_usage(
         Ok(None) => (
             StatusCode::OK,
             Json(serde_json::json!({ "run_id": run_id.to_string(), "usage": null })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn projects(State(state): State<Arc<AppState>>) -> Response {
+    match state.engine.store.projects() {
+        Ok(projects) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "projects": projects.into_iter().map(|(id, name, created_at)| serde_json::json!({
+                    "id": id,
+                    "name": name,
+                    "created_at": created_at,
+                })).collect::<Vec<_>>(),
+            })),
         )
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
