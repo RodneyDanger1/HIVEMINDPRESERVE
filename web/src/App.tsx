@@ -21,6 +21,8 @@ import { AgentsPanel } from './panels/AgentsPanel';
 import { ModelsPanel } from './panels/ModelsPanel';
 import { RoutingPanel } from './panels/RoutingPanel';
 import { ApprovalOverlay } from './panels/ApprovalOverlay';
+import { SwarmPanel } from './panels/SwarmPanel';
+import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
 
@@ -30,6 +32,8 @@ function AppFrame() {
   const connection = useUiStore((state) => state.connection);
   const connectionRefusal = useUiStore((state) => state.connectionRefusal);
   const apiKind = useUiStore((state) => state.apiKind);
+  const run = useUiStore((state) => state.run);
+  const setTab = useUiStore((state) => state.setTab);
   const reduced = useAppReducedMotion();
 
   useEffect(() => {
@@ -44,11 +48,36 @@ function AppFrame() {
         : null;
 
   const workspaceView =
-    tab === 'routing' ? (
+    tab === 'swarm' ? (
+      <SwarmPanel />
+    ) : tab === 'routing' ? (
       <RoutingPanel />
-    ) : tab === 'history' && nav === 'workspace' ? (
-      <div className="relative h-full min-h-0">
-        <Canvas />
+    ) : tab === 'history' ? (
+      <div className="flex h-full min-h-0">
+        <HistoryPanel />
+        <div className="relative min-h-0 min-w-0 flex-1">
+          {run !== null ? (
+            <Canvas />
+          ) : (
+            <div className="flex h-full items-center justify-center p-6">
+              <div className="surface-panel max-w-[420px] rounded-[16px] p-5">
+                <div className="type-mono-meta text-[8px] tracking-[0.14em] text-meta">COMMITTED HISTORY</div>
+                <h2 className="mt-1 font-display text-[26px] leading-tight text-ink-900">Nothing to replay yet</h2>
+                <p className="mt-2 text-[12.5px] leading-[18px] text-ink-500">
+                  History is read-only and only appears after a run commits a revision. No graph is
+                  shown when there is no authoritative snapshot to replay.
+                </p>
+                <button
+                  type="button"
+                  className="type-label mt-4 h-9 rounded-[8px] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400"
+                  onClick={() => setTab('workspace')}
+                >
+                  Go to Workspace
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     ) : (
       <div className="relative h-full min-h-0">
@@ -93,9 +122,14 @@ function AppFrame() {
             </div>
           ) : null}
           <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
-          {nav === 'workspace' ? (
+          {nav === 'workspace' && tab === 'workspace' ? (
             <div className="absolute inset-x-0 bottom-0 z-30">
               <ControlBar />
+              <Scrubber />
+            </div>
+          ) : null}
+          {nav === 'workspace' && tab === 'history' ? (
+            <div className="absolute inset-x-0 bottom-0 z-30">
               <Scrubber />
             </div>
           ) : null}

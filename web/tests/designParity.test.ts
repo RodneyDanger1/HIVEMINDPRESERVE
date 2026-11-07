@@ -39,6 +39,7 @@ describe('HiveMind spatial design parity pins', () => {
       '/panels/NavRail.tsx',
       '/panels/LibraryPanel.tsx',
       '/chat/ChatCore.tsx',
+      '/panels/Scrubber.tsx',
       '/state/strings.ts',
     ]) {
       const source = sourceOf(suffix);

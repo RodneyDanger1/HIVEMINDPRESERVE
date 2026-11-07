@@ -445,45 +445,54 @@ function CanvasInner() {
       <div className="absolute bottom-32 left-3 flex flex-col gap-1" aria-label="Zoom controls">
         <button
           type="button"
-          className="surface-panel h-8 w-8 rounded-[var(--radius-sm)] text-lg leading-none text-ink-800 hover:bg-honey-100"
+          className="surface-panel flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-ink-800 hover:bg-honey-100"
           onClick={() => {
             void zoomIn({ duration });
           }}
           aria-label={STRINGS.controls.zoomIn}
         >
-          +
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h10M7 2v10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
         </button>
         <span className="type-mono-meta text-center text-meta">{zoomLabel}</span>
         <button
           type="button"
-          className="surface-panel h-8 w-8 rounded-[var(--radius-sm)] text-lg leading-none text-ink-800 hover:bg-honey-100"
+          className="surface-panel flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-ink-800 hover:bg-honey-100"
           onClick={() => {
             void zoomOut({ duration });
           }}
           aria-label={STRINGS.controls.zoomOut}
         >
-          −
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 7h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
         </button>
         <button
           type="button"
-          className="surface-panel h-8 w-8 rounded-[var(--radius-sm)] text-[10px] leading-none text-ink-800 hover:bg-honey-100"
+          className="surface-panel flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-ink-800 hover:bg-honey-100"
           onClick={() => {
             setCenter(0, 0, { zoom: getZoom(), duration: 0 });
           }}
           aria-label={STRINGS.controls.recenter}
           title={STRINGS.controls.recenter}
         >
-          0
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
         </button>
         <button
           type="button"
-          className="surface-panel h-8 w-8 rounded-[var(--radius-sm)] text-[10px] leading-none text-ink-800 hover:bg-honey-100"
+          className="surface-panel flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-ink-800 hover:bg-honey-100"
           onClick={() => {
             void fitView({ duration, padding: 0.2 });
           }}
           aria-label={STRINGS.controls.zoomFit}
         >
-          ⤢
+          <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </div>
 
