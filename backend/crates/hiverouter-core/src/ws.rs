@@ -434,6 +434,7 @@ async fn session_loop(mut socket: WebSocket, state: Arc<AppState>, query_last_se
                     }
                     Some(Ok(Message::Ping(payload))) => {
                         let _ = socket.send(Message::Pong(payload)).await;
+                        publish_pong(state.bus.as_ref());
                     }
                     Some(Ok(Message::Pong(_))) => {}
                     Some(Ok(Message::Close(_))) | None => return,

@@ -436,7 +436,15 @@ pub fn build_router(state: Arc<AppState>) -> Router {
 /// `GET /diagnose` â€” tools-owned derived diagnostics (no secrets).
 async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
     match state.tools.diagnostics() {
-        Ok(value) => (StatusCode::OK, Json(value)).into_response(),
+        Ok(mut value) => {
+            if let Some(object) = value.as_object_mut() {
+                object.insert(
+                    "side_effects_enabled".to_owned(),
+                    serde_json::Value::Bool(state.config.side_effects_enabled),
+                );
+            }
+            (StatusCode::OK, Json(value)).into_response()
+        }
         Err(refusal) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({
