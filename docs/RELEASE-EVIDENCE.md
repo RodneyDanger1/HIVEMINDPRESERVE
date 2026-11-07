@@ -37,8 +37,8 @@ audit time, and the E2E result files are gitignored; none of it is a committed o
 | Tag | **No 1.2 tag.** Existing tags: `hivemind-1.0.0`, `hivemind-1.1.0`, `v1.0.0` | `git tag --list` (read 2026-11-06) |
 | Artifacts | **No 1.2 artifact.** `dist/` contains the 1.0.0/1.1.0 packages plus older/rehearsal files (`HiveMind-v1-win64.zip`, `.release-manifest-*.json`) and the 1.1.0 staging directory; there is no 1.2 zip or 1.2 staging directory | `dist/` listing (read 2026-11-06) |
 | Manifest | `tools/release-manifest.json` is still the sealed 1.1.0 record (`version=1.1.0`, source/tag target `87079ce`); no 1.2 manifest was created | `tools/release-manifest.json` |
-| Backend tests (current integrated tree) | **475 passed / 0 failed / 2 ignored**, `EXIT=0` (`cargo test --workspace --locked`, PATH prepended with `tools/w64devkit/bin`) | `docs/evidence/1.2-backend-tests-12.log` — local, gitignored (`*.log`) |
-| Backend tests (superseded claim) | 441 passed was an intermediate claim; the current 475-run supersedes it | `plans/foresight/RUN-3.md:197`; `docs/evidence/1.2-backend-tests-12.log` |
+| Backend tests (current integrated tree) | **475 passed / 0 failed / 2 ignored**, `EXIT=0` (`cargo test --workspace --locked`, PATH prepended with `tools/w64devkit/bin`) | `docs/evidence/1.2-backend-tests-14.log` — local, gitignored (`*.log`) |
+| Backend tests (superseded claim) | 441 passed was an intermediate claim; the current 475-run supersedes it | `plans/foresight/RUN-3.md:197`; `docs/evidence/1.2-backend-tests-14.log` |
 | Compile gate | `cargo check --workspace --tests --locked` exit 0 on the current integrated tree (22:46 CT) | command output; `docs/evidence/1.2-compile-gate-2.log` (historical) |
 | Web tests | **179 passed / 0 failed**, `EXIT=0`; `tsc --noEmit` exit 0 | `docs/evidence/1.2-web-tests-3.log`, `docs/evidence/1.2-web-typecheck.log` (local, gitignored) |
 | E2E (guarded, mocked + live skipped) | **106 passed / 0 failed / 166 skipped**, exit 0; skips are the live/paid and capture lanes | `node run-guarded.mjs` output in the session; `e2e/test-results/` (local, gitignored) |

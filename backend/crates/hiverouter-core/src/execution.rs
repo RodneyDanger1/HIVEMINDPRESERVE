@@ -2264,6 +2264,38 @@ impl RunEngine {
                 };
                 return self.complete_task(run, task, &terminal);
             }
+            // `report_result` reports this task's result to its parent. The
+            // engine persists it as the task's final assistant message and
+            // completes the task here; parent runs consume the child result
+            // from the queued-spawn path. A failed report is labelled, never
+            // rewritten as a success.
+            if let Some((report_plan, report_result)) = turn.executed.iter().find(|(plan, result)| {
+                plan.tool == "report_result"
+                    && result.outcome == hiverouter_contract::ToolOutcome::Ok
+            }) {
+                let summary = report_plan
+                    .args
+                    .get("summary")
+                    .and_then(serde_json::Value::as_str)
+                    .map_or_else(|| report_result.text.clone(), str::to_owned);
+                let success = report_plan
+                    .args
+                    .get("success")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(true);
+                let report_text = if success {
+                    summary
+                } else {
+                    format!("report_result success=false: {summary}")
+                };
+                let terminal = StreamedReply {
+                    deltas: if report_text.is_empty() { Vec::new() } else { vec![report_text] },
+                    usage: final_reply.usage,
+                    tool_calls: Vec::new(),
+                    reasoning: final_reply.reasoning.clone(),
+                };
+                return self.complete_task(run, task, &terminal);
+            }
             transcript.push(ToolTurnTranscript {
                 assistant_text: final_reply.text(),
                 reasoning: final_reply.reasoning.clone(),

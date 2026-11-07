@@ -428,5 +428,3 @@ export function refusalCopy(code: string): {
     STRINGS.clientRefusals;
   return table[code] ?? null;
 }
-
-
