@@ -183,6 +183,59 @@ impl ToolsBridge {
         &self.workspace_root
     }
 
+    /// Verifies the single-use grant, then commits exactly one preflighted side
+    /// effect (C1a split protocol).
+    ///
+    /// Ordering is load-bearing: the read-only preflight runs **before** the
+    /// grant CAS, so a doomed call (escape, oversize, stale hash) never burns
+    /// consent; after the CAS exactly one effect is attempted and the grant
+    /// stays consumed even if that effect fails (at-most-once).
+    ///
+    /// # Errors
+    /// Named refusals from preflight, `E_APPROVAL_REQUIRED` / `E_APPROVAL_REPLAY`
+    /// from the grant CAS, or an execution error after the grant was consumed.
+    pub async fn execute_approved(
+        &self,
+        shell_policy: &hiverouter_tools::shell::ShellPolicy,
+        registry: &hiverouter_tools::tool::ToolRegistry,
+        tier: hiverouter_tools::tool::AgentTier,
+        run_id: RunId,
+        tool: &str,
+        args: &serde_json::Value,
+        cancellation: Option<&tokio_util::sync::CancellationToken>,
+    ) -> Result<hiverouter_tools::executor::ExecutedTool, Refusal> {
+        if !side_effects_enabled() {
+            return Ok(hiverouter_tools::executor::ExecutedTool::Refused {
+                code: Refusal::ToolNotAllowed.code().to_owned(),
+                detail: "HIVEROUTER_SIDE_EFFECTS=0 disables granted side effects; \
+                         the approval was not consumed"
+                    .to_owned(),
+            });
+        }
+        let jail = self.require_jail()?;
+        let prepared = hiverouter_tools::side_effects::preflight_side_effect(
+            jail,
+            registry,
+            shell_policy,
+            tier,
+            tool,
+            args,
+            cancellation,
+        )
+        .map_err(Self::map_tool_error)?;
+        let tool_id = hiverouter_tools::ToolId::from_id(tool).ok_or(Refusal::ToolNotFound)?;
+        let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
+        self.verify_tool_grant(run_id, tool_id, args, now_unix_secs)?;
+        hiverouter_tools::side_effects::commit_side_effect(
+            jail,
+            shell_policy,
+            prepared,
+            cancellation,
+        )
+        .await
+        .map_err(Self::map_tool_error)
+    }
+
     /// Whether the workspace jail is usable.
     #[must_use]
     pub fn file_access_available(&self) -> bool {
@@ -294,21 +347,32 @@ impl ToolsBridge {
         ledger_dir: &Path,
     ) -> Result<ApprovalResolution, Refusal> {
         let resolution = self.resolve_approval(payload)?;
-        let mut guard = self.ledger.lock().map_err(|_| Refusal::InternalError)?;
-        let reopen = match guard.as_ref() {
-            Some((dir, _)) => dir.as_path() != ledger_dir,
-            None => true,
-        };
-        if reopen {
-            let opened = RunLedger::open_in(ledger_dir).map_err(|error| error.refusal())?;
-            *guard = Some((ledger_dir.to_path_buf(), opened));
+        let ledger_result = (|| -> Result<(), Refusal> {
+            let mut guard = self.ledger.lock().map_err(|_| Refusal::InternalError)?;
+            let reopen = match guard.as_ref() {
+                Some((dir, _)) => dir.as_path() != ledger_dir,
+                None => true,
+            };
+            if reopen {
+                let opened = RunLedger::open_in(ledger_dir).map_err(|error| error.refusal())?;
+                *guard = Some((ledger_dir.to_path_buf(), opened));
+            }
+            let ledger = match guard.as_ref() {
+                Some((_, ledger)) => ledger,
+                None => return Err(Refusal::InternalError),
+            };
+            append_approval_decision(ledger, &resolution).map_err(|error| error.refusal())?;
+            Ok(())
+        })();
+        if let Err(refusal) = ledger_result {
+            // The decision was already committed in SQLite. If its evidence
+            // could not be appended, consume/cancel the row before returning so
+            // the TTL executor can never perform the effect without a ledger
+            // row (fail closed, single-use nonce stays consumed).
+            let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
+            let _ = self.cancel_approval(&payload.approval_id.to_string(), now_unix_secs);
+            return Err(refusal);
         }
-        let ledger = match guard.as_ref() {
-            Some((_, ledger)) => ledger,
-            None => return Err(Refusal::InternalError),
-        };
-        append_approval_decision(ledger, &resolution).map_err(|error| error.refusal())?;
-        drop(guard);
         Ok(resolution)
     }
 
@@ -383,7 +447,7 @@ impl ToolsBridge {
                     // would refuse execution after a decision was consumed.
                     return Err(Refusal::ApprovalReplay);
                 }
-                return Ok(Self::approval_request_event(&existing));
+                return Ok(Self::approval_request_event_with_args(&existing, Some(args)));
             }
             let request = hiverouter_tools::approval::request_tool_approval(
                 &self.gate,
@@ -396,8 +460,22 @@ impl ToolsBridge {
                 now_unix_secs,
             )
             .map_err(|error| error.refusal())?;
-            Ok(Self::approval_request_event(&request))
+            Ok(Self::approval_request_event_with_args(&request, Some(args)))
         })
+    }
+
+    /// Wire projection for a fresh request whose arguments are still held in
+    /// memory: includes a bounded, redacted preview. Replay projections use
+    /// [`Self::approval_request_event`] and omit it because the persisted row
+    /// stores only the digest.
+    #[must_use]
+    pub fn approval_request_event_with_args(
+        request: &ApprovalRequest,
+        args: Option<&serde_json::Value>,
+    ) -> event::ApprovalRequest {
+        let mut event = Self::approval_request_event(request);
+        event.args_preview = args.map(hiverouter_contract::redact_args_preview);
+        event
     }
 
     /// Wire `APPROVAL_REQUEST` payload for one committed tools approval request.
@@ -417,6 +495,10 @@ impl ToolsBridge {
             task_id: Some(request.task_id),
             tool_call_id: Some(request.tool_call_id.clone()),
             args_sha256: Some(request.args_sha256.clone()),
+            // The persisted approval row carries only the digest; the preview
+            // must not be reconstructed from a lossy source. Producers that
+            // still hold the live args can attach it at publish time.
+            args_preview: None,
             expires_at: Some(request.expires_at.clone()),
         }
     }
@@ -438,6 +520,44 @@ impl ToolsBridge {
             .iter()
             .map(Self::approval_request_event)
             .collect())
+    }
+
+    /// Wire `APPROVAL_REQUEST` payloads for every still-pending approval of a
+    /// non-terminal run, oldest first, bounded by `limit`.
+    ///
+    /// Read-only replay projection over
+    /// [`hiverouter_tools::approval::pending_ids_for_active_runs`]: it never
+    /// consumes a nonce, resolves, executes or ledgers, so it is safe to
+    /// publish after `SERVER_HELLO`. Expired rows are skipped (the boot/live
+    /// reaper owns marking them `expired`; replay never resurrects one).
+    ///
+    /// # Errors
+    /// `E_DB_BUSY` / `E_INTERNAL_ERROR` on database or stored-row failure.
+    pub fn pending_approval_events_all(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<event::ApprovalRequest>, Refusal> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
+        self.db.with_connection_refusal(|conn| {
+            let ids = hiverouter_tools::approval::pending_ids_for_active_runs(conn, limit)
+                .map_err(|error| error.refusal())?;
+            let mut events = Vec::with_capacity(ids.len());
+            for id in ids {
+                let Some(request) = hiverouter_tools::approval::load_request(conn, &id)
+                    .map_err(|error| error.refusal())?
+                else {
+                    continue; // row vanished between query and load: never fabricate
+                };
+                if request.is_expired(now_unix_secs) {
+                    continue; // TTL elapsed before the reaper ran: never replay it
+                }
+                events.push(Self::approval_request_event(&request));
+            }
+            Ok(events)
+        })
     }
 
     /// `/diagnose` payload from the tools health/derived census layer.
@@ -464,6 +584,16 @@ impl ToolsBridge {
             tool: resolution.request.tool.id().to_owned(),
             decision: decision.to_owned(),
         }
+    }
+}
+
+fn side_effects_enabled() -> bool {
+    match std::env::var("HIVEROUTER_SIDE_EFFECTS") {
+        Ok(value) => {
+            let normalized = value.trim().to_ascii_lowercase();
+            !(normalized == "0" || normalized == "false" || normalized == "off")
+        }
+        Err(_) => true,
     }
 }
 

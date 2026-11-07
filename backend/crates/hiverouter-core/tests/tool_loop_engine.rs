@@ -270,6 +270,9 @@ async fn drive(harness: &Harness, prompt: &str) -> (Run, Collected) {
                 }
             }
             "RUN_STATUS" => {
+                if event.envelope.payload["status"] == "running" {
+                    continue; // D2: the run now starts before leaf execution
+                }
                 collected.final_status = event.envelope.payload.clone();
                 break;
             }

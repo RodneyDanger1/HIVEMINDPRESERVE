@@ -16,6 +16,14 @@
 
   -DryRun performs every read-only check and prints the plan; it executes NO build and writes NO files.
 
+  Seal topology (1.2, CODE-PROOF §6): source commit C holds code/tests/docs; the
+  seal commit D = C + artifacts + manifest + release evidence/docs. The release
+  tag points at D. -SourceOnly records a v2 manifest with sealed=false and
+  tag_target=null at C; -RecordSeal -SealCommit <D> re-verifies the allowlisted
+  C..D diff and recorded hashes, then writes sealed=true + seal_diff (manifest
+  only, no rebuild). tools/qa/check-seal-topology.mjs is the pure predicate used
+  by tools/qa/run-gates.ps1 for the sealed release acceptance.
+
   Exit codes: 0 ok | 2 precondition | 3 web | 4 cargo | 5 hash drift | 6 verify | 7 path policy.
   No tag is created, moved, or deleted by this script. No key is read. No absolute paths are emitted.
 #>
@@ -28,7 +36,10 @@ param(
     [string]$Tag,
     [string]$NewStagingVersion,
     [switch]$SkipWebTests,
-    [switch]$KeepVerifyDir
+    [switch]$KeepVerifyDir,
+    [switch]$SourceOnly,
+    [switch]$RecordSeal,
+    [string]$SealCommit
 )
 
 $ErrorActionPreference = 'Stop'
@@ -90,6 +101,89 @@ function HashFileList([string[]]$Paths) {
         }
     }
     return ,$out
+}
+
+function Sha256Text([string]$Text) {
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($Text))
+        return ([System.BitConverter]::ToString($hash) -replace '-', '').ToLowerInvariant()
+    }
+    finally { $sha.Dispose() }
+}
+
+# Exact 1.2 seal allowlist (CODE-PROOF §6). Must stay identical to
+# tools/qa/check-seal-topology.mjs SEAL_ALLOWLIST.
+$script:SealAllowlist = @(
+    'tools/release-manifest.json',
+    'dist/**',
+    'docs/RELEASE-EVIDENCE.md',
+    'plans/waves/README.md',
+    'docs/RELEASE.md',
+    'README.md'
+)
+
+function Test-SealAllowlisted([string]$Path, [string[]]$Allowlist) {
+    $p = (($Path -replace '\\', '/')).Trim()
+    if (-not $p) { return $false }
+    if ($p.StartsWith('/') -or $p -match '^[A-Za-z]:' -or $p -match '(^|/)\.\.(/|$)') { return $false }
+    foreach ($entry in $Allowlist) {
+        $e = (([string]$entry) -replace '\\', '/').Trim()
+        if (-not $e) { continue }
+        if ($e.EndsWith('/**')) {
+            $prefix = $e.Substring(0, $e.Length - 3).TrimEnd('/')
+            if ($p -eq $prefix -or $p.StartsWith($prefix + '/')) { return $true }
+        }
+        elseif ($p -eq $e) { return $true }
+    }
+    return $false
+}
+
+function Test-ManifestFileRow([string]$RelPath, [string]$ExpectedSha, [object]$ExpectedBytes, [string]$Label) {
+    if (-not $RelPath) { return ($Label + ': manifest path missing') }
+    $p = Join-Path $script:Repo ($RelPath -replace '/', '\')
+    if (-not (Test-Path -LiteralPath $p)) { return ($Label + ' missing: ' + $RelPath) }
+    $sha = Sha256 $p
+    if ($ExpectedSha -and $sha -ne $ExpectedSha) { return ($Label + ' sha mismatch: ' + $RelPath) }
+    if ($null -ne $ExpectedBytes -and [string]$ExpectedBytes -ne '') {
+        $bytes = (Get-Item -LiteralPath $p).Length
+        if ([int64]$ExpectedBytes -ne [int64]$bytes) { return ($Label + ' bytes mismatch: ' + $RelPath) }
+    }
+    return $null
+}
+
+function Get-ManifestArtifactDrift([object]$Manifest) {
+    $mismatches = @()
+    if (-not $Manifest.artifacts -or @($Manifest.artifacts).Count -eq 0) {
+        return @('manifest has no artifacts[] to verify')
+    }
+    foreach ($a in @($Manifest.artifacts)) {
+        $m = Test-ManifestFileRow ([string]$a.path) ([string]$a.sha256) $a.bytes 'artifact'
+        if ($m) { $mismatches += $m }
+    }
+    if (-not $Manifest.package) {
+        $mismatches += 'manifest has no package block'
+    }
+    else {
+        $m = Test-ManifestFileRow ([string]$Manifest.package.zip) ([string]$Manifest.package.zip_sha256) $Manifest.package.zip_bytes 'package zip'
+        if ($m) { $mismatches += $m }
+        if ($Manifest.package.sidecar) {
+            $m = Test-ManifestFileRow ([string]$Manifest.package.sidecar) ([string]$Manifest.package.sidecar_sha256) $null 'package sidecar'
+            if ($m) { $mismatches += $m }
+        }
+        if ($Manifest.package.checksums) {
+            $m = Test-ManifestFileRow ([string]$Manifest.package.checksums) ([string]$Manifest.package.checksums_sha256) $null 'package CHECKSUMS'
+            if ($m) { $mismatches += $m }
+        }
+    }
+    if ($Manifest.web -and $Manifest.web.files) {
+        foreach ($wf in @($Manifest.web.files)) {
+            $m = Test-ManifestFileRow ([string]$wf.path) ([string]$wf.sha256) $wf.bytes 'web dist file'
+            if ($m) { $mismatches += $m }
+        }
+    }
+    else { $mismatches += 'manifest has no web.files[] to verify' }
+    return @($mismatches)
 }
 
 function New-DeterministicZip([string]$ZipPath, [object[]]$Files) {
@@ -204,6 +298,119 @@ try {
     }
     $manifestVersion = if ($existingManifest -and $existingManifest.version) { [string]$existingManifest.version } else { '0.0.0' }
 
+    # ---------------------------------------------------------------- seal mode prechecks (1.2)
+    if ($SourceOnly -and $RecordSeal) {
+        Fail "E_RELEASE_FLAGS" "-SourceOnly and -RecordSeal are mutually exclusive" 2
+    }
+    if ($RecordSeal -and -not $SealCommit) {
+        Fail "E_RELEASE_FLAGS" "-RecordSeal requires -SealCommit <full 40-hex seal commit D>" 2
+    }
+    if ($SealCommit -and -not $RecordSeal) {
+        Fail "E_RELEASE_FLAGS" "-SealCommit is only valid with -RecordSeal" 2
+    }
+    if ($SealCommit -and ($SealCommit.Trim() -notmatch '^[0-9a-fA-F]{40}$')) {
+        Fail "E_RELEASE_FLAGS" "-SealCommit must be a full 40-hex git commit id" 2
+    }
+    if ($RecordSeal -and $NewStagingVersion) {
+        Fail "E_RELEASE_FLAGS" "-RecordSeal cannot be combined with -NewStagingVersion (seal records the existing manifest; no rebuild)" 2
+    }
+
+    if ($RecordSeal) {
+        Step "record seal: source C -> seal D"
+        if ($dirty) {
+            Fail "E_RELEASE_SEAL_STATE" "-RecordSeal requires a clean working tree (the seal evidence is the committed D tree); commit the seal commit D first." 2
+        }
+        $sealCommitId = $SealCommit.Trim().ToLowerInvariant()
+        if (-not $existingManifest) {
+            Fail "E_RELEASE_SEAL_STATE" "no tools/release-manifest.json; run -SourceOnly at the source commit first" 2
+        }
+        if ([string]$existingManifest.schema -ne 'hivemind.release-manifest.v2') {
+            Fail "E_RELEASE_SEAL_STATE" ("manifest schema '" + [string]$existingManifest.schema + "' is not hivemind.release-manifest.v2; run -SourceOnly first") 2
+        }
+        if ([bool]$existingManifest.sealed) {
+            Fail "E_RELEASE_SEAL_STATE" "manifest is already sealed; a seal commit is recorded exactly once" 2
+        }
+        $manifestSource = ([string]$existingManifest.source_commit).Trim()
+        if ($manifestSource -notmatch '^[0-9a-fA-F]{40}$') {
+            Fail "E_RELEASE_SEAL_STATE" "manifest.source_commit is not a full commit id; rebuild the source manifest" 2
+        }
+        if ([string]$existingManifest.version -ne $Version) {
+            Fail "E_RELEASE_SEAL_STATE" ("manifest version " + [string]$existingManifest.version + " != current version " + $Version) 2
+        }
+        if ([string]$existingManifest.tag -ne $Tag) {
+            Fail "E_RELEASE_SEAL_STATE" ("manifest tag " + [string]$existingManifest.tag + " != " + $Tag) 2
+        }
+        $sealHead = $head.Trim()
+        if ($sealHead -ne $sealCommitId) {
+            Fail "E_RELEASE_SEAL_COMMIT" ("HEAD " + $sealHead.Substring(0, 8) + " != -SealCommit " + $sealCommitId.Substring(0, 8) + "; check out the seal commit D before recording") 2
+        }
+        & $git cat-file -e ($sealCommitId + '^{commit}') 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Fail "E_RELEASE_SEAL_COMMIT" ("-SealCommit " + $SealCommit + " is not a commit in this repository") 2
+        }
+        if ($manifestSource -eq $sealCommitId) {
+            Fail "E_RELEASE_SEAL_COMMIT" "seal commit D must be a child commit (artifacts/manifest/evidence), not the source commit C" 2
+        }
+        & $git merge-base --is-ancestor $manifestSource $sealCommitId 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Fail "E_RELEASE_SEAL_COMMIT" "seal commit D is not a descendant of manifest source_commit C" 2
+        }
+        $sealDiffNames = @(& $git diff --name-only ($manifestSource + '..' + $sealCommitId) 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            Fail "E_RELEASE_SEAL_COMMIT" "git diff between manifest source_commit C and -SealCommit D failed" 2
+        }
+        $manifestAllow = @()
+        if ($existingManifest.seal_allowlist) { $manifestAllow = @($existingManifest.seal_allowlist | ForEach-Object { [string]$_ }) }
+        $expectedAllow = @($script:SealAllowlist)
+        if ((($manifestAllow | Sort-Object) -join '|') -ne (($expectedAllow | Sort-Object) -join '|')) {
+            Fail "E_RELEASE_SEAL_STATE" "manifest seal_allowlist is missing or differs from the exact 1.2 allowlist; rebuild the source manifest with tools/build-release.ps1 -SourceOnly" 2
+        }
+        $sealOffenders = @()
+        foreach ($p in $sealDiffNames) {
+            $rel = (([string]$p) -replace '\\', '/').Trim()
+            if (-not (Test-SealAllowlisted $rel $expectedAllow)) { $sealOffenders += $rel }
+        }
+        if ($sealOffenders.Count -gt 0) {
+            Fail "E_SEAL_DIFF" ("seal diff " + $manifestSource.Substring(0, 8) + ".." + $sealCommitId.Substring(0, 8) + " contains non-allowlisted path(s): " + (($sealOffenders | Select-Object -First 10) -join ', ')) 2
+        }
+        $artifactDrift = @(Get-ManifestArtifactDrift $existingManifest)
+        if ($artifactDrift.Count -gt 0) {
+            Fail "E_SEAL_ARTIFACT" ("recorded artifact hashes do not match the seal tree: " + (($artifactDrift | Select-Object -First 6) -join '; ')) 5
+        }
+        $sortedSealNames = @($sealDiffNames | ForEach-Object { (([string]$_) -replace '\\', '/').Trim() } | Where-Object { $_ } | Sort-Object)
+        $sealDiffSha = Sha256Text ((($sortedSealNames | Sort-Object) -join "`n") + "`n")
+        Step ("seal diff: " + $sortedSealNames.Count + " allowlisted path(s) sha256=" + $sealDiffSha)
+        if ($DryRun) {
+            Write-Host ""
+            Step "DRY RUN - RecordSeal plan (no writes)"
+            Write-Host ("source C: " + $manifestSource + "  seal D: " + $sealCommitId)
+            Write-Host ("allowlist: " + ($expectedAllow -join ', '))
+            Write-Host ("diff files: " + ($sortedSealNames -join ', '))
+            Write-Host "would write tools/release-manifest.json with sealed=true, seal_diff.from/to/sha256; no rebuild."
+            Write-Host "DRY RUN OK - no files were written." -ForegroundColor Green
+            exit 0
+        }
+        $sealedManifest = $existingManifest
+        $sealedManifest | Add-Member -NotePropertyName schema -NotePropertyValue 'hivemind.release-manifest.v2' -Force
+        $sealedManifest | Add-Member -NotePropertyName sealed -NotePropertyValue $true -Force
+        $sealedManifest | Add-Member -NotePropertyName sealed_at -NotePropertyValue ((Get-Date).ToString('yyyy-MM-ddTHH:mm:sszzz')) -Force
+        $sealedManifest | Add-Member -NotePropertyName tag_target -NotePropertyValue $null -Force
+        $sealedManifest | Add-Member -NotePropertyName seal_diff -NotePropertyValue ([ordered]@{ from = $manifestSource; to = $sealCommitId; sha256 = $sealDiffSha; files = @($sortedSealNames) }) -Force
+        $sealedManifest | Add-Member -NotePropertyName note -NotePropertyValue ('Sealed by tools/build-release.ps1 -RecordSeal: source ' + $manifestSource + '; seal ' + $sealCommitId + '; only allowlisted evidence/artifact paths differ. Tag target is resolved by tools/qa/run-gates.ps1; no rebuild, no tag move.') -Force
+        if (Test-Path -LiteralPath $manifestPath) {
+            $sealBackup = Join-Path $script:Repo ("dist/.release-manifest-seal-" + (Get-Date -Format 'yyyyMMddHHmmss') + ".json")
+            Copy-Item -LiteralPath $manifestPath -Destination $sealBackup -Force
+        }
+        $sealedJson = ($sealedManifest | ConvertTo-Json -Depth 10)
+        Write-Utf8NoBom $manifestPath ($sealedJson + "`n")
+        Test-AbsolutePaths (Get-Content -LiteralPath $manifestPath -Raw) 'tools/release-manifest.json'
+        Step "DONE - seal recorded (manifest only; no rebuild)"
+        Write-Host ("source C: " + $manifestSource)
+        Write-Host ("seal D:   " + $sealCommitId)
+        Write-Host ("diff:     " + $sortedSealNames.Count + " allowlisted path(s) sha256=" + $sealDiffSha)
+        exit 0
+    }
+
     # effective staging version (proactive supersede); drift-driven bump is refused post-build
     $effectiveVersion = $Version
     $supersedeReason = $null
@@ -228,7 +435,23 @@ try {
             $behind = [int]((& $git rev-list --count ($Tag + '..HEAD')).Trim())
         }
     }
-    if (-not $tagExists) {
+    if ($SourceOnly) {
+        # Source-only build at C: the release tag is created later at seal commit D.
+        # An existing tag remains immutable: rebuilding a source commit for a tag
+        # that points elsewhere is refused (no silent tag/source mismatch).
+        if ($tagExists -and $tagTarget -ne $head) {
+            Fail "E_RELEASE_TAG_MISMATCH" ("tag '" + $Tag + "' points at " + $tagTarget.Substring(0, 8) + ", not source HEAD " + $head.Substring(0, 8) + "; an existing release tag is immutable") 2
+        }
+        if ($tagExists) {
+            Write-Host ("source-only build at a tagged commit; tag '" + $Tag + "' stays put; manifest records sealed=false/tag_target=null.") -ForegroundColor Yellow
+        }
+        else {
+            Write-Host ("source-only build: tag '" + $Tag + "' is expected to be created at the seal commit after evidence; manifest records sealed=false/tag_target=null.") -ForegroundColor Yellow
+        }
+        $tagTarget = $null
+        $behind = $null
+    }
+    elseif (-not $tagExists) {
         if (-not $NewStagingVersion) { Fail "E_RELEASE_TAG_MISSING" ("tag '" + $Tag + "' does not exist. Create the annotated tag first (owner action), or use -NewStagingVersion for a staged superseding release.") 2 }
         Write-Host ("WARN: tag '" + $Tag + "' missing; -NewStagingVersion was supplied, continuing as staged release.") -ForegroundColor Yellow
     }
@@ -375,7 +598,13 @@ try {
         Write-Host ("4. stage " + $stagingRel + "/ {README.md, RUNBOOK.md, RELEASE.md, hiverouter.exe, hiverouter-cli.exe, CHECKSUMS.txt}")
         Write-Host ("5. zip " + $zipRel + " (deterministic) + sidecar " + $sidecarRel)
         Write-Host ("6. extract+verify every member hash against staging")
-        Write-Host ("7. write tools/release-manifest.json (schema hivemind.release-manifest.v1)")
+        Write-Host "7. write tools/release-manifest.json (schema hivemind.release-manifest.v2; sealed=false at source build)"
+        if ($SourceOnly) {
+            Write-Host ("   SOURCE-ONLY: tag_target=null; tag '" + $Tag + "' is created at the later seal commit D (owner action); sealed=false.")
+        }
+        else {
+            Write-Host ("   tag_target=" + $(if ($tagTarget) { $tagTarget } else { 'null' }) + "; sealed=false; seal_allowlist + seal_diff=null.")
+        }
         Write-Host "8. absolute-path scan -> summary old->new"
         if ($diskZipPath -and (Test-Path -LiteralPath $diskZipPath)) {
             $entries = Get-ZipEntries $diskZipPath
@@ -536,11 +765,14 @@ try {
         }
     }
     $manifest = [ordered]@{
-        schema = 'hivemind.release-manifest.v1'
+        schema = 'hivemind.release-manifest.v2'
         product = 'HiveMind'
         version = $effectiveVersion
         tag = $Tag
         tag_target = $tagTarget
+        sealed = $false
+        seal_allowlist = @($script:SealAllowlist)
+        seal_diff = $null
         tag_behind_commits = $behind
         source_commit = $head
         source_commit_date = $commitDate
@@ -597,13 +829,13 @@ try {
     }
     Write-Host "no absolute paths in manifest/CHECKSUMS"
 
-    Step "DONE - release sealed"
+    Step "DONE - release build complete (manifest sealed=false; -RecordSeal at D records the seal diff)"
     Write-Host ("version:  " + $effectiveVersion + "  tag: " + $Tag + " (behind=" + $behind + ")")
     Write-Host ("source:   " + $head)
     Write-Host ("web tree: " + $webTree)
     foreach ($a in $staged) { Write-Host ("  " + $a.name + "  " + $a.sha256 + "  " + $a.bytes + " B") }
     Write-Host ("zip:      " + $zipRel + "  " + $zipSha + "  " + $zipBytes + " B")
-    Write-Host ("manifest: tools/release-manifest.json (schema hivemind.release-manifest.v1)")
+    Write-Host ("manifest: tools/release-manifest.json (schema hivemind.release-manifest.v2; sealed=false until -RecordSeal)")
     exit 0
 }
 finally {

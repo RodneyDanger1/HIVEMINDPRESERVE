@@ -195,7 +195,7 @@ async fn run_lifecycle_plans_and_dispatches() {
             "REPLY_DELTA" => reply_deltas += 1,
             "REPLY_DONE" => reply_done += 1,
             "NODE_SPAWN" => node_spawns += 1,
-            "RUN_STATUS" => break event,
+            "RUN_STATUS" if event.envelope.payload["status"] != "running" => break event,
             _ => {}
         }
     };
@@ -232,6 +232,7 @@ async fn caps_refused_by_name() {
         .expect("submit");
     let failed = wait_for(&mut receiver, |event| {
         event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] != "running"
     })
     .await;
     assert_eq!(failed.envelope.payload["status"], "failed");
@@ -249,6 +250,7 @@ async fn caps_refused_by_name() {
         .expect("submit");
     let failed = wait_for(&mut receiver, |event| {
         event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] != "running"
     })
     .await;
     assert_eq!(
@@ -268,6 +270,7 @@ async fn provider_error_preserves_partial_state() {
         .expect("submit");
     let failed = wait_for(&mut receiver, |event| {
         event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] != "running"
     })
     .await;
     assert_eq!(failed.envelope.payload["status"], "failed");

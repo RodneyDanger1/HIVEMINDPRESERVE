@@ -1,5 +1,27 @@
 //! Frozen client -> server commands and their payloads
 //! (`docs/contracts/UI-COMMANDS-v1.md` §2).
+//!
+//! # Pending-approval pull (documented; no command is added)
+//!
+//! The frozen vocabulary deliberately has no `APPROVAL_HYDRATE` command. The
+//! transport already carries a real client-initiated pull, so no request or
+//! response event is missing: the untyped `{"type":"hello","last_seq":<n>}`
+//! control frame (the same handshake a reconnect sends). On every hello the
+//! server answers with `SERVER_HELLO` and re-publishes a bounded batch of open
+//! approvals as ordinary `APPROVAL_REQUEST` events — the response side needs no
+//! new event, and replay is replace-by-id, so it is idempotent and never
+//! fabricates a request. A live connection whose `last_seq` is current gets zero
+//! event replay (`EventBus::replay_after` returns `Replay::Current`), so the pull
+//! is safe mid-session.
+//!
+//! A typed command was rejected for this wave because it is **not** additive: a
+//! new `CommandName`/`Command` variant breaks every exhaustive `match` outside
+//! this crate (`schema.rs::command_payload_schema`,
+//! `ws.rs::handle_client_text`), needs a new `COMMAND_MATRIX` row, and requires
+//! regenerating the golden `schemas/contract-v1.json` — a coordinated contract
+//! wave plus a new server handler, not an optional field. Adding the name
+//! without those pieces would ship dead protocol surface that the server
+//! answers with `E_COMMAND_UNKNOWN`, so it was not added.
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

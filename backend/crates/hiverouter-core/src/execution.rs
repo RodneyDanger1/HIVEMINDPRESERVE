@@ -1,4 +1,4 @@
-﻿//! Run lifecycle engine: prompt -> run row -> plan -> dispatch -> streamed reply
+//! Run lifecycle engine: prompt -> run row -> plan -> dispatch -> streamed reply
 //! (blueprint Phase 4, WP 4.5/4.6/4.7/4.8).
 //!
 //! Guarantees:
@@ -17,14 +17,18 @@ use async_trait::async_trait;
 use hiverouter_contract::event::{
     NodeEvent, ReplyDelta, ReplyDone, RunCreated, RunStatusPayload,
 };
-use hiverouter_contract::{AgentState, Event, Refusal, RunId, TaskId, Timestamp, Usage};
+use hiverouter_contract::{AgentState, ApprovalId, Event, Refusal, RunId, TaskId, Timestamp, Usage};
 use hiverouter_provider::tool_assembler::AssembledToolCall;
+use hiverouter_tools::approval::{ApprovalDecision, ApprovalResolution};
+use hiverouter_tools::shell::ShellPolicy;
 use hiverouter_tools::{
-    execute_read_only, AgentTier, ExecutedTool, PermissionClass, ToolRegistry, WorkspaceJail,
+    execute_read_only, AgentTier, ExecutedTool as ToolsExecutedTool, PermissionClass,
+    SpawnAgentArgs, ToolRegistry, WorkspaceJail,
 };
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
+use crate::approval_wait::{ApprovalWake, ApprovalWaiters};
 use crate::bus::EventBus;
 use crate::caps::Caps;
 use crate::context::ContextStore;
@@ -35,6 +39,70 @@ use crate::planner::Plan;
 use crate::prompts::TemplateRegistry;
 use crate::store::RunStore;
 use crate::tool_loop::{self, ToolCallPlan, ToolExecution};
+use crate::tools_bridge::ToolsBridge;
+use crate::run_state::{self, StateEvent};
+
+/// Default approval clock: Unix seconds (the approval/TTL unit).
+fn default_now_unix_secs() -> u64 {
+    Timestamp::now().unix_secs().unwrap_or(0)
+}
+
+/// One time source for approval timestamps/CAS (tests inject a fixed clock).
+pub type Clock = Arc<dyn Fn() -> u64 + Send + Sync>;
+
+/// Disarms a waiter on every exit path (wake, timeout, cancel, error, panic).
+struct ArmedApproval {
+    waiters: Arc<ApprovalWaiters>,
+    approval_id: ApprovalId,
+}
+
+impl Drop for ArmedApproval {
+    fn drop(&mut self) {
+        self.waiters.disarm(self.approval_id);
+    }
+}
+
+/// True when a task state has no outgoing lifecycle edge (M-002 terminal guard).
+///
+/// A `KILL_WORKER` result (`Killed`) and every other terminal task state are
+/// never overwritten by a late completion/failure write: the engine refuses any
+/// transition out of these states instead of resurrecting the row.
+#[must_use]
+fn is_terminal_task_state(state: AgentState) -> bool {
+    run_state::is_task_terminal(state)
+}
+
+/// Contract node-kind label for an agent tier (`NODE_KIND_VOCABULARY` values).
+#[must_use]
+fn node_kind(tier: AgentTier) -> &'static str {
+    match tier {
+        AgentTier::HyperAgent => "hyperagent",
+        AgentTier::SuperAgent => "superagent",
+        AgentTier::WorkerAgent => "worker",
+        AgentTier::ToolAgent => "tool",
+    }
+}
+
+/// Maps a task's recorded role to the contract agent tier (M-015).
+///
+/// Known roles are mapped explicitly. An unrecognized role keeps the historic
+/// `WorkerAgent` capability set and is never promoted to a broader allowlist;
+/// the planner root is the run orchestrator, so `planner`/`hyper` map to
+/// `HyperAgent` and `super` (sub-hive) maps to `SuperAgent`.
+#[must_use]
+pub(crate) fn task_agent_tier(task: &TaskRecord) -> AgentTier {
+    let role = task.role.trim().to_ascii_lowercase();
+    match role.as_str() {
+        "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => {
+            AgentTier::HyperAgent
+        }
+        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => AgentTier::SuperAgent,
+        "tool" | "toolagent" | "tool_agent" => AgentTier::ToolAgent,
+        "worker" | "workeragent" | "worker_agent" => AgentTier::WorkerAgent,
+        "" if task.depth == 0 => AgentTier::HyperAgent,
+        _ => AgentTier::WorkerAgent,
+    }
+}
 
 /// Template used for the one planning call; the raw prompt is used when the
 /// registry has no such template.
@@ -286,6 +354,23 @@ pub struct RunEngine {
     /// Frozen tool registry used to validate model-originated calls
     /// (tier allowlists + argument schemas).
     tool_registry: ToolRegistry,
+    /// Approval/consent bridge. `None` keeps the pre-1.2 read-only behaviour:
+    /// side-effect plans refuse `E_TOOL_NOT_ALLOWED`.
+    tools: Option<Arc<ToolsBridge>>,
+    /// In-process approval waiters (one server process; no cross-process wait).
+    waiters: Arc<ApprovalWaiters>,
+    /// One clock for approval timestamps/CAS (tests inject a fixed clock).
+    clock: Clock,
+    /// Shell allowlist used only for an approved `shell_exec`.
+    shell_policy: ShellPolicy,
+    /// One cancellation token per executing task. The run token keeps the run
+    /// alive; a task token lets `KILL_WORKER` stop exactly one task (M-012).
+    task_tokens: Mutex<HashMap<TaskId, CancellationToken>>,
+    /// Serializes the engine-side task-state read/check/write so a concurrent
+    /// kill and completion cannot resurrect a terminal state (M-002).
+    task_state_lock: Mutex<()>,
+    /// Tasks created after planning (command or model spawn) awaiting dispatch.
+    spawn_queue: Mutex<Vec<TaskId>>,
     active_run: Mutex<Option<RunId>>,
 }
 
@@ -295,6 +380,8 @@ impl std::fmt::Debug for RunEngine {
             .field("active_run", &self.active_run())
             .field("caps", &self.caps)
             .field("tool_workspace", &self.tool_workspace.is_some())
+            .field("approval_wired", &self.tools.is_some())
+            .field("waiters", &self.waiters.len())
             .finish()
     }
 }
@@ -322,6 +409,13 @@ impl RunEngine {
             snapshots: None,
             tool_workspace: None,
             tool_registry: ToolRegistry::standard(),
+            tools: None,
+            waiters: Arc::new(ApprovalWaiters::new()),
+            clock: Arc::new(default_now_unix_secs),
+            shell_policy: ShellPolicy::conservative_default(),
+            task_tokens: Mutex::new(HashMap::new()),
+            task_state_lock: Mutex::new(()),
+            spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
         }
     }
@@ -345,6 +439,35 @@ impl RunEngine {
     pub fn with_tool_workspace(mut self, workspace: WorkspaceJail) -> Self {
         self.tool_workspace = Some(workspace);
         self
+    }
+
+    /// Attaches the approval bridge; production `http.rs` always does.
+    #[must_use]
+    pub fn with_tools(mut self, tools: Arc<ToolsBridge>) -> Self {
+        self.tools = Some(tools);
+        self
+    }
+
+    /// Injects the approval clock (tests; production uses the system clock).
+    #[must_use]
+    pub fn with_clock(mut self, clock: Clock) -> Self {
+        self.clock = clock;
+        self
+    }
+
+    /// Overrides the shell allowlist for an approved `shell_exec`.
+    #[must_use]
+    pub fn with_shell_policy(mut self, shell_policy: ShellPolicy) -> Self {
+        self.shell_policy = shell_policy;
+        self
+    }
+
+    /// Wakes a suspended engine wait after the WS command committed a decision.
+    /// Returns false when no waiter is armed (legal: late/duplicate/terminal
+    /// resolve); the caller logs and never fails the command.
+    #[must_use]
+    pub fn notify_approval_resolved(&self, resolution: &ApprovalResolution) -> bool {
+        self.waiters.wake_resolved(resolution)
     }
 
     /// Builds an engine with explicit contexts/registry (tests).
@@ -372,6 +495,13 @@ impl RunEngine {
             snapshots: None,
             tool_workspace: None,
             tool_registry: ToolRegistry::standard(),
+            tools: None,
+            waiters: Arc::new(ApprovalWaiters::new()),
+            clock: Arc::new(default_now_unix_secs),
+            shell_policy: ShellPolicy::conservative_default(),
+            task_tokens: Mutex::new(HashMap::new()),
+            task_state_lock: Mutex::new(()),
+            spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
         }
     }
@@ -395,11 +525,212 @@ impl RunEngine {
     }
 
     fn publish_node(&self, run_id: RunId, task_id: TaskId, state: AgentState) {
+        let node = self.graph.node(task_id).ok().flatten();
+        let kind = self
+            .store
+            .get_task(task_id)
+            .ok()
+            .map(|task| node_kind(task_agent_tier(&task)).to_owned());
         self.publish(
-            Event::NodeState(NodeEvent { task_id, state }),
+            Event::NodeState(NodeEvent {
+                task_id,
+                state,
+                rev: node.as_ref().map(|node| node.rev),
+                kind,
+                parent_task_id: node.as_ref().and_then(|node| node.parent_task_id),
+            }),
             Some(run_id),
             None,
         );
+    }
+
+    /// Publishes the `NODE_SPAWN` frame with the node's authoritative topology.
+    fn publish_node_spawn(&self, run_id: RunId, task: &TaskRecord) {
+        let node = self.graph.node(task.id).ok().flatten();
+        self.publish(
+            Event::NodeSpawn(NodeEvent {
+                task_id: task.id,
+                state: AgentState::Queued,
+                rev: node.as_ref().map(|node| node.rev),
+                kind: Some(node_kind(task_agent_tier(task)).to_owned()),
+                parent_task_id: task.parent_task_id,
+            }),
+            Some(run_id),
+            None,
+        );
+    }
+
+    /// Registers a per-task child of `run_token` and returns it.
+    fn register_task_token(
+        &self,
+        task_id: TaskId,
+        run_token: &CancellationToken,
+    ) -> Result<CancellationToken, Refusal> {
+        let token = run_token.child_token();
+        let mut tokens = self
+            .task_tokens
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        tokens.insert(task_id, token.clone());
+        Ok(token)
+    }
+
+    /// Drops the per-task token once its execution turn ended.
+    fn unregister_task_token(&self, task_id: TaskId) {
+        if let Ok(mut tokens) = self.task_tokens.lock() {
+            tokens.remove(&task_id);
+        }
+    }
+
+    /// Cancels exactly one task's token; `false` when the task has no live turn.
+    fn cancel_task_token(&self, task_id: TaskId) -> bool {
+        let token = self
+            .task_tokens
+            .lock()
+            .ok()
+            .and_then(|tokens| tokens.get(&task_id).cloned());
+        match token {
+            Some(token) => {
+                token.cancel();
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Enqueues a task created after planning for the run's dispatch loop.
+    fn enqueue_spawned_task(&self, task_id: TaskId) -> Result<(), Refusal> {
+        let mut queue = self
+            .spawn_queue
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        if !queue.contains(&task_id) {
+            queue.push(task_id);
+        }
+        Ok(())
+    }
+
+    /// Removes one specific spawned task from the deferred queue.
+    fn take_queued_task(&self, task_id: TaskId) -> bool {
+        self.spawn_queue.lock().ok().is_some_and(|mut queue| {
+            if let Some(position) = queue.iter().position(|queued| *queued == task_id) {
+                queue.remove(position);
+                true
+            } else {
+                false
+            }
+        })
+    }
+
+    /// Pops the next spawned task awaiting dispatch.
+    fn next_queued_task(&self) -> Option<TaskId> {
+        self.spawn_queue.lock().ok().and_then(|mut queue| {
+            if queue.is_empty() {
+                None
+            } else {
+                Some(queue.remove(0))
+            }
+        })
+    }
+
+    /// Applies one task lifecycle event to the freshest persisted state.
+    ///
+    /// A terminal task is never transitioned again (`Ok(None)`). The store and
+    /// graph writes happen here under the engine's task-state lock; the caller
+    /// owns publishing the matching `NODE_STATE`.
+    fn apply_task_state(
+        &self,
+        task_id: TaskId,
+        event: StateEvent,
+    ) -> Result<Option<run_state::TaskTransition>, Refusal> {
+        let _guard = self
+            .task_state_lock
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        let fresh = self.store.get_task(task_id)?;
+        if is_terminal_task_state(fresh.state) {
+            return Ok(None);
+        }
+        let transition =
+            run_state::apply_task(fresh.state, event).map_err(|error| error.refusal())?;
+        self.store.update_task_state(task_id, transition.to)?;
+        let _ = self.graph.set_state(task_id, transition.to);
+        Ok(Some(transition))
+    }
+
+    /// Runs one lifecycle read/check/write while holding the engine lifecycle
+    /// lock, so a per-task kill and a terminal run write cannot interleave and
+    /// resurrect a terminal run. The closure must not call another guarded
+    /// lifecycle helper (the mutex is not reentrant).
+    fn with_lifecycle_lock<T>(
+        &self,
+        apply: impl FnOnce() -> Result<T, Refusal>,
+    ) -> Result<T, Refusal> {
+        let _guard = self
+            .task_state_lock
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        apply()
+    }
+
+    /// Returns a run suspended on a per-task approval wait to `running` after a
+    /// per-task kill, so sibling tasks keep executing (M-012).
+    ///
+    /// Serialized with the terminal run writers: a run that already reached a
+    /// terminal status is never resurrected to `running`.
+    fn resume_run_after_task_kill(&self, run_id: RunId) -> Result<(), Refusal> {
+        self.with_lifecycle_lock(|| {
+            let run = self.store.get_run(run_id)?;
+            if run.status.is_terminal() || run.status != AgentState::AwaitingApproval {
+                return Ok(());
+            }
+            let transition = run_state::apply_run(run.status, StateEvent::Resume)
+                .map_err(|error| error.refusal())?;
+            self.store.set_run_status(run_id, transition.to, None)?;
+            self.publish(
+                Event::RunStatus(RunStatusPayload {
+                    run_id,
+                    status: transition.to,
+                    error_code: None,
+                }),
+                Some(run_id),
+                None,
+            );
+            Ok(())
+        })
+    }
+
+    /// Authorizes one model tool call against the task's real tier and the
+    /// task's scoped persona allowlist (M-015).
+    ///
+    /// The tier comes from the task role ([`task_agent_tier`]) instead of the
+    /// historic hardcoded `WorkerAgent`. When the task has a scoped context
+    /// whose persona allowlist is non-empty, the tool id must be on it too.
+    fn authorize_tool_call(
+        &self,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+    ) -> Result<AgentTier, Refusal> {
+        let tier = task_agent_tier(task);
+        tool_loop::validate_plan(&self.tool_registry, tier, plan)?;
+        if let Some(allowed) = self.scoped_persona_tools(task.id)? {
+            if !allowed.is_empty() && !allowed.iter().any(|tool| tool == &plan.tool) {
+                return Err(Refusal::ToolNotAllowed);
+            }
+        }
+        Ok(tier)
+    }
+
+    /// The task's persona tool ids, when a scoped context carries them.
+    ///
+    /// The context owner copies the persona's `allowed_tool_ids` into the task's
+    /// scoped context on creation/rewire; an empty list means the context has
+    /// not narrowed the tier allowlist.
+    fn scoped_persona_tools(&self, task_id: TaskId) -> Result<Option<Vec<String>>, Refusal> {
+        Ok(self
+            .contexts
+            .get(task_id)?
+            .map(|context| context.allowed_tool_ids))
     }
 
     /// Handles `SUBMIT_PROMPT`: validates, creates the run row, audit receipt,
@@ -453,42 +784,45 @@ impl RunEngine {
     /// `E_TASK_NOT_FOUND`, `E_RUN_TERMINAL`, `E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`,
     /// `E_AGENT_LIMIT`.
     pub fn spawn_sub_hive(&self, parent_task_id: TaskId, role: &str) -> Result<TaskRecord, Refusal> {
-        let parent = self.store.get_task(parent_task_id)?;
-        let run = self.store.get_run(parent.run_id)?;
-        if run.status.is_terminal() {
-            return Err(Refusal::RunTerminal);
-        }
-        let siblings = self
-            .store
-            .tasks_for_run(parent.run_id)?
-            .into_iter()
-            .filter(|task| task.parent_task_id == Some(parent_task_id))
-            .count();
-        let agents = self.store.task_count(parent.run_id)?;
-        let depth = parent.depth.saturating_add(1);
-        self.caps.check_spawn(depth, siblings, agents)?;
-        let task = TaskRecord {
-            id: TaskId::new(),
-            run_id: parent.run_id,
-            parent_task_id: Some(parent_task_id),
-            role: role.to_owned(),
-            depth,
-            spawn_seq: agents.saturating_add(1),
-            state: AgentState::Queued,
-            rev: 0,
-        };
-        self.store.insert_task(&task)?;
-        self.graph
-            .add_task(task.id, Some(parent_task_id))
-            .map_err(|error| error)?;
-        self.publish(
-            Event::NodeSpawn(NodeEvent {
-                task_id: task.id,
+        // Read + cap-check + insert under one lock so concurrent spawns cannot
+        // both pass the fan-out/agent caps and exceed them (the caps are hard).
+        let task = {
+            let _guard = self
+                .task_state_lock
+                .lock()
+                .map_err(|_| Refusal::InternalError)?;
+            let parent = self.store.get_task(parent_task_id)?;
+            let run = self.store.get_run(parent.run_id)?;
+            if run.status.is_terminal() {
+                return Err(Refusal::RunTerminal);
+            }
+            let siblings = self
+                .store
+                .tasks_for_run(parent.run_id)?
+                .into_iter()
+                .filter(|task| task.parent_task_id == Some(parent_task_id))
+                .count();
+            let agents = self.store.task_count(parent.run_id)?;
+            let depth = parent.depth.saturating_add(1);
+            self.caps.check_spawn(depth, siblings, agents)?;
+            let task = TaskRecord {
+                id: TaskId::new(),
+                run_id: parent.run_id,
+                parent_task_id: Some(parent_task_id),
+                role: role.to_owned(),
+                depth,
+                spawn_seq: agents.saturating_add(1),
                 state: AgentState::Queued,
-            }),
-            Some(task.run_id),
-            None,
-        );
+                rev: 0,
+            };
+            self.store.insert_task(&task)?;
+            self.graph.add_task(task.id, Some(parent_task_id))?;
+            task
+        };
+        self.publish_node_spawn(task.run_id, &task);
+        // The run dispatch loop drains this queue and executes the child to a
+        // terminal state before the run itself can become terminal (M-009).
+        self.enqueue_spawned_task(task.id)?;
         Ok(task)
     }
 
@@ -504,79 +838,183 @@ impl RunEngine {
         if !self.tokens.cancel(run_id) {
             return Err(Refusal::RunTerminal);
         }
-        self.store
-            .set_run_status(run_id, AgentState::Cancelled, None)?;
-        self.publish(
-            Event::RunStatus(RunStatusPayload {
-                run_id,
-                status: AgentState::Cancelled,
-                error_code: None,
-            }),
-            Some(run_id),
-            None,
-        );
+        // The engine owns the single terminal frame and TOOL_RESULT ordering:
+        // cancelling the token wakes a suspended wait, whose cancel path finishes
+        // one cancelled TOOL_RESULT, then dispatch persists/publishes the one
+        // terminal RUN_STATUS cancelled frame.
         Ok(())
     }
 
-    /// Handles `KILL_WORKER`.
+    /// Handles `KILL_WORKER` with per-task scope.
+    ///
+    /// A running task is cancelled through its own execution token and settled
+    /// `Killed`; an awaiting-approval task is settled `Cancelled`, its wait token
+    /// is cancelled, and the run returns to `running` so sibling tasks keep
+    /// executing. Only `CANCEL_RUN` cancels the run itself (M-002/M-012).
     ///
     /// # Errors
     /// `E_TASK_NOT_FOUND`, `E_TASK_TERMINAL`, `E_KILL_DENIED`.
     pub fn kill_worker(&self, task_id: TaskId) -> Result<(), Refusal> {
         let task = self.store.get_task(task_id)?;
-        if task.state.is_terminal() {
+        if is_terminal_task_state(task.state) {
             return Err(Refusal::TaskTerminal);
         }
-        if task.state != AgentState::Running {
+        if !matches!(
+            task.state,
+            AgentState::Running | AgentState::AwaitingApproval
+        ) {
             return Err(Refusal::KillDenied);
         }
-        self.store.update_task_state(task_id, AgentState::Killed)?;
-        let _ = self.graph.set_state(task_id, AgentState::Killed);
-        self.publish_node(task.run_id, task_id, AgentState::Killed);
+        // The transition is single-owner and terminal-guarded: a task already
+        // settled by a concurrent completion/failure path is never resurrected.
+        let Some(transition) = self.apply_task_state(task_id, StateEvent::Kill)? else {
+            return Err(Refusal::TaskTerminal);
+        };
+        // Cancel exactly this task's in-flight work. The run token is untouched:
+        // only CANCEL_RUN may cancel the run and its sibling tasks (M-012).
+        self.cancel_task_token(task_id);
+        self.publish_node(task.run_id, task_id, transition.to);
+        if transition.from == AgentState::AwaitingApproval {
+            // The suspended waiter wakes on the task token and consumes the
+            // approval; returning the run to running keeps siblings alive.
+            self.resume_run_after_task_kill(task.run_id)?;
+        }
+        Ok(())
+    }
+
+    /// Next monotonically increasing snapshot revision for a run.
+    ///
+    /// A revision is consumed only when its index row is committed, so a failed
+    /// write cannot create a gap or a duplicate revision.
+    fn snapshot_revision(&self, run_id: RunId) -> u64 {
+        self.snapshots
+            .as_ref()
+            .and_then(|store| store.indexed_revisions(run_id).ok())
+            .map(|rows| u64::try_from(rows.len()).unwrap_or(0))
+            .unwrap_or(0)
+    }
+
+    /// Captures and durably writes the committed graph for `run` (M-004).
+    ///
+    /// Called at the committed transitions (planning -> running, after each
+    /// executed node, awaiting approval, terminal), so a crash mid-run restores
+    /// the last committed graph instead of having no revision at all. A write
+    /// failure is reported and leaves the previous revision intact; it never
+    /// fabricates a snapshot.
+    fn commit_run_snapshot(&self, run: &Run, revision: u64, status: AgentState) {
+        let Some(store) = &self.snapshots else {
+            return;
+        };
+        match crate::snapshot::capture(&self.graph, run.id, revision, status) {
+            Ok(envelope) => {
+                if let Err(error) = store.write(&envelope) {
+                    tracing::error!(
+                        code = error.code(),
+                        "snapshot write failed; run state is persisted without a new revision"
+                    );
+                }
+            }
+            Err(error) => {
+                tracing::error!(code = error.code(), "snapshot capture failed");
+            }
+        }
+    }
+
+    /// Settles every non-terminal task of a terminal run to the terminal state
+    /// matching the run outcome (M-003).
+    ///
+    /// The planner root and every non-leaf/queued task are structural rows that
+    /// never enter `execute_task`; without this reconciliation a `completed` run
+    /// keeps the root `running` in SQLite and `queued` in the graph. Already
+    /// terminal rows are never overwritten; the graph is aligned to the
+    /// persisted state so DB and graph agree in the terminal snapshot.
+    fn reconcile_terminal_tasks(&self, run: &Run, outcome: AgentState) -> Result<(), Refusal> {
+        let terminal = match outcome {
+            AgentState::Completed => AgentState::Completed,
+            AgentState::Cancelled => AgentState::Cancelled,
+            AgentState::Interrupted => AgentState::Interrupted,
+            _ => AgentState::Failed,
+        };
+        let mut tasks = self.store.tasks_for_run(run.id)?;
+        tasks.sort_by_key(|task| task.spawn_seq);
+        for task in tasks {
+            let _guard = self
+                .task_state_lock
+                .lock()
+                .map_err(|_| Refusal::InternalError)?;
+            let fresh = self.store.get_task(task.id)?;
+            if is_terminal_task_state(fresh.state) {
+                let graph_state = self.graph.state_of(task.id).ok();
+                if graph_state.is_some_and(|state| state != fresh.state) {
+                    let _ = self.graph.set_state(task.id, fresh.state);
+                }
+                continue;
+            }
+            self.store.update_task_state(task.id, terminal)?;
+            let _ = self.graph.set_state(task.id, terminal);
+            self.publish_node(run.id, task.id, terminal);
+        }
         Ok(())
     }
 
     async fn dispatch(self: Arc<Self>, run: Run, token: CancellationToken) {
         let outcome = self.dispatch_inner(&run, &token).await;
-        let (status, error_code) = match &outcome {
-            Ok(()) => (AgentState::Completed, None),
-            Err(refusal) if *refusal == Refusal::ToolCancelled => (AgentState::Cancelled, None),
-            Err(refusal) => (AgentState::Failed, Some(refusal.code().to_owned())),
-        };
-        if let Err(error) = self
+        let persisted = self
             .store
-            .set_run_status(run.id, status, error_code.as_deref())
-        {
-            tracing::error!(code = error.code(), "failed to persist final run status");
+            .get_run(run.id)
+            .map(|current| current.status)
+            .unwrap_or(run.status);
+        let (final_status, final_error) = if persisted.is_terminal() {
+            // A wait terminal path (timeout) or CANCEL_RUN already persisted and
+            // published the terminal frame; never duplicate it.
+            (persisted, None)
+        } else {
+            let (status, error_code) = match &outcome {
+                Ok(()) => (AgentState::Completed, None),
+                Err(refusal) if *refusal == Refusal::ToolCancelled => (AgentState::Cancelled, None),
+                Err(refusal) => (AgentState::Failed, Some(refusal.code().to_owned())),
+            };
+            (status, error_code)
+        };
+        // Every task is settled before the terminal frame and terminal snapshot:
+        // a terminal run must never keep a Running/Queued task row (M-003).
+        if let Err(error) = self.reconcile_terminal_tasks(&run, final_status) {
+            tracing::error!(code = error.code(), "failed to reconcile terminal task states");
         }
-        self.publish(
-            Event::RunStatus(RunStatusPayload {
-                run_id: run.id,
-                status,
-                error_code,
-            }),
-            Some(run.id),
-            None,
-        );
-        if let Some(store) = &self.snapshots {
-            let revision = store
-                .indexed_revisions(run.id)
-                .map(|rows| u64::try_from(rows.len()).unwrap_or(0))
-                .unwrap_or(0);
-            match crate::snapshot::capture(&self.graph, run.id, revision, status) {
-                Ok(envelope) => {
-                    if let Err(error) = store.write(&envelope) {
-                        tracing::error!(
-                            code = error.code(),
-                            "snapshot write failed; run state is persisted without a new revision"
-                        );
-                    }
+        if !persisted.is_terminal() {
+            // Serialized with the per-task kill run resume: a terminal status is
+            // written and published exactly once and never resurrected.
+            let published = self.with_lifecycle_lock(|| {
+                let current = self.store.get_run(run.id)?;
+                if current.status.is_terminal() {
+                    return Ok(false);
                 }
-                Err(error) => {
-                    tracing::error!(code = error.code(), "snapshot capture failed");
+                if let Err(error) = self
+                    .store
+                    .set_run_status(run.id, final_status, final_error.as_deref())
+                {
+                    tracing::error!(code = error.code(), "failed to persist final run status");
                 }
+                self.publish(
+                    Event::RunStatus(RunStatusPayload {
+                        run_id: run.id,
+                        status: final_status,
+                        error_code: final_error.clone(),
+                    }),
+                    Some(run.id),
+                    None,
+                );
+                Ok(true)
+            });
+            if let Err(error) = published {
+                tracing::error!(
+                    code = error.code(),
+                    "failed to write the terminal run status under the lifecycle lock"
+                );
             }
         }
+        // Keep the post-terminal snapshot in addition to the mid-run revisions.
+        self.commit_run_snapshot(&run, self.snapshot_revision(run.id), final_status);
         let _ = self.set_active(None);
         self.tokens.remove(run.id);
         self.executor.finish_run(run.id).await;
@@ -607,14 +1045,7 @@ impl RunEngine {
         };
         self.store.insert_task(&root)?;
         self.graph.add_task(root.id, None)?;
-        self.publish(
-            Event::NodeSpawn(NodeEvent {
-                task_id: root.id,
-                state: AgentState::Queued,
-            }),
-            Some(run.id),
-            None,
-        );
+        self.publish_node_spawn(run.id, &root);
 
         let mut tasks: HashMap<TaskId, TaskRecord> = HashMap::new();
         tasks.insert(root.id, root.clone());
@@ -635,16 +1066,27 @@ impl RunEngine {
             };
             self.store.insert_task(&record)?;
             self.graph.add_task(record.id, Some(root.id))?;
-            self.publish(
-                Event::NodeSpawn(NodeEvent {
-                    task_id: record.id,
-                    state: AgentState::Queued,
-                }),
-                Some(run.id),
-                None,
-            );
+            self.publish_node_spawn(run.id, &record);
             tasks.insert(record.id, record);
         }
+
+        // D2: run_state accepts Suspend only from Running. The planning phase is
+        // over; persist one Start transition and publish the one new frame.
+        let start = run_state::apply_run(AgentState::Planning, StateEvent::Start)
+            .map_err(|error| error.refusal())?;
+        self.store.set_run_status(run.id, start.to, None)?;
+        self.publish(
+            Event::RunStatus(RunStatusPayload {
+                run_id: run.id,
+                status: start.to,
+                error_code: None,
+            }),
+            Some(run.id),
+            None,
+        );
+        // M-004: commit the planned graph before the first execution turn, so a
+        // crash during execution restores this run instead of nothing.
+        self.commit_run_snapshot(run, self.snapshot_revision(run.id), start.to);
 
         // Execute leaf tasks in topological order; reply chunks stream per task.
         for leaf_id in plan.leaf_order()? {
@@ -652,7 +1094,94 @@ impl RunEngine {
                 return Err(Refusal::ToolCancelled);
             }
             let task = tasks.get(&leaf_id).cloned().ok_or(Refusal::InternalError)?;
-            self.execute_task(run, &task, token).await?;
+            let result = self.execute_task(run, &task, token).await;
+            // Bounded mid-run commit after every executed node (M-004).
+            let status = self
+                .store
+                .get_run(run.id)
+                .map(|current| current.status)
+                .unwrap_or(AgentState::Running);
+            self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+            match result {
+                Ok(_) => {}
+                Err(refusal) => {
+                    if !token.is_cancelled()
+                        && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
+                    {
+                        let fresh = self.store.get_task(task.id)?;
+                        if is_terminal_task_state(fresh.state) {
+                            // KILL_WORKER (or a kill/resolve race) stopped only
+                            // this task; the run and its remaining tasks continue
+                            // (M-012).
+                            continue;
+                        }
+                    }
+                    return Err(refusal);
+                }
+            }
+        }
+        // Tasks created after planning (operator SPAWN_SUB_HIVE or a model
+        // spawn_agent that was not already joined inline) are executed to a
+        // terminal state before the run can become terminal (M-009).
+        self.dispatch_spawned_tasks(run, token).await?;
+        Ok(())
+    }
+
+    /// Drains tasks created after planning and executes each one to a terminal
+    /// state, sequentially, inside the run dispatch (M-009).
+    ///
+    /// Depth/fan-out/agent caps were enforced by [`Self::spawn_sub_hive`] before
+    /// the child row existed; the queue consumer re-reads the row so a task
+    /// killed/removed before dispatch is never run. A per-task kill settles that
+    /// one child and the loop continues with the next queued task.
+    async fn dispatch_spawned_tasks(
+        &self,
+        run: &Run,
+        token: &CancellationToken,
+    ) -> Result<(), Refusal> {
+        while let Some(task_id) = self.next_queued_task() {
+            if token.is_cancelled() {
+                return Err(Refusal::ToolCancelled);
+            }
+            let task = match self.store.get_task(task_id) {
+                Ok(task) => task,
+                Err(Refusal::TaskNotFound) => continue,
+                Err(error) => return Err(error),
+            };
+            if task.run_id != run.id || is_terminal_task_state(task.state) {
+                continue;
+            }
+            if task.state != AgentState::Queued && task.state != AgentState::Running {
+                // AwaitingApproval/terminal rows are owned by their own path.
+                continue;
+            }
+            let result = self.execute_task(run, &task, token).await;
+            let status = self
+                .store
+                .get_run(run.id)
+                .map(|current| current.status)
+                .unwrap_or(AgentState::Running);
+            self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+            match result {
+                Ok(_) => {}
+                Err(refusal) => {
+                    if !token.is_cancelled()
+                        && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
+                    {
+                        let fresh = self.store.get_task(task_id)?;
+                        if is_terminal_task_state(fresh.state) {
+                            // Per-task kill: this child is settled; siblings keep
+                            // their own execution turns.
+                            continue;
+                        }
+                    }
+                    let fresh = self.store.get_task(task_id)?;
+                    if !is_terminal_task_state(fresh.state) {
+                        self.fail_task(run, &task, AgentState::Failed)?;
+                    }
+                    return Err(refusal);
+                }
+            }
         }
         Ok(())
     }
@@ -676,12 +1205,12 @@ impl RunEngine {
     /// returns the planned results for the follow-up model turn.
     ///
     /// Order per call (W12 interface): persisted turn/call budget check ->
-    /// [`tool_loop::plan_call`] -> WorkerAgent tier/registry validation ->
+    /// [`tool_loop::plan_call`] -> task-tier/persona registry validation ->
     /// publish `TOOL_CALL` -> read-only execution through the configured
     /// [`WorkspaceJail`] -> publish `TOOL_RESULT` -> durable `tool_turns` row.
     /// Non-read-only tools, missing jail, invalid plans and exhausted budgets
     /// produce a named `TOOL_RESULT` refusal and execute nothing.
-    fn execute_tool_turn(
+    async fn execute_tool_turn(
         &self,
         run: &Run,
         task: &TaskRecord,
@@ -734,6 +1263,7 @@ impl RunEngine {
         };
 
         let mut executed: Vec<(ToolCallPlan, ToolExecution)> = Vec::new();
+        let mut precounted: u32 = 0;
         let mut calls_in_turn: u32 = 0;
         let mut budget_refused = false;
         for (index, call) in reply.tool_calls.iter().enumerate() {
@@ -766,23 +1296,46 @@ impl RunEngine {
                         ),
                     ),
                     Ok(plan) => {
-                        let execution = match tool_loop::validate_plan(
-                            &self.tool_registry,
-                            AgentTier::WorkerAgent,
-                            &plan,
-                        ) {
+                        let execution = match self.authorize_tool_call(task, &plan) {
                             Err(refusal) => ToolExecution::refused(
                                 plan.tool_call_id.clone(),
                                 refusal.code(),
                                 format!(
-                                    "tool {:?} refused by the WorkerAgent tier allowlist: {}",
+                                    "tool {:?} refused for task role {:?} (tier {}): {}",
                                     plan.tool,
+                                    task.role,
+                                    task_agent_tier(task).label(),
                                     refusal.message()
                                 ),
                             ),
-                            Ok(()) => {
+                            Ok(tier) => {
                                 self.publish_tool_call(run, task, &plan);
-                                self.execute_tool_plan(&plan)
+                                if plan.tool == "spawn_agent" {
+                                    // Real model-spawned child path (M-010): caps are
+                                    // enforced before the child row exists, the child
+                                    // runs to a terminal state here, and its result is
+                                    // returned as this tool's result. No approval is
+                                    // consumed: spawning is loop-owned, never a
+                                    // workspace side effect.
+                                    self.execute_spawn_agent(run, task, &plan, token)
+                                        .await
+                                } else if tool_loop::requires_approval(&self.tool_registry, &plan.tool)
+                                    && self.tools.is_some()
+                                    && self.tool_workspace.is_some()
+                                {
+                                    // D12: count the attempt before the wait so a
+                                    // deny/timeout cannot retry for free.
+                                    self.db
+                                        .increment_run_tool_counters(run.id, 0, 1)
+                                        .map_err(|error| error.refusal())?;
+                                    precounted = precounted.saturating_add(1);
+                                    // Terminal waits finalize their own TOOL_RESULT and
+                                    // return Err (D13); approve/deny return Ok.
+                                    self.suspend_for_approval(run, task, call, &plan, turn, token)
+                                        .await?
+                                } else {
+                                    self.execute_tool_plan(&plan, tier)
+                                }
                             }
                         };
                         executed.push((plan, execution.clone()));
@@ -795,7 +1348,11 @@ impl RunEngine {
         }
         if calls_in_turn > 0 {
             self.db
-                .increment_run_tool_counters(run.id, 1, calls_in_turn)
+                .increment_run_tool_counters(
+                    run.id,
+                    1,
+                    calls_in_turn.saturating_sub(precounted),
+                )
                 .map_err(|error| error.refusal())?;
         }
         Ok(ToolTurnResult {
@@ -864,10 +1421,19 @@ impl RunEngine {
     }
 
     /// Marks the task terminal for a failed/cancelled turn (store+graph+event).
+    ///
+    /// Terminal-aware: a task already `Killed`/`Cancelled`/`Failed`/... is never
+    /// overwritten by a late failure write (M-002).
     fn fail_task(&self, run: &Run, task: &TaskRecord, state: AgentState) -> Result<(), Refusal> {
-        self.store.update_task_state(task.id, state)?;
-        let _ = self.graph.set_state(task.id, state);
-        self.publish_node(run.id, task.id, state);
+        let event = match state {
+            AgentState::Cancelled => StateEvent::Cancel,
+            AgentState::Killed => StateEvent::Kill,
+            AgentState::Interrupted => StateEvent::Restart,
+            _ => StateEvent::Fail,
+        };
+        if let Some(transition) = self.apply_task_state(task.id, event)? {
+            self.publish_node(run.id, task.id, transition.to);
+        }
         Ok(())
     }
 
@@ -876,7 +1442,7 @@ impl RunEngine {
     /// Read-only is a property of the frozen registry contract: a non-read tool
     /// is refused here and never reaches the executor or the jail. Without a
     /// configured jail a read call is refused as `E_FILE_TREE_UNAVAILABLE`.
-    fn execute_tool_plan(&self, plan: &ToolCallPlan) -> ToolExecution {
+    fn execute_tool_plan(&self, plan: &ToolCallPlan, tier: AgentTier) -> ToolExecution {
         if tool_loop::permission_for(&self.tool_registry, &plan.tool)
             != Some(PermissionClass::Read)
         {
@@ -900,15 +1466,15 @@ impl RunEngine {
         match execute_read_only(
             workspace,
             &self.tool_registry,
-            AgentTier::WorkerAgent,
+            tier,
             &plan.tool,
             &plan.args,
         ) {
-            Ok(ExecutedTool::Ok { text }) => ToolExecution::ok(
+            Ok(ToolsExecutedTool::Ok { text }) => ToolExecution::ok(
                 plan.tool_call_id.clone(),
                 tool_loop::bounded_tool_text(&text),
             ),
-            Ok(ExecutedTool::Refused { code, detail }) => {
+            Ok(ToolsExecutedTool::Refused { code, detail }) => {
                 ToolExecution::refused(plan.tool_call_id.clone(), code, detail)
             }
             Err(error) => ToolExecution::refused(
@@ -965,20 +1531,642 @@ impl RunEngine {
             .map_err(|error| error.refusal())
     }
 
+    fn now_unix_secs(&self) -> u64 {
+        (self.clock)()
+    }
+
+    /// Applies the run+task Suspend transitions exactly once and publishes
+    /// `RUN_STATUS awaiting_approval` + `NODE_STATE awaiting_approval`.
+    ///
+    /// The task transition is applied first from the freshest state so a task
+    /// killed before the suspend can never leave the run suspended with a
+    /// terminal task.
+    fn persist_approval_transitions(&self, run: &Run, task: &TaskRecord) -> Result<(), Refusal> {
+        let current_run = self.store.get_run(run.id)?;
+        let run_transition = run_state::apply_run(current_run.status, StateEvent::Suspend)
+            .map_err(|error| error.refusal())?;
+        let Some(task_transition) = self.apply_task_state(task.id, StateEvent::Suspend)? else {
+            return Err(Refusal::TaskTerminal);
+        };
+        self.store.set_run_status(run.id, run_transition.to, None)?;
+        self.publish(
+            Event::RunStatus(RunStatusPayload {
+                run_id: run.id,
+                status: run_transition.to,
+                error_code: None,
+            }),
+            Some(run.id),
+            None,
+        );
+        self.publish_node(run.id, task.id, task_transition.to);
+        Ok(())
+    }
+
+    /// Applies run+task Resume and publishes `RUN_STATUS running` + NODE running.
+    fn resume_transitions(&self, run: &Run, task: &TaskRecord) -> Result<(), Refusal> {
+        let current_run = self.store.get_run(run.id)?;
+        let run_transition = run_state::apply_run(current_run.status, StateEvent::Resume)
+            .map_err(|error| error.refusal())?;
+        let Some(task_transition) = self.apply_task_state(task.id, StateEvent::Resume)? else {
+            return Err(Refusal::TaskTerminal);
+        };
+        self.store.set_run_status(run.id, run_transition.to, None)?;
+        self.publish(
+            Event::RunStatus(RunStatusPayload {
+                run_id: run.id,
+                status: run_transition.to,
+                error_code: None,
+            }),
+            Some(run.id),
+            None,
+        );
+        self.publish_node(run.id, task.id, task_transition.to);
+        Ok(())
+    }
+
+    /// Commits one approval, arms the waiter, persists `awaiting_approval`,
+    /// publishes `APPROVAL_REQUEST`, then waits for resolution/TTL/cancel.
+    async fn suspend_for_approval(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+        token: &CancellationToken,
+    ) -> Result<ToolExecution, Refusal> {
+        let Some(tools) = self.tools.as_ref() else {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolNotAllowed.code(),
+                "approval bridge is not wired; the side effect did not execute".to_owned(),
+            ));
+        };
+        if self.tool_workspace.is_none() {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::FileTreeUnavailable.code(),
+                "no workspace jail is configured; the side effect did not execute".to_owned(),
+            ));
+        }
+        let waits = tools
+            .approval_count_for_run(run.id)?;
+        if waits >= u64::from(tool_loop::MAX_APPROVAL_WAITS_PER_RUN) {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::CallLimit.code(),
+                format!(
+                    "approval wait budget exhausted ({waits} of {}); nothing executed",
+                    tool_loop::MAX_APPROVAL_WAITS_PER_RUN
+                ),
+            ));
+        }
+
+        let now = self.now_unix_secs();
+        let event = tools
+            .request_model_tool_approval(run.id, task.id, &plan.tool_call_id, &plan.tool, &plan.args)?;
+        let approval_key = event.approval_id;
+
+        // Arm BEFORE publishing: a fast resolve can never be lost.
+        let receiver = self
+            .waiters
+            .arm(approval_key)
+            .map_err(|_| Refusal::InternalError)?;
+        let _armed = ArmedApproval {
+            waiters: Arc::clone(&self.waiters),
+            approval_id: approval_key,
+        };
+
+        // Persist + publish only after the row is committed and the waiter armed.
+        if let Err(refusal) = self.persist_approval_transitions(run, task) {
+            let _ = tools.expire_approval(&approval_key.to_string(), now);
+            return Err(refusal);
+        }
+        // M-004: an awaiting-approval crash restores this committed graph.
+        self.commit_run_snapshot(
+            run,
+            self.snapshot_revision(run.id),
+            AgentState::AwaitingApproval,
+        );
+        self.publish(Event::ApprovalRequest(event.clone()), Some(run.id), None);
+
+        // A request can already be decided by a concurrent driver/retry.
+        if let Some(label) = tools
+            .approval_decision(&approval_key.to_string())?
+        {
+            return self
+                .apply_committed_decision(
+                    run,
+                    task,
+                    call,
+                    plan,
+                    turn,
+                    token,
+                    tools,
+                    &approval_key.to_string(),
+                    &label,
+                )
+                .await;
+        }
+
+        let expires = event
+            .expires_at
+            .as_ref()
+            .and_then(|timestamp| timestamp.unix_secs().ok())
+            .unwrap_or_else(|| now.saturating_add(tools.approval_gate().ttl_secs()));
+        let remaining = expires.saturating_sub(self.now_unix_secs()).max(1);
+        let wait = tokio::time::timeout(std::time::Duration::from_secs(remaining), receiver);
+        let wake = tokio::select! {
+            biased;
+            _ = token.cancelled() => None,
+            result = wait => Some(result),
+        };
+
+        let approval_id = approval_key.to_string();
+        match wake {
+            None => {
+                self.finish_cancelled_wait(run, task, call, plan, turn, tools, &approval_id)
+                    .await
+            }
+            Some(Err(_elapsed)) => {
+                self.finish_timeout_wait(run, task, call, plan, turn, tools, &approval_id, token)
+                    .await
+            }
+            Some(Ok(Err(_closed))) => {
+                let _ = tools.cancel_approval(&approval_id, self.now_unix_secs());
+                self.finish_cancelled_wait(run, task, call, plan, turn, tools, &approval_id)
+                    .await
+            }
+            Some(Ok(Ok(ApprovalWake::Cancelled))) => {
+                self.finish_cancelled_wait(run, task, call, plan, turn, tools, &approval_id)
+                    .await
+            }
+            Some(Ok(Ok(ApprovalWake::Resolved(resolution)))) => {
+                if token.is_cancelled() {
+                    let _ = tools.cancel_approval(&approval_id, self.now_unix_secs());
+                    return self
+                        .finish_cancelled_wait(run, task, call, plan, turn, tools, &approval_id)
+                        .await;
+                }
+                match resolution.decision {
+                    ApprovalDecision::AllowOnce | ApprovalDecision::AllowSession => {
+                        self.resume_and_execute(run, task, plan, token).await
+                    }
+                    ApprovalDecision::Deny => self.resume_denied(run, task, plan),
+                }
+            }
+        }
+    }
+
+    /// Applies an already-committed decision found right after arming or after
+    /// the timeout CAS loses.
+    ///
+    /// The `expired` outcome is terminal and single-owner: it is routed to
+    /// [`Self::terminal_approval_expired`], which never re-enters the timeout
+    /// wait (M-001).
+    async fn apply_committed_decision(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+        token: &CancellationToken,
+        tools: &ToolsBridge,
+        approval_id: &str,
+        label: &str,
+    ) -> Result<ToolExecution, Refusal> {
+        match ApprovalDecision::from_label(label) {
+            Some(ApprovalDecision::AllowOnce | ApprovalDecision::AllowSession) => {
+                self.resume_and_execute(run, task, plan, token).await
+            }
+            Some(ApprovalDecision::Deny) => self.resume_denied(run, task, plan),
+            None if label == "expired" => {
+                // Bounded terminal path: finalize the run and return. This arm
+                // must never call finish_timeout_wait again (unbounded recursion).
+                self.terminal_approval_expired(run, task, call, plan, turn, tools, approval_id)
+            }
+            None => {
+                self.finish_cancelled_wait(run, task, call, plan, turn, tools, approval_id)
+                    .await
+            }
+        }
+    }
+
+    /// Approve path: persist Running, then one granted-executor call
+    /// (preflight -> single-use grant CAS -> exactly one effect).
+    async fn resume_and_execute(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+        token: &CancellationToken,
+    ) -> Result<ToolExecution, Refusal> {
+        let tools = self.tools.as_ref().ok_or(Refusal::InternalError)?;
+        self.resume_transitions(run, task)?;
+        // The granted call is authorized for the task's actual tier/persona, not
+        // the historic hardcoded WorkerAgent (M-015). A refused re-authorization
+        // never reaches execute_approved, so the consent is not consumed.
+        let tier = task_agent_tier(task);
+        if let Err(refusal) = self.authorize_tool_call(task, plan) {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                format!(
+                    "the granted tool {:?} is no longer authorized for task role {:?} \
+                     (tier {}): {}",
+                    plan.tool,
+                    task.role,
+                    tier.label(),
+                    refusal.message()
+                ),
+            ));
+        }
+        let executed = tools
+            .execute_approved(
+                &self.shell_policy,
+                &self.tool_registry,
+                tier,
+                run.id,
+                &plan.tool,
+                &plan.args,
+                Some(token),
+            )
+            .await;
+        Ok(match executed {
+            Ok(ToolsExecutedTool::Ok { text }) => {
+                ToolExecution::ok(plan.tool_call_id.clone(), tool_loop::bounded_tool_text(&text))
+            }
+            Ok(ToolsExecutedTool::Refused { code, detail }) => {
+                ToolExecution::refused(plan.tool_call_id.clone(), code, detail)
+            }
+            Err(refusal) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                refusal.message().to_owned(),
+            ),
+        })
+    }
+
+    /// Deny path: persist Running and return the denied execution (no effect).
+    fn resume_denied(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+    ) -> Result<ToolExecution, Refusal> {
+        let current_run = self.store.get_run(run.id)?;
+        let run_transition = run_state::apply_run(current_run.status, StateEvent::Deny)
+            .map_err(|error| error.refusal())?;
+        let Some(task_transition) = self.apply_task_state(task.id, StateEvent::Deny)? else {
+            return Err(Refusal::TaskTerminal);
+        };
+        self.store.set_run_status(run.id, run_transition.to, None)?;
+        self.publish(
+            Event::RunStatus(RunStatusPayload {
+                run_id: run.id,
+                status: run_transition.to,
+                error_code: None,
+            }),
+            Some(run.id),
+            None,
+        );
+        self.publish_node(run.id, task.id, task_transition.to);
+        Ok(ToolExecution::denied(plan.tool_call_id.clone()))
+    }
+
+    /// Timeout: expire CAS first; a won CAS finalizes one timeout TOOL_RESULT and
+    /// the terminal failed run with `E_APPROVAL_TIMEOUT`.
+    async fn finish_timeout_wait(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+        tools: &ToolsBridge,
+        approval_id: &str,
+        token: &CancellationToken,
+    ) -> Result<ToolExecution, Refusal> {
+        let now = self.now_unix_secs();
+        if tools.expire_approval(approval_id, now)? {
+            self.finalize_approval_timeout(run, task, call, plan, turn)?;
+            return Err(Refusal::ApprovalTimeout);
+        }
+        match tools.approval_decision(approval_id)? {
+            Some(label) => {
+                self.apply_committed_decision(
+                    run, task, call, plan, turn, token, tools, approval_id, &label,
+                )
+                .await
+            }
+            None => Err(Refusal::InternalError),
+        }
+    }
+
+    /// Terminal single-owner outcome for an approval that is already expired
+    /// (M-001).
+    ///
+    /// A late resolve at/after `expires_at` commits `decision = 'expired'`
+    /// without publishing a run status. This helper claims the row once,
+    /// finalizes the timeout task transition and exactly one terminal
+    /// `RUN_STATUS failed` with `E_APPROVAL_TIMEOUT`, cancels the wait token, and
+    /// returns. It never re-enters the timeout wait, so the expired label can
+    /// never recurse and `active_run` is released by the normal dispatch
+    /// cleanup that follows this error.
+    fn terminal_approval_expired(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+        tools: &ToolsBridge,
+        approval_id: &str,
+    ) -> Result<ToolExecution, Refusal> {
+        // Claim/expire once. `false` is legal: a late resolve already marked the
+        // row expired; this call still owns the one terminal run transition.
+        let _ = tools.expire_approval(approval_id, self.now_unix_secs());
+        self.finalize_approval_timeout(run, task, call, plan, turn)?;
+        // Stop in-flight work: the run is terminal, so nothing else may execute.
+        if let Some(token) = self.tokens.token(run.id) {
+            token.cancel();
+        }
+        Err(Refusal::ApprovalTimeout)
+    }
+
+    /// Persists the single terminal approval-timeout outcome for one wait.
+    ///
+    /// Used by the timeout CAS winner and by the expired-approval terminal path,
+    /// so both routes produce exactly one timeout `TOOL_RESULT`, one failed task
+    /// and one terminal `RUN_STATUS failed` (`E_APPROVAL_TIMEOUT`). An already
+    /// terminal run is never published twice (single owner).
+    fn finalize_approval_timeout(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+    ) -> Result<(), Refusal> {
+        let execution = ToolExecution::timed_out(plan.tool_call_id.clone());
+        let tool_result = self.finish_tool_call(run, task, call, &execution, turn);
+        if let Err(error) = &tool_result {
+            // The run must still be terminalized; report the persistence failure
+            // after the terminal state is written instead of leaving the run
+            // active forever.
+            tracing::error!(code = error.code(), "failed to persist the timeout TOOL_RESULT");
+        }
+        let task_state = match self.apply_task_state(task.id, StateEvent::Timeout) {
+            Ok(Some(transition)) => Some(transition.to),
+            Ok(None) => None,
+            Err(error) => {
+                tracing::error!(
+                    code = error.code(),
+                    "approval-timeout task transition refused; run is still terminalized"
+                );
+                None
+            }
+        };
+        if let Some(state) = task_state {
+            self.publish_node(run.id, task.id, state);
+        }
+        // Serialized with the per-task kill run resume: a terminal run is never
+        // resurrected, and the terminal frame is published exactly once.
+        self.with_lifecycle_lock(|| {
+            let current_run = self.store.get_run(run.id)?;
+            if current_run.status.is_terminal() {
+                return Ok(());
+            }
+            let run_transition = if current_run.status == AgentState::AwaitingApproval {
+                run_state::apply_run(current_run.status, StateEvent::Timeout)
+            } else {
+                run_state::apply_run(current_run.status, StateEvent::Fail)
+            }
+            .map_err(|error| error.refusal())?;
+            let error_code = run_transition
+                .effect
+                .refusal()
+                .unwrap_or(Refusal::ApprovalTimeout)
+                .code()
+                .to_owned();
+            self.store
+                .set_run_status(run.id, run_transition.to, Some(&error_code))?;
+            self.publish(
+                Event::RunStatus(RunStatusPayload {
+                    run_id: run.id,
+                    status: run_transition.to,
+                    error_code: Some(error_code),
+                }),
+                Some(run.id),
+                None,
+            );
+            Ok(())
+        })?;
+        tool_result
+    }
+
+    /// Cancel: consume the row, mark the task cancelled once, finish one
+    /// cancelled TOOL_RESULT, return `E_TOOL_CANCELLED`.
+    async fn finish_cancelled_wait(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        call: &AssembledToolCall,
+        plan: &ToolCallPlan,
+        turn: u32,
+        tools: &ToolsBridge,
+        approval_id: &str,
+    ) -> Result<ToolExecution, Refusal> {
+        let _ = tools.cancel_approval(approval_id, self.now_unix_secs());
+        if let Some(transition) = self.apply_task_state(task.id, StateEvent::Cancel)? {
+            self.publish_node(run.id, task.id, transition.to);
+        }
+        // A per-task cancellation (not a run cancel) must not leave the run
+        // suspended on a wait that no longer exists (M-012).
+        if !self.tokens.is_cancelled(run.id) {
+            self.resume_run_after_task_kill(run.id)?;
+        }
+        let execution = ToolExecution::cancelled(plan.tool_call_id.clone());
+        self.finish_tool_call(run, task, call, &execution, turn)?;
+        Err(Refusal::ToolCancelled)
+    }
+
+    /// Executes one model-originated `spawn_agent` call (M-010).
+    ///
+    /// Resolves the calling task, enforces the parent/depth/fan-out/agent caps
+    /// through [`Self::spawn_sub_hive`] before any child row is created, runs the
+    /// child to a terminal state, and returns the child's result as this tool's
+    /// result so the model can consume it. Every refusal is a named tool-result
+    /// refusal, never a fabricated success.
+    async fn execute_spawn_agent(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+        token: &CancellationToken,
+    ) -> ToolExecution {
+        let args: SpawnAgentArgs = match serde_json::from_value(plan.args.clone()) {
+            Ok(args) => args,
+            Err(error) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::ToolSchema.code(),
+                    format!("spawn_agent arguments do not match the frozen schema: {error}"),
+                );
+            }
+        };
+        if let Some(claim) = args.parent_task_id.as_deref() {
+            if claim != task.id.to_string() {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::ToolNotAllowed.code(),
+                    format!(
+                        "spawn_agent parent_task_id claim {claim:?} does not match the calling \
+                         task {}; no child was created",
+                        task.id
+                    ),
+                );
+            }
+        }
+        if args.role.trim().is_empty() {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolSchema.code(),
+                "spawn_agent role must not be empty; no child was created".to_owned(),
+            );
+        }
+        let child = match self.spawn_sub_hive(task.id, args.role.trim()) {
+            Ok(child) => child,
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    format!(
+                        "spawn_agent refused before any child was created or dispatched: {}",
+                        refusal.message()
+                    ),
+                );
+            }
+        };
+        // The model awaits this child: run it now instead of leaving it in the
+        // deferred post-plan queue.
+        let _ = self.take_queued_task(child.id);
+        let instruction = args.instruction.trim();
+        let child_prompt = if instruction.is_empty() {
+            run.prompt.clone()
+        } else {
+            format!(
+                "{}\n\nChild agent instruction (role {:?}):\n{}",
+                run.prompt, child.role, instruction
+            )
+        };
+        // Boxing breaks the async type cycle execute_task -> tool loop -> spawn.
+        let result = Box::pin(self.execute_task_with_prompt(run, &child, token, &child_prompt)).await;
+        match result {
+            Ok(Some(text)) => {
+                let payload = serde_json::json!({
+                    "child_task_id": child.id.to_string(),
+                    "role": child.role,
+                    "depth": child.depth,
+                    "state": AgentState::Completed.as_str(),
+                    "result": tool_loop::bounded_tool_text(&text),
+                });
+                ToolExecution::ok(plan.tool_call_id.clone(), payload.to_string())
+            }
+            Ok(None) => {
+                let state = self
+                    .store
+                    .get_task(child.id)
+                    .map(|child| child.state)
+                    .unwrap_or(AgentState::Failed);
+                let code = if matches!(state, AgentState::Killed | AgentState::Cancelled) {
+                    Refusal::ToolCancelled.code()
+                } else {
+                    Refusal::TaskTerminal.code()
+                };
+                ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    code,
+                    format!(
+                        "child task {} ended {} before returning a result",
+                        child.id, state
+                    ),
+                )
+            }
+            Err(refusal) => {
+                let fresh = self.store.get_task(child.id).unwrap_or_else(|_| child.clone());
+                if !is_terminal_task_state(fresh.state) {
+                    let _ = self.fail_task(run, &child, AgentState::Failed);
+                }
+                ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    format!(
+                        "child task {} failed before reporting a result: {}",
+                        child.id,
+                        refusal.message()
+                    ),
+                )
+            }
+        }
+    }
+
+    /// Executes one planned/spawned task with the run prompt.
     async fn execute_task(
         &self,
         run: &Run,
         task: &TaskRecord,
         token: &CancellationToken,
-    ) -> Result<(), Refusal> {
+    ) -> Result<Option<String>, Refusal> {
+        self.execute_task_with_prompt(run, task, token, &run.prompt)
+            .await
+    }
+
+    /// Executes one task with an explicit prompt.
+    ///
+    /// A plan/spawned task uses the run prompt; a model-spawned child adds its
+    /// instruction. The returned text is the persisted final assistant reply
+    /// (`None` when the task was already terminal and completion was suppressed).
+    async fn execute_task_with_prompt(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        token: &CancellationToken,
+        prompt: &str,
+    ) -> Result<Option<String>, Refusal> {
+        let task_token = self.register_task_token(task.id, token)?;
+        let result = self
+            .execute_task_inner(run, task, &task_token, prompt)
+            .await;
+        self.unregister_task_token(task.id);
+        result
+    }
+
+    async fn execute_task_inner(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        token: &CancellationToken,
+        prompt: &str,
+    ) -> Result<Option<String>, Refusal> {
         if let Err(refusal) = self.caps.check_calls(1) {
             self.fail_task(run, task, AgentState::Failed)?;
             return Err(refusal);
         }
-        self.store
-            .update_task_state(task.id, AgentState::Running)?;
-        let _ = self.graph.set_state(task.id, AgentState::Running);
-        self.publish_node(run.id, task.id, AgentState::Running);
+        let Some(start) = self.apply_task_state(task.id, StateEvent::Start)? else {
+            // The task was killed/cancelled before its first turn: no provider
+            // call, no reply, and no resurrection of its terminal state.
+            return Ok(None);
+        };
+        self.publish_node(run.id, task.id, start.to);
+        // M-004: commit the node-state change before the provider call so a
+        // crash during execution restores the running node, not only the plan.
+        self.commit_run_snapshot(
+            run,
+            self.snapshot_revision(run.id),
+            AgentState::Running,
+        );
 
         // Real-time delta publishing: a fresh sink per provider call keeps the
         // streaming/no-duplicate bookkeeping exact across follow-up tool turns.
@@ -989,7 +2177,7 @@ impl RunEngine {
                 self.fail_task(run, task, AgentState::Cancelled)?;
                 return Err(Refusal::ToolCancelled);
             }
-            result = self.executor.execute(run.id, task, &run.prompt, token, &sink) => result,
+            result = self.executor.execute(run.id, task, prompt, token, &sink) => result,
         } {
             Ok(reply) => reply,
             Err(refusal) => {
@@ -1018,18 +2206,21 @@ impl RunEngine {
                 self.fail_task(run, task, AgentState::Cancelled)?;
                 return Err(Refusal::ToolCancelled);
             }
-            let turn = match self.execute_tool_turn(run, task, &final_reply, token) {
+            let turn = match self.execute_tool_turn(run, task, &final_reply, token).await {
                 Ok(turn) => turn,
                 Err(refusal) => {
-                    // A persistence/budget error while the task is Running must
-                    // not leave it non-terminal when the run fails; a cancelled
-                    // turn keeps its cancelled state instead of becoming failed.
-                    let state = if refusal == Refusal::ToolCancelled {
-                        AgentState::Cancelled
-                    } else {
-                        AgentState::Failed
-                    };
-                    self.fail_task(run, task, state)?;
+                    // A wait terminal path (timeout/cancel) already persisted and
+                    // published the task terminal state; never duplicate or
+                    // overwrite it with a second failure frame.
+                    let fresh = self.store.get_task(task.id)?;
+                    if !fresh.state.is_terminal() {
+                        let state = if refusal == Refusal::ToolCancelled {
+                            AgentState::Cancelled
+                        } else {
+                            AgentState::Failed
+                        };
+                        self.fail_task(run, task, state)?;
+                    }
                     return Err(refusal);
                 }
             };
@@ -1052,6 +2243,27 @@ impl RunEngine {
                 self.fail_task(run, task, AgentState::Failed)?;
                 return Err(Refusal::ProviderInvalidResponse);
             }
+            // A successful `finish` call is the model's explicit terminal
+            // signal: its verdict becomes the final assistant message and the
+            // task completes without another provider round-trip. A refused
+            // finish falls through to the ordinary transcript so the model can
+            // correct itself instead of the engine fabricating completion.
+            if let Some((finish_plan, finish_result)) = turn.executed.iter().find(|(plan, result)| {
+                plan.tool == "finish" && result.outcome == hiverouter_contract::ToolOutcome::Ok
+            }) {
+                let verdict = finish_plan
+                    .args
+                    .get("verdict")
+                    .and_then(serde_json::Value::as_str)
+                    .map_or_else(|| finish_result.text.clone(), str::to_owned);
+                let terminal = StreamedReply {
+                    deltas: if verdict.is_empty() { Vec::new() } else { vec![verdict] },
+                    usage: final_reply.usage,
+                    tool_calls: Vec::new(),
+                    reasoning: final_reply.reasoning.clone(),
+                };
+                return self.complete_task(run, task, &terminal);
+            }
             transcript.push(ToolTurnTranscript {
                 assistant_text: final_reply.text(),
                 reasoning: final_reply.reasoning.clone(),
@@ -1066,7 +2278,7 @@ impl RunEngine {
                 result = self.executor.continue_with_tools(
                     run.id,
                     task,
-                    &run.prompt,
+                    prompt,
                     token,
                     &continuation_sink,
                     &transcript,
@@ -1087,26 +2299,54 @@ impl RunEngine {
             final_reply = continuation;
         }
 
-        if let Err(refusal) = self.complete_task(run, task, &final_reply) {
-            let state = if refusal == Refusal::ToolCancelled {
-                AgentState::Cancelled
-            } else {
-                AgentState::Failed
-            };
-            self.fail_task(run, task, state)?;
-            return Err(refusal);
+        match self.complete_task(run, task, &final_reply) {
+            Ok(text) => Ok(text),
+            Err(refusal) => {
+                let state = if refusal == Refusal::ToolCancelled {
+                    AgentState::Cancelled
+                } else {
+                    AgentState::Failed
+                };
+                self.fail_task(run, task, state)?;
+                Err(refusal)
+            }
         }
-        Ok(())
     }
 
     /// Persists the final assistant reply once, publishes one `REPLY_DONE` and
     /// marks the task completed.
+    ///
+    /// Terminal-aware (M-002): a task that is no longer `Running` (killed,
+    /// cancelled, failed, interrupted or already completed) is never overwritten
+    /// and no `REPLY_DONE` is published for work the operator stopped. Returns
+    /// the persisted text, or `None` when completion was suppressed.
     fn complete_task(
         &self,
         run: &Run,
         task: &TaskRecord,
         reply: &StreamedReply,
-    ) -> Result<(), Refusal> {
+    ) -> Result<Option<String>, Refusal> {
+        let _guard = self
+            .task_state_lock
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        let fresh = self.store.get_task(task.id)?;
+        if is_terminal_task_state(fresh.state) {
+            tracing::warn!(
+                task = %task.id,
+                state = %fresh.state,
+                "refusing to complete a terminal task; no REPLY_DONE published"
+            );
+            return Ok(None);
+        }
+        if fresh.state != AgentState::Running {
+            tracing::warn!(
+                task = %task.id,
+                state = %fresh.state,
+                "task is not running; completion suppressed"
+            );
+            return Ok(None);
+        }
         let text = reply.text();
         if !text.is_empty() {
             self.store
@@ -1124,7 +2364,7 @@ impl RunEngine {
             .update_task_state(task.id, AgentState::Completed)?;
         let _ = self.graph.set_state(task.id, AgentState::Completed);
         self.publish_node(run.id, task.id, AgentState::Completed);
-        Ok(())
+        Ok(Some(text))
     }
 }
 

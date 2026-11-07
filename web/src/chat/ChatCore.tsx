@@ -5,9 +5,66 @@
  * refusal is named by ToastRegion, never silently dropped.
  */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useUiStore } from '../state/context';
+import { useUiStore, useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
+import { validatePromptText } from '../api/contract';
+import type { ChatMessage, ToastRefusal } from '../state/store';
+
+/** Baselines captured immediately before SUBMIT_PROMPT is dispatched. */
+export interface PromptSubmissionBaseline {
+  readonly messageIds: ReadonlySet<string>;
+  readonly refusalIds: ReadonlySet<string>;
+  readonly startedAt: number;
+}
+
+export function promptSubmissionBaseline(
+  messages: readonly ChatMessage[],
+  refusals: readonly ToastRefusal[],
+  startedAt: number,
+): PromptSubmissionBaseline {
+  return {
+    messageIds: new Set(messages.map((message) => message.id)),
+    refusalIds: new Set(refusals.map((entry) => entry.id)),
+    startedAt,
+  };
+}
+
+/** The refusal the store published while this submission was in flight, if any. */
+export function findSubmissionRefusal(
+  baseline: PromptSubmissionBaseline,
+  refusals: readonly ToastRefusal[],
+): ToastRefusal | null {
+  return (
+    refusals.find(
+      (entry) => !baseline.refusalIds.has(entry.id) && entry.at >= baseline.startedAt,
+    ) ?? null
+  );
+}
+
+/** The optimistic user row this submission appended, if it is still present. */
+export function findOptimisticPrompt(
+  baseline: PromptSubmissionBaseline,
+  messages: readonly ChatMessage[],
+  text: string,
+): ChatMessage | null {
+  return (
+    messages.find(
+      (message) =>
+        message.role === 'user' && !baseline.messageIds.has(message.id) && message.text === text,
+    ) ?? null
+  );
+}
+
+/** ACK: clear only the sent text, never text typed while the command was in flight. */
+export function draftAfterAck(current: string, submitted: string): string {
+  return current === submitted ? '' : current;
+}
+
+/** Refusal: restore the submitted text unless the operator already typed a replacement. */
+export function draftAfterRefusal(current: string, submitted: string): string {
+  return current.trim().length === 0 ? submitted : current;
+}
 
 export function ChatCore() {
   const messages = useUiStore((state) => state.messages);
@@ -19,8 +76,12 @@ export function ChatCore() {
   const setChatVisible = useUiStore((state) => state.setChatVisible);
   const streamingRunId = useUiStore((state) => state.streamingRunId);
   const reduced = useAppReducedMotion();
+  const store = useUiStoreApi();
   const [draft, setDraft] = useState('');
   const listRef = useRef<HTMLDivElement | null>(null);
+  // Synchronous double-submit guard: the derived `submitting` updates on render,
+  // so two fast Enter presses could otherwise both pass the disabled check.
+  const inFlightRef = useRef(false);
 
   const submitting = useMemo(
     () => Object.values(pending).some((entry) => entry.name === 'SUBMIT_PROMPT'),
@@ -48,11 +109,55 @@ export function ChatCore() {
     );
   }
 
+  /**
+   * Validate -> submit -> ACK/refusal settlement. The draft is never cleared
+   * before the command is acknowledged; on a named refusal the optimistic user
+   * message the store appended is retracted and the typed prompt stays in the
+   * composer (M-018: no silent loss).
+   */
+  const submit = async (): Promise<void> => {
+    if (inFlightRef.current) {
+      return;
+    }
+    const text = draft;
+    if (validatePromptText(text) !== null) {
+      // The store validates before appending and raises the named refusal
+      // toast; this call therefore sends nothing and renders no user message.
+      await submitPrompt(text);
+      return;
+    }
+    const before = store.getState();
+    const baseline = promptSubmissionBaseline(before.messages, before.refusals, Date.now());
+    inFlightRef.current = true;
+    try {
+      await submitPrompt(text);
+    } finally {
+      inFlightRef.current = false;
+    }
+    const after = store.getState();
+    // submitPrompt returns void (store-owned API), so the ACK outcome is read
+    // from the refusal the store publishes for this command: server ERROR
+    // frames land before the send promise settles, and local refusals are
+    // pushed by the same path. A store API that returns the ACK outcome would
+    // replace this observation without changing the rollback below.
+    const refusal = findSubmissionRefusal(baseline, after.refusals);
+    if (refusal === null) {
+      setDraft((current) => draftAfterAck(current, text));
+      return;
+    }
+    // Refused: keep/restore the draft and retract exactly the optimistic row.
+    setDraft((current) => draftAfterRefusal(current, text));
+    const optimistic = findOptimisticPrompt(baseline, after.messages, text);
+    if (optimistic) {
+      store.setState({
+        messages: store.getState().messages.filter((message) => message.id !== optimistic.id),
+      });
+    }
+  };
+
   const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    const text = draft;
-    setDraft('');
-    void submitPrompt(text);
+    void submit();
   };
 
   return (
@@ -131,9 +236,7 @@ export function ChatCore() {
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                const text = draft;
-                setDraft('');
-                void submitPrompt(text);
+                void submit();
               }
             }}
             rows={2}

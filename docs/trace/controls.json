@@ -2,7 +2,7 @@
   "_meta": {
     "schema": "hiverouter.trace.controls/v1",
     "source": "e2e/data/control-matrix.json",
-    "status": "EVIDENCE_STATE_CORRECTED (W4 trace-capture)",
+    "status": "EVIDENCE_STATE_CORRECTED (W4 trace-capture); POST-RUN3 RECHECK_NO_NEW_CAPTURE (lane F docs audit)",
     "evidence_rule": "No verdict may leave PENDING without captured evidence (dom/request/ws-frame/db-row/log/file).",
     "generated_at": "2026-11-06T10:56:04.256Z",
     "live_capture": {
@@ -19,6 +19,7 @@
         "verdicts": "43 WIRED-AND-WORKS / 260 UNVERIFIED / 5 MISSING"
       },
       "invalidated_wired_hops": 43,
+      "downgrade_breakdown": "43 WIRED hops invalidated by the empty raw capture + 5 W9 promotions without raw capture (S10/2_handler, S27/6_service, S27/7_store, S27/8_provider, S27/9_response)",
       "hops_evidence_backed": 0,
       "rule": "A capture file whose surfaces[] is empty supports no hop. WIRED verdicts derived from it were downgraded to UNVERIFIED with w4_correction history preserved."
     },
@@ -32,15 +33,30 @@
       "refused_by_name": 0,
       "wired_but_dead": 0,
       "non_pending": 55,
-      "evidence_backed_hops": 55,
+      "hops_with_evidence_entries": 55,
+      "evidence_backed_hops": 1,
       "raw_capture_backed_wired": 1,
+      "raw_capture_backed_wired_note": "S22/6_service only; its evidence is a pre-HEAD 1.0-artifact browser-origin WS probe plus tracked live-app DOM evidence, not a current-HEAD/1.2 verification (capture-registry.json marks CAP-S22-RECHECK PARTIAL_RAW_PRE_HEAD)",
       "downgraded_from_wired": 48,
       "controls_partially_verified": 23,
       "controls_pending_app_not_built": 6
     },
-    "counts_note": "Recomputed by W4 from this file after the raw capture was overwritten with surfaces=[]; 48 WIRED hops downgraded to UNVERIFIED with w4_correction history; only S22/6_service remains raw-capture-backed. Command: node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(n)\"",
+    "counts_note": "Recomputed by W4 from this file after the raw capture was overwritten with surfaces=[]; 48 WIRED hops downgraded to UNVERIFIED with w4_correction history (43 empty-raw-capture invalidations + 5 W9 source/test promotions without raw capture); only S22/6_service remains raw-capture-backed. The 55 non-PENDING hops all carry evidence[] entries, but only 1 is raw-capture-backed evidence; the 49 UNVERIFIED hops carry source/test pointers or empty-capture correction notes, and the 5 MISSING hops point at the now-empty capture. Command: node -e \"const c=require('./docs/trace/controls.json');const h=c.controls.flatMap(x=>Object.values(x.hops));const n={};for(const v of h)n[v.verdict]=(n[v.verdict]||0)+1;console.log(n)\"",
+    "counts_audit": {
+      "audited_at": "2026-11-06T21:41:06-06:00",
+      "auditor": "lane F docs audit",
+      "method": "recomputed verdicts from this file; checked evidence pointers against docs/trace/live/trace-capture.json (surfaces 0) and docs/trace/capture-registry.json (CAPTURE_PLAN_ONLY)",
+      "result": "319 total = 1 WIRED + 49 UNVERIFIED + 5 MISSING + 264 PENDING; no verdict changed, no promotion",
+      "corrections": [
+        "evidence_backed_hops corrected 55 -> 1: only S22/6_service has raw-capture-backed evidence; the other 54 non-PENDING hops have source/test pointers or empty-capture correction notes",
+        "5 MISSING evidence quotes and S15-S19 notes corrected: the old 'react-flow nodes=0' trace-capture record no longer exists in the 286 B empty capture",
+        "S10/S27 notes corrected: the W9 source/test promotions are not raw capture and do not make those hops WIRED"
+      ],
+      "no_new_capture": "docs/trace/live/trace-capture.json remains 286 B, surfaces 0, generated_at 2026-11-06T20:25:04.044Z; docs/trace/live/captures/w12/ does not exist; capture-registry status CAPTURE_PLAN_ONLY"
+    },
     "wave2_evidence": {
       "applied_at": "2026-11-06T14:10:40-0600",
+      "historical_record": "This block records the W9/Wave-2 promotions as applied at 14:10:40. It is superseded by w4_correction below; do not read hop_delta as current verdicts.",
       "sources": [
         "plans/waves/W3-STREAMING.md:143-150 (observed cargo test output: streaming 8 / provider_streaming 6 / run_lifecycle 7; workspace 261 passed)",
         "backend/crates/hiverouter-provider/tests/streaming.rs (8 SSE wiremock tests)",
@@ -49,7 +65,7 @@
         "web/tests/graph.replay.test.ts + web/tests/state.parity.test.ts (replay projection / 16-state parity)",
         "e2e/test-results/.last-run.json = {\"status\":\"passed\",\"failedTests\":[]} (2026-11-06T20:02:54Z)",
         "docs/audit/evidence/final/live-probe-final.json (tracked browser-origin WS roundtrips)",
-        "docs/RELEASE-EVIDENCE.md:21-23 (release-binary smoke: SETTINGS_STATUS, SUBMIT_PROMPT->REPLY_DONE usage 99, HISTORY_REVISION_SET revision 0 -> 2-node HISTORY_SNAPSHOT)"
+        "docs/RELEASE-EVIDENCE.md (sealed 1.1.0 section: release-binary smoke SETTINGS_STATUS, SUBMIT_PROMPT->REPLY_DONE usage 99, HISTORY_REVISION_SET revision 0 -> 2-node HISTORY_SNAPSHOT)"
       ],
       "hop_delta": {
         "S27": "6_service,7_store,8_provider,9_response -> WIRED-AND-WORKS (integration-test evidence)",
@@ -950,7 +966,7 @@
           "evidence": []
         }
       },
-      "notes": "W9: at HEAD 8a5b583 the browser replay proof (e2e/specs/replay-state.spec.ts, deterministic dist+routeWebSocket harness) exists and its last-run file says passed; projection/read-only source hops are now WIRED. | NOT WIRED: 3_client_call/4_request/5_route/6_service/7_store/9_response/11_reentry require a captured live HISTORY_REVISION_SET -> HISTORY_SNAPSHOT round-trip against a running server. READ-level claims exist in docs/RELEASE-EVIDENCE.md:23 and docs/evidence/live-provider-smoke.md:13 (2-node snapshot, canvas projects it) but the raw frames/DB row are not committed. | Missing evidence for 10_render_back: timestamped DOM snapshot/screenshot or Playwright trace naming replay-state, showing replay banner + inert nodes."
+      "notes": "W9 promoted the source/test projection hops to WIRED on 2026-11-06T14:10:40-0600; the W4 audit reverted them because no raw capture backed them. Current: 1_render/2_handler/10_render_back are UNVERIFIED; 3_client_call/4_request/5_route/6_service/7_store/9_response/11_reentry remain PENDING and require a captured live HISTORY_REVISION_SET -> HISTORY_SNAPSHOT round-trip against a running server. READ-level claims exist in docs/RELEASE-EVIDENCE.md and docs/evidence/live-provider-smoke.md, but raw frames/DB rows are not committed. Missing evidence for 10_render_back: timestamped DOM snapshot/screenshot or Playwright trace naming replay-state, showing replay banner + inert nodes."
     },
     {
       "surface_id": "S11",
@@ -1299,7 +1315,7 @@
             {
               "kind": "dom",
               "pointer": "docs/trace/live/trace-capture.json#S15",
-              "quote": "react-flow nodes=0; no run was executed in this capture"
+              "quote": "W4 CORRECTION: docs/trace/live/trace-capture.json currently has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z); the pre-overwrite 'no run' record no longer exists, so S15/1_render remains MISSING (never captured)"
             }
           ]
         },
@@ -1344,7 +1360,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
+      "notes": "W4 CORRECTION: the old trace-capture record ('react-flow nodes=0; no run was executed') no longer exists — docs/trace/live/trace-capture.json now has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z). Server-side real-run evidence exists READ-level (docs/RELEASE-EVIDENCE.md, sealed 1.1.0 section: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed), but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S16",
@@ -1361,7 +1377,7 @@
             {
               "kind": "dom",
               "pointer": "docs/trace/live/trace-capture.json#S16",
-              "quote": "react-flow nodes=0; no run was executed in this capture"
+              "quote": "W4 CORRECTION: docs/trace/live/trace-capture.json currently has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z); the pre-overwrite 'no run' record no longer exists, so S16/1_render remains MISSING (never captured)"
             }
           ]
         },
@@ -1406,7 +1422,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
+      "notes": "W4 CORRECTION: the old trace-capture record ('react-flow nodes=0; no run was executed') no longer exists — docs/trace/live/trace-capture.json now has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z). Server-side real-run evidence exists READ-level (docs/RELEASE-EVIDENCE.md, sealed 1.1.0 section: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed), but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S17",
@@ -1423,7 +1439,7 @@
             {
               "kind": "dom",
               "pointer": "docs/trace/live/trace-capture.json#S17",
-              "quote": "react-flow nodes=0; no run was executed in this capture"
+              "quote": "W4 CORRECTION: docs/trace/live/trace-capture.json currently has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z); the pre-overwrite 'no run' record no longer exists, so S17/1_render remains MISSING (never captured)"
             }
           ]
         },
@@ -1468,7 +1484,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
+      "notes": "W4 CORRECTION: the old trace-capture record ('react-flow nodes=0; no run was executed') no longer exists — docs/trace/live/trace-capture.json now has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z). Server-side real-run evidence exists READ-level (docs/RELEASE-EVIDENCE.md, sealed 1.1.0 section: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed), but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S18",
@@ -1485,7 +1501,7 @@
             {
               "kind": "dom",
               "pointer": "docs/trace/live/trace-capture.json#S18",
-              "quote": "react-flow nodes=0; no run was executed in this capture"
+              "quote": "W4 CORRECTION: docs/trace/live/trace-capture.json currently has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z); the pre-overwrite 'no run' record no longer exists, so S18/1_render remains MISSING (never captured)"
             }
           ]
         },
@@ -1530,7 +1546,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
+      "notes": "W4 CORRECTION: the old trace-capture record ('react-flow nodes=0; no run was executed') no longer exists — docs/trace/live/trace-capture.json now has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z). Server-side real-run evidence exists READ-level (docs/RELEASE-EVIDENCE.md, sealed 1.1.0 section: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed), but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S19",
@@ -1547,7 +1563,7 @@
             {
               "kind": "dom",
               "pointer": "docs/trace/live/trace-capture.json#S19",
-              "quote": "react-flow nodes=0; no run was executed in this capture"
+              "quote": "W4 CORRECTION: docs/trace/live/trace-capture.json currently has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z); the pre-overwrite 'no run' record no longer exists, so S19/1_render remains MISSING (never captured)"
             }
           ]
         },
@@ -1592,7 +1608,7 @@
           "evidence": []
         }
       },
-      "notes": "react-flow nodes=0; no run was executed in this capture. | W9: server-side real-run evidence now exists READ-level (docs/RELEASE-EVIDENCE.md:22: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed) but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
+      "notes": "W4 CORRECTION: the old trace-capture record ('react-flow nodes=0; no run was executed') no longer exists — docs/trace/live/trace-capture.json now has surfaces=[] (286 B, generated_at 2026-11-06T20:25:04.044Z). Server-side real-run evidence exists READ-level (docs/RELEASE-EVIDENCE.md, sealed 1.1.0 section: SUBMIT_PROMPT -> RUN_CREATED -> nodes/reply events -> REPLY_DONE usage 99 -> RUN_STATUS completed), but no browser DOM capture of this card from a completed run is committed; missing evidence: captured render of S15-S19 cards after a run (screenshot + node text)."
     },
     {
       "surface_id": "S20",
@@ -2565,7 +2581,7 @@
           "evidence": []
         }
       },
-      "notes": "S27 wave-2 (1.1): true SSE streaming wired; 4 hops evidence-backed by new provider+core integration tests (plans/waves/W3-STREAMING.md:143-150). | STILL PENDING: 2_handler/3_client_call/4_request/5_route (no captured UI->WS frames for a streamed run), 10_render_back (no browser capture of progressive REPLY_DELTA rendering), 11_reentry. | Missing evidence to close 10_render_back: >=2 captured REPLY_DELTA frames + timestamped before/after DOM or Playwright trace showing incremental text; paid run or provider fixture in browser."
+      "notes": "S27 wave-2 (1.1): true SSE streaming is implemented; the provider+core integration tests (plans/waves/W3-STREAMING.md:143-150) are offline source/test evidence, not hop capture. W4 corrected the earlier promotion: 6_service/7_store/8_provider/9_response are UNVERIFIED (no raw capture), and 2_handler/3_client_call/4_request/5_route/10_render_back/11_reentry remain PENDING. Missing evidence to close 10_render_back: >=2 captured REPLY_DELTA frames + timestamped before/after DOM or Playwright trace showing incremental text; paid run or provider fixture in browser."
     },
     {
       "surface_id": "S28",

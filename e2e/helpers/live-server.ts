@@ -39,6 +39,18 @@ export interface LiveGate {
   readonly reason: string;
 }
 
+/**
+ * Which paid lane a test belongs to.
+ *
+ * - `prompt` (default, backward compatible): plain streaming/replay prompt proof,
+ *   gated by `LIVE_ONE_PROMPT=1` + `DEEPSEEK_API_KEY` + a server binary.
+ * - `tool-turn`: the model-driven tool-turn proof, gated by the **independent**
+ *   `LIVE_TOOL_TURN=1` + `DEEPSEEK_API_KEY` + a server binary. It is deliberately
+ *   not implied by `LIVE_ONE_PROMPT`: a tool turn has a different budget/risk and
+ *   an operator may enable one lane without the other.
+ */
+export type LiveGateMode = 'prompt' | 'tool-turn';
+
 export interface LiveHealth {
   readonly status: 'ok' | 'degraded' | 'failing';
   readonly schema: string;
@@ -110,19 +122,28 @@ export function serverSkipReason(): string | null {
 
 /**
  * Named skip reason for tests that would make a paid provider call.
- * A paid call is possible only with BOTH `LIVE_ONE_PROMPT=1` and a key present.
+ *
+ * A paid call is possible only when the lane flag is `1`, a key is present and the
+ * server binary exists. `mode` selects the lane: `prompt` keeps the pre-existing
+ * `LIVE_ONE_PROMPT` behaviour (backward compatible default), `tool-turn` requires
+ * `LIVE_TOOL_TURN=1`. Gate-negative tests must call this before starting any
+ * server: a missing flag/key is a named skip, never a fake pass and never a spawn.
  */
-export function paidGate(): LiveGate {
+export function paidGate(mode: LiveGateMode = 'prompt'): LiveGate {
   const binary = findServerBinary();
   if (binary === null) {
     return { enabled: false, reason: serverSkipReason() ?? 'LIVE_SERVER_MISSING' };
   }
-  if (process.env.LIVE_ONE_PROMPT !== '1') {
+  const flagName = mode === 'tool-turn' ? 'LIVE_TOOL_TURN' : 'LIVE_ONE_PROMPT';
+  const flagValue = mode === 'tool-turn' ? process.env.LIVE_TOOL_TURN : process.env.LIVE_ONE_PROMPT;
+  if (flagValue !== '1') {
+    const proof = mode === 'tool-turn' ? 'live tool-turn' : 'live streaming/replay';
     return {
       enabled: false,
       reason:
-        'LIVE_ONE_PROMPT is not 1: paid provider call disabled. Set LIVE_ONE_PROMPT=1 AND ' +
-        'DEEPSEEK_API_KEY explicitly to run the live streaming/replay proof (one short prompt each).',
+        `${flagName} is not 1: paid ${proof} proof disabled. Set ${flagName}=1 AND ` +
+        'DEEPSEEK_API_KEY explicitly to run the live proof (one short prompt each). ' +
+        'The no-key fail-closed tests still run and prove the named refusal.',
     };
   }
   if (typeof process.env.DEEPSEEK_API_KEY !== 'string' || process.env.DEEPSEEK_API_KEY.length === 0) {
@@ -130,7 +151,7 @@ export function paidGate(): LiveGate {
       enabled: false,
       reason:
         'DEEPSEEK_API_KEY is not set: cannot run the paid provider proof; refusing to fake a pass. ' +
-        'The no-key fail-closed tests still run and prove E_KEY_MISSING refusal.',
+        'The no-key fail-closed tests still run and prove the named refusal.',
     };
   }
   return { enabled: true, reason: '' };
@@ -313,6 +334,31 @@ export interface StartLiveServerOptions {
   /** When false, the child env is stripped of DEEPSEEK_API_KEY (no paid call possible). */
   readonly withProviderKey?: boolean;
   readonly bootTimeoutMs?: number;
+  /**
+   * Extra exact-match loopback WebSocket Origins appended to the bind-derived
+   * defaults (`http://127.0.0.1:<port>` / `http://localhost:<port>`), passed to
+   * the child as `HIVEROUTER_ALLOWED_ORIGINS`. Used by the G-UI-3 origin-boundary
+   * proofs; values must be exact `http(s) loopback` origins (validated, no wildcards).
+   */
+  readonly allowedOrigins?: readonly string[];
+}
+
+/** Exact loopback origin accepted by {@link StartLiveServerOptions.allowedOrigins}. */
+const LOOPBACK_ORIGIN_PATTERN = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\]):\d+$/;
+
+function validateAllowedOrigins(origins: readonly string[] | undefined): readonly string[] {
+  if (origins === undefined) {
+    return [];
+  }
+  for (const origin of origins) {
+    if (!LOOPBACK_ORIGIN_PATTERN.test(origin)) {
+      throw new Error(
+        `LIVE_ALLOWED_ORIGINS_INVALID: ${JSON.stringify(origin)} is not an exact loopback origin ` +
+          '(expected http://127.0.0.1:<port>, http://localhost:<port> or http://[::1]:<port>)',
+      );
+    }
+  }
+  return origins;
 }
 
 /**
@@ -325,6 +371,7 @@ export async function startLiveServer(options: StartLiveServerOptions = {}): Pro
     throw new Error(serverSkipReason() ?? 'LIVE_SERVER_MISSING');
   }
   const bootTimeoutMs = options.bootTimeoutMs ?? 20_000;
+  const allowedOrigins = validateAllowedOrigins(options.allowedOrigins);
   const tempRoot = mkdtempSync(join(tmpdir(), 'hiverouter-live-'));
   const dataDir = join(tempRoot, 'data');
   const workspaceRoot = join(tempRoot, 'workspace');
@@ -339,7 +386,7 @@ export async function startLiveServer(options: StartLiveServerOptions = {}): Pro
       binary.path,
       ['--bind', `127.0.0.1:${port}`, '--data-dir', dataDir, '--workspace-root', workspaceRoot],
       {
-        env: buildChildEnv(options.withProviderKey !== false),
+        env: buildChildEnv(options.withProviderKey !== false, allowedOrigins),
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
       },
@@ -412,7 +459,7 @@ export async function startLiveServer(options: StartLiveServerOptions = {}): Pro
   throw lastError ?? new Error('LIVE_SPAWN_FAILED: could not start the server');
 }
 
-function buildChildEnv(withProviderKey: boolean): NodeJS.ProcessEnv {
+function buildChildEnv(withProviderKey: boolean, allowedOrigins: readonly string[]): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env };
   if (!withProviderKey) {
     delete env.DEEPSEEK_API_KEY;
@@ -422,6 +469,11 @@ function buildChildEnv(withProviderKey: boolean): NodeJS.ProcessEnv {
   delete env.HIVEROUTER_DATA_DIR;
   delete env.HIVEROUTER_WORKSPACE_ROOT;
   delete env.HIVEROUTER_ALLOWED_ORIGINS;
+  // Explicit additive option only: the server appends these to the bind-derived
+  // defaults (`Config::resolve_allowed_origins`), it never replaces them.
+  if (allowedOrigins.length > 0) {
+    env.HIVEROUTER_ALLOWED_ORIGINS = allowedOrigins.join(',');
+  }
   return env;
 }
 

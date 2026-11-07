@@ -51,7 +51,7 @@ export const STRINGS = {
     reconnecting: 'Reconnecting',
     closed: 'Disconnected',
     error: 'Connection failed',
-    mock: 'DEV MOCK · simulated data',
+    mock: 'DEV MOCK Â· simulated data',
     offlineBanner: 'The local server is unreachable — start it with cargo run --release, then retry.',
     reconnectBanner: 'Reconnecting to the local server; mutations are blocked until the socket is open.',
   },
@@ -89,7 +89,7 @@ export const STRINGS = {
   composer: {
     placeholder: 'Type your prompt...',
     submit: 'Submit prompt',
-    hint: 'Enter submits · Shift+Enter newline · Ctrl+0 recentres',
+    hint: 'Enter submits Â· Shift+Enter newline Â· Ctrl+0 recentres',
     emptyRefusal: 'Prompt is empty',
   },
   controls: {
@@ -245,6 +245,11 @@ export const STRINGS = {
     title: 'Tool approval requested',
     toolLabel: 'Tool',
     resolving: 'Resolving approval…',
+    resolveFailed: 'Approval resolution failed',
+    retry: 'Retry',
+    dismiss: 'Dismiss',
+    staleBanner:
+      'Reconnected: pending approvals are being replayed. Keep this panel open until the server settles; do not approve an unconfirmed card.',
     resolveHint: 'APPROVAL_RESOLVE',
     /** Evidence labels keep the frozen wire field names (args_sha256, run_id, …). */
     fields: {
@@ -423,3 +428,5 @@ export function refusalCopy(code: string): {
     STRINGS.clientRefusals;
   return table[code] ?? null;
 }
+
+

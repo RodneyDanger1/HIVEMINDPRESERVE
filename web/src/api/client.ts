@@ -60,6 +60,30 @@ export interface UiApi {
   subscribeClientError(listener: (refusal: Refusal) => void): () => void;
 }
 
+/**
+ * Optional capability: ask the server to re-publish its bounded batch of open
+ * approvals on demand.
+ *
+ * This is not a new wire command. The pull reuses the `hello` control frame the
+ * reconnect path already sends (see {@link WsApiClient.pullPendingApprovals}),
+ * which the server answers with `SERVER_HELLO` plus ordinary
+ * `APPROVAL_REQUEST` frames (replace-by-id, so replay is idempotent). It stays
+ * out of {@link UiApi} so that implementations that cannot pull — the dev mock
+ * and the test doubles implementing `UiApi` — are unaffected; narrow with
+ * {@link supportsPendingApprovalPull} before calling it.
+ */
+export interface PendingApprovalPull {
+  pullPendingApprovals(): Promise<void>;
+}
+
+/** Narrows a {@link UiApi} to one that can pull pending approvals. */
+export function supportsPendingApprovalPull(
+  api: UiApi,
+): api is UiApi & PendingApprovalPull {
+  const candidate = api as Partial<PendingApprovalPull>;
+  return typeof candidate.pullPendingApprovals === 'function';
+}
+
 export interface WsApiClientOptions {
   readonly baseUrl?: string;
   readonly wsUrl?: string;
@@ -494,6 +518,42 @@ export class WsApiClient implements UiApi {
   private reportClientError(refusal: Refusal): void {
     for (const listener of this.clientErrorListeners) {
       listener(refusal);
+    }
+  }
+
+  /**
+   * Client-initiated pull for pending approvals.
+   *
+   * The frozen vocabulary has no `APPROVAL_HYDRATE` command (adding one is not
+   * additive — see `hiverouter-contract/src/command.rs`), but the transport
+   * already carries a real pull: the `{"type":"hello","last_seq":n}` control
+   * frame. The server answers every hello with `SERVER_HELLO` and then
+   * re-publishes its bounded batch of open approvals as `APPROVAL_REQUEST`
+   * events, so the response side needs no new event and replay is idempotent
+   * (the store replaces by `approval_id`).
+   *
+   * `last_seq` is the sequence this client has applied, exactly like a
+   * reconnect: when it is current the server replays no stream events at all
+   * (`EventBus::replay_after` -> `Replay::Current`), and when events were
+   * missed it replays precisely that range. Nothing is fabricated and no
+   * approval is re-created.
+   *
+   * The frames arrive asynchronously through {@link subscribe}; this resolves
+   * once the control frame is handed to the transport. Rejects with
+   * `E_WS_DISCONNECTED` when the socket is not open.
+   */
+  async pullPendingApprovals(): Promise<void> {
+    if (!this.transport || !this.session || this.status !== 'open') {
+      throw new RefusalError(clientRefusal('E_WS_DISCONNECTED'));
+    }
+    try {
+      this.transport.send(JSON.stringify(buildHelloFrame(this.lastSeq)));
+    } catch {
+      const refusal = clientRefusal('E_WS_DISCONNECTED', {
+        message: 'The WebSocket refused the hello pull frame.',
+      });
+      this.setStatus('error', refusal);
+      throw new RefusalError(refusal);
     }
   }
 

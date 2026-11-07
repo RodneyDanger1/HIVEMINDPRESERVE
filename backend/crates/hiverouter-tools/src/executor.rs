@@ -1,14 +1,11 @@
 //! Read-only tool executor for the 1.2 model tool loop (W12 interface).
 //!
-//! Only two tools may execute through this module — `file_read` and `file_list`
-//! — and both go through the one [`WorkspaceJail`]: there is no ambient
-//! `std::fs` path, no write, no child process and no database access here.
-//!
-//! Every other tool (`file_write`, `shell_exec`, `spawn_agent`, `report_result`,
-//! `finish`) and any unknown tool name is a named policy refusal
-//! [`Refusal::ToolNotAllowed`] returned as [`ExecutedTool::Refused`]; side
-//! effects stay owned by the approval/loop layers. The tool loop maps an
-//! [`ExecutedTool`] to `TOOL_RESULT` and must never treat a refusal as success.
+//! `file_read`, `file_list`, `report_result` and `finish` may execute through
+//! this module; the two terminal-result tools carry no side effect and return
+//! their structured claim as text. Every other tool name is a named policy
+//! refusal [`Refusal::ToolNotAllowed`]. Side effects stay owned by the
+//! approval/loop layers. The tool loop maps an [`ExecutedTool`] to `TOOL_RESULT`
+//! and must never treat a refusal as success.
 //!
 //! The tier allowlist and argument schema are enforced by
 //! [`ToolRegistry::resolve_call`] before anything executes; a tier without the
@@ -18,7 +15,9 @@ use hiverouter_contract::Refusal;
 
 use crate::error::ToolError;
 use crate::jail::WorkspaceJail;
-use crate::tool::{AgentTier, FileListArgs, FileReadArgs, ToolId, ToolRegistry};
+use crate::tool::{
+    AgentTier, FileListArgs, FileReadArgs, FinishArgs, ReportResultArgs, ToolId, ToolRegistry,
+};
 
 /// Result of routing one model-originated read-only tool call.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,7 +55,11 @@ pub fn execute_read_only(
     tool: &str,
     args: &serde_json::Value,
 ) -> Result<ExecutedTool, ToolError> {
-    if tool != ToolId::FileRead.id() && tool != ToolId::FileList.id() {
+    if tool != ToolId::FileRead.id()
+        && tool != ToolId::FileList.id()
+        && tool != ToolId::ReportResult.id()
+        && tool != ToolId::Finish.id()
+    {
         return Ok(ExecutedTool::Refused {
             code: Refusal::ToolNotAllowed.code().to_owned(),
             detail: format!(
@@ -67,16 +70,50 @@ pub fn execute_read_only(
     }
 
     // Registry first: unknown id, missing tier grant or invalid args never
-    // reach the jail (fail closed before any filesystem access).
+    // reach an executor (fail closed before any filesystem access).
     let contract = registry.resolve_call(tier, tool, args)?;
     match contract.id {
         ToolId::FileRead => execute_file_read(jail, args),
         ToolId::FileList => execute_file_list(jail, args),
+        ToolId::ReportResult => execute_report_result(args),
+        ToolId::Finish => execute_finish(args),
         _ => Ok(ExecutedTool::Refused {
             code: Refusal::ToolNotAllowed.code().to_owned(),
             detail: format!("tool {:?} is not executable by the read-only executor", tool),
         }),
     }
+}
+
+/// A terminal-result report from the model. It carries no side effect and is
+/// returned as text so the run ledger/event and the next turn see the claim.
+fn execute_report_result(args: &serde_json::Value) -> Result<ExecutedTool, ToolError> {
+    let report: ReportResultArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("report_result arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok {
+        text: serde_json::json!({
+            "summary": report.summary,
+            "success": report.success,
+        })
+        .to_string(),
+    })
+}
+
+/// A finish verdict from the model. It is a read-class terminal result; the
+/// engine still owns the actual terminal state transition.
+fn execute_finish(args: &serde_json::Value) -> Result<ExecutedTool, ToolError> {
+    let finish: FinishArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("finish arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok {
+        text: serde_json::json!({"verdict": finish.verdict}).to_string(),
+    })
 }
 
 fn execute_file_read(
@@ -207,10 +244,10 @@ mod tests {
     }
 
     #[test]
-    fn every_non_read_tool_is_refused_by_name_without_side_effects() {
+    fn every_side_effect_tool_is_refused_by_name_without_side_effects() {
         let (_temp, jail) = jail();
         let registry = registry();
-        for tool in ["file_write", "shell_exec", "spawn_agent", "report_result", "finish"] {
+        for tool in ["file_write", "shell_exec", "spawn_agent"] {
             let outcome = execute_read_only(
                 &jail,
                 &registry,
@@ -227,6 +264,41 @@ mod tests {
                 other => panic!("{tool} must be refused, got {other:?}"),
             }
         }
+    }
+
+    #[test]
+    fn report_result_and_finish_execute_as_read_class_terminal_results() {
+        let (_temp, jail) = jail();
+        let registry = registry();
+
+        let report = execute_read_only(
+            &jail,
+            &registry,
+            AgentTier::WorkerAgent,
+            "report_result",
+            &serde_json::json!({"summary": "finished the leaf", "success": true}),
+        )
+        .expect("report executes");
+        let ExecutedTool::Ok { text } = report else {
+            panic!("report_result must execute, got {report:?}");
+        };
+        let parsed: serde_json::Value = serde_json::from_str(&text).expect("report json");
+        assert_eq!(parsed["summary"], "finished the leaf");
+        assert_eq!(parsed["success"], true);
+
+        let finish = execute_read_only(
+            &jail,
+            &registry,
+            AgentTier::WorkerAgent,
+            "finish",
+            &serde_json::json!({"verdict": "done"}),
+        )
+        .expect("finish executes");
+        let ExecutedTool::Ok { text } = finish else {
+            panic!("finish must execute, got {finish:?}");
+        };
+        let parsed: serde_json::Value = serde_json::from_str(&text).expect("finish json");
+        assert_eq!(parsed["verdict"], "done");
     }
 
     #[test]

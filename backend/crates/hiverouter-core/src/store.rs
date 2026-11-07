@@ -1,7 +1,7 @@
 //! SQLite store for runs, tasks, chat messages and command receipts
 //! (blueprint Phase 4, WP 4.6; schema created by migration v2).
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp};
 use rusqlite::{params, OptionalExtension};
@@ -9,10 +9,43 @@ use uuid::Uuid;
 
 use crate::db::{Database, DbError};
 use crate::entities::{ChatMessage, ChatRole, Run, TaskRecord};
+use crate::run_state::{is_terminal_task_state, TASK_TERMINAL_STATES};
 
 fn map(error: DbError) -> Refusal {
     error.refusal()
 }
+
+/// SQL list of terminal task states, derived from the single state-machine set.
+///
+/// The guard must never drift from [`TASK_TERMINAL_STATES`]: a state added to the
+/// lifecycle machine is therefore also un-resurrectable in SQLite. Values are
+/// this crate's own `AgentState::as_str()` constants (never caller input).
+fn terminal_task_state_sql() -> &'static str {
+    static LIST: OnceLock<String> = OnceLock::new();
+    LIST.get_or_init(|| {
+        TASK_TERMINAL_STATES
+            .iter()
+            .map(|state| format!("'{}'", state.as_str()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    })
+}
+
+/// Outcome of one guarded task-state write (inside the connection lock).
+enum TaskWrite {
+    /// The row was non-terminal and is now `state` at this revision.
+    Applied(u64),
+    /// No task row has this id.
+    Missing,
+    /// The row is terminal; `current` is the state that was already persisted.
+    Terminal {
+        /// Terminal state already stored.
+        current: AgentState,
+        /// Revision already stored (unchanged by the refused write).
+        rev: u64,
+    },
+}
+
 
 /// Typed access to the run/task/message tables.
 #[derive(Debug, Clone)]
@@ -208,22 +241,74 @@ impl RunStore {
 
     /// Updates a task's state and bumps its revision.
     ///
+    /// Terminal states are sticky: a task that is already `completed`, `failed`,
+    /// `cancelled`, `killed` or `interrupted` can never be moved to a *different*
+    /// state (a late completion may not resurrect a killed task). Replaying the
+    /// same terminal state is idempotent and returns the stored revision without
+    /// bumping it.
+    ///
     /// # Errors
-    /// `E_TASK_NOT_FOUND` when the row does not exist.
+    /// `E_TASK_NOT_FOUND` when the row does not exist; `E_TASK_TERMINAL` when the
+    /// row is terminal and a different state was requested. The read/compare and
+    /// the write happen inside one connection lock, so the decision cannot race a
+    /// concurrent writer.
     pub fn update_task_state(&self, task_id: TaskId, state: AgentState) -> Result<u64, Refusal> {
-        let updated = self
+        let id = task_id.to_string();
+        let sql = format!(
+            "UPDATE tasks SET state = ?2, rev = rev + 1 WHERE id = ?1 AND state NOT IN ({})",
+            terminal_task_state_sql()
+        );
+        let outcome = self
             .db
             .with_connection(|connection| {
-                connection.execute(
-                    "UPDATE tasks SET state = ?2, rev = rev + 1 WHERE id = ?1",
-                    params![task_id.to_string(), state.as_str()],
-                )
+                let updated = connection.execute(&sql, params![id, state.as_str()])?;
+                if updated > 0 {
+                    let rev: i64 = connection.query_row(
+                        "SELECT rev FROM tasks WHERE id = ?1",
+                        params![id],
+                        |row| row.get(0),
+                    )?;
+                    return Ok(TaskWrite::Applied(u64::try_from(rev).unwrap_or(0)));
+                }
+                let existing = connection
+                    .query_row(
+                        "SELECT state, rev FROM tasks WHERE id = ?1",
+                        params![id],
+                        |row| {
+                            let current: String = row.get(0)?;
+                            let rev: i64 = row.get(1)?;
+                            Ok((current, rev))
+                        },
+                    )
+                    .optional()?;
+                Ok(match existing {
+                    None => TaskWrite::Missing,
+                    Some((current, rev)) => TaskWrite::Terminal {
+                        current: parse_state(&current),
+                        rev: u64::try_from(rev).unwrap_or(0),
+                    },
+                })
             })
             .map_err(map)?;
-        if updated == 0 {
-            return Err(Refusal::TaskNotFound);
+        match outcome {
+            TaskWrite::Applied(rev) => Ok(rev),
+            TaskWrite::Missing => Err(Refusal::TaskNotFound),
+            TaskWrite::Terminal { current, rev } => {
+                if current == state && is_terminal_task_state(current) {
+                    // Idempotent replay: the task is already in this terminal
+                    // state. No resurrection and no revision churn.
+                    Ok(rev)
+                } else {
+                    tracing::warn!(
+                        task = %task_id,
+                        from = current.as_str(),
+                        to = state.as_str(),
+                        "refused to move a terminal task to a different state"
+                    );
+                    Err(Refusal::TaskTerminal)
+                }
+            }
         }
-        Ok(self.get_task(task_id)?.rev)
     }
 
     /// Lists a run's tasks in spawn order.
@@ -450,5 +535,123 @@ fn parse_state(value: &str) -> AgentState {
         "loading" => AgentState::Loading,
         "interrupted" => AgentState::Interrupted,
         _ => AgentState::Failed,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn store() -> RunStore {
+        let db = Database::open_in_memory().expect("in-memory database");
+        db.migrate().expect("migrate");
+        RunStore::new(Arc::new(db))
+    }
+
+    fn seed_task(store: &RunStore, state: AgentState) -> TaskRecord {
+        let run = store
+            .create_run("project-1", "terminal guard", AgentState::Running)
+            .expect("run");
+        let task = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "worker".to_owned(),
+            depth: 1,
+            spawn_seq: 1,
+            state,
+            rev: 0,
+        };
+        store.insert_task(&task).expect("task row");
+        task
+    }
+
+    #[test]
+    fn terminal_task_cannot_be_resurrected() {
+        let store = store();
+        let task = seed_task(&store, AgentState::Queued);
+
+        // Non-terminal writes stay legal and bump the revision.
+        let running = store
+            .update_task_state(task.id, AgentState::Running)
+            .expect("start");
+        assert!(running > 0, "a real transition bumps the revision");
+        let completed = store
+            .update_task_state(task.id, AgentState::Completed)
+            .expect("complete");
+        assert!(completed > running);
+
+        // Every resurrection attempt is refused by name and changes nothing.
+        for attempted in [
+            AgentState::Running,
+            AgentState::Killed,
+            AgentState::Failed,
+            AgentState::Interrupted,
+        ] {
+            assert_eq!(
+                store.update_task_state(task.id, attempted),
+                Err(Refusal::TaskTerminal),
+                "{attempted} must not resurrect a completed task"
+            );
+            let stored = store.get_task(task.id).expect("task");
+            assert_eq!(stored.state, AgentState::Completed);
+            assert_eq!(stored.rev, completed, "a refused write must not bump rev");
+        }
+
+        // Replaying the same terminal state is idempotent, not an error.
+        assert_eq!(
+            store.update_task_state(task.id, AgentState::Completed),
+            Ok(completed)
+        );
+        assert_eq!(store.get_task(task.id).expect("task").rev, completed);
+    }
+
+    #[test]
+    fn killed_task_stays_killed_after_a_late_completion() {
+        let store = store();
+        let task = seed_task(&store, AgentState::Running);
+        store
+            .update_task_state(task.id, AgentState::Killed)
+            .expect("kill");
+        assert_eq!(
+            store.update_task_state(task.id, AgentState::Completed),
+            Err(Refusal::TaskTerminal),
+            "a late completion may not overwrite an acknowledged kill"
+        );
+        assert_eq!(
+            store.get_task(task.id).expect("task").state,
+            AgentState::Killed
+        );
+    }
+
+    #[test]
+    fn terminal_sql_list_matches_the_state_machine() {
+        let list = terminal_task_state_sql();
+        for terminal in TASK_TERMINAL_STATES {
+            assert!(
+                list.contains(&format!("'{}'", terminal.as_str())),
+                "terminal set {list} is missing {}",
+                terminal.as_str()
+            );
+        }
+        for active in [
+            AgentState::Queued,
+            AgentState::Running,
+            AgentState::AwaitingApproval,
+        ] {
+            assert!(
+                !list.contains(&format!("'{}'", active.as_str())),
+                "active state {active} must stay settlable"
+            );
+        }
+    }
+
+    #[test]
+    fn unknown_task_update_is_refused_by_name() {
+        let store = store();
+        assert_eq!(
+            store.update_task_state(TaskId::new(), AgentState::Running),
+            Err(Refusal::TaskNotFound)
+        );
     }
 }

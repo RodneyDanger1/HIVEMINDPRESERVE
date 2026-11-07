@@ -35,7 +35,11 @@ pub use command::{
     TemplateInsert, ViewportRecenter, ViewportSet,
 };
 pub use envelope::{Envelope, FrameKind};
-pub use event::{Event, EventName, ToolCallPayload, ToolOutcome, ToolResultPayload};
+pub use event::{
+    redact_args_preview, Event, EventName, ToolCallPayload, ToolOutcome, ToolResultPayload,
+    ARGS_PREVIEW_REDACTED, ARGS_PREVIEW_TRUNCATED, ARGS_PREVIEW_UNAVAILABLE,
+    MAX_ARGS_PREVIEW_CHARS, NODE_KIND_VOCABULARY,
+};
 pub use ids::{ApprovalId, RunId, TaskId};
 pub use refusal::Refusal;
 pub use schema::{

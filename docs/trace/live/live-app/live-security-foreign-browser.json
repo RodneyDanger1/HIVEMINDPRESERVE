@@ -1,0 +1,16 @@
+{
+  "captured_at": "2026-11-07T04:39:20.061Z",
+  "release_binary": null,
+  "page_origin": "http://127.0.0.1:60081",
+  "server_origin_allowlist": [
+    "http://127.0.0.1:60082",
+    "http://localhost:60082"
+  ],
+  "outcome": {
+    "opened": false,
+    "errored": true,
+    "closed": false
+  },
+  "runs_after": 0,
+  "screenshot": "docs/trace/live/live-app/live-security-foreign-browser.png"
+}

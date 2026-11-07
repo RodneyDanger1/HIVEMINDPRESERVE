@@ -1,0 +1,14 @@
+{
+  "captured_at": "2026-11-07T04:39:17.567Z",
+  "release_binary": null,
+  "binary": {
+    "path": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\target\\debug\\hiverouter.exe",
+    "variant": "debug"
+  },
+  "current_seq": 0,
+  "reported_future_seq": 50,
+  "expected_seq": 1,
+  "resync_last_seq": 50,
+  "runs_before": 0,
+  "runs_after": 0
+}

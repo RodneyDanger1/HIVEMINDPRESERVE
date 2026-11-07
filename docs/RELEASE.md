@@ -5,8 +5,10 @@
 HiveMind 1.1.0 is the second official build of the localhost HiveMind runtime: one Rust server binary + embedded
 React UI, one CLI, a real DeepSeek provider path, and **true SSE streaming**. `SUBMIT_PROMPT` reaches the provider,
 the planner returns a model-authored DAG, and the leaf reply is delivered as ordered `REPLY_DELTA` frames as it is
-generated (not as a single post-completion delta). Current version `1.1.0` is declared in `web/package.json` and all
-four `backend/crates/*/Cargo.toml`.
+generated (not as a single post-completion delta). At seal time, `1.1.0` was declared in `web/package.json` and all
+four `backend/crates/*/Cargo.toml`. This document describes the sealed 1.1.0 release only; the working tree has since
+moved to an unreleased 1.2 pre-release line (status and evidence: `docs/RELEASE-EVIDENCE.md`). No 1.2 feature is
+released, built, or end-to-end verified.
 
 ## Verified in the 1.1.0 build
 
@@ -33,9 +35,11 @@ four `backend/crates/*/Cargo.toml`.
 ## Known limitations / not claimed in 1.1.0
 
 - Autonomous model tool-calling is a recorded decision for a later wave; tools/approval/jail remain available to the
-  application surfaces, but the model does not yet drive multi-turn tool calls.
-- A live paid-provider streaming smoke on a sealed 1.1.0 artifact has not yet been run; streaming is proven offline
-  (wiremock matrix) and by the 1.1 backend log, not by a paid production call.
+  application surfaces, but the model does not yet drive multi-turn tool calls in 1.1.0.
+- A paid live streaming/replay smoke was run on the sealed 1.1.0 binary and recorded: 5 passed / 0 failed, exit 0
+  (`docs/evidence/live-1.1-paid.log`; frames in `docs/trace/live/captures/w11/`). **No 1.2 live paid run exists.**
+- The 1.2 pre-release working tree (approval suspension, side effects, web replay, live specs) is unverified WIP; it
+  is not part of this release and no 1.2 feature is claimed.
 - Full trace ladder, pixel-level design fidelity, Tauri/installer and every P2 audit item remain out of scope.
 - No key material is in the repository or release artifacts. Any key supplied in a chat transcript should be rotated.
 
@@ -48,9 +52,10 @@ four `backend/crates/*/Cargo.toml`.
 
 ## Release gate
 
-The annotated tag is created only after the independent audit and final packaging smoke pass on a quiescent tree.
-`v1.0.0` (the historical private tag) stays immutable; the 1.1.0 release gate is recorded in
-`docs/RELEASE-EVIDENCE.md` and `tools/release-manifest.json` only when a sealed build exists.
+The sealed 1.1.0 build exists and its release record is `tools/release-manifest.json` plus `docs/RELEASE-EVIDENCE.md`.
+`v1.0.0` (the historical private tag) stays immutable and `hivemind-1.1.0` remains the released tag/source. **No 1.2
+tag, artifact, manifest, live proof, or release-gate PASS exists**; the 1.2 release build is blocked until the 1.2
+fixes and gates pass (`plans/foresight/COMPILED-LEDGER.md`, `plans/foresight/PROOF-RELEASE-PLAN.md`).
 
 <!-- docs-truth:historical:start -->
 ## Historical: HiveMind 1.0.0 (SUPERSEDED)

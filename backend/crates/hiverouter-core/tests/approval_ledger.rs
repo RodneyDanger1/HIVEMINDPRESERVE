@@ -127,6 +127,69 @@ async fn approval_resolve_writes_exactly_one_ledger_row_and_replay_writes_none()
 }
 
 #[tokio::test]
+async fn concurrent_committed_decisions_append_exactly_one_ledger_row() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (approval_id, nonce, run) = seed_pending_approval(&server);
+    let bridge = server.state.tools.clone();
+    let ledger_dir =
+        hiverouter_core::ToolsBridge::approval_ledger_dir(&server.state.config.data_dir);
+    let payload = ApprovalResolve {
+        approval_id,
+        nonce,
+        decision: "approve".to_owned(),
+        reason: Some("concurrent operator decision".to_owned()),
+    };
+
+    // Two committed decision attempts race for the same single-use nonce on real
+    // blocking threads (the gate/DB CAS is synchronous). Only one may win; only
+    // the winning command may append one ledger row, and the loser must observe
+    // the named replay refusal.
+    let first_bridge = bridge.clone();
+    let second_bridge = bridge.clone();
+    let first_payload = payload.clone();
+    let second_payload = payload.clone();
+    let first_ledger = ledger_dir.clone();
+    let second_ledger = ledger_dir.clone();
+    let first_task = tokio::task::spawn_blocking(move || {
+        first_bridge.resolve_approval_ledgered(&first_payload, &first_ledger)
+    });
+    let second_task = tokio::task::spawn_blocking(move || {
+        second_bridge.resolve_approval_ledgered(&second_payload, &second_ledger)
+    });
+    let (first, second) = tokio::join!(first_task, second_task);
+    let first = first.expect("first decision task");
+    let second = second.expect("second decision task");
+    assert!(
+        first.is_ok() ^ second.is_ok(),
+        "exactly one concurrent decision may win: first={first:?} second={second:?}"
+    );
+    let loser = first
+        .as_ref()
+        .err()
+        .or(second.as_ref().err())
+        .expect("exactly one refusal");
+    assert_eq!(*loser, Refusal::ApprovalReplay);
+
+    let rows = ledger_rows(&server);
+    assert_eq!(
+        rows.len(),
+        1,
+        "one committed decision = exactly one ledger row, even under a race"
+    );
+    assert_eq!(rows[0]["outcome"].as_str(), Some("allowed"));
+    assert_eq!(rows[0]["run_id"].as_str(), Some(run.to_string().as_str()));
+    assert_eq!(rows[0]["tool_call_id"].as_str(), Some("call-approval-wiring"));
+
+    // A later replay is refused and appends nothing.
+    let replay = bridge
+        .resolve_approval_ledgered(&payload, &ledger_dir)
+        .expect_err("late replay is refused");
+    assert_eq!(replay, Refusal::ApprovalReplay);
+    assert_eq!(ledger_rows(&server).len(), 1);
+}
+
+#[tokio::test]
 async fn refused_approval_resolve_never_writes_a_ledger_row() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

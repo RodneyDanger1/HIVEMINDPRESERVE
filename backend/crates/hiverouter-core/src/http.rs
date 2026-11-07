@@ -159,10 +159,12 @@ fn build_engine(
     config: &Config,
     templates: Arc<TemplateRegistry>,
     snapshots: Arc<SnapshotStore>,
+    tools: Arc<ToolsBridge>,
     wire_workspace_jail: bool,
 ) -> Arc<RunEngine> {
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config), templates)
-        .with_snapshot_store(snapshots);
+        .with_snapshot_store(snapshots)
+        .with_tools(tools);
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
             Ok(jail) => engine = engine.with_tool_workspace(jail),
@@ -176,6 +178,22 @@ fn build_engine(
         }
     }
     Arc::new(engine)
+}
+
+/// Publishes the boot-recovery settlement frames once the bus exists.
+///
+/// `main.rs` performs `recover_on_boot` before `AppState` is built (the bus does
+/// not exist yet), so the settlement `NODE_STATE` frames are published here as a
+/// catch-up from the persisted recovery outcome. It mutates nothing and is a
+/// no-op on a clean boot (no interrupted run, no recovered task).
+fn publish_recovery_catch_up(db: &Arc<Database>, graph: &GraphAuthority, bus: &EventBus) {
+    match crate::recovery::publish_recovered_node_states(db.clone(), graph, bus) {
+        Ok(_) => {}
+        Err(error) => tracing::warn!(
+            code = error.code(),
+            "boot catch-up could not publish recovered node states"
+        ),
+    }
 }
 
 impl AppState {
@@ -195,9 +213,10 @@ impl AppState {
         let graph = Arc::new(GraphAuthority::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), true);
-        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), tools.clone(), true);
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
             checks,
@@ -232,9 +251,10 @@ impl AppState {
         let bus = Arc::new(EventBus::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), true);
-        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), tools.clone(), true);
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
             checks,
@@ -266,9 +286,9 @@ impl AppState {
         session: Arc<SessionAuth>,
     ) -> Self {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), snapshots.clone(), false);
-        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let tools = build_tools(&db, &config);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), snapshots.clone(), tools.clone(), false);
+        let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         Self {
             db,
             checks,
@@ -556,3 +576,50 @@ pub fn is_loopback(ip: IpAddr) -> bool {
     ip.is_loopback()
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hiverouter_contract::{AgentState, TaskId};
+
+    use crate::bus::Replay;
+    use crate::entities::TaskRecord;
+
+    #[test]
+    fn boot_state_publishes_the_recovered_node_states() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let config = Arc::new(
+            Config::resolve("127.0.0.1:0", temp.path().to_str().expect("utf8"), None)
+                .expect("config"),
+        );
+        let db = Arc::new(Database::open(config.db_file()).expect("database"));
+        db.migrate().expect("migrations");
+        let store = crate::store::RunStore::new(db.clone());
+        let run = store
+            .create_run("project-1", "crashed while waiting", AgentState::Interrupted)
+            .expect("run");
+        let task = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "worker".to_owned(),
+            depth: 1,
+            spawn_seq: 1,
+            state: AgentState::Interrupted,
+            rev: 0,
+        };
+        store.insert_task(&task).expect("task");
+
+        // The production boot path: recovery ran first (main.rs), then the state
+        // is built; the catch-up must publish the persisted recovery outcome.
+        let state = AppState::new(db, crate::checks::run_checks(), config);
+        let events = match state.bus.replay_after(0) {
+            Replay::Events(events) => events,
+            other => panic!("expected one boot catch-up frame, got {other:?}"),
+        };
+        assert_eq!(events.len(), 1, "one frame for the one recovered task");
+        assert_eq!(events[0].envelope.name, "NODE_STATE");
+        assert_eq!(events[0].envelope.payload["task_id"], task.id.to_string());
+        assert_eq!(events[0].envelope.payload["state"], "interrupted");
+        assert_eq!(events[0].envelope.run_id, Some(run.id));
+    }
+}

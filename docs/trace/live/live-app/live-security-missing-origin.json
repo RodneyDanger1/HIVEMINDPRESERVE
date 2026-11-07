@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-11-07T04:39:18.967Z",
+  "release_binary": null,
+  "status": 403,
+  "status_line": "HTTP/1.1 403 Forbidden",
+  "body": {
+    "code": "E_ORIGIN_REJECTED",
+    "message": "The WebSocket Origin header is not on the localhost allowlist.",
+    "how_to_fix": "Connect from http://127.0.0.1:<port> or http://localhost:<port>; do not proxy the UI from another origin.",
+    "retryable": false
+  }
+}

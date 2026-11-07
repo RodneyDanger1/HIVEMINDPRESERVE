@@ -43,6 +43,7 @@ pub mod jail;
 pub mod ledger;
 pub mod sha256;
 pub mod shell;
+pub mod side_effects;
 pub mod settings;
 pub mod tool;
 pub mod watcher;
@@ -75,6 +76,10 @@ pub use ledger::{
     append_approval_decision, LedgerOutcome, LedgerRecord, LedgerRow, RunLedger, LEDGER_FILE_NAME,
 };
 pub use sha256::sha256_hex;
+pub use side_effects::{
+    commit_side_effect, preflight_side_effect, PreparedSideEffect, PreparedWrite,
+    MAX_SIDE_EFFECT_TEXT_BYTES, MAX_WRITE_BYTES,
+};
 pub use shell::{
     execute as execute_shell, ShellOutput, ShellPolicy, ShellRequest, DEFAULT_MAX_STDERR_BYTES,
     DEFAULT_MAX_STDOUT_BYTES, DEFAULT_TIMEOUT,

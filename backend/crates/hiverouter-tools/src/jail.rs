@@ -17,6 +17,7 @@
 //! [`crate::shell`] (one containment owner: win32job, not cap-std).
 
 use std::fs;
+use std::io::Write as _;
 use std::path::{Component, Path, PathBuf};
 
 use hiverouter_contract::Refusal;
@@ -108,7 +109,9 @@ impl WorkspaceJail {
                     return Err(escape("drive/device prefix is outside the workspace jail"));
                 }
                 Component::RootDir => {
-                    return Err(escape("rooted (absolute) path is outside the workspace jail"));
+                    return Err(escape(
+                        "rooted (absolute) path is outside the workspace jail",
+                    ));
                 }
                 Component::ParentDir => {
                     return Err(escape("parent traversal ('..') is refused, not clamped"));
@@ -242,6 +245,105 @@ impl WorkspaceJail {
         Ok(path)
     }
 
+    /// Atomically replaces a workspace file: a unique temp file in the target's
+    /// directory is written and fsynced, then renamed over the target.
+    ///
+    /// Refuses the workspace root, directories and non-regular existing targets,
+    /// plus every escape vector [`Self::resolve`] already refuses. Parent
+    /// directories are created inside the jail (same rule as [`Self::write`]).
+    ///
+    /// The caller owns both the approval gate and the content bound: this helper
+    /// guarantees containment + atomic replacement only, so no partial file is
+    /// ever visible under the target name.
+    ///
+    /// # Errors
+    /// [`Refusal::PathOutsideJail`] for escapes, [`Refusal::ToolSchema`] for the
+    /// root/directory/non-regular target, [`Refusal::InternalError`] for I/O.
+    pub fn write_atomic(&self, requested: &str, bytes: &[u8]) -> Result<PathBuf, ToolError> {
+        let target = self.resolve(requested)?;
+        if target == self.root() {
+            return Err(ToolError::new(
+                Refusal::ToolSchema,
+                "cannot atomically write the workspace root",
+            ));
+        }
+        let parent = target.parent().ok_or_else(|| {
+            ToolError::new(
+                Refusal::InternalError,
+                "write target has no parent directory",
+            )
+        })?;
+        // Mirror `write`: check the parent's canonical containment, then create it.
+        if !self.is_inside(&fs::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf())) {
+            return Err(escape("write parent resolves outside the workspace root"));
+        }
+        fs::create_dir_all(parent).map_err(|error| {
+            ToolError::new(
+                Refusal::InternalError,
+                format!("cannot create parent directory for {requested:?}: {error}"),
+            )
+        })?;
+        match fs::symlink_metadata(&target) {
+            Ok(metadata) if metadata.is_dir() => {
+                return Err(ToolError::new(
+                    Refusal::ToolSchema,
+                    format!("{requested:?} is a directory"),
+                ));
+            }
+            Ok(metadata) if !metadata.is_file() => {
+                return Err(ToolError::new(
+                    Refusal::ToolSchema,
+                    format!("{requested:?} is not a regular file (symlink/non-file refused)"),
+                ));
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+
+        // Same-directory temp keeps the rename on one volume; `create_new`
+        // refuses to follow a pre-planted symlink and refuses collisions.
+        let temp = parent.join(format!(".hive-write-{}.tmp", uuid::Uuid::now_v7()));
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temp)
+            .map_err(|error| {
+                ToolError::new(
+                    Refusal::InternalError,
+                    format!("cannot create the temporary write file: {error}"),
+                )
+            })?;
+        let write_outcome = (|| -> Result<(), ToolError> {
+            file.write_all(bytes).map_err(|error| {
+                ToolError::new(
+                    Refusal::InternalError,
+                    format!("I/O failure writing the temporary file: {error}"),
+                )
+            })?;
+            file.sync_all().map_err(|error| {
+                ToolError::new(
+                    Refusal::InternalError,
+                    format!("cannot flush the temporary write file: {error}"),
+                )
+            })?;
+            Ok(())
+        })();
+        drop(file);
+        if let Err(error) = write_outcome {
+            let _ = fs::remove_file(&temp);
+            return Err(error);
+        }
+        // Windows `std::fs::rename` maps to MoveFileExW with replace-existing
+        // semantics; the overwrite test proves it on this host. On failure the
+        // stale temp is removed, never the target.
+        if let Err(error) = fs::rename(&temp, &target) {
+            let _ = fs::remove_file(&temp);
+            return Err(ToolError::from(error));
+        }
+        Ok(target)
+    }
+
     /// Lists a workspace directory (root by default).
     ///
     /// # Errors
@@ -256,7 +358,10 @@ impl WorkspaceJail {
             )
         })?;
         if !metadata.is_dir() {
-            return Err(ToolError::new(Refusal::ToolSchema, "path is not a directory"));
+            return Err(ToolError::new(
+                Refusal::ToolSchema,
+                "path is not a directory",
+            ));
         }
         let mut entries = Vec::new();
         for entry in fs::read_dir(&path).map_err(|error| {
@@ -325,7 +430,12 @@ mod tests {
     #[test]
     fn escape_vector_parent_traversal_is_refused() {
         let (_temp, jail) = jail();
-        for attempt in ["..", "../escape.txt", "a/../../escape.txt", "docs/../../../x"] {
+        for attempt in [
+            "..",
+            "../escape.txt",
+            "a/../../escape.txt",
+            "docs/../../../x",
+        ] {
             let error = jail.resolve(attempt).expect_err(attempt);
             assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt}");
         }
@@ -434,8 +544,67 @@ mod tests {
         assert!(path.starts_with(&root));
         assert_eq!(fs::read(path).expect("read back"), b"ok");
     }
+
+    fn no_temp_residue(dir: &Path) -> bool {
+        fs::read_dir(dir).expect("read dir").all(|entry| {
+            !entry
+                .expect("dir entry")
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".hive-write-")
+        })
+    }
+
+    #[test]
+    fn write_atomic_creates_and_replaces_file() {
+        let (temp, jail) = jail();
+        let first = jail
+            .write_atomic("notes/a.txt", b"one")
+            .expect("first write");
+        assert_eq!(fs::read(&first).expect("read back"), b"one");
+        let root = fs::canonicalize(jail.root()).expect("root canonical");
+        assert!(first.starts_with(&root));
+
+        let second = jail.write_atomic("notes/a.txt", b"two").expect("replace");
+        assert_eq!(second, first, "same target path");
+        assert_eq!(fs::read(&second).expect("read back"), b"two");
+        assert!(
+            no_temp_residue(&temp.path().join("notes")),
+            "atomic write must not leave a .hive-write-*.tmp behind"
+        );
+    }
+
+    #[test]
+    fn write_atomic_creates_nested_parents_inside_jail() {
+        let (_temp, jail) = jail();
+        let path = jail
+            .write_atomic("a/b/c.txt", b"nested")
+            .expect("nested write");
+        let root = fs::canonicalize(jail.root()).expect("root canonical");
+        assert!(path.starts_with(&root));
+        assert_eq!(fs::read(path).expect("read back"), b"nested");
+    }
+
+    #[test]
+    fn write_atomic_refuses_root_and_directory_targets() {
+        let (_temp, jail) = jail();
+        for target in ["", ".", "./"] {
+            let error = jail.write_atomic(target, b"x").expect_err(target);
+            assert_eq!(error.code(), "E_TOOL_SCHEMA", "root target: {target:?}");
+        }
+        fs::create_dir_all(jail.root().join("dir")).expect("dir");
+        let error = jail
+            .write_atomic("dir", b"x")
+            .expect_err("directory target");
+        assert_eq!(error.code(), "E_TOOL_SCHEMA");
+    }
+
+    #[test]
+    fn write_atomic_escape_vectors_stay_refused() {
+        let (_temp, jail) = jail();
+        for attempt in ["../x.txt", "C:\\x.txt", "PROGRA~1\\x.txt", "a\0b.txt"] {
+            let error = jail.write_atomic(attempt, b"x").expect_err(attempt);
+            assert_eq!(error.code(), "E_PATH_OUTSIDE_JAIL", "vector: {attempt:?}");
+        }
+    }
 }
-
-
-
-

@@ -27,6 +27,19 @@ pub const PROMPT_CLAIMED_TOOL_IDS: &[&str] = &[
     "shell_exec",
 ];
 
+/// Every advertised tool must have a declared execution lane. The census below
+/// refuses an unclassified registry row, so a tool can never be advertised to
+/// the model without an executor/approval/loop owner.
+pub const EXECUTOR_DISPOSITIONS: &[(&str, &str)] = &[
+    ("file_read", "read_executor"),
+    ("file_list", "read_executor"),
+    ("report_result", "read_executor"),
+    ("finish", "read_executor"),
+    ("file_write", "approval_executor"),
+    ("shell_exec", "approval_executor"),
+    ("spawn_agent", "loop_owned"),
+];
+
 /// Schema id of the census payload.
 pub const CENSUS_SCHEMA: &str = "hiverouter.census.v1";
 
@@ -53,6 +66,8 @@ pub struct CapabilityCensus {
     pub allowlist_tool_ids: Vec<String>,
     /// Prompt-claimed tool ids.
     pub prompt_claim_tool_ids: Vec<String>,
+    /// Execution lane each advertised tool is wired to.
+    pub executor_dispositions: BTreeMap<String, String>,
 }
 
 impl CapabilityCensus {
@@ -138,6 +153,22 @@ pub fn derive_census(
         .iter()
         .map(|id| (*id).to_owned())
         .collect();
+    let mut executor_dispositions = BTreeMap::new();
+    for (tool, lane) in EXECUTOR_DISPOSITIONS {
+        executor_dispositions.insert((*tool).to_owned(), (*lane).to_owned());
+    }
+    let unclassified: Vec<&String> = registry_tool_ids
+        .iter()
+        .filter(|id| !executor_dispositions.contains_key(*id))
+        .collect();
+    if !unclassified.is_empty() {
+        return Err(ToolError::new(
+            Refusal::InternalError,
+            format!(
+                "capability census drift: advertised tools with no execution lane: {unclassified:?}"
+            ),
+        ));
+    }
     check_census_drift(
         &registry_tool_ids,
         &allowlist_tool_ids,
@@ -155,6 +186,7 @@ pub fn derive_census(
         registry_tool_ids,
         allowlist_tool_ids,
         prompt_claim_tool_ids,
+        executor_dispositions,
     })
 }
 
@@ -191,6 +223,11 @@ mod tests {
         assert_eq!(census.permission_class_count, 4);
         assert_eq!(census.grant_count(), 3 + 5 + 6 + 4);
         assert!(census.tools_by_tier.contains_key("hyper_agent"));
+        assert_eq!(census.executor_dispositions.len(), census.registry_tool_ids.len());
+        assert_eq!(
+            census.executor_dispositions.get("file_write").map(String::as_str),
+            Some("approval_executor")
+        );
     }
 
     #[test]

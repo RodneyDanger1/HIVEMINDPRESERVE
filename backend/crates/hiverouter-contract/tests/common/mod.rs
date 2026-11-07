@@ -118,18 +118,30 @@ pub fn event_samples() -> Vec<Event> {
         Event::NodeSpawn(NodeEvent {
             task_id,
             state: AgentState::Queued,
+            rev: None,
+            kind: None,
+            parent_task_id: None,
         }),
         Event::NodeDrag(NodeEvent {
             task_id,
             state: AgentState::Running,
+            rev: None,
+            kind: None,
+            parent_task_id: None,
         }),
         Event::NodeRewire(NodeEvent {
             task_id,
             state: AgentState::Running,
+            rev: None,
+            kind: None,
+            parent_task_id: None,
         }),
         Event::NodeState(NodeEvent {
             task_id,
             state: AgentState::Completed,
+            rev: None,
+            kind: None,
+            parent_task_id: None,
         }),
         Event::RunMetrics(RunMetrics {
             superagents: 2,
@@ -150,6 +162,7 @@ pub fn event_samples() -> Vec<Event> {
             args_sha256: Some(
                 "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08".to_owned(),
             ),
+            args_preview: None,
             expires_at: Some(Timestamp::parse("2026-11-06T09:20:00Z").expect("valid expiry")),
         }),
         Event::ApprovalResolved(ApprovalResolved {

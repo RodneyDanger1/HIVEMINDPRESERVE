@@ -3,6 +3,12 @@
  * `hiverouter-contract`). This file is the single client-side source of
  * command/event names, payload shapes and refusal codes; the API client and
  * the store only speak through it. Pure functions -> unit-testable.
+ *
+ * Additive field mirror (2026-11-07, backend `hiverouter-contract` 1.2.0-dev):
+ * `NODE_SPAWN`/`NODE_STATE` payloads may carry `rev`, `kind` and
+ * `parent_task_id`, and `APPROVAL_REQUEST` may carry a bounded `args_preview`.
+ * Every one of them is optional on the wire and absent stays absent; no event
+ * or command name changed, so the frozen vocabulary counts are unchanged.
  */
 import { isAgentState, type AgentState } from '../state/agentState';
 
@@ -10,6 +16,14 @@ export const SCHEMA_VERSION = 'hiverouter.v1' as const;
 export const MAX_PROMPT_CHARS = 8000;
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 3.0;
+/**
+ * Mirror of the backend `MAX_ARGS_PREVIEW_CHARS` (`hiverouter-contract`
+ * `src/event.rs`), measured in UTF-16 code units — the same unit as
+ * `String.length` — so the client enforces exactly the server's bound on the
+ * `APPROVAL_REQUEST` `args_preview`. The preview is display-only; `args_sha256`
+ * stays the authoritative binding for every approval decision.
+ */
+export const MAX_ARGS_PREVIEW_CHARS = 512;
 
 export type FrameKind = 'COMMAND' | 'EVENT';
 
@@ -200,14 +214,27 @@ export function isNodeKind(value: unknown): value is NodeKind {
 }
 
 /**
- * Frozen contract payload is `{task_id, state}`. Rendering metadata (kind,
- * label, parent, progress) is read when the server supplies it as extra
- * fields; absent fields stay absent (the card renders a generic task card and
- * the gap is recorded in PHASE-7-8-10-EVIDENCE.md). No metadata is invented.
+ * `NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.
+ *
+ * Frozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and
+ * `parent_task_id` are additive and optional on the wire: absent stays absent
+ * (each decodes to `null`), so a pre-1.3 server still renders.
+ *  - `rev` is the server's per-node revision — the same value `REWIRE_TASK`
+ *    `expected_rev` is compared against, never the client event counter.
+ *  - `parent_task_id` is the node's current parent, so a re-parent moves the
+ *    canvas edge in the same frame that reports the state.
+ *  - `kind` is populated by the server only from the task's authoritative tier;
+ *    an unknown value is ignored (decodes to `null`) rather than coerced.
+ *
+ * Rendering metadata (`label`, `progress`) is still read only when the server
+ * supplies it as an extra field; absent fields stay absent (the card renders a
+ * generic task card and the gap is recorded in PHASE-7-8-10-EVIDENCE.md). No
+ * metadata is invented.
  */
 export interface NodeEventPayload {
   readonly task_id: string;
   readonly state: AgentState;
+  readonly rev?: number | null;
   readonly kind?: NodeKind | null;
   readonly label?: string | null;
   readonly parent_task_id?: string | null;
@@ -234,6 +261,17 @@ export interface ApprovalRequestPayload {
   readonly tool_call_id?: string | null;
   /** 1.2 additive: SHA-256 of the canonical tool arguments the nonce binds. */
   readonly args_sha256?: string | null;
+  /**
+   * Additive: bounded, redacted, display-only preview of the gated tool
+   * arguments (at most {@link MAX_ARGS_PREVIEW_CHARS} UTF-16 code units).
+   *
+   * Absent when the producer did not hold the arguments — e.g. a post-hello
+   * replay of a persisted approval row, which stores only the digest — so the
+   * UI must render the approval without it. It is never authoritative:
+   * `args_sha256` is the binding, and an oversized preview is dropped by the
+   * decoder instead of being rendered.
+   */
+  readonly args_preview?: string | null;
   /** 1.2 additive: ISO-8601 approval expiry (TTL countdown). */
   readonly expires_at?: string | null;
 }
@@ -657,6 +695,9 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
       const kind = isNodeKind(payload.kind) ? payload.kind : null;
       const label = typeof payload.label === 'string' ? payload.label : null;
       const parent = typeof payload.parent_task_id === 'string' ? payload.parent_task_id : null;
+      const revRaw = payload.rev;
+      const rev =
+        typeof revRaw === 'number' && Number.isInteger(revRaw) && revRaw >= 0 ? revRaw : null;
       const progressRaw = payload.progress;
       const progress =
         typeof progressRaw === 'number' && Number.isFinite(progressRaw) ? progressRaw : null;
@@ -668,6 +709,7 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
           payload: {
             task_id: taskId,
             state,
+            rev,
             kind,
             label,
             parent_task_id: parent,
@@ -702,6 +744,14 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
       const taskId = typeof payload.task_id === 'string' ? payload.task_id : null;
       const toolCallId = typeof payload.tool_call_id === 'string' ? payload.tool_call_id : null;
       const argsSha = typeof payload.args_sha256 === 'string' ? payload.args_sha256 : null;
+      const argsPreviewRaw = payload.args_preview;
+      // Over-cap or non-string previews are dropped, never truncated client-side
+      // and never a reason to refuse the approval itself: the digest is the
+      // binding, the preview is presentation only.
+      const argsPreview =
+        typeof argsPreviewRaw === 'string' && argsPreviewRaw.length <= MAX_ARGS_PREVIEW_CHARS
+          ? argsPreviewRaw
+          : null;
       const expiresAt = typeof payload.expires_at === 'string' ? payload.expires_at : null;
       return {
         ok: true,
@@ -716,6 +766,7 @@ function decodePayload(name: EventName, payload: Record<string, unknown>): Parse
             task_id: taskId,
             tool_call_id: toolCallId,
             args_sha256: argsSha,
+            args_preview: argsPreview,
             expires_at: expiresAt,
           },
         },

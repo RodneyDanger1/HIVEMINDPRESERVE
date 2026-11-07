@@ -7,14 +7,17 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type {
   CommandPayloads,
+  Envelope,
   FileContentPayload,
   FileTreeEntry,
+  NodeEventPayload,
   Refusal,
   RunMetricsPayload,
   ServerCommandName,
   ToolOutcome,
 } from '../api/contract';
 import {
+  isAgentState,
   isRunActive,
   isTerminal,
   type AgentState,
@@ -28,11 +31,32 @@ import {
 } from '../api/contract';
 import { shortId, uuidv7 } from '../api/ids';
 import { RefusalError, clientRefusal } from '../api/refusals';
-import type { ConnectionStatus, SessionInfo, UiApi } from '../api/client';
+import { apiBaseUrl, type ConnectionStatus, type SessionInfo, type UiApi } from '../api/client';
 import { fetchHealth } from '../api/health';
+import { DEFAULT_HTTP_TIMEOUT_MS, fetchWithBoundTimeout } from '../api/http';
 import type { DecodedEvent } from '../api/contract';
 import { deriveHud } from './metrics';
 import { formatStateOf, STRINGS } from './strings';
+import {
+  APPROVAL_ACK_SETTLE_CODE,
+  APPROVAL_ACK_SETTLE_MS,
+  APPROVAL_REPLAY_SETTLE_MS,
+  approvalDisplayStatus,
+  approvalStatusAfterRequest,
+  beginReplayWindow,
+  canRetryApproval,
+  classifyApprovalRefusal,
+  initialApprovalReplayState,
+  initialApprovalResolveState,
+  isReplayWindowOpen,
+  markApprovalsStale,
+  settleReplay,
+  settleReplayStatus,
+  stampReplayEpoch,
+  type ApprovalReplayState,
+  type ApprovalResolveOutcome,
+  type ApprovalResolveState,
+} from './approval';
 
 export type NavSection = 'workspace' | 'agents' | 'data' | 'models' | 'routing' | 'settings';
 export type TabId = 'workspace' | 'swarm' | 'routing' | 'history';
@@ -47,7 +71,16 @@ export interface TaskRecord {
   readonly state: AgentState;
   readonly progress: number | null;
   readonly errorCode: string | null;
-  readonly rev: number;
+  /**
+   * The node's own server CAS revision (`graph.rs TaskNode.rev`).
+   *
+   * `null` means UNKNOWN/unconfirmed: the node has never been seen in a
+   * committed history snapshot, or a live NODE_* frame changed it after the
+   * last confirmation. `REWIRE_TASK.expected_rev` is sent from this value —
+   * never from the client-local `graphRev` counter, which is not a server CAS
+   * revision and can never win `GraphAuthority::rewire` (`graph.rs:152`).
+   */
+  readonly rev: number | null;
 }
 
 export interface ChatMessage {
@@ -108,6 +141,73 @@ export interface ReplayGraph {
   readonly graph: unknown;
 }
 
+/** Committed-revision cursor for time travel (server history is the authority). */
+export interface HistoryState {
+  /** Latest committed revision number; `-1` when the run has none. */
+  readonly latest: number;
+  /** Number of committed revisions (clamp target, not `latest + 1`). */
+  readonly count: number;
+  /** Exact committed revision numbers, ascending (may be non-contiguous). */
+  readonly revisions: readonly number[];
+  /** Revision currently shown; the latest revision when the live graph is shown. */
+  readonly selected: number;
+  /** Non-null while replaying a committed revision; `null` renders the live graph. */
+  readonly replayGraph: ReplayGraph | null;
+  readonly refreshStatus: 'idle' | 'loading' | 'ok' | 'error';
+  readonly refreshRefusal: Refusal | null;
+}
+
+/** Why the last run/tasks/history rehydration was attempted. */
+export type SnapshotSource =
+  | 'boot'
+  | 'reconnect'
+  | 'resync'
+  | 'refusal'
+  | 'rewire'
+  | 'manual';
+
+/** What an otherwise successful rehydrate could not restore from the server. */
+export type SnapshotIncomplete =
+  | 'no-run'
+  | 'no-committed-revision'
+  | 'messages-unavailable'
+  | 'run-changed';
+
+/**
+ * Server-authoritative rehydration of run/tasks/history.
+ *
+ * The graph snapshot from `GET /api/history/runs/{run_id}/state` is the
+ * authority; no event is synthesized and nothing is invented when a resource
+ * is missing (that is reported in `incomplete` and `refusal` instead).
+ */
+export interface SnapshotState {
+  readonly status: 'idle' | 'loading' | 'ready' | 'degraded' | 'failed';
+  readonly source: SnapshotSource | null;
+  readonly runId: string | null;
+  /** Committed revision the tasks were projected from; `null` when none exists. */
+  readonly revision: number | null;
+  readonly revisionCount: number;
+  readonly incomplete: readonly SnapshotIncomplete[];
+  readonly refusal: Refusal | null;
+  readonly attempts: number;
+  readonly updatedAt: number | null;
+}
+
+/**
+ * An unresolved event-range gap announced by `RESYNC_REQUIRED` (or a command
+ * refusal with `E_RESYNC_REQUIRED`). It is cleared ONLY by a settled snapshot
+ * rehydrate — a following `SERVER_HELLO` must not present the gap as Connected.
+ */
+export type ResyncGap =
+  | { readonly cause: 'event'; readonly expectedSeq: number; readonly lastSeq: number }
+  | { readonly cause: 'refusal'; readonly code: string };
+
+/** Injectable seams for the store's bounded history reads (tests and hosts). */
+export interface UiStoreOptions {
+  readonly fetchImpl?: typeof fetch;
+  readonly snapshotTimeoutMs?: number;
+}
+
 export interface SettingsState {
   readonly status: 'unknown' | 'pending' | 'ok' | 'error';
   readonly provider: string | null;
@@ -152,14 +252,22 @@ export interface UiState {
   readonly messages: readonly ChatMessage[];
   readonly streamingRunId: string | null;
   readonly metrics: RunMetricsPayload | null;
-  readonly history: {
-    readonly latest: number;
-    readonly selected: number;
-    readonly replayGraph: ReplayGraph | null;
-  };
+  readonly history: HistoryState;
+  /** Last server-authoritative rehydration (boot/reload/reconnect/resync). */
+  readonly snapshot: SnapshotState;
+  /** Unresolved RESYNC_REQUIRED gap; non-null until a snapshot rehydrate settles. */
+  readonly resyncGap: ResyncGap | null;
   readonly approvals: readonly ApprovalRecord[];
   /** Approval ids with an in-flight APPROVAL_RESOLVE command (double-submit guard). */
   readonly resolvingApprovals: readonly string[];
+  /** Per-approval resolve/retry machine; absent until the first gesture. */
+  readonly approvalResolve: Readonly<Record<string, ApprovalResolveState>>;
+  /** Replay-window state for pending approvals after reconnect. */
+  readonly approvalReplay: ApprovalReplayState;
+  /** True when the current approval list has not been confirmed since reconnect. */
+  readonly approvalsStale: boolean;
+  /** Replay epoch in which each approval id was last confirmed by a replayed request. */
+  readonly approvalSeenEpoch: Readonly<Record<string, number>>;
   /** Server-reported tool calls in arrival order; outcomes transition pending -> terminal once. */
   readonly toolActivity: readonly ToolActivityRecord[];
   readonly refusals: readonly ToastRefusal[];
@@ -180,10 +288,20 @@ export interface UiState {
   rewireSelected(newParentId: string): Promise<void>;
   cancelRun(): Promise<void>;
   killWorker(): Promise<void>;
-  resolveApproval(approvalId: string, decision: 'approve' | 'deny', reason?: string): Promise<void>;
+  resolveApproval(
+    approvalId: string,
+    decision: 'approve' | 'deny',
+    reason?: string,
+  ): Promise<ApprovalResolveOutcome>;
+  retryApproval(approvalId: string): Promise<ApprovalResolveOutcome>;
+  dismissApproval(approvalId: string): void;
   pinChat(pinned: boolean): Promise<void>;
   insertTemplate(templateId: string): Promise<void>;
   setHistoryRevision(revision: number): Promise<void>;
+  /** Leave replay and render the live graph again (explicit exit, not just a disabled control). */
+  exitHistoryReplay(): void;
+  /** Rehydrate run/tasks/history from the committed server snapshot. */
+  refreshRunSnapshot(source?: SnapshotSource): Promise<void>;
   setNav(nav: NavSection): void;
   setTab(tab: TabId): void;
   setViewport(viewport: ViewportState): void;
@@ -238,7 +356,322 @@ function initialFileTree(): FileTreeState {
   };
 }
 
-export function createUiStore(api: UiApi): StoreApi<UiState> {
+function initialHistory(): HistoryState {
+  return {
+    latest: -1,
+    count: 0,
+    revisions: [],
+    selected: 0,
+    replayGraph: null,
+    refreshStatus: 'idle',
+    refreshRefusal: null,
+  };
+}
+
+function initialSnapshot(): SnapshotState {
+  return {
+    status: 'idle',
+    source: null,
+    runId: null,
+    revision: null,
+    revisionCount: 0,
+    incomplete: [],
+    refusal: null,
+    attempts: 0,
+    updatedAt: null,
+  };
+}
+
+/* --------------------------------------------------------- history rehydration */
+
+/**
+ * Existing localhost HTTP read surface (`backend/crates/hiverouter-core/src/http.rs:356-358`):
+ *   GET /api/history/runs
+ *   GET /api/history/runs/{run_id}/revisions
+ *   GET /api/history/runs/{run_id}/state?revision=N
+ *
+ * There is no messages/transcript route: the store cannot restore chat history
+ * and reports `messages-unavailable` instead of fabricating it.
+ */
+const HISTORY_RUNS_PATH = '/api/history/runs';
+
+function historyRevisionsPath(runId: string): string {
+  return `/api/history/runs/${encodeURIComponent(runId)}/revisions`;
+}
+
+function historyStatePath(runId: string, revision: number): string {
+  return `/api/history/runs/${encodeURIComponent(runId)}/state?revision=${revision}`;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function schemaRefusal(message: string): RefusalError {
+  return new RefusalError(clientRefusal('E_SCHEMA_INVALID', { message }));
+}
+
+function toRefusal(error: unknown): Refusal {
+  return error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
+}
+
+interface HistoryRunSummary {
+  readonly runId: string;
+  readonly status: AgentState;
+  readonly errorCode: string | null;
+}
+
+function decodeHistoryRuns(body: unknown): readonly HistoryRunSummary[] {
+  const record = asRecord(body);
+  const runs = record?.runs;
+  if (!Array.isArray(runs)) {
+    throw schemaRefusal('GET /api/history/runs did not return a runs array.');
+  }
+  const decoded: HistoryRunSummary[] = [];
+  for (const entry of runs) {
+    const item = asRecord(entry);
+    const runId = item?.run_id;
+    const status = item?.status;
+    if (typeof runId !== 'string' || !isAgentState(status)) {
+      throw schemaRefusal('GET /api/history/runs returned a run row without a run_id/status.');
+    }
+    decoded.push({
+      runId,
+      status,
+      errorCode: typeof item?.error_code === 'string' ? item.error_code : null,
+    });
+  }
+  return decoded;
+}
+
+interface HistoryRevisionList {
+  readonly revisions: readonly number[];
+  readonly latest: number | null;
+}
+
+function decodeHistoryRevisions(body: unknown): HistoryRevisionList {
+  const record = asRecord(body);
+  const rawRevisions = record?.revisions;
+  if (!Array.isArray(rawRevisions)) {
+    throw schemaRefusal('GET /api/history/runs/{run_id}/revisions did not return a revisions array.');
+  }
+  const revisions: number[] = [];
+  for (const entry of rawRevisions) {
+    const revision = asRecord(entry)?.revision;
+    if (typeof revision !== 'number' || !Number.isInteger(revision) || revision < 0) {
+      throw schemaRefusal('A history revision row has no non-negative integer revision.');
+    }
+    if (!revisions.includes(revision)) {
+      revisions.push(revision);
+    }
+  }
+  revisions.sort((left, right) => left - right);
+  const latest = revisions.length > 0 ? revisions[revisions.length - 1] : null;
+  const declared = record?.latest_revision;
+  if (declared !== null && declared !== undefined && declared !== latest) {
+    throw schemaRefusal('The revisions payload latest_revision disagrees with its revision list.');
+  }
+  return { revisions, latest };
+}
+
+interface HistoryStateProjection {
+  readonly revision: number;
+  readonly runStatus: AgentState | null;
+  readonly tasks: Readonly<Record<string, TaskRecord>>;
+}
+
+function decodeHistoryState(body: unknown): HistoryStateProjection {
+  const record = asRecord(body);
+  const revision = record?.revision;
+  if (typeof revision !== 'number' || !Number.isInteger(revision) || revision < 0) {
+    throw schemaRefusal('GET /api/history/runs/{run_id}/state returned no non-negative revision.');
+  }
+  const runStatusRaw = record?.run_status;
+  return {
+    revision,
+    runStatus: isAgentState(runStatusRaw) ? runStatusRaw : null,
+    tasks: recordsFromSnapshotGraph(record?.graph),
+  };
+}
+
+/**
+ * Projects a committed history graph snapshot (`GraphSnapshot` in
+ * `graph.rs:31-40`) into task records. Every node must carry `task_id`,
+ * `state` and the server per-node `rev`; a malformed snapshot fails closed
+ * (named refusal) rather than rendering an invented revision.
+ */
+function recordsFromSnapshotGraph(graph: unknown): Readonly<Record<string, TaskRecord>> {
+  const record = asRecord(graph);
+  const rawNodes = record?.nodes;
+  if (!Array.isArray(rawNodes)) {
+    throw schemaRefusal('A history snapshot graph has no nodes array.');
+  }
+  const parsed: Array<{
+    id: string;
+    parentId: string | null;
+    state: AgentState;
+    rev: number;
+  }> = [];
+  const ids = new Set<string>();
+  for (const entry of rawNodes) {
+    const node = asRecord(entry);
+    const id = node?.task_id;
+    const state = node?.state;
+    const rev = node?.rev;
+    if (
+      typeof id !== 'string' ||
+      !isAgentState(state) ||
+      typeof rev !== 'number' ||
+      !Number.isInteger(rev) ||
+      rev < 0
+    ) {
+      throw schemaRefusal('A history snapshot node is not a {task_id, state, rev} record.');
+    }
+    if (ids.has(id)) {
+      throw schemaRefusal(`A history snapshot contains task ${id} twice.`);
+    }
+    ids.add(id);
+    parsed.push({
+      id,
+      parentId: typeof node?.parent_task_id === 'string' ? node.parent_task_id : null,
+      state,
+      rev,
+    });
+  }
+  const tasks: Record<string, TaskRecord> = {};
+  for (const node of parsed) {
+    tasks[node.id] = {
+      id: node.id,
+      // The snapshot is the graph authority; a parent outside this snapshot
+      // cannot be drawn as an edge, so it is re-rooted rather than dangling.
+      parentId: node.parentId !== null && ids.has(node.parentId) ? node.parentId : null,
+      // `GraphSnapshot::TaskNode` carries no kind/label/progress: none is invented.
+      kind: 'worker',
+      label: `Task ${shortId(node.id)}`,
+      state: node.state,
+      progress: null,
+      errorCode: null,
+      rev: node.rev,
+    };
+  }
+  return tasks;
+}
+
+/**
+ * Reads the additive topology `rev` from a NODE_* payload.
+ *
+ * `rev` is the same per-node revision `GraphAuthority::rewire` compares against
+ * (`graph.rs:152`) — never the client-local event counter. It is optional on the
+ * wire (a pre-1.3 producer omits it), so an absent/non-integer value stays
+ * `null` (unconfirmed) instead of being guessed.
+ */
+function readNodeRev(payload: NodeEventPayload): number | null {
+  const candidate = payload.rev;
+  return typeof candidate === 'number' && Number.isInteger(candidate) && candidate >= 0
+    ? candidate
+    : null;
+}
+
+function chooseHistoryRun(
+  runs: readonly HistoryRunSummary[],
+  current: RunRecord | null,
+): HistoryRunSummary | null {
+  if (current !== null) {
+    const same = runs.find((candidate) => candidate.runId === current.id);
+    if (same !== undefined) {
+      return same;
+    }
+  }
+  const active = runs.find((candidate) => isRunActive(candidate.status));
+  return active ?? runs[0] ?? null;
+}
+
+function insertRevision(revisions: readonly number[], revision: number): readonly number[] {
+  if (revisions.includes(revision)) {
+    return revisions;
+  }
+  return [...revisions, revision].sort((left, right) => left - right);
+}
+
+/** Honest preconditions for the Re-route control (shared by store and panels). */
+export type RewireBlocker =
+  | 'no-run'
+  | 'run-terminal'
+  | 'no-selection'
+  | 'target-not-in-graph'
+  | 'unknown-server-rev';
+
+export interface RewireBlockerArgs {
+  readonly run: RunRecord | null;
+  readonly tasks: Readonly<Record<string, TaskRecord>>;
+  readonly selectedTaskId: string | null;
+  readonly newParentId: string | null;
+}
+
+/**
+ * `unknown-server-rev` is the disabled/unknown state M-005 asks for: without a
+ * confirmed node revision the command cannot win `GraphAuthority::rewire`
+ * (`graph.rs:152`), so the store does not send a guessed `expected_rev` and
+ * does not enter a false E_RESYNC_REQUIRED loop.
+ */
+export function rewireBlocker(args: RewireBlockerArgs): RewireBlocker | null {
+  if (args.run === null) {
+    return 'no-run';
+  }
+  if (!isRunActive(args.run.status)) {
+    return 'run-terminal';
+  }
+  if (args.selectedTaskId === null || args.tasks[args.selectedTaskId] === undefined) {
+    return 'no-selection';
+  }
+  if (args.newParentId === null || args.tasks[args.newParentId] === undefined) {
+    return 'target-not-in-graph';
+  }
+  if (args.tasks[args.selectedTaskId].rev === null) {
+    return 'unknown-server-rev';
+  }
+  return null;
+}
+
+function rewireRefusal(
+  blocker: RewireBlocker,
+  taskId: string,
+  parentId: string | null,
+): Refusal {
+  switch (blocker) {
+    case 'run-terminal':
+      return clientRefusal('E_RUN_TERMINAL');
+    case 'no-run':
+      return clientRefusal('E_RUN_NOT_FOUND');
+    case 'no-selection':
+      return clientRefusal('E_TASK_NOT_FOUND', {
+        message: 'Select a task before re-routing.',
+      });
+    case 'target-not-in-graph':
+      return clientRefusal('E_TASK_NOT_FOUND', {
+        message: `The re-route target ${parentId === null ? '(none)' : shortId(parentId)} is not in the current graph.`,
+      });
+    case 'unknown-server-rev':
+      return clientRefusal('E_RESYNC_REQUIRED', {
+        message: `No committed server revision is known for task ${shortId(taskId)}; re-route is disabled until a snapshot confirms it.`,
+        retryable: true,
+      });
+  }
+}
+
+/** True while the UI is missing a confirmed server snapshot. */
+export function isSnapshotDegraded(snapshot: SnapshotState): boolean {
+  return (
+    snapshot.status === 'loading' ||
+    snapshot.status === 'degraded' ||
+    snapshot.status === 'failed'
+  );
+}
+
+export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreApi<UiState> {
   const unsubscribes: Array<() => void> = [];
   // Out-of-order TOOL_RESULTs wait here until their TOOL_CALL arrives. The buffer is
   // intentionally closure-local: it is never rendered and never leaves the store.
@@ -296,7 +729,489 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       });
     };
 
-    const applyEvent = (event: DecodedEvent): void => {
+    const approvalTimers = new Map<string, ReturnType<typeof setTimeout>>();
+    const clearApprovalTimer = (approvalId: string): void => {
+      const timer = approvalTimers.get(approvalId);
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        approvalTimers.delete(approvalId);
+      }
+    };
+    const armApprovalAckTimer = (approvalId: string): void => {
+      clearApprovalTimer(approvalId);
+      const timer = setTimeout(() => {
+        approvalTimers.delete(approvalId);
+        const current = get().approvalResolve[approvalId];
+        if (current?.status !== 'awaiting_server') {
+          return;
+        }
+        set({
+          approvalResolve: {
+            ...get().approvalResolve,
+            [approvalId]: {
+              ...current,
+              status: 'retryable',
+              refusal: clientRefusal(APPROVAL_ACK_SETTLE_CODE),
+            },
+          },
+        });
+      }, APPROVAL_ACK_SETTLE_MS);
+      approvalTimers.set(approvalId, timer);
+    };
+    let approvalReplayTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearApprovalReplayTimer = (): void => {
+      if (approvalReplayTimer !== null) {
+        clearTimeout(approvalReplayTimer);
+        approvalReplayTimer = null;
+      }
+    };
+    const settleApprovalReplayWindow = (): void => {
+      clearApprovalReplayTimer();
+      const replay = get().approvalReplay;
+      if (!replay.window) {
+        return;
+      }
+      const nowMs = Date.now();
+      const approvalResolve = { ...get().approvalResolve };
+      const approvalSeenEpoch = get().approvalSeenEpoch;
+      for (const approval of get().approvals) {
+        const resolve = approvalResolve[approval.approvalId] ?? initialApprovalResolveState();
+        const display = approvalDisplayStatus(approval, resolve, nowMs);
+        const settled = settleReplayStatus(
+          display,
+          approvalSeenEpoch[approval.approvalId],
+          replay.epoch,
+        );
+        if (settled !== display) {
+          approvalResolve[approval.approvalId] = { ...resolve, status: settled };
+        }
+      }
+      // Window settled: only replayed/confirmed ids stay actionable; unreconfirmed
+      // actionable records became read-only `unconfirmed`, never auto-sent.
+      set({
+        approvalReplay: settleReplay(replay),
+        approvalResolve,
+        approvalsStale: false,
+        approvalSeenEpoch: {},
+      });
+    };
+    const armApprovalReplayTimer = (): void => {
+      clearApprovalReplayTimer();
+      approvalReplayTimer = setTimeout(() => {
+        approvalReplayTimer = null;
+        settleApprovalReplayWindow();
+      }, APPROVAL_REPLAY_SETTLE_MS);
+    };
+    const markApprovalReplayStale = (): void => {
+      clearApprovalReplayTimer();
+      const replay = get().approvalReplay;
+      set({
+        approvalReplay: replay.stale ? replay : markApprovalsStale(replay),
+        approvalsStale: true,
+      });
+    };
+
+    /* ------------------------------------------- server snapshot / resync wiring */
+
+    let disposed = false;
+    let socketOpen = false;
+    let resyncSerial = 0;
+    let resyncFollowUp = false;
+    let snapshotInFlight: Promise<void> | null = null;
+    const inFlightAborts = new Set<AbortController>();
+    let pendingRewire: {
+      readonly taskId: string;
+      readonly newParentId: string;
+    } | null = null;
+
+    const historyResponseRefusal = async (
+      response: Response,
+      label: string,
+    ): Promise<RefusalError> => {
+      let body: unknown = null;
+      try {
+        body = await response.json();
+      } catch {
+        // An HTTP error may carry no body; the status below still names the failure.
+        body = null;
+      }
+      const record = asRecord(body);
+      if (record !== null && typeof record.code === 'string') {
+        const base = clientRefusal(record.code);
+        return new RefusalError({
+          code: record.code,
+          message:
+            typeof record.message === 'string'
+              ? record.message
+              : `${label} refused with ${record.code}.`,
+          how_to_fix:
+            typeof record.how_to_fix === 'string' ? record.how_to_fix : base.how_to_fix,
+          retryable: typeof record.retryable === 'boolean' ? record.retryable : base.retryable,
+        });
+      }
+      return new RefusalError(
+        clientRefusal('E_WS_DISCONNECTED', {
+          message: `${label} returned HTTP ${response.status} without a refusal body.`,
+          retryable: true,
+        }),
+      );
+    };
+
+    const historyFetch = async (path: string, label: string): Promise<unknown> => {
+      const controller = new AbortController();
+      inFlightAborts.add(controller);
+      try {
+        const response = await fetchWithBoundTimeout(`${apiBaseUrl()}${path}`, {
+          label,
+          timeoutMs: options.snapshotTimeoutMs ?? DEFAULT_HTTP_TIMEOUT_MS,
+          ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
+          signal: controller.signal,
+          init: {
+            credentials: 'same-origin',
+            headers: { accept: 'application/json' },
+          },
+        });
+        if (!response.ok) {
+          throw await historyResponseRefusal(response, label);
+        }
+        try {
+          return (await response.json()) as unknown;
+        } catch {
+          // An unreadable 2xx body is not state: fail closed with a named refusal.
+          throw schemaRefusal(`${label} returned a body that is not JSON.`);
+        }
+      } finally {
+        inFlightAborts.delete(controller);
+      }
+    };
+
+    /** Replaces the committed-revision cursor without ever inventing a revision. */
+    const applyHistoryRevisionList = (list: HistoryRevisionList): void => {
+      const history = get().history;
+      const latest = list.latest ?? -1;
+      let selected = Math.max(latest, 0);
+      if (history.replayGraph !== null) {
+        selected = list.revisions.includes(history.selected)
+          ? history.selected
+          : Math.max(latest, 0);
+      }
+      set({
+        history: {
+          ...history,
+          latest,
+          count: list.revisions.length,
+          revisions: list.revisions,
+          selected,
+          replayGraph:
+            history.replayGraph !== null && list.revisions.includes(history.replayGraph.revision)
+              ? history.replayGraph
+              : null,
+          refreshStatus: 'ok',
+          refreshRefusal: null,
+        },
+      });
+    };
+
+    /** Quiet revision-cursor refresh (no toast): recorded in `history.refreshStatus`. */
+    const refreshCommittedRevisions = async (runId: string): Promise<void> => {
+      if (disposed || api.kind === 'mock') {
+        return;
+      }
+      set({
+        history: { ...get().history, refreshStatus: 'loading', refreshRefusal: null },
+      });
+      try {
+        const body = await historyFetch(
+          historyRevisionsPath(runId),
+          `GET /api/history/runs/${shortId(runId)}/revisions`,
+        );
+        if (disposed) {
+          return;
+        }
+        applyHistoryRevisionList(decodeHistoryRevisions(body));
+      } catch (error) {
+        if (disposed) {
+          return;
+        }
+        set({
+          history: {
+            ...get().history,
+            refreshStatus: 'error',
+            refreshRefusal: toRefusal(error),
+          },
+        });
+      }
+    };
+
+    /**
+     * Rehydrates run/tasks/history from the existing committed history API.
+     *
+     * The server snapshot is the authority: a run with no committed revision is
+     * reported as `degraded`/`no-committed-revision` instead of rendering an
+     * invented graph, and the chat transcript is reported as
+     * `messages-unavailable` because no HTTP route exposes it.
+     */
+    const performSnapshotRefresh = (source: SnapshotSource): Promise<void> => {
+      if (disposed || api.kind === 'mock') {
+        return Promise.resolve();
+      }
+      if (snapshotInFlight !== null) {
+        return snapshotInFlight;
+      }
+      const attempt = (async (): Promise<void> => {
+        const capturedSerial = resyncSerial;
+        const priorSnapshot = get().snapshot;
+        set({
+          snapshot: {
+            ...priorSnapshot,
+            status: 'loading',
+            source,
+            refusal: null,
+            attempts: priorSnapshot.attempts + 1,
+            updatedAt: Date.now(),
+          },
+        });
+        try {
+          const runs = decodeHistoryRuns(
+            await historyFetch(HISTORY_RUNS_PATH, 'GET /api/history/runs'),
+          );
+          const current = get().run;
+          const chosen = chooseHistoryRun(runs, current);
+          let list: HistoryRevisionList = { revisions: [], latest: null };
+          let projection: HistoryStateProjection | null = null;
+          if (chosen !== null) {
+            list = decodeHistoryRevisions(
+              await historyFetch(
+                historyRevisionsPath(chosen.runId),
+                `GET /api/history/runs/${shortId(chosen.runId)}/revisions`,
+              ),
+            );
+            if (list.latest !== null) {
+              projection = decodeHistoryState(
+                await historyFetch(
+                  historyStatePath(chosen.runId, list.latest),
+                  `GET /api/history/runs/${shortId(chosen.runId)}/state`,
+                ),
+              );
+              if (projection.revision !== list.latest) {
+                throw schemaRefusal(
+                  'The run state revision disagrees with the latest committed revision.',
+                );
+              }
+            }
+          }
+          if (disposed) {
+            return;
+          }
+
+          const liveRun = get().run;
+          const history = get().history;
+          if (
+            chosen !== null &&
+            liveRun !== null &&
+            liveRun.id !== chosen.runId &&
+            isRunActive(liveRun.status)
+          ) {
+            // A newer live run appeared while this read was in flight: never replace it.
+            set({
+              snapshot: {
+                status: 'degraded',
+                source,
+                runId: liveRun.id,
+                revision: null,
+                revisionCount: history.count,
+                incomplete: ['run-changed', 'messages-unavailable'],
+                refusal: null,
+                attempts: get().snapshot.attempts,
+                updatedAt: Date.now(),
+              },
+            });
+            return;
+          }
+          if (chosen === null && liveRun !== null && isRunActive(liveRun.status)) {
+            set({
+              snapshot: {
+                status: 'degraded',
+                source,
+                runId: liveRun.id,
+                revision: null,
+                revisionCount: history.count,
+                incomplete: ['run-changed', 'messages-unavailable'],
+                refusal: null,
+                attempts: get().snapshot.attempts,
+                updatedAt: Date.now(),
+              },
+            });
+            return;
+          }
+
+          const incomplete: SnapshotIncomplete[] = [];
+          if (chosen === null) {
+            incomplete.push('no-run');
+          } else {
+            incomplete.push('messages-unavailable');
+            if (projection === null) {
+              incomplete.push('no-committed-revision');
+            }
+          }
+          const status: SnapshotState['status'] =
+            chosen === null ? 'ready' : projection !== null ? 'ready' : 'degraded';
+          const latest = list.latest ?? -1;
+          const runStatus =
+            chosen !== null &&
+            liveRun !== null &&
+            liveRun.id === chosen.runId &&
+            isTerminal(liveRun.status) &&
+            !isTerminal(chosen.status)
+              ? liveRun.status
+              : chosen?.status ?? null;
+          const resolvedGap = resyncSerial === capturedSerial;
+          set({
+            ...(chosen === null
+              ? { tasks: {} }
+              : projection !== null
+                ? { tasks: projection.tasks }
+                : {}),
+            run:
+              chosen === null
+                ? null
+                : { id: chosen.runId, status: runStatus ?? chosen.status, errorCode: chosen.errorCode },
+            graphRev: get().graphRev + 1,
+            history: {
+              ...history,
+              latest,
+              count: list.revisions.length,
+              revisions: list.revisions,
+              selected: Math.max(latest, 0),
+              replayGraph: null,
+              refreshStatus: 'ok',
+              refreshRefusal: null,
+            },
+            snapshot: {
+              status,
+              source,
+              runId: chosen?.runId ?? null,
+              revision: projection?.revision ?? null,
+              revisionCount: list.revisions.length,
+              incomplete,
+              refusal: null,
+              attempts: get().snapshot.attempts,
+              updatedAt: Date.now(),
+            },
+            resyncGap: resolvedGap ? null : get().resyncGap,
+            connection: resolvedGap && socketOpen ? 'open' : get().connection,
+          });
+          if (!resolvedGap) {
+            // A newer gap arrived while this snapshot was read; it cannot clear it.
+            scheduleResyncFollowUp();
+          }
+        } catch (error) {
+          if (disposed) {
+            return;
+          }
+          const failure = toRefusal(error);
+          set({
+            snapshot: {
+              ...get().snapshot,
+              status: 'failed',
+              source,
+              refusal: failure,
+              updatedAt: Date.now(),
+            },
+            ...(source === 'resync' || source === 'refusal'
+              ? { connection: 'reconnecting' as const }
+              : {}),
+          });
+          if (source === 'resync' || source === 'refusal' || source === 'manual') {
+            pushRefusal(failure);
+          }
+        }
+      })();
+      snapshotInFlight = attempt.finally(() => {
+        snapshotInFlight = null;
+      });
+      return snapshotInFlight;
+    };
+
+    const scheduleResyncFollowUp = (): void => {
+      if (disposed || resyncFollowUp) {
+        return;
+      }
+      resyncFollowUp = true;
+      setTimeout(() => {
+        resyncFollowUp = false;
+        if (!disposed) {
+          void performSnapshotRefresh('resync');
+        }
+      }, 0);
+    };
+
+    const raiseResyncGap = (gap: ResyncGap): void => {
+      resyncSerial += 1;
+      set({ resyncGap: gap, connection: 'reconnecting' });
+      if (gap.cause === 'event') {
+        // The server does not send an ERROR frame for a lost range: surface the
+        // named refusal here so the gap is visible, not just an internal flag.
+        pushRefusal(
+          clientRefusal('E_RESYNC_REQUIRED', {
+            message: `Missed events: expected sequence ${gap.expectedSeq} but the client last applied ${gap.lastSeq}. Rehydrating from the committed snapshot.`,
+          }),
+        );
+      }
+      void performSnapshotRefresh(gap.cause === 'event' ? 'resync' : 'refusal');
+    };
+
+    /**
+     * Fallback parent for our own rewire when the producer omits the additive
+     * `NODE_REWIRE.parent_task_id` (pre-1.3): the parent that the server ACKed
+     * for the command is the new edge. Matched by task id (one rewire in flight
+     * per task) and consumed once; the payload's parent always wins when present.
+     */
+    const takePendingRewire = (taskId: string): { readonly newParentId: string } | null => {
+      const intent = pendingRewire;
+      if (intent === null || intent.taskId !== taskId) {
+        return null;
+      }
+      pendingRewire = null;
+      return { newParentId: intent.newParentId };
+    };
+
+    /** Reads one node's committed server revision on demand (never guesses one). */
+    const fetchNodeServerRev = async (runId: string, taskId: string): Promise<number | null> => {
+      const list = decodeHistoryRevisions(
+        await historyFetch(
+          historyRevisionsPath(runId),
+          `GET /api/history/runs/${shortId(runId)}/revisions`,
+        ),
+      );
+      if (list.latest === null) {
+        applyHistoryRevisionList(list);
+        return null;
+      }
+      const projection = decodeHistoryState(
+        await historyFetch(
+          historyStatePath(runId, list.latest),
+          `GET /api/history/runs/${shortId(runId)}/state`,
+        ),
+      );
+      applyHistoryRevisionList(list);
+      const record = projection.tasks[taskId];
+      if (record === undefined) {
+        return null;
+      }
+      const existing = get().tasks[taskId];
+      if (existing !== undefined) {
+        set({ tasks: { ...get().tasks, [taskId]: { ...existing, rev: record.rev } } });
+      }
+      return record.rev;
+    };
+
+    const applyEvent = (event: DecodedEvent, envelope: Envelope<unknown>): void => {
+      if (typeof envelope.seq === 'number' && envelope.seq > get().lastSeq) {
+        // The resolved store sequence follows the transport sequence; the gap check
+        // below uses the RESYNC_REQUIRED payload, never this cursor.
+        set({ lastSeq: envelope.seq });
+      }
       switch (event.name) {
         case 'ACK':
           return;
@@ -305,19 +1220,73 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           if (event.payload.code === 'E_KEY_MISSING') {
             set({ settings: { ...get().settings, keyPresent: false } });
           }
+          if (event.payload.code === 'E_RESYNC_REQUIRED') {
+            // A command-refused resync (e.g. stale rewire CAS) is not a transport
+            // gap, but it still requires a real resnapshot — never a retry loop.
+            raiseResyncGap({ cause: 'refusal', code: event.payload.code });
+          }
           return;
         }
         case 'SERVER_HELLO': {
-          set({ lastSeq: event.payload.last_seq ?? get().lastSeq, connection: 'open' });
+          socketOpen = true;
+          set({
+            lastSeq: event.payload.last_seq ?? get().lastSeq,
+            // The hello that follows RESYNC_REQUIRED must NOT present the lost range
+            // as Connected; the gap clears only when a snapshot rehydrate settles.
+            connection: get().resyncGap === null ? 'open' : 'reconnecting',
+            // Every hello is a reconnect/replay boundary: keep the current records
+            // but mark them stale until the bounded replay window settles.
+            approvalReplay: beginReplayWindow(
+              get().approvalReplay.stale
+                ? get().approvalReplay
+                : markApprovalsStale(get().approvalReplay),
+              'hello',
+              Date.now(),
+            ),
+            approvalsStale: true,
+          });
+          armApprovalReplayTimer();
+          if (
+            get().snapshot.status === 'idle' ||
+            get().snapshot.status === 'degraded' ||
+            get().snapshot.status === 'failed'
+          ) {
+            // Reconnect/reload with no confirmed server snapshot yet (e.g. boot while
+            // the server was down): rehydrate quietly. When `ready`, the replayed
+            // events are authoritative and no extra read is issued.
+            void performSnapshotRefresh('reconnect');
+          }
           return;
         }
         case 'RESYNC_REQUIRED': {
+          markApprovalReplayStale();
           set({ connection: 'reconnecting' });
+          raiseResyncGap({
+            cause: 'event',
+            expectedSeq: event.payload.expected_seq,
+            lastSeq: event.payload.last_seq,
+          });
           return;
         }
         case 'RUN_CREATED': {
+          const previous = get().run;
+          const freshRun = previous === null || previous.id !== event.payload.run_id;
           set({
             run: { id: event.payload.run_id, status: event.payload.status, errorCode: null },
+            // A new run owns a new graph and a new revision line: keeping the previous
+            // run's tasks/revisions would mix two runs' state (the old global cursor
+            // bug). The chat transcript is the operator's conversation and is kept.
+            ...(freshRun
+              ? {
+                  tasks: {},
+                  selectedTaskId: null,
+                  toolActivity: [],
+                  metrics: null,
+                  streamingRunId: null,
+                  history: initialHistory(),
+                  snapshot: initialSnapshot(),
+                }
+              : {}),
             graphRev: get().graphRev + 1,
           });
           return;
@@ -341,6 +1310,12 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
             streamingRunId: isTerminal(event.payload.status) ? null : get().streamingRunId,
             graphRev: get().graphRev + 1,
           });
+          if (isTerminal(event.payload.status)) {
+            // A terminal run commits its final snapshot: refresh the revision cursor so
+            // time travel becomes reachable without waiting for a reload. Quiet: any
+            // failure is recorded in `history.refreshStatus`, never faked.
+            void refreshCommittedRevisions(event.payload.run_id);
+          }
           return;
         }
         case 'REPLY_DELTA': {
@@ -383,12 +1358,18 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
             payload.kind !== null && payload.kind !== undefined
               ? payload.kind
               : (existing?.kind ?? 'worker');
+          // NODE_REWIRE: the additive `parent_task_id` (1.3) is the server's new
+          // edge. For a pre-1.3 producer that omits it, the parent is the one the
+          // server ACKed for our own REWIRE_TASK (consumed once per task).
+          const intended =
+            event.name === 'NODE_REWIRE' ? takePendingRewire(payload.task_id) : null;
+          const payloadParent =
+            payload.parent_task_id !== null && payload.parent_task_id !== undefined
+              ? payload.parent_task_id
+              : null;
           const record: TaskRecord = {
             id: payload.task_id,
-            parentId:
-              payload.parent_task_id !== null && payload.parent_task_id !== undefined
-                ? payload.parent_task_id
-                : (existing?.parentId ?? null),
+            parentId: payloadParent ?? intended?.newParentId ?? existing?.parentId ?? null,
             kind,
             label: payload.label ?? existing?.label ?? `Task ${shortId(payload.task_id)}`,
             state: payload.state,
@@ -397,12 +1378,27 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
                 ? payload.progress
                 : (existing?.progress ?? null),
             errorCode: payload.error_code ?? existing?.errorCode ?? null,
-            rev: get().graphRev + 1,
+            // `rev` is the server's per-node revision (same value the rewire CAS
+            // compares); an absent field stays unconfirmed (null) and is never
+            // guessed. NODE_DRAG is not a graph mutation, so the last
+            // confirmed revision survives it.
+            rev:
+              readNodeRev(payload) ??
+              (event.name === 'NODE_DRAG' ? (existing?.rev ?? null) : null),
           };
           set({
             tasks: { ...get().tasks, [payload.task_id]: record },
             graphRev: get().graphRev + 1,
           });
+          if (
+            event.name === 'NODE_REWIRE' &&
+            intended === null &&
+            payloadParent === null
+          ) {
+            // Another client rewired and the frozen event cannot carry the new
+            // parent, so the edge can only be learned from a committed snapshot.
+            void performSnapshotRefresh('rewire');
+          }
           return;
         }
         case 'RUN_METRICS': {
@@ -482,6 +1478,9 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           return;
         }
         case 'APPROVAL_REQUEST': {
+          const replay = get().approvalReplay;
+          const replayWindowOpen = isReplayWindowOpen(replay);
+          const existingResolve = get().approvalResolve[event.payload.approval_id];
           const approval: ApprovalRecord = {
             approvalId: event.payload.approval_id,
             tool: event.payload.tool,
@@ -494,16 +1493,44 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
             argsSha256: event.payload.args_sha256 ?? null,
             expiresAt: event.payload.expires_at ?? null,
           };
+          // Replay dedupe is id-based: replace-by-id keeps exactly one record; the
+          // replay window only stamps confirmation and never sends a command.
+          const approvalResolve = {
+            ...get().approvalResolve,
+            [approval.approvalId]: {
+              ...(existingResolve ?? initialApprovalResolveState()),
+              status: approvalStatusAfterRequest(
+                existingResolve?.status,
+                event.payload,
+                Date.now(),
+              ),
+            },
+          };
+          const approvalSeenEpoch = replayWindowOpen
+            ? stampReplayEpoch(get().approvalSeenEpoch, approval.approvalId, replay.epoch)
+            : get().approvalSeenEpoch;
           set({
-            approvals: [...get().approvals.filter((a) => a.approvalId !== approval.approvalId), approval],
+            approvals: [
+              ...get().approvals.filter((a) => a.approvalId !== approval.approvalId),
+              approval,
+            ],
+            approvalResolve,
+            approvalSeenEpoch,
           });
           return;
         }
         case 'APPROVAL_RESOLVED': {
+          clearApprovalTimer(event.payload.approval_id);
+          const approvalResolve = { ...get().approvalResolve };
+          delete approvalResolve[event.payload.approval_id];
+          const approvalSeenEpoch = { ...get().approvalSeenEpoch };
+          delete approvalSeenEpoch[event.payload.approval_id];
           set({
             approvals: get().approvals.filter(
               (approval) => approval.approvalId !== event.payload.approval_id,
             ),
+            approvalResolve,
+            approvalSeenEpoch,
           });
           return;
         }
@@ -547,11 +1574,17 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           return;
         }
         case 'HISTORY_SNAPSHOT': {
+          const revision = event.payload.revision;
+          const history = get().history;
+          const revisions = insertRevision(history.revisions, revision);
           set({
             history: {
-              latest: Math.max(get().history.latest, event.payload.revision),
-              selected: event.payload.revision,
-              replayGraph: { revision: event.payload.revision, graph: event.payload.graph },
+              ...history,
+              latest: Math.max(history.latest, revision),
+              count: revisions.length,
+              revisions,
+              selected: revision,
+              replayGraph: { revision, graph: event.payload.graph },
             },
           });
           return;
@@ -565,6 +1598,7 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
     const run = async <N extends ServerCommandName>(
       name: N,
       payload: CommandPayloads[N],
+      onRefusal?: (refusal: Refusal) => void,
     ): Promise<boolean> => {
       const correlationId = uuidv7();
       set({
@@ -579,6 +1613,7 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       } catch (error) {
         const refusal =
           error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
+        onRefusal?.(refusal);
         // Server ERROR frames are already toasted by applyEvent; only local
         // pre-send/transport refusals need a toast here.
         if (refusal.code === 'E_WS_DISCONNECTED' || refusal.code === 'E_PATH_OUTSIDE_JAIL' || refusal.code === 'E_FILE_TOO_LARGE') {
@@ -618,9 +1653,15 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       messages: [],
       streamingRunId: null,
       metrics: null,
-      history: { latest: 0, selected: 0, replayGraph: null },
+      history: initialHistory(),
+      snapshot: initialSnapshot(),
+      resyncGap: null,
       approvals: [],
       resolvingApprovals: [],
+      approvalResolve: {},
+      approvalReplay: initialApprovalReplayState(),
+      approvalsStale: false,
+      approvalSeenEpoch: {},
       toolActivity: [],
       refusals: [],
       pendingCommands: {},
@@ -639,15 +1680,37 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
         }
         set({ initialized: true, connection: 'connecting' });
         unsubscribes.push(
-          api.subscribe((event) => applyEvent(event)),
+          api.subscribe((event, envelope) => applyEvent(event, envelope)),
           api.subscribeStatus((status, detail) => {
-            set({ connection: status, connectionRefusal: detail ?? get().connectionRefusal });
+            socketOpen = status === 'open';
+            set({
+              // An unresolved RESYNC gap outranks a transport "open": the events in the
+              // gap are still missing until a snapshot rehydrate settles.
+              connection: status === 'open' && get().resyncGap !== null ? 'reconnecting' : status,
+              connectionRefusal: detail ?? get().connectionRefusal,
+            });
           }),
           api.subscribeClientError((refusal) => pushRefusal(refusal)),
         );
+        // Hydrate before the socket opens: the server does not replay old state on a
+        // fresh hello (`Replay::Current`), so the committed history read is the only
+        // way a reload can show the active run and make CANCEL_RUN available.
+        await performSnapshotRefresh('boot');
+        if (disposed) {
+          return;
+        }
         try {
           const session = await api.open();
-          set({ session, connection: 'open', lastSeq: session.last_seq });
+          if (disposed) {
+            api.close();
+            return;
+          }
+          socketOpen = true;
+          set({
+            session,
+            connection: get().resyncGap === null ? 'open' : 'reconnecting',
+            lastSeq: session.last_seq,
+          });
         } catch (error) {
           const refusal =
             error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
@@ -657,6 +1720,16 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
       },
 
       dispose(): void {
+        disposed = true;
+        for (const controller of inFlightAborts) {
+          controller.abort();
+        }
+        inFlightAborts.clear();
+        clearApprovalReplayTimer();
+        for (const timer of approvalTimers.values()) {
+          clearTimeout(timer);
+        }
+        approvalTimers.clear();
         for (const unsubscribe of unsubscribes) {
           unsubscribe();
         }
@@ -698,19 +1771,57 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
 
       async rewireSelected(newParentId: string): Promise<void> {
         const current = guardActiveRun();
-        if (!current) {
+        if (current === null) {
           return;
         }
         const taskId = get().selectedTaskId;
-        if (!taskId) {
-          pushRefusal(clientRefusal('E_TASK_NOT_FOUND'));
+        const before = rewireBlocker({
+          run: current,
+          tasks: get().tasks,
+          selectedTaskId: taskId,
+          newParentId,
+        });
+        if (before === 'unknown-server-rev' && taskId !== null) {
+          // The committed snapshot is the only authority for a node revision. One
+          // bounded read here; a stale one is then refused by the server CAS and
+          // surfaced (never retried with the same guessed value).
+          try {
+            await fetchNodeServerRev(current.id, taskId);
+          } catch (error) {
+            const failure = toRefusal(error);
+            pushRefusal({
+              ...failure,
+              message: `${failure.message} Re-route needs task ${shortId(taskId)}'s committed server revision.`,
+            });
+            return;
+          }
+        }
+        const blocker = rewireBlocker({
+          run: get().run,
+          tasks: get().tasks,
+          selectedTaskId: taskId,
+          newParentId,
+        });
+        if (blocker !== null) {
+          pushRefusal(rewireRefusal(blocker, taskId ?? '', newParentId));
           return;
         }
-        await run('REWIRE_TASK', {
+        const rev = taskId === null ? null : (get().tasks[taskId]?.rev ?? null);
+        if (taskId === null || rev === null) {
+          pushRefusal(rewireRefusal('unknown-server-rev', taskId ?? '', newParentId));
+          return;
+        }
+        // ACK-before-mutation: the parent lands on NODE_REWIRE (matched by task id),
+        // because the frozen event payload carries no parent of its own.
+        pendingRewire = { taskId, newParentId };
+        const ok = await run('REWIRE_TASK', {
           task_id: taskId,
           new_parent_id: newParentId,
-          expected_rev: get().graphRev,
+          expected_rev: rev,
         });
+        if (!ok) {
+          pendingRewire = null;
+        }
       },
 
       async cancelRun(): Promise<void> {
@@ -740,40 +1851,151 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
         approvalId: string,
         decision: 'approve' | 'deny',
         reason?: string,
-      ): Promise<void> {
-        // In-flight guard: a second approve/deny gesture must not send a second
-        // command while the first is awaiting ACK/refusal.
+      ): Promise<ApprovalResolveOutcome> {
         if (get().resolvingApprovals.includes(approvalId)) {
-          return;
+          return {
+            ok: false,
+            kind: 'ignored',
+            refusal: clientRefusal('E_APPROVAL_REPLAY', {
+              message: 'an APPROVAL_RESOLVE is already in flight for this approval',
+            }),
+          };
         }
         const approval = get().approvals.find((candidate) => candidate.approvalId === approvalId);
         if (!approval) {
-          pushRefusal(clientRefusal('E_APPROVAL_NOT_FOUND'));
-          return;
+          const refusal = clientRefusal('E_APPROVAL_NOT_FOUND');
+          pushRefusal(refusal);
+          return { ok: false, kind: 'stale', refusal };
         }
         if (!approval.nonce) {
-          pushRefusal(
-            clientRefusal('E_SCHEMA_INVALID', {
-              message: 'APPROVAL_REQUEST carried no nonce (contract gap); cannot resolve.',
-            }),
-          );
-          return;
+          const refusal = clientRefusal('E_SCHEMA_INVALID', {
+            message: 'APPROVAL_REQUEST carried no nonce (contract gap); cannot resolve.',
+          });
+          pushRefusal(refusal);
+          return { ok: false, kind: 'operator', refusal };
         }
-        // No optimistic approve/deny: the approval stays untouched until the server's
-        // APPROVAL_RESOLVED event arrives.
-        set({ resolvingApprovals: [...get().resolvingApprovals, approvalId] });
-        try {
-          await run('APPROVAL_RESOLVE', {
+
+        const previous = get().approvalResolve[approvalId] ?? initialApprovalResolveState();
+        const attempts = previous.attempts + 1;
+        const lastAttemptAt = Date.now();
+        set({
+          resolvingApprovals: [...get().resolvingApprovals, approvalId],
+          approvalResolve: {
+            ...get().approvalResolve,
+            [approvalId]: {
+              ...previous,
+              status: 'resolving',
+              attempts,
+              lastDecision: decision,
+              refusal: null,
+              lastAttemptAt,
+            },
+          },
+        });
+
+        let refusal: Refusal | null = null;
+        const ok = await run(
+          'APPROVAL_RESOLVE',
+          {
             approval_id: approvalId,
             nonce: approval.nonce,
             decision,
             ...(reason === undefined ? {} : { reason }),
-          });
-        } finally {
+          },
+          (failure) => {
+            refusal = failure;
+          },
+        );
+        set({
+          resolvingApprovals: get().resolvingApprovals.filter((id) => id !== approvalId),
+        });
+
+        if (ok) {
           set({
-            resolvingApprovals: get().resolvingApprovals.filter((id) => id !== approvalId),
+            approvalResolve: {
+              ...get().approvalResolve,
+              [approvalId]: {
+                ...(get().approvalResolve[approvalId] ?? initialApprovalResolveState()),
+                status: 'awaiting_server',
+                attempts,
+                lastDecision: decision,
+                refusal: null,
+                lastAttemptAt,
+              },
+            },
           });
+          armApprovalAckTimer(approvalId);
+          return { ok: true };
         }
+
+        const failure = refusal ?? clientRefusal('E_WS_DISCONNECTED');
+        const classified = classifyApprovalRefusal(failure);
+        set({
+          approvalResolve: {
+            ...get().approvalResolve,
+            [approvalId]: {
+              ...(get().approvalResolve[approvalId] ?? initialApprovalResolveState()),
+              status: classified.status,
+              attempts,
+              lastDecision: decision,
+              refusal: failure,
+              lastAttemptAt,
+            },
+          },
+        });
+        return { ok: false, kind: classified.kind, refusal: failure };
+      },
+
+      async retryApproval(approvalId: string): Promise<ApprovalResolveOutcome> {
+        const approval = get().approvals.find((candidate) => candidate.approvalId === approvalId);
+        if (!approval) {
+          const refusal = clientRefusal('E_APPROVAL_NOT_FOUND');
+          pushRefusal(refusal);
+          return { ok: false, kind: 'stale', refusal };
+        }
+        const resolve = get().approvalResolve[approvalId];
+        const canRetry = canRetryApproval({
+          record: approval,
+          resolve,
+          nowMs: Date.now(),
+          connection: get().connection,
+        });
+        if (!canRetry) {
+          const refusal = clientRefusal('E_APPROVAL_REQUIRED', {
+            message: 'this approval is not currently retryable',
+          });
+          pushRefusal(refusal);
+          return { ok: false, kind: 'operator', refusal };
+        }
+        return get().resolveApproval(
+          approvalId,
+          resolve?.lastDecision ?? 'approve',
+          'operator retry',
+        );
+      },
+
+      dismissApproval(approvalId: string): void {
+        const resolve = get().approvalResolve[approvalId];
+        if (resolve === undefined) {
+          return;
+        }
+        if (
+          resolve.status !== 'expired' &&
+          resolve.status !== 'stale' &&
+          resolve.status !== 'unconfirmed'
+        ) {
+          return;
+        }
+        clearApprovalTimer(approvalId);
+        const approvalResolve = { ...get().approvalResolve };
+        delete approvalResolve[approvalId];
+        const approvalSeenEpoch = { ...get().approvalSeenEpoch };
+        delete approvalSeenEpoch[approvalId];
+        set({
+          approvals: get().approvals.filter((candidate) => candidate.approvalId !== approvalId),
+          approvalResolve,
+          approvalSeenEpoch,
+        });
       },
 
       async pinChat(pinned: boolean): Promise<void> {
@@ -796,8 +2018,41 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
           pushRefusal(clientRefusal('E_RUN_NOT_FOUND'));
           return;
         }
-        const bounded = Math.max(0, Math.min(revision, get().history.latest));
-        await run('HISTORY_REVISION_SET', { run_id: current.id, revision: bounded });
+        if (get().history.revisions.length === 0) {
+          // Time travel is only legal against committed revisions: seed the cursor
+          // from the server first (revision 0 is one committed state, not "empty").
+          await get().refreshRunSnapshot();
+        }
+        const history = get().history;
+        if (!history.revisions.includes(revision)) {
+          pushRefusal(
+            clientRefusal('E_HISTORY_GAP', {
+              message: `Revision ${revision} is not one of the ${history.count} committed revision(s) for run ${shortId(current.id)}.`,
+            }),
+          );
+          return;
+        }
+        await run('HISTORY_REVISION_SET', { run_id: current.id, revision });
+      },
+
+      exitHistoryReplay(): void {
+        const history = get().history;
+        if (history.replayGraph === null) {
+          return;
+        }
+        // Explicit exit: clear the replay graph so the live graph renders again, and
+        // put the cursor at the live edge. No command is sent (nothing to ask for).
+        set({
+          history: {
+            ...history,
+            selected: Math.max(history.latest, 0),
+            replayGraph: null,
+          },
+        });
+      },
+
+      async refreshRunSnapshot(source: SnapshotSource = 'manual'): Promise<void> {
+        await performSnapshotRefresh(source);
       },
 
       setNav(nav: NavSection): void {
@@ -915,10 +2170,13 @@ export function createUiStore(api: UiApi): StoreApi<UiState> {
 
       formatSelectedRevision(): string {
         const history = get().history;
-        if (history.latest < 0) {
+        if (history.count === 0) {
           return STRINGS.scrubber.empty;
         }
-        return formatStateOf(history.selected, Math.max(history.latest + 1, 1));
+        const index = history.revisions.indexOf(history.selected);
+        // Clamp against the committed revision count, not a max revision index: a
+        // sparse revision list (gaps) must not read "state 7 of 4".
+        return formatStateOf(index >= 0 ? index : history.count - 1, history.count);
       },
     };
   });

@@ -90,6 +90,9 @@ async fn ws_fanout_two_clients() {
         .publish(Event::NodeDrag(NodeEvent {
             task_id,
             state: AgentState::Running,
+            rev: None,
+            kind: None,
+            parent_task_id: None,
         }))
         .expect("publish drag");
 
@@ -114,6 +117,9 @@ async fn hello_replay_and_gap_resync() {
             .publish(Event::NodeDrag(NodeEvent {
                 task_id: TaskId::new(),
                 state: AgentState::Running,
+                rev: None,
+                kind: None,
+                parent_task_id: None,
             }))
             .expect("publish");
     }

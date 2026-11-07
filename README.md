@@ -1,6 +1,10 @@
-# HiveMind v1.1.0 — implementation workspace
+# HiveMind — implementation workspace (sealed release 1.1.0)
 
 Built from the verified blueprint (read-only reference: `C:\Users\Riley\Desktop\hivemind-blueprint`).
+
+> **Version truth:** this README documents the sealed **1.1.0** release. The working tree is on an unreleased
+> **1.2 pre-release** source line (exact version and evidence: [docs/RELEASE-EVIDENCE.md](docs/RELEASE-EVIDENCE.md)).
+> No 1.2 feature is released, built into an artifact, tagged, or end-to-end verified; do not present 1.2 work as current.
 
 ## Layout
 - `backend/` — Rust workspace (`hiverouter-core`, `-contract`, `-provider`, `-tools`), single localhost binary.
@@ -19,9 +23,10 @@ $env:CARGO_PROFILE_DEV_DEBUG = "0"; $env:CARGO_INCREMENTAL = "0"
 cargo build --release --locked
 ```
 
-## Status — HiveMind 1.1.0 (2026-11-06)
+## Status — sealed release 1.1.0 (2026-11-06)
 
-- **Current version: `1.1.0`** — `web/package.json` and all four `backend/crates/*/Cargo.toml` agree. The 1.1 wave
+- **Sealed release: `1.1.0`** — at seal time, `web/package.json` and all four `backend/crates/*/Cargo.toml` agreed on
+  1.1.0; the working tree has since moved to the 1.2 pre-release line (see the version-truth note above). The 1.1 wave
   delivers true SSE streaming on top of the real provider path.
 - **Streaming is real in 1.1.0:** the leaf reply is streamed as ordered `REPLY_DELTA` frames while the provider
   response arrives (`backend/crates/hiverouter-core/src/provider_executor.rs` `stream_reply`), with usage settled
@@ -31,16 +36,17 @@ cargo build --release --locked
 - **Replay and state parity:** `HISTORY_REVISION_SET` returns a read-only `HISTORY_SNAPSHOT`; the web canvas
   projects snapshot nodes/edges (browser proof in 1.1) and the UI/backend state vocabulary is 16 states including
   `interrupted`.
-- **Release artifacts / exact hashes:** the authoritative registry is `tools/release-manifest.json`, written by
-  `tools/build-release.ps1` for a sealed build, and summarised in `docs/RELEASE-EVIDENCE.md`. Exact 1.1.0 artifact
-  hashes are recorded there only after the sealed 1.1.0 build runs — do not hand-copy hashes into this README, and
-  do not present 1.0.0 values as current.
+- **Release artifacts / exact hashes:** the sealed 1.1.0 build ran; its authoritative exact-hash registry is
+  `tools/release-manifest.json`, summarised in `docs/RELEASE-EVIDENCE.md`. No 1.2 manifest or artifacts exist — do not
+  hand-copy hashes into this README, and do not present 1.0.0 or 1.2 values as current.
 - **Key custody:** `DEEPSEEK_API_KEY` only, never committed or shown in UI; provider type zeroized/redacted; child
   processes are spawned with an allowlisted environment (no key inheritance). Model/thinking/effort settings are
   documented in `tools/runbook.md`.
-- **Known limits (stated, not hidden):** autonomous model tool-calling is a recorded decision, not claimed in 1.1.0;
-  a live paid-provider streaming smoke on a sealed 1.1.0 artifact has not yet been run; full trace-ladder/pixel
-  reviews remain partial. `docs/evidence/1.1-backend-tests.log` is the 1.1 backend run log.
+- **Known limits (stated, not hidden):** the sealed 1.1.0 artifact has a recorded paid live streaming/replay smoke
+  (`docs/evidence/live-1.1-paid.log`, 5 passed, exit 0; frames in `docs/trace/live/captures/w11/`). No 1.2 live run,
+  1.2 release build, full 1.2 E2E/release gate, or 1.2 trace capture exists. Autonomous model tool-calling remains
+  unclaimed for 1.1.0; full trace-ladder/pixel reviews remain partial. `docs/evidence/1.1-backend-tests.log` is the
+  1.1 backend run log.
 - **Audit / release notes:** `audit/HIVEMIND-AUDIT-PAPER.md`; release notes `docs/RELEASE.md`; exact hash registry
   `docs/RELEASE-EVIDENCE.md` + `tools/release-manifest.json`.
 

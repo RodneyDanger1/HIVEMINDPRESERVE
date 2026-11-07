@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
+import { approvalActionsEnabled } from '../state/approval';
 
 export const APPROVAL_DECISIONS = { approve: 'approve', deny: 'deny' } as const;
 export type ApprovalDecision = (typeof APPROVAL_DECISIONS)[keyof typeof APPROVAL_DECISIONS];
@@ -162,9 +163,13 @@ function asApprovalView(record: {
 
 export function ApprovalOverlay() {
   const approvals = useUiStore((state) => state.approvals);
+  const approvalsStale = useUiStore((state) => state.approvalsStale);
   const resolvingApprovals = useUiStore((state) => state.resolvingApprovals);
+  const approveResolveStates = useUiStore((state) => state.approvalResolve);
+  const connection = useUiStore((state) => state.connection);
   const resolveApproval = useUiStore((state) => state.resolveApproval);
-  const [pendingResolution, setPendingResolution] = useState<Readonly<Record<string, boolean>>>({});
+  const retryApproval = useUiStore((state) => state.retryApproval);
+  const dismissApproval = useUiStore((state) => state.dismissApproval);
   const [now, setNow] = useState<number>(() => Date.now());
 
   const hasExpiry = approvals.some((approval) => Boolean(asApprovalView(approval).expiresAt));
@@ -178,51 +183,53 @@ export function ApprovalOverlay() {
     return () => clearInterval(timer);
   }, [hasExpiry]);
 
-  // Pending locks are pruned only by approval removal (APPROVAL_RESOLVED). The store's
-  // resolvingApprovals is cleared on ACK, so it cannot be the sole disabled source.
-  useEffect(() => {
-    setPendingResolution((previous) =>
-      prunePendingResolutions(
-        previous,
-        approvals.map((approval) => approval.approvalId),
-      ),
-    );
-  }, [approvals]);
-
   if (approvals.length === 0) {
     return null;
   }
 
   const submit = async (view: ApprovalView, decision: ApprovalDecision): Promise<void> => {
-    const inFlight =
-      resolvingApprovals.includes(view.approvalId) || pendingResolution[view.approvalId] === true;
-    const expired = isApprovalExpired(view.expiresAt, Date.now());
-    if (!canResolveApproval({ nonce: view.nonce, resolving: inFlight, expired })) {
+    const resolveState = approveResolveStates[view.approvalId];
+    const actions = approvalActionsEnabled({
+      record: view as unknown as Parameters<typeof approvalActionsEnabled>[0]['record'],
+      resolve: resolveState,
+      nowMs: Date.now(),
+      connection,
+    });
+    const enabled = decision === APPROVAL_DECISIONS.approve ? actions.approve : actions.deny;
+    if (!enabled) {
       return;
     }
-    // Lock immediately; released only when this approval leaves `approvals`
-    // (server APPROVAL_RESOLVED), never merely because the send promise settled on ACK.
-    setPendingResolution((previous) => ({ ...previous, [view.approvalId]: true }));
-    try {
-      await resolveApproval(
-        view.approvalId,
-        decision,
-        decision === APPROVAL_DECISIONS.deny ? 'operator denied' : undefined,
-      );
-    } catch {
-      // A throw is not APPROVAL_RESOLVED: keep the lock (fail-closed).
-    }
+    await resolveApproval(
+      view.approvalId,
+      decision,
+      decision === APPROVAL_DECISIONS.deny ? 'operator denied' : undefined,
+    );
   };
 
   return (
     <>
+      {approvalsStale ? (
+        <div
+          role="status"
+          data-testid="approval-stale-banner"
+          className="fixed inset-x-0 top-0 z-50 border-b border-amber bg-panel-alt px-4 py-2 text-center type-label text-ink-800"
+        >
+          {STRINGS.approval.staleBanner}
+        </div>
+      ) : null}
       {approvals.map((record) => {
         const view = asApprovalView(record);
+        const resolveState = approveResolveStates[view.approvalId];
+        const actions = approvalActionsEnabled({
+          record: view as unknown as Parameters<typeof approvalActionsEnabled>[0]['record'],
+          resolve: resolveState,
+          nowMs: now,
+          connection,
+        });
         const inFlight =
           resolvingApprovals.includes(view.approvalId) ||
-          pendingResolution[view.approvalId] === true;
-        const expired = isApprovalExpired(view.expiresAt, now);
-        const enabled = canResolveApproval({ nonce: view.nonce, resolving: inFlight, expired });
+          resolveState?.status === 'resolving' ||
+          resolveState?.status === 'awaiting_server';
         const remaining = formatExpiry(view.expiresAt, now);
         const argsHash = formatArgsSha256(view.argsSha256);
         // Honest TTL display: unknown stays unknown, past stays expired; never a fake time.
@@ -293,11 +300,42 @@ export function ApprovalOverlay() {
                 </p>
               ) : null}
 
+              {resolveState?.refusal ? (
+                <div className="mt-2 rounded-[var(--radius-sm)] border border-amber bg-panel-alt p-2">
+                  <p className="type-mono-meta text-ink-800">
+                    {STRINGS.approval.resolveFailed}: {resolveState.refusal.code} —{' '}
+                    {resolveState.refusal.message}
+                  </p>
+                  <div className="mt-2 flex justify-end gap-2">
+                    {actions.retry ? (
+                      <button
+                        type="button"
+                        className="type-label rounded-[var(--radius-button)] border border-signal px-3 py-1.5 text-signal"
+                        onClick={() => {
+                          void retryApproval(view.approvalId);
+                        }}
+                      >
+                        {STRINGS.approval.retry}
+                      </button>
+                    ) : null}
+                    {actions.dismiss ? (
+                      <button
+                        type="button"
+                        className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-700"
+                        onClick={() => dismissApproval(view.approvalId)}
+                      >
+                        {STRINGS.approval.dismiss}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="mt-3 flex justify-end gap-2">
                 <button
                   type="button"
                   className="type-label rounded-[var(--radius-button)] border border-signal px-3 py-1.5 text-signal disabled:opacity-50"
-                  disabled={!enabled}
+                  disabled={!actions.deny}
                   aria-label={approvalActionAriaLabel(APPROVAL_DECISIONS.deny, view.tool)}
                   onClick={() => {
                     void submit(view, APPROVAL_DECISIONS.deny);
@@ -308,7 +346,7 @@ export function ApprovalOverlay() {
                 <button
                   type="button"
                   className="type-label rounded-[var(--radius-button)] bg-honey-300 px-3 py-1.5 text-ink-900 disabled:opacity-50"
-                  disabled={!enabled}
+                  disabled={!actions.approve}
                   aria-label={approvalActionAriaLabel(APPROVAL_DECISIONS.approve, view.tool)}
                   onClick={() => {
                     void submit(view, APPROVAL_DECISIONS.approve);

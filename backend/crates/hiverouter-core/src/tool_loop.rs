@@ -1,4 +1,4 @@
-﻿//! 1.2 tool-loop planning primitives.
+//! 1.2 tool-loop planning primitives.
 //!
 //! This module is deliberately pure: it turns assembled provider tool calls into
 //! validated plans, exposes the registry subset a tier may offer to the model, and
@@ -16,6 +16,9 @@ pub const MAX_TOOL_TURNS: u32 = 4;
 pub const MAX_CALLS_PER_RUN: u32 = 16;
 /// Maximum tool result body retained in memory (events carry the hash/bytes only).
 pub const MAX_TOOL_RESULT_BYTES: usize = 65_536;
+/// Maximum committed approval waits per run; the next request is refused with
+/// the frozen `E_CALL_LIMIT`, never a new code.
+pub const MAX_APPROVAL_WAITS_PER_RUN: u32 = 8;
 
 /// One validated model tool call, ready for approval/execution.
 #[derive(Clone, Debug, PartialEq)]

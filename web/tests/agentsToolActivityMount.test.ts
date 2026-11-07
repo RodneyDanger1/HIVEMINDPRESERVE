@@ -64,6 +64,7 @@ function fakeApi(): UiApi {
 
 function renderWith(node: ReactElement, state: Partial<UiState> = {}): string {
   const store = createUiStore(fakeApi());
+  store.setState({ connection: 'open' as const, ...state });
   if (Object.keys(state).length > 0) {
     store.setState(state);
   }

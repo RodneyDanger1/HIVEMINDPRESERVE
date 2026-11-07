@@ -441,6 +441,19 @@ pub fn is_task_terminal(state: AgentState) -> bool {
     is_one_of(TASK_TERMINAL_STATES, state)
 }
 
+/// Terminal-task predicate under the name the engine/store guards use.
+///
+/// This is the exact symbol the W1 remediation manifest names for the
+/// terminal-state guard: [`crate::store::RunStore::update_task_state`] refuses to
+/// move a `completed`/`failed`/`cancelled`/`killed`/`interrupted` task to a
+/// different state, and the execution owner must apply the same predicate before
+/// it publishes a completion (a late `REPLY_DONE` may not resurrect a
+/// `KILL_WORKER`'d task). Defined once here so both guards share one set.
+#[must_use]
+pub fn is_terminal_task_state(state: AgentState) -> bool {
+    is_task_terminal(state)
+}
+
 fn guard_run(from: AgentState, event: StateEvent) -> Result<(), RunStateError> {
     if from == BEFORE_RUN {
         // Creation sentinel: only Submit is allowed; handled by the caller.
@@ -686,6 +699,29 @@ mod tests {
         // Contract-owned terminality agrees for every terminal state.
         assert!(AgentState::Killed.is_terminal());
         assert!(AgentState::Interrupted.is_terminal());
+    }
+
+    #[test]
+    fn terminal_task_predicate_matches_the_terminal_set_only() {
+        for state in TASK_STATES {
+            assert_eq!(
+                is_terminal_task_state(*state),
+                TASK_TERMINAL_STATES.contains(state),
+                "is_terminal_task_state disagrees with TASK_TERMINAL_STATES for {state}"
+            );
+            assert_eq!(is_terminal_task_state(*state), is_task_terminal(*state));
+        }
+        for state in [
+            AgentState::Queued,
+            AgentState::Running,
+            AgentState::AwaitingApproval,
+            BEFORE_RUN,
+        ] {
+            assert!(
+                !is_terminal_task_state(state),
+                "{state} must stay settlable by the engine"
+            );
+        }
     }
 
     #[test]

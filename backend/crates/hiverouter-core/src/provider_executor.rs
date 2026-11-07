@@ -13,12 +13,12 @@ use hiverouter_provider::{
 };
 use hiverouter_provider::dto::{ResponseFormat, ToolCall, ToolChoice};
 use hiverouter_provider::tool_assembler::ToolCallAssembler;
-use hiverouter_tools::{AgentTier, ToolRegistry};
+use hiverouter_tools::ToolRegistry;
 use tokio_util::sync::CancellationToken;
 
 use crate::config::ProviderSettings;
 use crate::entities::TaskRecord;
-use crate::execution::{DeltaSink, ProviderExecutor, StreamedReply, ToolTurnTranscript};
+use crate::execution::{task_agent_tier, DeltaSink, ProviderExecutor, StreamedReply, ToolTurnTranscript};
 use crate::planner::{Plan, PlanNode};
 use crate::tool_loop;
 
@@ -376,7 +376,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
             return Err(Refusal::ProviderInvalidResponse);
         }
         let registry = ToolRegistry::standard();
-        let tools = tool_loop::tool_specs_for_tier(&registry, AgentTier::WorkerAgent);
+        let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
         let request = ChatRequest::new(self.settings.model, messages)
             .with_thinking(self.settings.leaf_thinking)
             .with_max_tokens(self.settings.leaf_max_tokens)

@@ -14,10 +14,12 @@
  */
 import {
   WsApiClient,
+  supportsPendingApprovalPull,
   type ConnectionStatus,
   type SessionInfo,
   type UiApi,
 } from './client';
+import { RefusalError, clientRefusal } from './refusals';
 import type {
   CommandPayloads,
   DecodedEvent,
@@ -98,6 +100,19 @@ class DevAwareApi implements UiApi {
   async open(): Promise<SessionInfo> {
     const api = await this.ensure();
     return api.open();
+  }
+
+  /** Pull pending approvals over the existing hello/replay control frame. */
+  async pullPendingApprovals(): Promise<void> {
+    const api = await this.ensure();
+    if (!supportsPendingApprovalPull(api)) {
+      throw new RefusalError(
+        clientRefusal('E_WS_DISCONNECTED', {
+          message: 'This UI transport cannot pull pending approvals.',
+        }),
+      );
+    }
+    return api.pullPendingApprovals();
   }
 
   close(): void {

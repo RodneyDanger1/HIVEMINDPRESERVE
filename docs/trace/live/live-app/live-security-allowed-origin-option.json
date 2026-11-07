@@ -1,0 +1,17 @@
+{
+  "captured_at": "2026-11-07T04:39:20.687Z",
+  "release_binary": null,
+  "binary": {
+    "path": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\target\\debug\\hiverouter.exe",
+    "variant": "debug"
+  },
+  "appended_origin": "http://127.0.0.1:60088",
+  "handshake_status": 101,
+  "handshake_status_line": "HTTP/1.1 101 Switching Protocols",
+  "allowlist_size": 3,
+  "browser_outcome": {
+    "opened": true,
+    "errored": false,
+    "closed": false
+  }
+}

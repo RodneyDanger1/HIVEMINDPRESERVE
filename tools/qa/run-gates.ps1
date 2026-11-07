@@ -21,12 +21,18 @@
                 Without -Live, LIVE_ONE_PROMPT is forced to 0 so paid specs skip by name.
     -SkipE2E    skip the guarded e2e step by name (recorded SKIPPED, not PASS).
     -RequireE2E the guarded e2e gate must execute and PASS; a skip (-SkipE2E, missing app/server env) is a FAIL.
-    -Release    release mode: zero skipped gates. On a sealed tree the manifest must describe exactly HEAD
-                (manifest.source_commit == HEAD). A documented pre-release tree (current version != manifest
-                version, e.g. 1.2.0-dev while the manifest/tag still record 1.1.0) is accepted only when the
-                manifest tag target equals its source_commit, that source is an ancestor of HEAD, and
-                docs/RELEASE-EVIDENCE.md + plans/waves/README.md document the pre-release line; the run then
-                reports PRE-RELEASE and exits 3 - never a release PASS (no false green).
+    -Release    release mode: zero skipped gates. Two accepted topologies:
+                1) a sealed v2 manifest (source commit C + seal commit D): the tag
+                   points at D, HEAD == tag target, the git diff C..HEAD is a subset
+                   of manifest.seal_allowlist, and every recorded artifact/web hash
+                   matches disk (verified by tools/qa/check-seal-topology.mjs). Any
+                   refusal is a named E_SEAL_* preflight failure (never PASS).
+                2) a post-release sealed 1.x record on a documented pre-release tree
+                   (current version != manifest version): accepted only when the tag
+                   target matches the recorded source (or seal commit for v2), that
+                   commit is an ancestor of HEAD, and docs/RELEASE-EVIDENCE.md +
+                   plans/waves/README.md document the line; the run reports
+                   PRE-RELEASE and exits 3 - never a release PASS (no false green).
 
   Exit codes: 0 = all gates pass (named skips are reported, never counted as PASS; zero skips in -Release mode),
   1 = one or more gates failed or a release-mode skip was recorded, 2 = setup/file error,
@@ -137,7 +143,18 @@ $web = Join-Path $script:Repo 'web'
 $e2e = Join-Path $script:Repo 'e2e'
 $docsChecker = Join-Path $script:Repo 'tools/qa/check-docs-truth.mjs'
 $harness = Join-Path $script:Repo 'tools/qa/verify-harness.mjs'
+$sealChecker = Join-Path $script:Repo 'tools/qa/check-seal-topology.mjs'
 $manifestPath = Join-Path $script:Repo 'tools/release-manifest.json'
+# Fixed 1.2 seal allowlist (CODE-PROOF §6); must match
+# tools/qa/check-seal-topology.mjs SEAL_ALLOWLIST. A widened allowlist refuses.
+$script:SealAllowlist = @(
+    'tools/release-manifest.json',
+    'dist/**',
+    'docs/RELEASE-EVIDENCE.md',
+    'plans/waves/README.md',
+    'docs/RELEASE.md',
+    'README.md'
+)
 $cargoBin = Join-Path $env:USERPROFILE '.cargo\bin'
 $gccBin = Join-Path $script:Repo 'tools/w64devkit/bin'
 
@@ -177,6 +194,7 @@ if (-not $node) { Setup-Fail 'E_GATE_TOOLCHAIN' 'node.exe not found on PATH' }
 if (-not $npm) { Setup-Fail 'E_GATE_TOOLCHAIN' 'npm.cmd not found next to node.exe' }
 if (-not (Test-Path -LiteralPath $docsChecker)) { Setup-Fail 'E_GATE_MISSING_FILE' 'tools/qa/check-docs-truth.mjs missing' }
 if (-not (Test-Path -LiteralPath $harness)) { Setup-Fail 'E_GATE_MISSING_FILE' 'tools/qa/verify-harness.mjs missing' }
+if (-not (Test-Path -LiteralPath $sealChecker)) { Setup-Fail 'E_GATE_MISSING_FILE' 'tools/qa/check-seal-topology.mjs missing' }
 
 $cargoVersion = (& $cargo --version).Trim()
 $rustcVersion = (& $rustc --version).Trim()
@@ -197,6 +215,12 @@ if ($manifest -and [string]$manifest.version) {
 
 $preflightProblems = @()
 $preflightWarnings = @()
+# 1.2 seal topology (CODE-PROOF §6): source commit C + seal commit D; the tag
+# points at D. The sealed acceptance is delegated to the pure checker.
+$sealedManifest = $false
+$manifestSealSource = $null
+$manifestSealTo = $null
+$script:SealedAccepted = $false
 if ($dirty.Count -gt 0) {
     $msg = ("working tree is not clean (" + $dirty.Count + " path(s))")
     if ($Rehearsal) { $preflightWarnings += ($msg + ' - allowed by -Rehearsal') }
@@ -214,6 +238,28 @@ if (-not $manifest) {
     else { $preflightProblems += ('E_GATE_MANIFEST_STALE: ' + $msg) }
 }
 else {
+    $sealedManifest = [bool]($manifest.sealed -eq $true)
+    if ($sealedManifest) {
+        $manifestSealSource = ([string]$manifest.source_commit).Trim()
+        $manifestSealTo = if ($manifest.seal_diff) { ([string]$manifest.seal_diff.to).Trim() } else { '' }
+        $sealFrom = if ($manifest.seal_diff) { ([string]$manifest.seal_diff.from).Trim() } else { '' }
+        if ([string]$manifest.schema -ne 'hivemind.release-manifest.v2') {
+            $preflightProblems += 'E_GATE_MANIFEST_STALE: sealed manifest must use schema hivemind.release-manifest.v2'
+        }
+        if (-not $manifestSealTo) { $preflightProblems += 'E_GATE_MANIFEST_STALE: sealed manifest has no seal_diff.to' }
+        if (-not $sealFrom) { $preflightProblems += 'E_GATE_MANIFEST_STALE: sealed manifest has no seal_diff.from' }
+        elseif ($sealFrom -ne $manifestSealSource) { $preflightProblems += 'E_SEAL_DIFF: seal_diff.from != manifest.source_commit' }
+        if (-not $manifest.seal_allowlist -or @($manifest.seal_allowlist).Count -eq 0) {
+            $preflightProblems += 'E_GATE_MANIFEST_STALE: sealed manifest has no seal_allowlist'
+        }
+        else {
+            $manifestAllow = @($manifest.seal_allowlist | ForEach-Object { [string]$_ } | Sort-Object)
+            $canonicalAllow = @($script:SealAllowlist | Sort-Object)
+            if (($manifestAllow -join '|') -ne ($canonicalAllow -join '|')) {
+                $preflightProblems += 'E_SEAL_DIFF: sealed manifest seal_allowlist differs from the fixed 1.2 allowlist (a widened allowlist cannot certify a seal)'
+            }
+        }
+    }
     if ([string]$manifest.version -ne $version) {
         $msg = ('manifest version ' + [string]$manifest.version + ' != current version ' + $version)
         if ($preReleaseCandidate) {
@@ -230,6 +276,15 @@ else {
             if ($Rehearsal) { $preflightWarnings += ($msg + ' - allowed by -Rehearsal') }
             else { $preflightProblems += ('E_GATE_MANIFEST_STALE: ' + $msg) }
         }
+        elseif ($sealedManifest) {
+            # The tag points at the post-amend seal commit D'; manifest.seal_diff.to
+            # records the pre-amend D passed to -RecordSeal. -Release enforces
+            # HEAD == tag target through the pure checker; here only a tag that
+            # does not point at the checked-out commit is worth a warning.
+            if ($tagTarget.Trim() -ne $head) {
+                $preflightWarnings += ('sealed tag target ' + $tagTarget.Trim().Substring(0, 8) + ' != HEAD ' + $head.Substring(0, 8) + ' (post-release commits or a seal-amend commit); -Release requires HEAD == tag target')
+            }
+        }
         elseif ([string]$manifest.source_commit -and $tagTarget.Trim() -ne [string]$manifest.source_commit) {
             $msg = ('manifest source_commit ' + ([string]$manifest.source_commit).Substring(0, 8) + ' != tag target ' + $tagTarget.Trim().Substring(0, 8))
             if ($Rehearsal) { $preflightWarnings += ($msg + ' - allowed by -Rehearsal') }
@@ -242,7 +297,14 @@ else {
         if ($LASTEXITCODE -eq 0) { $behind = [int]((& git -C $script:Repo rev-list --count ([string]$manifest.source_commit + '..HEAD')).Trim()) }
         else { $preflightProblems += 'E_GATE_MANIFEST_STALE: manifest source_commit is not an ancestor of HEAD' }
     }
-    if ($behind -gt 0) { $preflightWarnings += ("HEAD is $behind commit(s) ahead of the sealed source (post-release commits)") }
+    if ($behind -gt 0) {
+        if ($sealedManifest) {
+            $preflightWarnings += ('sealed topology: HEAD is the seal commit D (' + $behind + ' commit(s) after source C)')
+        }
+        else {
+            $preflightWarnings += ("HEAD is $behind commit(s) ahead of the sealed source (post-release commits)")
+        }
+    }
 }
 
 # Release mode: zero skipped gates. Sealed trees must match HEAD exactly; a documented pre-release tree is
@@ -256,6 +318,39 @@ if ($Release) {
     elseif (-not [string]$manifest.source_commit) {
         $preflightProblems += 'E_GATE_RELEASE: manifest has no source_commit'
     }
+    elseif ($sealedManifest -and -not $preReleaseCandidate) {
+        # Sealed source-C -> seal-D release: the pure checker owns the predicate
+        # (HEAD == tag target, source C is an ancestor of HEAD, the C..HEAD diff is
+        # a subset of the fixed allowlist, artifact/web hashes unchanged). Any
+        # refusal is a named E_SEAL_* problem.
+        $sealOut = @()
+        $sealExit = 0
+        Push-Location $script:Repo
+        try {
+            $sealOut = @(& $node $sealChecker '--json' '--repo' $script:Repo '--manifest' $manifestPath 2>$null)
+            $sealExit = $LASTEXITCODE
+        }
+        catch {
+            $sealExit = 1
+            $sealOut = @()
+        }
+        finally { Pop-Location }
+        if ($sealExit -ne 0) {
+            $sealCode = 'E_SEAL_CHECK'
+            $sealMsg = 'seal topology check failed'
+            try {
+                $sealObj = (($sealOut -join "`n") | ConvertFrom-Json)
+                if ($sealObj.code) { $sealCode = [string]$sealObj.code }
+                if ($sealObj.message) { $sealMsg = [string]$sealObj.message }
+            }
+            catch { }
+            $preflightProblems += ($sealCode + ': ' + $sealMsg)
+        }
+        else {
+            $script:SealedAccepted = $true
+            $preflightWarnings += ('SEALED TREE ACCEPTED: source C ' + $manifestSealSource.Substring(0, [Math]::Min(8, $manifestSealSource.Length)) + ' -> tagged seal commit ' + $head.Substring(0, 8) + '; source ancestor verified; diff allowlisted; artifact hashes verified')
+        }
+    }
     elseif (-not $preReleaseCandidate) {
         if ([string]$manifest.source_commit.Trim() -ne $head) {
             $preflightProblems += ('E_GATE_RELEASE: manifest source_commit ' + ([string]$manifest.source_commit).Substring(0, 8) + ' != HEAD ' + $head.Substring(0, 8) + ' (rebuild/refresh manifest or do not release)')
@@ -266,12 +361,19 @@ if ($Release) {
         # sealed source must be an ancestor of HEAD; docs must state the pre-release line and sealed record.
         $manifestSource = ([string]$manifest.source_commit).Trim()
         $manifestTag = [string]$manifest.tag
+        $expectedPrereleaseTarget = $manifestSource
         if (-not $manifestTag) { $preflightProblems += 'E_GATE_PRERELEASE: manifest has no sealed tag' }
         else {
             $tagTargetNow = (& git -C $script:Repo rev-list -n1 $manifestTag 2>$null)
             if ($LASTEXITCODE -ne 0 -or -not $tagTargetNow) { $preflightProblems += ('E_GATE_PRERELEASE: sealed tag ' + $manifestTag + ' does not exist') }
-            elseif ($tagTargetNow.Trim() -ne $manifestSource) {
-                $preflightProblems += ('E_GATE_PRERELEASE: tag ' + $manifestTag + ' target ' + $tagTargetNow.Trim().Substring(0, 8) + ' != manifest source_commit ' + $manifestSource.Substring(0, 8))
+            elseif ($sealedManifest) {
+                # Sealed v2 pre-release record: the tag points at the post-amend seal
+                # commit D', which the manifest cannot name (seal_diff.to is the
+                # pre-amend D); existence + source ancestry are the checks here.
+                $preflightWarnings += ('sealed pre-release record: tag ' + $manifestTag + ' target ' + $tagTargetNow.Trim().Substring(0, 8) + ' (seal commit D''); manifest seal_diff.to is the pre-amend D')
+            }
+            elseif ($tagTargetNow.Trim() -ne $expectedPrereleaseTarget) {
+                $preflightProblems += ('E_GATE_PRERELEASE: tag ' + $manifestTag + ' target ' + $tagTargetNow.Trim().Substring(0, 8) + ' != expected source_commit ' + $expectedPrereleaseTarget.Substring(0, 8))
             }
         }
         if ($manifestSource -eq $head) {
@@ -349,6 +451,10 @@ if ($DryRun) {
     if ($script:PreReleaseAccepted) {
         Write-Host 'DRY RUN: PRE-RELEASE (documented pre-release tree; gates not executed; not a release PASS)' -ForegroundColor Yellow
         exit 3
+    }
+    if ($script:SealedAccepted) {
+        Write-Host 'DRY RUN: OK (sealed source-C/seal-D topology preflight satisfied; no gate executed)' -ForegroundColor Green
+        exit 0
     }
     Write-Host "DRY RUN: OK (preflight satisfied; no gate executed)" -ForegroundColor Green
     exit 0
@@ -469,7 +575,13 @@ Invoke-Gate 'G7 manifest / artifact hash verification' {
     if (-not $manifest) { throw 'tools/release-manifest.json missing or unparsable' }
     $problems = @()
     $preReleaseMode = [bool]$script:PreReleaseAccepted
-    if ([string]$manifest.schema -ne 'hivemind.release-manifest.v1') { $problems += 'unexpected schema: ' + [string]$manifest.schema }
+    $manifestSchema = [string]$manifest.schema
+    if ($manifestSchema -notin @('hivemind.release-manifest.v1', 'hivemind.release-manifest.v2')) {
+        $problems += 'unexpected schema: ' + $manifestSchema
+    }
+    if ($sealedManifest -and $manifestSchema -ne 'hivemind.release-manifest.v2') {
+        $problems += 'sealed manifest must use schema hivemind.release-manifest.v2'
+    }
     if ([string]$manifest.version -ne $version) {
         if ($script:PreReleaseAccepted) {
             Write-Host ("pre-release tree: manifest version " + [string]$manifest.version + " is the sealed release record; current source is " + $version)
@@ -478,6 +590,13 @@ Invoke-Gate 'G7 manifest / artifact hash verification' {
     }
     $tagTarget = (& git -C $script:Repo rev-list -n1 ([string]$manifest.tag) 2>$null)
     if ($LASTEXITCODE -ne 0 -or -not $tagTarget) { $problems += ('tag ' + [string]$manifest.tag + ' missing') }
+    elseif ($sealedManifest) {
+        if (-not $preReleaseMode -and $tagTarget.Trim() -ne $head) {
+            $problems += 'sealed tag target != HEAD (the release tag must point at the checked-out seal commit)'
+        }
+        # Pre-release sealed record: existence is checked here; release-mode
+        # equality (HEAD == tag target) is enforced by the pure checker.
+    }
     elseif ([string]$manifest.source_commit -and $tagTarget.Trim() -ne [string]$manifest.source_commit) { $problems += 'tag target != manifest source_commit' }
 
     foreach ($artifact in @($manifest.artifacts)) {
@@ -604,7 +723,10 @@ Write-Host "================================================================" -F
 Write-Host ("HEAD start  " + $head)
 Write-Host ("HEAD end    " + $headEnd + $(if ($headEnd -ne $head) { '  (CHANGED - investigate)' } else { '' }))
 if ($Rehearsal) { Write-Host 'MODE        REHEARSAL (dirty tree / stale manifest allowed)' -ForegroundColor Yellow }
-if ($Release -and $preReleaseAccepted) { Write-Host ('MODE        PRE-RELEASE (working tree ' + $version + '; sealed ' + [string]$manifest.version + ' remains the release record; NOT a release PASS)') -ForegroundColor Yellow }
+if ($Release -and $script:SealedAccepted) {
+    Write-Host ('MODE        RELEASE (sealed source C ' + $manifestSealSource.Substring(0, [Math]::Min(8, $manifestSealSource.Length)) + ' -> seal D ' + $manifestSealTo.Substring(0, [Math]::Min(8, $manifestSealTo.Length)) + '; tag at D; zero skipped gates)') -ForegroundColor Yellow
+}
+elseif ($Release -and $preReleaseAccepted) { Write-Host ('MODE        PRE-RELEASE (working tree ' + $version + '; sealed ' + [string]$manifest.version + ' remains the release record; NOT a release PASS)') -ForegroundColor Yellow }
 elseif ($Release) { Write-Host 'MODE        RELEASE (clean tree, manifest.source_commit == HEAD, zero skipped gates)' -ForegroundColor Yellow }
 Write-Host ("passed " + $pass + " | failed " + $fail + " | skipped " + $skip + " (skips are never PASS)")
 foreach ($step in $script:Steps) {

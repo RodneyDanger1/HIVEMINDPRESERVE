@@ -938,7 +938,7 @@
     "NODE_SPAWN": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "NodeEvent",
-      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.\n\nFrozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and\n`parent_task_id` are additive and optional on the wire: they are omitted when\nabsent, so a pre-1.3 producer and a pre-1.3 consumer keep working unchanged.",
       "type": "object",
       "properties": {
         "task_id": {
@@ -948,6 +948,33 @@
         "state": {
           "description": "New node state.",
           "$ref": "#/$defs/AgentState"
+        },
+        "rev": {
+          "description": "Server node revision this frame describes — the same per-node value\n`REWIRE_TASK.expected_rev` is compared against.\n\nAbsent stays absent. This is never the client's event counter and is\nnever inferred from another revision: a producer that does not own the\ngraph node revision omits it instead of guessing.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "kind": {
+          "description": "Topology kind, one of [`NODE_KIND_VOCABULARY`].\n\nPopulated only from the task's authoritative tier; omitted when the tier\nis unknown. Consumers ignore an unknown value rather than coercing it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_task_id": {
+          "description": "Current parent task id (`None` for the run root), carried so a re-parent\nmoves the canvas edge in the same frame that reports the new state.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskId"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1049,7 +1076,7 @@
     "NODE_DRAG": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "NodeEvent",
-      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.\n\nFrozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and\n`parent_task_id` are additive and optional on the wire: they are omitted when\nabsent, so a pre-1.3 producer and a pre-1.3 consumer keep working unchanged.",
       "type": "object",
       "properties": {
         "task_id": {
@@ -1059,6 +1086,33 @@
         "state": {
           "description": "New node state.",
           "$ref": "#/$defs/AgentState"
+        },
+        "rev": {
+          "description": "Server node revision this frame describes — the same per-node value\n`REWIRE_TASK.expected_rev` is compared against.\n\nAbsent stays absent. This is never the client's event counter and is\nnever inferred from another revision: a producer that does not own the\ngraph node revision omits it instead of guessing.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "kind": {
+          "description": "Topology kind, one of [`NODE_KIND_VOCABULARY`].\n\nPopulated only from the task's authoritative tier; omitted when the tier\nis unknown. Consumers ignore an unknown value rather than coercing it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_task_id": {
+          "description": "Current parent task id (`None` for the run root), carried so a re-parent\nmoves the canvas edge in the same frame that reports the new state.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskId"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1160,7 +1214,7 @@
     "NODE_REWIRE": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "NodeEvent",
-      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.\n\nFrozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and\n`parent_task_id` are additive and optional on the wire: they are omitted when\nabsent, so a pre-1.3 producer and a pre-1.3 consumer keep working unchanged.",
       "type": "object",
       "properties": {
         "task_id": {
@@ -1170,6 +1224,33 @@
         "state": {
           "description": "New node state.",
           "$ref": "#/$defs/AgentState"
+        },
+        "rev": {
+          "description": "Server node revision this frame describes — the same per-node value\n`REWIRE_TASK.expected_rev` is compared against.\n\nAbsent stays absent. This is never the client's event counter and is\nnever inferred from another revision: a producer that does not own the\ngraph node revision omits it instead of guessing.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "kind": {
+          "description": "Topology kind, one of [`NODE_KIND_VOCABULARY`].\n\nPopulated only from the task's authoritative tier; omitted when the tier\nis unknown. Consumers ignore an unknown value rather than coercing it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_task_id": {
+          "description": "Current parent task id (`None` for the run root), carried so a re-parent\nmoves the canvas edge in the same frame that reports the new state.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskId"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1271,7 +1352,7 @@
     "NODE_STATE": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "NodeEvent",
-      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen\ncontract: `task_id`, `state`).",
+      "description": "`NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.\n\nFrozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and\n`parent_task_id` are additive and optional on the wire: they are omitted when\nabsent, so a pre-1.3 producer and a pre-1.3 consumer keep working unchanged.",
       "type": "object",
       "properties": {
         "task_id": {
@@ -1281,6 +1362,33 @@
         "state": {
           "description": "New node state.",
           "$ref": "#/$defs/AgentState"
+        },
+        "rev": {
+          "description": "Server node revision this frame describes — the same per-node value\n`REWIRE_TASK.expected_rev` is compared against.\n\nAbsent stays absent. This is never the client's event counter and is\nnever inferred from another revision: a producer that does not own the\ngraph node revision omits it instead of guessing.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "kind": {
+          "description": "Topology kind, one of [`NODE_KIND_VOCABULARY`].\n\nPopulated only from the task's authoritative tier; omitted when the tier\nis unknown. Consumers ignore an unknown value rather than coercing it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_task_id": {
+          "description": "Current parent task id (`None` for the run root), carried so a re-parent\nmoves the canvas edge in the same frame that reports the new state.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskId"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -1474,11 +1582,19 @@
           ]
         },
         "args_sha256": {
-          "description": "SHA-256 of the canonical tool arguments the nonce is bound to (1.2 additive).",
+          "description": "SHA-256 of the canonical tool arguments the nonce is bound to (1.2 additive).\n\nAuthoritative: a preview is never a substitute for this digest.",
           "type": [
             "string",
             "null"
           ]
+        },
+        "args_preview": {
+          "description": "Bounded, redacted, display-only preview of the gated tool arguments\n(additive; at most [`MAX_ARGS_PREVIEW_CHARS`] UTF-16 code units).\n\nBuild it with [`redact_args_preview`], which enforces the redaction and\nsize rules. Absent stays absent: a producer that does not hold the\narguments (the tools approval row persists only the digest) omits the\nfield rather than reconstructing it, so a post-hello replay of a\npersisted row carries no preview. [`Self::args_sha256`] remains the\nauthoritative binding on every path.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
         },
         "expires_at": {
           "description": "Approval expiry (TTL) so the UI can show a countdown (1.2 additive).",

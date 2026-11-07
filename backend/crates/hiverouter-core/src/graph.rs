@@ -281,6 +281,20 @@ impl GraphAuthority {
             .ok_or(Refusal::TaskNotFound)
     }
 
+    /// One node's authoritative record (state, parent and revision).
+    ///
+    /// This is the single-lock read the transport uses after a mutation so a
+    /// published node event and the graph can never disagree; `Ok(None)` means
+    /// the task has no node (a command may legitimately reference a graph node
+    /// that has no persisted task row yet).
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` if the graph lock is poisoned.
+    pub fn node(&self, task_id: TaskId) -> Result<Option<TaskNode>, Refusal> {
+        let state = self.lock()?;
+        Ok(state.nodes.get(&task_id).cloned())
+    }
+
     /// Rebuilds the whole graph from a persisted snapshot (kill-restore path).
     ///
     /// # Errors
@@ -377,5 +391,21 @@ mod tests {
             graph.state_of(TaskId::new()),
             Err(Refusal::TaskNotFound)
         );
+    }
+
+    #[test]
+    fn node_read_carries_rev_and_parent_for_truthful_events() {
+        let graph = GraphAuthority::new();
+        let root = TaskId::new();
+        let child = TaskId::new();
+        graph.add_task(root, None).expect("root");
+        graph.add_task(child, Some(root)).expect("child");
+        graph.set_state(child, AgentState::Running).expect("state");
+        let node = graph.node(child).expect("read").expect("node");
+        assert_eq!(node.task_id, child);
+        assert_eq!(node.parent_task_id, Some(root));
+        assert_eq!(node.state, AgentState::Running);
+        assert_eq!(node.rev, 1, "set_state bumps the node revision once");
+        assert_eq!(graph.node(TaskId::new()).expect("read"), None);
     }
 }

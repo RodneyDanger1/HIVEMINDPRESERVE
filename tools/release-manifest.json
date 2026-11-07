@@ -2,6 +2,8 @@
     "schema":  "hivemind.release-manifest.v1",
     "product":  "HiveMind",
     "version":  "1.1.0",
+    "status":  "SEALED_1.1.0",
+    "status_note":  "Authoritative sealed 1.1.0 record only. The working tree is an unreleased 1.2.0-dev pre-release line; no 1.2 manifest, artifact, tag, live proof, or release-gate PASS exists. Do not overwrite this registry with a 1.2 build until the seal topology and release gates pass.",
     "tag":  "hivemind-1.1.0",
     "tag_target":  "87079cecf6a4cf2212b9d41e56f4c7643a97c7fe",
     "tag_behind_commits":  0,

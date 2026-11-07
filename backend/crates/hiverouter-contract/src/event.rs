@@ -224,14 +224,45 @@ pub struct ReplyDone {
     pub usage: Usage,
 }
 
-/// `NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload (frozen
-/// contract: `task_id`, `state`).
+/// Vocabulary of [`NodeEvent::kind`] (mirror of the web `NODE_KINDS` in
+/// `web/src/api/contract.ts`).
+///
+/// A producer populates `kind` only from the task's authoritative tier. A task
+/// whose tier is not threaded yet must omit the field rather than infer one from
+/// its free-form role string (`planner`, `worker`, ...): an invented kind is
+/// worse than an absent one. `error` is a client-only broken-route state and is
+/// never produced by the server.
+pub const NODE_KIND_VOCABULARY: &[&str] = &["hyperagent", "superagent", "worker", "tool"];
+
+/// `NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.
+///
+/// Frozen fields: `task_id`, `state`. The topology fields `rev`, `kind` and
+/// `parent_task_id` are additive and optional on the wire: they are omitted when
+/// absent, so a pre-1.3 producer and a pre-1.3 consumer keep working unchanged.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct NodeEvent {
     /// Task id.
     pub task_id: TaskId,
     /// New node state.
     pub state: AgentState,
+    /// Server node revision this frame describes — the same per-node value
+    /// `REWIRE_TASK.expected_rev` is compared against.
+    ///
+    /// Absent stays absent. This is never the client's event counter and is
+    /// never inferred from another revision: a producer that does not own the
+    /// graph node revision omits it instead of guessing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rev: Option<u64>,
+    /// Topology kind, one of [`NODE_KIND_VOCABULARY`].
+    ///
+    /// Populated only from the task's authoritative tier; omitted when the tier
+    /// is unknown. Consumers ignore an unknown value rather than coercing it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Current parent task id (`None` for the run root), carried so a re-parent
+    /// moves the canvas edge in the same frame that reports the new state.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_task_id: Option<TaskId>,
 }
 
 /// `RUN_METRICS` payload.
@@ -245,6 +276,198 @@ pub struct RunMetrics {
     pub green_pct: f64,
     /// Change in green percentage since the previous metrics frame.
     pub delta: f64,
+}
+
+/// Hard cap on an [`ApprovalRequest::args_preview`] length, measured in UTF-16
+/// code units — the same unit as JavaScript's `String.length`, so the client
+/// mirror (`MAX_ARGS_PREVIEW_CHARS` in `web/src/api/contract.ts`) enforces the
+/// identical bound.
+///
+/// The preview is display-only. [`ApprovalRequest::args_sha256`] stays the
+/// authoritative binding for the approval, and argument content above this cap
+/// must never reach the wire.
+pub const MAX_ARGS_PREVIEW_CHARS: usize = 512;
+
+/// Placeholder rendered by [`redact_args_preview`] in place of a secret value.
+pub const ARGS_PREVIEW_REDACTED: &str = "[redacted]";
+
+/// Placeholder rendered where a preview was cut by a size bound.
+pub const ARGS_PREVIEW_TRUNCATED: &str = "[truncated]";
+
+/// Placeholder rendered when an argument value cannot be rendered at all.
+pub const ARGS_PREVIEW_UNAVAILABLE: &str = "[unavailable]";
+
+/// Per-string cap inside a preview: one long argument cannot spend the whole
+/// budget.
+const PREVIEW_STRING_CHARS: usize = 160;
+/// Per-object key cap inside a preview.
+const PREVIEW_OBJECT_KEYS: usize = 12;
+/// Per-array item cap inside a preview.
+const PREVIEW_ARRAY_ITEMS: usize = 8;
+/// Nesting cap inside a preview.
+const PREVIEW_MAX_DEPTH: usize = 4;
+
+/// Lowercased key fragments that mark a value as a secret. Matching is by
+/// containment, so `GITHUB_TOKEN`, `api_key` and `client_secret` are all caught;
+/// the price is fail-closed over-redaction (e.g. `max_tokens`), which is the
+/// safe direction for a preview.
+const PREVIEW_SECRET_KEY_FRAGMENTS: &[&str] = &[
+    "apikey",
+    "api_key",
+    "authorization",
+    "bearer",
+    "cookie",
+    "credential",
+    "nonce",
+    "passwd",
+    "password",
+    "private_key",
+    "privatekey",
+    "secret",
+    "session",
+    "token",
+];
+
+/// Minimum length before a well-known token prefix is treated as a secret, so a
+/// short ordinary word is not redacted just because it starts like a key.
+const PREVIEW_SECRET_PREFIX_MIN_LEN: usize = 16;
+
+/// Well-known credential prefixes (compared lowercased).
+const PREVIEW_SECRET_PREFIXES: &[&str] = &[
+    "aiza",
+    "akia",
+    "ghp_",
+    "gho_",
+    "ghs_",
+    "github_pat_",
+    "sk-",
+    "xoxb-",
+    "xoxp-",
+];
+
+/// Renders a bounded, redacted preview of one tool-argument value for
+/// [`ApprovalRequest::args_preview`].
+///
+/// Guarantees, in order:
+/// 1. **Bounded** — the result is never longer than [`MAX_ARGS_PREVIEW_CHARS`]
+///    UTF-16 code units; a cut result ends with `…`.
+/// 2. **Redacted** — the value of any key whose lowercased name contains one of
+///    [`PREVIEW_SECRET_KEY_FRAGMENTS`], and any string shaped like a bearer /
+///    well-known API token or a JWT, becomes [`ARGS_PREVIEW_REDACTED`].
+/// 3. **Small** — per-string, per-object, per-array and depth caps keep one huge
+///    argument from dominating the frame.
+/// 4. **Deterministic** — no clock, randomness or locale involvement, so the
+///    same arguments always render the same preview.
+///
+/// This is a presentation helper only. It is never a substitute for the digest:
+/// a consumer that needs certainty compares [`ApprovalRequest::args_sha256`].
+#[must_use]
+pub fn redact_args_preview(args: &serde_json::Value) -> String {
+    let projection = redact_preview_value(args, 0);
+    let rendered = serde_json::to_string(&projection)
+        .unwrap_or_else(|_| format!("\"{ARGS_PREVIEW_UNAVAILABLE}\""));
+    truncate_utf16(&rendered, MAX_ARGS_PREVIEW_CHARS)
+}
+
+fn redact_preview_value(value: &serde_json::Value, depth: usize) -> serde_json::Value {
+    use serde_json::Value;
+    if depth >= PREVIEW_MAX_DEPTH {
+        return Value::String(ARGS_PREVIEW_TRUNCATED.to_owned());
+    }
+    match value {
+        Value::Object(map) => {
+            let mut out = serde_json::Map::new();
+            for (index, (key, nested)) in map.iter().enumerate() {
+                if index >= PREVIEW_OBJECT_KEYS {
+                    out.insert(
+                        "…".to_owned(),
+                        Value::String(ARGS_PREVIEW_TRUNCATED.to_owned()),
+                    );
+                    break;
+                }
+                if is_secret_key(key) {
+                    out.insert(key.clone(), Value::String(ARGS_PREVIEW_REDACTED.to_owned()));
+                    continue;
+                }
+                out.insert(key.clone(), redact_preview_value(nested, depth + 1));
+            }
+            Value::Object(out)
+        }
+        Value::Array(items) => {
+            let mut out = Vec::new();
+            for (index, item) in items.iter().enumerate() {
+                if index >= PREVIEW_ARRAY_ITEMS {
+                    out.push(Value::String(ARGS_PREVIEW_TRUNCATED.to_owned()));
+                    break;
+                }
+                out.push(redact_preview_value(item, depth + 1));
+            }
+            Value::Array(out)
+        }
+        Value::String(text) => {
+            if looks_like_secret(text) {
+                Value::String(ARGS_PREVIEW_REDACTED.to_owned())
+            } else {
+                Value::String(truncate_utf16(text, PREVIEW_STRING_CHARS))
+            }
+        }
+        other => other.clone(),
+    }
+}
+
+fn is_secret_key(key: &str) -> bool {
+    let lowered = key.to_ascii_lowercase();
+    PREVIEW_SECRET_KEY_FRAGMENTS
+        .iter()
+        .any(|fragment| lowered.contains(fragment))
+}
+
+fn looks_like_secret(value: &str) -> bool {
+    let trimmed = value.trim();
+    if trimmed.len() < PREVIEW_SECRET_PREFIX_MIN_LEN {
+        return false;
+    }
+    let lowered = trimmed.to_ascii_lowercase();
+    if lowered.starts_with("bearer ") || lowered.starts_with("basic ") {
+        return true;
+    }
+    if PREVIEW_SECRET_PREFIXES
+        .iter()
+        .any(|prefix| lowered.starts_with(prefix))
+    {
+        return true;
+    }
+    // JWT shape: exactly three dot-separated segments whose header is the
+    // base64url encoding of `{"` (`eyJ`).
+    let segments: Vec<&str> = trimmed.split('.').collect();
+    segments.len() == 3
+        && segments.iter().all(|segment| !segment.is_empty())
+        && trimmed.starts_with("eyJ")
+}
+
+/// Truncates `text` to at most `max_units` UTF-16 code units on a `char`
+/// boundary, marking a cut with `…`.
+fn truncate_utf16(text: &str, max_units: usize) -> String {
+    if max_units == 0 {
+        return String::new();
+    }
+    if text.encode_utf16().count() <= max_units {
+        return text.to_owned();
+    }
+    // Reserve one unit for the ellipsis so the result never overshoots.
+    let budget = max_units - 1;
+    let mut out = String::new();
+    let mut used = 0_usize;
+    for character in text.chars() {
+        let width = character.len_utf16();
+        if used + width > budget {
+            break;
+        }
+        out.push(character);
+        used += width;
+    }
+    out.push('…');
+    out
 }
 
 /// `APPROVAL_REQUEST` payload.
@@ -273,8 +496,22 @@ pub struct ApprovalRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
     /// SHA-256 of the canonical tool arguments the nonce is bound to (1.2 additive).
+    ///
+    /// Authoritative: a preview is never a substitute for this digest.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub args_sha256: Option<String>,
+    /// Bounded, redacted, display-only preview of the gated tool arguments
+    /// (additive; at most [`MAX_ARGS_PREVIEW_CHARS`] UTF-16 code units).
+    ///
+    /// Build it with [`redact_args_preview`], which enforces the redaction and
+    /// size rules. Absent stays absent: a producer that does not hold the
+    /// arguments (the tools approval row persists only the digest) omits the
+    /// field rather than reconstructing it, so a post-hello replay of a
+    /// persisted row carries no preview. [`Self::args_sha256`] remains the
+    /// authoritative binding on every path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[schemars(length(max = 512))]
+    pub args_preview: Option<String>,
     /// Approval expiry (TTL) so the UI can show a countdown (1.2 additive).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<crate::timestamp::Timestamp>,
@@ -640,5 +877,194 @@ mod tests {
             assert_eq!(EventName::from_name(expected), Some(*name));
         }
         assert_eq!(EventName::from_name("NOT_AN_EVENT"), None);
+    }
+
+    #[test]
+    fn node_kind_vocabulary_matches_the_web_mirror() {
+        assert_eq!(
+            NODE_KIND_VOCABULARY,
+            &["hyperagent", "superagent", "worker", "tool"]
+        );
+        assert!(
+            !NODE_KIND_VOCABULARY.contains(&"error"),
+            "`error` is a client-only broken-route state, never a server kind"
+        );
+    }
+
+    #[test]
+    fn node_event_legacy_payload_keeps_the_frozen_wire_shape() {
+        let legacy = serde_json::json!({
+            "task_id": TaskId::new().to_string(),
+            "state": "running",
+        });
+        let decoded: NodeEvent =
+            serde_json::from_value(legacy).expect("a pre-1.3 NODE_* payload still decodes");
+        assert_eq!(decoded.rev, None);
+        assert_eq!(decoded.kind, None);
+        assert_eq!(decoded.parent_task_id, None);
+
+        let encoded = serde_json::to_value(&decoded).expect("re-encodes");
+        let object = encoded.as_object().expect("payload is an object");
+        assert_eq!(
+            object.len(),
+            2,
+            "absent topology fields must be omitted, not sent as null: {encoded}"
+        );
+        assert!(object.contains_key("task_id") && object.contains_key("state"));
+    }
+
+    #[test]
+    fn node_event_carries_the_actual_rev_kind_and_parent() {
+        let task = TaskId::new();
+        let parent = TaskId::new();
+        let payload = NodeEvent {
+            task_id: task,
+            state: AgentState::Running,
+            rev: Some(9),
+            kind: Some("superagent".to_owned()),
+            parent_task_id: Some(parent),
+        };
+        let encoded = serde_json::to_value(&payload).expect("encodes");
+        assert_eq!(encoded["rev"], serde_json::json!(9));
+        assert_eq!(encoded["kind"], serde_json::json!("superagent"));
+        assert_eq!(
+            encoded["parent_task_id"],
+            serde_json::json!(parent.to_string())
+        );
+        let decoded: NodeEvent = serde_json::from_value(encoded).expect("decodes");
+        assert_eq!(decoded, payload);
+    }
+
+    #[test]
+    fn approval_request_without_a_preview_keeps_the_frozen_wire_shape() {
+        let legacy = serde_json::json!({
+            "approval_id": ApprovalId::new().to_string(),
+            "tool": "file_write",
+        });
+        let decoded: ApprovalRequest =
+            serde_json::from_value(legacy).expect("a pre-2.0 APPROVAL_REQUEST still decodes");
+        assert_eq!(decoded.args_preview, None);
+        let encoded = serde_json::to_value(&decoded).expect("encodes");
+        assert!(
+            encoded.get("args_preview").is_none(),
+            "an absent preview must stay absent on the wire: {encoded}"
+        );
+    }
+
+    #[test]
+    fn args_preview_redacts_secret_keys_and_secret_shaped_values() {
+        let args = serde_json::json!({
+            "path": "src/main.rs",
+            "api_key": "sk-live-0123456789abcdefghijklmnop",
+            "nested": {"password": "hunter2", "note": "Bearer abcdefghijklmnop"},
+            "env": {"GITHUB_TOKEN": "ghp_abcdefghijklmnopqrst"},
+            "count": 3,
+        });
+        let preview = redact_args_preview(&args);
+        assert!(
+            preview.contains("src/main.rs"),
+            "non-secret content is preserved: {preview}"
+        );
+        for secret in ["sk-live", "hunter2", "Bearer", "ghp_"] {
+            assert!(
+                !preview.contains(secret),
+                "secret {secret:?} leaked into {preview}"
+            );
+        }
+        assert!(preview.contains(ARGS_PREVIEW_REDACTED));
+        assert!(
+            preview.contains("\"count\":3"),
+            "non-string leaves keep their type: {preview}"
+        );
+    }
+
+    #[test]
+    fn args_preview_caps_each_string_array_and_depth() {
+        let args = serde_json::json!({
+            "content": "é".repeat(4_000),
+            "astral": "𝄞".repeat(1_000),
+            "blob": vec!["x"; 100],
+            "deep": {"a": {"b": {"c": {"d": {"e": "f"}}}}},
+        });
+        let preview = redact_args_preview(&args);
+        let units = preview.encode_utf16().count();
+        assert!(
+            units <= MAX_ARGS_PREVIEW_CHARS,
+            "preview is {units} UTF-16 units, cap is {MAX_ARGS_PREVIEW_CHARS}"
+        );
+        assert!(
+            !preview.contains(&"é".repeat(PREVIEW_STRING_CHARS + 1)),
+            "the per-string cap holds: {preview}"
+        );
+        assert!(
+            preview.contains(ARGS_PREVIEW_TRUNCATED),
+            "a capped array/depth is marked: {preview}"
+        );
+    }
+
+    #[test]
+    fn args_preview_is_cut_and_marked_at_the_total_cap() {
+        let mut wide = serde_json::Map::new();
+        for index in 0..PREVIEW_OBJECT_KEYS {
+            // 160 astral chars = 320 UTF-16 units per value, so the rendered
+            // object necessarily exceeds the total cap.
+            wide.insert(format!("k{index}"), serde_json::json!("𝄞".repeat(160)));
+        }
+        let preview = redact_args_preview(&serde_json::Value::Object(wide));
+        let units = preview.encode_utf16().count();
+        assert!(
+            (MAX_ARGS_PREVIEW_CHARS - 1..=MAX_ARGS_PREVIEW_CHARS).contains(&units),
+            "a budgeted preview is cut to the cap (surrogate-pair granularity): {units} units"
+        );
+        assert!(preview.ends_with('…'), "a cut preview is marked: {preview}");
+        assert!(
+            preview.chars().count() <= MAX_ARGS_PREVIEW_CHARS,
+            "chars never exceed UTF-16 units"
+        );
+    }
+
+    #[test]
+    fn utf16_truncation_never_overshoots_the_bound() {
+        for max in 0..=8_usize {
+            let rendered = truncate_utf16("𝄞𝄞𝄞", max);
+            assert!(
+                rendered.encode_utf16().count() <= max,
+                "max={max} rendered {rendered:?}"
+            );
+        }
+        assert_eq!(truncate_utf16("abcdef", 3), "ab…");
+        assert_eq!(truncate_utf16("abc", 3), "abc");
+        assert_eq!(truncate_utf16("abc", 0), "");
+    }
+
+    #[test]
+    fn approval_request_schema_bounds_the_preview_length() {
+        let schema = serde_json::to_value(schemars::schema_for!(ApprovalRequest))
+            .expect("schema serializes")
+            .to_string();
+        assert!(
+            schema.contains("maxLength"),
+            "the preview cap must be part of the derived schema: {schema}"
+        );
+        let oversized = serde_json::json!({
+            "approval_id": ApprovalId::new().to_string(),
+            "tool": "file_write",
+            "args_preview": "x".repeat(MAX_ARGS_PREVIEW_CHARS + 1),
+        });
+        assert_eq!(
+            crate::schema::validate_event_payload(EventName::ApprovalRequest, &oversized),
+            Err(Refusal::SchemaInvalid),
+            "an oversized preview is refused by the derived schema"
+        );
+        let bounded = serde_json::json!({
+            "approval_id": ApprovalId::new().to_string(),
+            "tool": "file_write",
+            "args_preview": "x".repeat(MAX_ARGS_PREVIEW_CHARS),
+        });
+        assert_eq!(
+            crate::schema::validate_event_payload(EventName::ApprovalRequest, &bounded),
+            Ok(()),
+            "a preview at the cap is accepted"
+        );
     }
 }

@@ -1,26 +1,63 @@
 # HiveMind release evidence
 
-**Current source line: `1.2.0-dev` (pre-release in the working tree; unsealed, no 1.2 artifacts committed).** The
-**authoritative exact-hash registry for released artifacts remains `tools/release-manifest.json` (sealed 1.1.0 build)**;
-this file never invents hashes. The 1.2.0-dev bump changes version strings only (four crate manifests +
-`backend/Cargo.lock` workspace package entries + `web/package.json` / `web/package-lock.json` root) — **no
-runtime/tool-loop claim is made for 1.2**, no 1.2 build was run, and `hivemind-1.1.0` (`87079ce`) remains the build
-source that produced the released artifacts. HEAD `57d5157` is ahead of that tag (post-release evidence commits +
-uncommitted W11/W12 work).
+**Working tree source line: `1.2.0-dev` (pre-release; unsealed; no 1.2 artifacts or tag).** The authoritative
+exact-hash registry for released artifacts remains `tools/release-manifest.json` (sealed 1.1.0 build); this file never
+invents hashes. The `1.2.0-dev` version bump itself changes version strings only (four crate manifests + `backend/Cargo.lock`
+workspace package entries + `web/package.json` / `web/package-lock.json` root); the same 1.2 WIP tree also contains
+substantive product code (approval suspension, side effects, web replay, live specs) — **no runtime/tool-loop claim is
+made for 1.2**, no 1.2 release build was run, and `hivemind-1.1.0` (`87079ce`) remains the build source that produced the
+released artifacts. HEAD `889b779` is 7 commits ahead of that tag (post-release evidence commits + uncommitted
+W11/W12 work); the tree is dirty.
 
 > **OLD → NEW (2026-11-06, W12 Wave 2):** `1.1.0` → `1.2.0-dev` in the four `backend/crates/*/Cargo.toml` manifests,
 > the four matching `backend/Cargo.lock` package entries, and the `web/package.json` + `web/package-lock.json` root
 > versions. No dependency version, contract schema version (`hiverouter.v1`), git tag, or release-manifest hash changed.
-> **Post-version truth (Wave 3):** `tools/qa/check-docs-truth.mjs` now derives the sealed release from
+> **Post-version truth (Wave 3):** `tools/qa/check-docs-truth.mjs` derives the sealed release from
 > `tools/release-manifest.json` (version/source/tag), asserts this file states the current source line **and** preserves
 > the sealed artifact hashes below, and rejects a pre-release tree presented as the released version. `run-gates.ps1
 > -Release` accepts this documented pre-release tree (manifest still `1.1.0`, tag target `87079ce` == source, source is
 > an ancestor of HEAD) only with an explicit **PRE-RELEASE** result (exit 3), never a release PASS. In accepted
 > pre-release mode `G7` keeps the sealed tag/source and package zip/sidecar/CHECKSUMS strict while reporting workspace
 > artifact/web-dist drift from the sealed manifest as pre-release drift warnings (dev builds are expected to differ; no
-> release claim). `README.md` and `docs/RELEASE.md` remain sealed-release docs; they must not claim `1.2.0-dev` as released.
+> release claim). `README.md` and `docs/RELEASE.md` remain sealed-release docs; both now carry a working-tree
+> pre-release notice, and neither may claim 1.2 as released or verified.
 
-## Current released artifacts: HiveMind 1.1.0 (authoritative)
+## Working tree status: `1.2.0-dev` (UNRELEASED, UNVERIFIED)
+
+The working tree declares `1.2.0-dev` in `web/package.json`, all four `backend/crates/*/Cargo.toml` manifests, and the
+four matching `backend/Cargo.lock` package entries. It is a **pre-release source line**: no 1.2 tag, release manifest,
+artifact, live paid proof, or release-gate PASS exists. The sealed 1.1.0 record in the next section remains the only
+release authority. **No end-to-end verification of the current 1.2 tree exists.** Evidence below is labelled by
+source: the 1.2 logs are gitignored local files, `plans/foresight/RUN-3.md` is an untracked working-tree trace at
+audit time, and the E2E result files are gitignored; none of it is a committed or sealed release receipt.
+
+| Item | Recorded state | Evidence (labelled source) |
+|---|---|---|
+| Source commit | HEAD `889b779` (`hivemind-1.1.0-7-g889b779`); tree dirty; `hivemind-1.1.0` remains `87079ce` | `git rev-parse HEAD`, `git describe --tags`, `git status --porcelain` (read 2026-11-06); `plans/foresight/RUN-3.md:4-5` records the same HEAD and, at the RUN-3 snapshot, a 36-entry dirty tree |
+| Tag | **No 1.2 tag.** Existing tags: `hivemind-1.0.0`, `hivemind-1.1.0`, `v1.0.0` | `git tag --list` (read 2026-11-06) |
+| Artifacts | **No 1.2 artifact.** `dist/` contains the 1.0.0/1.1.0 packages plus older/rehearsal files (`HiveMind-v1-win64.zip`, `.release-manifest-*.json`) and the 1.1.0 staging directory; there is no 1.2 zip or 1.2 staging directory | `dist/` listing (read 2026-11-06) |
+| Manifest | `tools/release-manifest.json` is still the sealed 1.1.0 record (`version=1.1.0`, source/tag target `87079ce`); no 1.2 manifest was created | `tools/release-manifest.json` |
+| Backend tests (current integrated tree) | **475 passed / 0 failed / 2 ignored**, `EXIT=0` (`cargo test --workspace --locked`, PATH prepended with `tools/w64devkit/bin`) | `docs/evidence/1.2-backend-tests-12.log` — local, gitignored (`*.log`) |
+| Backend tests (superseded claim) | 441 passed was an intermediate claim; the current 475-run supersedes it | `plans/foresight/RUN-3.md:197`; `docs/evidence/1.2-backend-tests-12.log` |
+| Compile gate | `cargo check --workspace --tests --locked` exit 0 on the current integrated tree (22:46 CT) | command output; `docs/evidence/1.2-compile-gate-2.log` (historical) |
+| Web tests | **179 passed / 0 failed**, `EXIT=0`; `tsc --noEmit` exit 0 | `docs/evidence/1.2-web-tests-3.log`, `docs/evidence/1.2-web-typecheck.log` (local, gitignored) |
+| E2E (guarded, mocked + live skipped) | **106 passed / 0 failed / 166 skipped**, exit 0; skips are the live/paid and capture lanes | `node run-guarded.mjs` output in the session; `e2e/test-results/` (local, gitignored) |
+| Static docs/harness checks | 19/19 docs-truth checks pass, 0 violations; 28/28 harness checks pass, 0 failures | commands run by lane F on 2026-11-06: `node tools/qa/check-docs-truth.mjs`, `node tools/qa/verify-harness.mjs` (console output; no log file written). These check docs/harness structure, not 1.2 product code |
+| Live paid proof | **None for 1.2.** No `docs/trace/live/captures/w12/` directory and no 1.2 live log exist. The last recorded live-trace capture attempt (1.1) was blocked (`E_LIVE_TRACE_BLOCKED_NO_OPERATOR_KEY`) with no fabricated hop; no 1.2 live attempt is recorded | `docs/evidence/live-trace-1.1.md` (1.1 attempt); `docs/trace/capture-registry.json` (`CAPTURE_PLAN_ONLY`); `docs/trace/live/trace-capture.json` (`surfaces: []`, 286 B) |
+| Trace / controls | 29 controls / 319 hops: **1 WIRED / 264 PENDING / 5 MISSING / 49 UNVERIFIED**. The one WIRED hop is `S22/6_service`, backed by a pre-HEAD raw probe — not a 1.2 proof | `docs/trace/controls.json`; `docs/trace/capture-registry.json` |
+| Release gate | **No 1.2 `run-gates -Release` PASS or PRE-RELEASE log exists.** A 1.2 release build is blocked until the fixes and gates below pass | `plans/foresight/COMPILED-LEDGER.md:39-43,154`; `plans/foresight/PROOF-RELEASE-PLAN.md:228-243` |
+
+**What is not claimed for 1.2:** no feature is released, no artifact is built, no tag exists, no live paid call was made,
+no release gate PASS, no 1.2 live paid proof, and no sealed 1.2 artifact exists, and no trace hop was promoted. The uncommitted 1.2 work
+(approval suspension, side effects, web replay, live specs) is WIP. The 441 backend claim and the sealed 1.1 live
+results are not 1.2 evidence.
+
+**Release-build blockers (current):** the dirty tree/uncommitted WIP, the missing 1.2 live
+tool-turn/approval/security/resync proof, the absent axe dependency/approval, the empty raw trace capture, and the
+unresolved seal topology (C10). See `plans/foresight/COMPILED-LEDGER.md:39-43,154` and
+`plans/foresight/PROOF-RELEASE-PLAN.md:228-243`.
+
+## Sealed released artifacts: HiveMind 1.1.0 (authoritative)
 
 - Released 1.1.0 was declared in `web/package.json` and all four `backend/crates/*/Cargo.toml` at seal time; the
   working tree now declares `1.2.0-dev` (pre-release, see above) — the 1.1.0 values in this section remain the
@@ -33,14 +70,14 @@ uncommitted W11/W12 work).
   proof recorded in the 1.1 wave.
 - **State parity:** 16 states including `interrupted` (backend and web).
 - **Artifact hashes (sealed 1.1.0 build):** `hiverouter.exe` `9c3174fb7c118143139ff283c08a3190c8e146a831717fb3ff8e25d6468d7207` (13,624,320 B); `hiverouter-cli.exe` `f757f55833f52f626cff6f962d31cb18d740dab53e314c5ba6048599f09214df` (5,372,416 B); `dist/HiveMind-1.1.0-win64.zip` `af2345f663643f1c0d1dbc18a298511817bf38090351d5f5b4842418f4d63e56` (8,613,122 B). Authoritative registry: `tools/release-manifest.json` (`version=1.1.0`, source `87079cecf6a4cf2212b9d41e56f4c7643a97c7fe`, tag `hivemind-1.1.0`). Zip extraction verified 6 members + CHECKSUMS.
+- **Sealed artifacts re-hashed on disk (2026-11-06):** the two `target/release/*.exe` files and `dist/HiveMind-1.1.0-win64.zip` match the three hashes above.
 - **Live paid-provider streaming smoke on the sealed release binary:** `target/release/hiverouter.exe` via the live e2e harness with `LIVE_ONE_PROMPT=1` and `E2E_SERVER_BIN=target/release/hiverouter.exe`; `live-streaming.spec.ts` **3 passed** (boot, no-key fail-closed, paid ordered `REPLY_DELTA -> REPLY_DONE -> RUN_STATUS completed`), and `live-replay.spec.ts` **2 passed** (unknown-run refusal, paid `HISTORY_SNAPSHOT` >=2 nodes with read-only UI). Raw evidence: `docs/evidence/live-1.1-paid.log` (5 passed, exit 0), `docs/trace/live/captures/w11/live-streaming.json` (10 frames), `docs/trace/live/captures/w11/live-replay.json` (12 frames, revision 0, 2 nodes). No key material was written to evidence.
 
-## Test evidence at the sealed 1.1.0 baseline (no 1.2 run yet)
+## Test evidence at the sealed 1.1.0 baseline
 
 - Backend 1.1 gate: **286 passed / 0 failed / 2 ignored** (`docs/evidence/1.1-backend-final.log`; includes the
   truncation, provider-error, prompt-asset and streaming suites).
 - Web: **93/93** unit tests (15 files), typecheck 0 errors, production build green.
-- Docs truth checker: **11/11 checks, 0 violations** (`node tools/qa/check-docs-truth.mjs`).
 - Release build log: `docs/evidence/1.1-release-build-4.log` (web build, cargo build, deterministic zip, extraction
   verification, manifest write, absolute-path scan, DONE).
 

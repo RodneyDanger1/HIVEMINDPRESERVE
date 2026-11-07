@@ -248,7 +248,14 @@ fn is_unique_violation(error: &rusqlite::Error) -> bool {
     )
 }
 
-fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<ApprovalRequest>, ToolError> {
+/// Loads one committed approval request by id.
+///
+/// Public for read-only replay projections (core `pending_approval_events_all`):
+/// it never consumes a nonce, resolves, executes or ledgers.
+///
+/// # Errors
+/// [`Refusal::InternalError`] for an unreadable/malformed stored row.
+pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<ApprovalRequest>, ToolError> {
     let row = conn
         .query_row(
             "SELECT approval_id, run_id, task_id, tool_call_id, tool_name, args_sha256,
@@ -761,6 +768,43 @@ pub fn pending_for_run(
         }
     }
     Ok(requests)
+}
+
+/// Approval ids for every committed, undecided approval whose run is still
+/// non-terminal, oldest first, bounded by `limit`.
+///
+/// Read-only replay projection (WP-05): never consumes a nonce, resolves,
+/// executes or ledgers. Callers load full requests with [`load_request`] and
+/// skip expired rows before publishing.
+///
+/// # Errors
+/// [`Refusal::InternalError`] on a SQLite failure or a nonsensical limit.
+pub fn pending_ids_for_active_runs(
+    conn: &Connection,
+    limit: usize,
+) -> Result<Vec<String>, ToolError> {
+    if limit == 0 {
+        return Ok(Vec::new());
+    }
+    let capped = i64::try_from(limit).map_err(|_| {
+        ToolError::new(
+            Refusal::InternalError,
+            "replay limit does not fit into a SQLite LIMIT parameter",
+        )
+    })?;
+    let mut statement = conn.prepare(
+        "SELECT a.approval_id
+           FROM approvals a
+           JOIN runs r ON r.id = a.run_id
+          WHERE a.decision IS NULL
+            AND r.status NOT IN ('completed','failed','cancelled','killed','interrupted')
+          ORDER BY a.created_at ASC
+          LIMIT ?1",
+    )?;
+    let ids = statement
+        .query_map(params![capped], |row| row.get::<_, String>(0))?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(ids)
 }
 
 /// The approval gate state machine (single owner).
@@ -1520,6 +1564,50 @@ mod tests {
             .expect("row");
         assert_eq!(stored, request.args_sha256);
         assert!(!stored.contains(secret));
+    }
+
+    #[test]
+    fn nonce_compare_accepts_only_an_exact_match() {
+        let nonce = "01234567-89ab-7cde-9f01-23456789abcd";
+        assert!(nonce_matches(nonce, nonce));
+        assert!(!nonce_matches(
+            nonce,
+            "01234567-89ab-7cde-9f01-23456789abce"
+        ));
+        // Prefix/suffix/length differences must never be accepted.
+        assert!(!nonce_matches(nonce, "01234567-89ab-7cde-9f01-23456789abc"));
+        assert!(!nonce_matches(nonce, "x01234567-89ab-7cde-9f01-23456789abcd"));
+        assert!(!nonce_matches(nonce, ""));
+        assert!(!nonce_matches("", nonce));
+    }
+
+    #[test]
+    fn nonce_mismatch_refusal_never_echoes_either_nonce() {
+        let conn = memory_db();
+        let request = request_tool_approval(
+            &ApprovalGate::default(),
+            &conn,
+            RunId::new(),
+            TaskId::new(),
+            "call-nonce-leak",
+            "file_write",
+            &serde_json::json!({"path": "a.txt", "content": "x"}),
+            now(),
+        )
+        .expect("request approval");
+        let presented = "wrong-nonce-value";
+        let error = resolve_with_nonce(
+            &conn,
+            &request.approval_id.to_string(),
+            presented,
+            "approve",
+            None,
+            now(),
+        )
+        .expect_err("mismatched nonce");
+        assert_eq!(error.code(), "E_APPROVAL_REPLAY");
+        assert!(!error.detail().contains(presented));
+        assert!(!error.detail().contains(&request.nonce));
     }
 }
 

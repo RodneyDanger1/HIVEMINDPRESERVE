@@ -8,6 +8,7 @@
 //! (`{"type":"hello","last_seq":<u64|null>}`) or a frozen COMMAND envelope.
 //! Every command gets a typed ACK or a typed ERROR event (never a silent drop).
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
@@ -19,15 +20,21 @@ use serde_json::{json, Value};
 use tokio::sync::broadcast::error::RecvError;
 use uuid::Uuid;
 
-use hiverouter_contract::command::{Command, CommandName};
+use hiverouter_contract::command::{Command, CommandName, TemplateInsert};
 use hiverouter_contract::event::{
     Ack, EmptyPayload, ErrorPayload, Event, EventName, HistorySnapshot, NodeEvent, ServerHello,
 };
 use hiverouter_contract::schema;
-use hiverouter_contract::Refusal;
+use hiverouter_contract::{AgentState, Refusal, RunId, TaskId};
 
 use crate::bus::{EventBus, Replay, SequencedEvent};
+use crate::caps::Caps;
+use crate::context::{ContextStore, ContextSwitchOutcome, ScopedContext};
+use crate::entities::TaskRecord;
+use crate::graph::{GraphAuthority, TaskNode};
 use crate::http::AppState;
+use crate::prompts::TemplateRegistry;
+use crate::store::RunStore;
 
 /// How long a new connection may wait before sending its `hello` frame.
 pub const HELLO_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
@@ -87,6 +94,266 @@ pub struct WsQuery {
     pub last_seq: Option<u64>,
 }
 
+/// Longest accepted `template_id` / `project_id` identifier in `TEMPLATE_INSERT`.
+///
+/// Both are short identifiers on the wire (a manifest row id and a workspace
+/// binding); anything longer cannot name a real template or project.
+pub const MAX_TEMPLATE_FIELD_CHARS: usize = 128;
+
+/// One node of an insertable template DAG.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TemplateDagNode {
+    /// Agent role the spawned task runs.
+    pub role: String,
+    /// Prompt template the node renders (a [`TemplateRegistry`] id).
+    pub template_id: String,
+}
+
+/// One insertable template DAG, resolved from the loaded prompt assets.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TemplateDag {
+    /// Manifest row id this DAG belongs to.
+    pub template_id: String,
+    /// Nodes to spawn, in insertion order.
+    pub nodes: Vec<TemplateDagNode>,
+}
+
+/// Template-DAG catalog derived from the real, loaded prompt-asset registry.
+///
+/// The shipped assets contain one prompt template (`planner`) and **no multi-node
+/// DAG manifests**: a manifest row is a prompt asset, not a task graph. The
+/// catalog therefore exposes the only mapping the assets support without
+/// inventing node sets — one single-node DAG per registered prompt template,
+/// whose node role and prompt are that template id. The four Library template
+/// ids (`content-writer`, `data-analyst`, `code-reviewer`, `chatbot`) have no
+/// prompt asset in the manifest, so a real lookup refuses them by name; adding
+/// four `.prompty` assets plus manifest rows makes them resolvable here with no
+/// code change. Multi-node DAG data is not present in the assets.
+#[derive(Clone, Debug, Default)]
+pub struct TemplateDagCatalog {
+    dags: BTreeMap<String, TemplateDag>,
+}
+
+impl TemplateDagCatalog {
+    /// Builds the catalog from the loaded prompt-template registry.
+    #[must_use]
+    pub fn from_registry(registry: &TemplateRegistry) -> Self {
+        let mut dags = BTreeMap::new();
+        for template_id in registry.template_ids() {
+            let dag = TemplateDag {
+                template_id: template_id.clone(),
+                nodes: vec![TemplateDagNode {
+                    role: template_id.clone(),
+                    template_id: template_id.clone(),
+                }],
+            };
+            dags.insert(template_id, dag);
+        }
+        Self { dags }
+    }
+
+    /// Looks a template DAG up by manifest id.
+    #[must_use]
+    pub fn get(&self, template_id: &str) -> Option<&TemplateDag> {
+        self.dags.get(template_id)
+    }
+
+    /// Every insertable template id, in manifest order.
+    #[must_use]
+    pub fn template_ids(&self) -> Vec<String> {
+        self.dags.keys().cloned().collect()
+    }
+
+    /// Whether the catalog holds no template DAG.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.dags.is_empty()
+    }
+}
+
+/// Inserts one manifest-backed template DAG into the active run.
+///
+/// This is the production `TEMPLATE_INSERT` path and it never starts from a canned
+/// answer: every step is a real lookup or validation, and nothing is
+/// written before all of them pass.
+///
+/// 1. Validate the payload identifiers.
+/// 2. Resolve the template id through [`TemplateDagCatalog`] (built from the
+///    loaded prompt-asset manifest). A miss refuses `E_TEMPLATE_UNKNOWN` and names
+///    the known ids in the log.
+/// 3. Resolve the target run. The frozen payload carries no run id, so the one
+///    active run is the only legal target (`E_RUN_NOT_FOUND` when none exists),
+///    and it must be non-terminal and bound to the requested project.
+/// 4. Enforce the spawn caps for every node before the first insert.
+/// 5. Insert each node as a `queued` task row plus a graph node under the run's
+///    planned root task. The transport owner publishes one `NODE_SPAWN` per
+///    inserted node after the `ACK`; the nodes stay `queued` until the run-scoped
+///    dispatcher picks post-plan nodes up, and the `ACK` never claims execution.
+///
+/// # Errors
+/// `E_SCHEMA_INVALID` for an invalid payload/project binding, `E_TEMPLATE_UNKNOWN`
+/// for an id absent from the prompt-asset manifest, `E_RUN_NOT_FOUND` when no run
+/// is active (or the run has no planned root task), `E_RUN_TERMINAL` for a
+/// terminal run, and the cap refusals (`E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`,
+/// `E_AGENT_LIMIT`).
+fn insert_template_dag(
+    templates: &TemplateRegistry,
+    store: &RunStore,
+    graph: &GraphAuthority,
+    caps: Caps,
+    active_run: Option<RunId>,
+    payload: &TemplateInsert,
+) -> Result<Vec<TaskRecord>, Refusal> {
+    let project_id = payload.project_id.trim();
+    let template_id = payload.template_id.trim();
+    if project_id.is_empty()
+        || template_id.is_empty()
+        || project_id.chars().count() > MAX_TEMPLATE_FIELD_CHARS
+        || template_id.chars().count() > MAX_TEMPLATE_FIELD_CHARS
+    {
+        return Err(Refusal::SchemaInvalid);
+    }
+
+    let catalog = TemplateDagCatalog::from_registry(templates);
+    let dag = match catalog.get(template_id) {
+        Some(dag) => dag.clone(),
+        None => {
+            tracing::warn!(
+                requested = %template_id,
+                known = ?catalog.template_ids(),
+                "TEMPLATE_INSERT refused after a real prompt-asset lookup"
+            );
+            return Err(Refusal::TemplateUnknown);
+        }
+    };
+
+    let run_id = active_run.ok_or(Refusal::RunNotFound)?;
+    let run = store.get_run(run_id)?;
+    if run.status.is_terminal() {
+        return Err(Refusal::RunTerminal);
+    }
+    if run.project_id != project_id {
+        return Err(Refusal::SchemaInvalid);
+    }
+
+    let tasks = store.tasks_for_run(run_id)?;
+    let root = tasks
+        .iter()
+        .find(|task| task.parent_task_id.is_none())
+        .cloned()
+        .ok_or(Refusal::TaskNotFound)?;
+    let depth = root.depth.saturating_add(1);
+    let siblings = tasks
+        .iter()
+        .filter(|task| task.parent_task_id == Some(root.id))
+        .count();
+    let agents = u64::try_from(tasks.len()).unwrap_or(u64::MAX);
+    for node in &dag.nodes {
+        // Every node must render a real prompt asset; a DAG that points at a
+        // missing template is refused before anything is inserted.
+        if templates.get(&node.template_id).is_none() {
+            tracing::error!(
+                template = %node.template_id,
+                "template DAG references a prompt asset that is not loaded"
+            );
+            return Err(Refusal::TemplateUnknown);
+        }
+    }
+    for index in 0..dag.nodes.len() {
+        let index = u64::try_from(index).unwrap_or(u64::MAX);
+        caps.check_spawn(
+            depth,
+            usize::try_from(index)
+                .unwrap_or(usize::MAX)
+                .saturating_add(siblings),
+            agents.saturating_add(index),
+        )?;
+    }
+
+    let mut spawn_seq = tasks.iter().map(|task| task.spawn_seq).max().unwrap_or(0);
+    let mut inserted = Vec::with_capacity(dag.nodes.len());
+    for node in &dag.nodes {
+        spawn_seq = spawn_seq.saturating_add(1);
+        let task = TaskRecord {
+            id: TaskId::new(),
+            run_id,
+            parent_task_id: Some(root.id),
+            role: node.role.clone(),
+            depth,
+            spawn_seq,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        store.insert_task(&task)?;
+        graph.add_task(task.id, Some(root.id))?;
+        inserted.push(task);
+    }
+    Ok(inserted)
+}
+
+/// Seeds the scoped context for a task that has none yet.
+///
+/// A task's context parent is its authoritative graph parent (`previous_parent`,
+/// read before the rewire). Seeding records only that real link and no facts; a
+/// task with a persisted row but no context would otherwise make the rewire
+/// context switch refuse `E_TASK_NOT_FOUND`.
+///
+/// # Errors
+/// `E_INTERNAL_ERROR` when the context store lock is poisoned.
+fn seed_rewire_context(
+    contexts: &ContextStore,
+    task_id: TaskId,
+    previous_parent: Option<TaskId>,
+) -> Result<(), Refusal> {
+    if let Some(existing) = contexts.get(task_id)? {
+        if existing.parent_task_id != previous_parent {
+            // The scoped context and the graph disagree about the current
+            // parent. The switch clears the facts of the context's parent, so
+            // report the drift instead of hiding it; the authoritative graph is
+            // the parent the next switch records.
+            tracing::warn!(
+                task = %task_id,
+                context_parent = ?existing.parent_task_id,
+                graph_parent = ?previous_parent,
+                "rewire found a scoped context whose parent differs from the graph"
+            );
+        }
+        return Ok(());
+    }
+    contexts.set(task_id, ScopedContext::new(previous_parent))?;
+    Ok(())
+}
+
+/// Applies the documented rewire context switch for a persisted task.
+///
+/// The old parent's scoped facts are cleared, the new parent's facts are injected
+/// and the task's scoped context now points at the new parent. The parent-fact
+/// source is the new parent's own output facts; no producer writes scoped facts
+/// in this release (`ContextStore::set` has no production caller yet), so the
+/// injected set is empty rather than fabricated. `allowed_tool_ids` /
+/// `output_schema_id` keep the task's own values: they are the task's persona
+/// capability set, and the production persona loader that would re-derive them
+/// for a new branch is not wired yet (recorded as a dependency, never invented).
+///
+/// # Errors
+/// `E_TASK_NOT_FOUND` when the task has no context, `E_INTERNAL_ERROR` when the
+/// store lock is poisoned.
+fn apply_rewire_context(
+    contexts: &ContextStore,
+    task_id: TaskId,
+    new_parent: TaskId,
+) -> Result<ContextSwitchOutcome, Refusal> {
+    let current = contexts.get(task_id)?.ok_or(Refusal::TaskNotFound)?;
+    let new_parent_facts = BTreeMap::new();
+    contexts.switch_on_rewire(
+        task_id,
+        Some(new_parent),
+        &new_parent_facts,
+        current.allowed_tool_ids,
+        current.output_schema_id,
+    )
+}
+
 /// `GET /ws` upgrade handler.
 ///
 /// Rejections happen before the upgrade and carry the named refusal in a JSON
@@ -144,9 +411,9 @@ async fn session_loop(mut socket: WebSocket, state: Arc<AppState>, query_last_se
         }
     };
 
-    if !send_hello_and_replay(&mut socket, &state.bus, reported)
+    if send_hello_replay_and_approvals(&mut socket, &state, reported)
         .await
-        .is_ok()
+        .is_err()
     {
         return;
     }
@@ -294,6 +561,49 @@ async fn send_hello_and_replay(
     }
 }
 
+/// Bounded cap on pending approvals replayed after one hello (mirror of the
+/// server constant documented for the UI replay window).
+const MAX_APPROVAL_REPLAY_EVENTS: usize = 20;
+
+/// Publishes the bounded pending-approval replay batch after `SERVER_HELLO`.
+///
+/// The socket is already subscribed to the bus (session_loop subscribes before
+/// the hello exchange), so every event published here is delivered to this
+/// connection's loop immediately after hello and to other clients as an
+/// idempotent replace-by-id upsert. Replay is best-effort: a refusal is logged
+/// and the session still works; the UI stays fail-closed (read-only card)
+/// instead of fabricating an approval.
+fn publish_pending_approval_replays(state: &Arc<AppState>) -> usize {
+    match state.tools.pending_approval_events_all(MAX_APPROVAL_REPLAY_EVENTS) {
+        Ok(events) => {
+            let mut published = 0_usize;
+            for approval in events {
+                if state.bus.publish(Event::ApprovalRequest(approval)).is_ok() {
+                    published += 1;
+                }
+            }
+            if published > 0 {
+                tracing::info!(published, "replayed pending approvals after hello");
+            }
+            published
+        }
+        Err(error) => {
+            tracing::warn!(code = error.code(), "pending-approval replay refused");
+            0
+        }
+    }
+}
+
+async fn send_hello_replay_and_approvals(
+    socket: &mut WebSocket,
+    state: &Arc<AppState>,
+    reported: Option<u64>,
+) -> Result<(), ()> {
+    send_hello_and_replay(socket, &state.bus, reported).await?;
+    let _ = publish_pending_approval_replays(state);
+    Ok(())
+}
+
 async fn handle_client_text(
     socket: &mut WebSocket,
     state: &Arc<AppState>,
@@ -313,7 +623,7 @@ async fn handle_client_text(
     // Transport control frame: client asks for a resync.
     if value.get("type").and_then(Value::as_str) == Some("hello") {
         let last_seq = value.get("last_seq").and_then(Value::as_u64);
-        send_hello_and_replay(socket, &state.bus, last_seq).await?;
+        send_hello_replay_and_approvals(socket, state, last_seq).await?;
         return Ok(());
     }
 
@@ -335,24 +645,83 @@ async fn handle_client_text(
 
     match command {
         Command::RewireTask(payload) => {
+            // The previous parent is the authoritative graph link *before* the
+            // mutation: the context switch must clear exactly that parent's
+            // scoped facts.
+            let previous_parent = state.graph.parent_of(payload.task_id).ok().flatten();
+            // A scoped context exists only for a persisted task. A graph-only
+            // node (transport tests, or a node whose row is written later) has
+            // no context, and none is fabricated for it.
+            let task = match state.engine.store.get_task(payload.task_id) {
+                Ok(task) => Some(task),
+                Err(Refusal::TaskNotFound) => None,
+                Err(refusal) => {
+                    publish_error(state, refusal, Some(correlation));
+                    return Ok(());
+                }
+            };
+            if let Some(task) = &task {
+                if let Err(refusal) =
+                    seed_rewire_context(&state.engine.contexts, task.id, previous_parent)
+                {
+                    publish_error(state, refusal, Some(correlation));
+                    return Ok(());
+                }
+            }
             match state
                 .graph
                 .rewire(payload.task_id, payload.new_parent_id, payload.expected_rev)
             {
                 Ok(()) => {
-                    let state_value = match state.graph.state_of(payload.task_id) {
-                        Ok(state_value) => state_value,
+                    // One locked read of the authoritative node after the
+                    // mutation: the published state and the stored revision can
+                    // never disagree with the graph.
+                    let node = match state.graph.node(payload.task_id) {
+                        Ok(Some(node)) => node,
+                        Ok(None) => {
+                            publish_error(state, Refusal::TaskNotFound, Some(correlation));
+                            return Ok(());
+                        }
                         Err(refusal) => {
                             publish_error(state, refusal, Some(correlation));
                             return Ok(());
                         }
                     };
+                    // Live context-stream switch (M-016): the graph rewire alone
+                    // left the old parent's scoped context in place.
+                    if let Some(task) = &task {
+                        match apply_rewire_context(
+                            &state.engine.contexts,
+                            task.id,
+                            payload.new_parent_id,
+                        ) {
+                            Ok(outcome) => tracing::debug!(
+                                task = %task.id,
+                                cleared = outcome.cleared_facts.len(),
+                                injected = outcome.injected_facts.len(),
+                                "rewire switched the task's scoped context to the new parent"
+                            ),
+                            Err(refusal) => {
+                                // The graph mutation is already committed, so the
+                                // scoped context and the graph now disagree: fail
+                                // loudly and let the client resync the authoritative
+                                // graph instead of ACKing a half-applied switch.
+                                tracing::error!(
+                                    code = refusal.code(),
+                                    task = %task.id,
+                                    "rewire committed but the context switch failed; the command is refused"
+                                );
+                                publish_error(state, refusal, Some(correlation));
+                                return Ok(());
+                            }
+                        }
+                    }
                     publish_ack(state, CommandName::RewireTask, correlation);
                     publish_node_event(
-                        state,
+                        state.bus.as_ref(),
                         EventName::NodeRewire,
-                        payload.task_id,
-                        state_value,
+                        &node,
+                        task.as_ref().map(|task| task.run_id),
                         Some(correlation),
                     );
                 }
@@ -420,6 +789,32 @@ async fn handle_client_text(
             publish_with_correlation(state, Event::SettingsStatusResult(result), correlation);
             Ok(())
         }
+        Command::TemplateInsert(payload) => {
+            // A boot that failed to load the embedded prompt assets must refuse
+            // with that named failure; flattening it into "unknown template"
+            // would hide a broken deployment behind a data error.
+            if let Some(refusal) = state.prompt_assets_error {
+                publish_error(state, refusal, Some(correlation));
+                return Ok(());
+            }
+            match insert_template_dag(
+                state.engine.templates.as_ref(),
+                &state.engine.store,
+                &state.engine.graph,
+                state.engine.caps,
+                state.engine.active_run(),
+                &payload,
+            ) {
+                Ok(tasks) => {
+                    publish_ack(state, CommandName::TemplateInsert, correlation);
+                    for task in &tasks {
+                        publish_node_spawn(state.bus.as_ref(), &state.graph, task);
+                    }
+                }
+                Err(refusal) => publish_error(state, refusal, Some(correlation)),
+            }
+            Ok(())
+        }
         Command::HistoryRevisionSet(payload) => {
             match state.history.state_at(payload.run_id, payload.revision) {
                 Ok(envelope) => {
@@ -476,6 +871,15 @@ async fn handle_client_text(
                         crate::tools_bridge::ToolsBridge::approval_resolved_event(&resolution);
                     publish_ack(state, CommandName::ApprovalResolve, correlation);
                     publish_with_correlation(state, Event::ApprovalResolved(resolved), correlation);
+                    // Wake the suspended engine turn only after the decision was
+                    // committed and published. A false result is legal (late,
+                    // duplicate or terminal-run resolve) and never fails the command.
+                    if !state.engine.notify_approval_resolved(&resolution) {
+                        tracing::warn!(
+                            approval_id = %resolution.request.approval_id,
+                            "approval decided with no armed engine wait (late/duplicate/terminal run)"
+                        );
+                    }
                 }
                 Err(refusal) => publish_error(state, refusal, Some(correlation)),
             }
@@ -527,26 +931,66 @@ fn publish_with_correlation(state: &Arc<AppState>, event: Event, correlation: Uu
     }
 }
 
+/// Publishes one frozen `NODE_*` frame for the authoritative graph node.
+///
+/// The frozen payload is `{task_id, state}` plus the additive topology fields
+/// `rev`, `kind` and `parent_task_id` (`contract/src/event.rs`): `rev` is the
+/// same per-node revision `REWIRE_TASK.expected_rev` is compared against and
+/// `parent_task_id` lets a re-parent move the canvas edge in the frame that
+/// reports the state. Both are read under one graph lock, so the frame can never
+/// disagree with the graph. `kind` stays absent: it may only be populated from a
+/// task's authoritative tier, and that tier is not threaded through the task
+/// record yet (the free-form `role` string is never promoted to a kind). The
+/// `run_id` is set on the envelope when the task row is known.
 fn publish_node_event(
-    state: &Arc<AppState>,
+    bus: &EventBus,
     name: EventName,
-    task_id: hiverouter_contract::TaskId,
-    agent_state: hiverouter_contract::AgentState,
+    node: &TaskNode,
+    run_id: Option<RunId>,
     correlation: Option<Uuid>,
 ) {
-    let node = NodeEvent {
-        task_id,
-        state: agent_state,
+    let payload = NodeEvent {
+        task_id: node.task_id,
+        state: node.state,
+        rev: Some(node.rev),
+        kind: None,
+        parent_task_id: node.parent_task_id,
     };
     let event = match name {
-        EventName::NodeSpawn => Event::NodeSpawn(node),
-        EventName::NodeDrag => Event::NodeDrag(node),
-        EventName::NodeRewire => Event::NodeRewire(node),
-        _ => Event::NodeState(node),
+        EventName::NodeSpawn => Event::NodeSpawn(payload),
+        EventName::NodeDrag => Event::NodeDrag(payload),
+        EventName::NodeRewire => Event::NodeRewire(payload),
+        _ => Event::NodeState(payload),
     };
-    if let Err(error) = state.bus.publish_with_correlation(event, correlation) {
+    if let Err(error) = bus.publish_for_run(event, run_id, correlation) {
         tracing::error!(code = error.code(), "failed to publish NODE event");
     }
+}
+
+/// Publishes `NODE_SPAWN` for a task row created after planning.
+///
+/// The frame is built from the graph node (not from the task row) so its `rev`
+/// is the graph revision `REWIRE_TASK` compares, never the row's own counter.
+fn publish_node_spawn(bus: &EventBus, graph: &GraphAuthority, task: &TaskRecord) {
+    let node = match graph.node(task.id) {
+        Ok(Some(node)) => node,
+        Ok(None) => {
+            tracing::error!(
+                task = %task.id,
+                "inserted node has no graph node; refusing to publish a fabricated NODE_SPAWN"
+            );
+            return;
+        }
+        Err(error) => {
+            tracing::error!(
+                code = error.code(),
+                task = %task.id,
+                "could not read the graph node for NODE_SPAWN"
+            );
+            return;
+        }
+    };
+    publish_node_event(bus, EventName::NodeSpawn, &node, Some(task.run_id), None);
 }
 
 async fn send_event_direct(socket: &mut WebSocket, event: Event) -> Result<(), ()> {
@@ -573,5 +1017,340 @@ pub async fn send_sequenced(
     sequenced: &SequencedEvent,
 ) -> Result<(), ()> {
     send_envelope(socket, &sequenced.envelope).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::bus::Replay;
+    use crate::db::Database;
+
+    /// The real, embedded prompt-asset registry (the production template source).
+    fn embedded_registry() -> TemplateRegistry {
+        TemplateRegistry::load_embedded().expect("embedded prompt assets load")
+    }
+
+    struct InsertFixture {
+        store: RunStore,
+        graph: GraphAuthority,
+        run_id: RunId,
+        root: TaskRecord,
+    }
+
+    fn insert_fixture(status: AgentState) -> InsertFixture {
+        let db = Database::open_in_memory().expect("in-memory database");
+        db.migrate().expect("migrate");
+        let store = RunStore::new(Arc::new(db));
+        let run = store
+            .create_run("project-1", "template insert", status)
+            .expect("run");
+        let root = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "planner".to_owned(),
+            depth: 0,
+            spawn_seq: 1,
+            state: AgentState::Running,
+            rev: 0,
+        };
+        store.insert_task(&root).expect("root task row");
+        let graph = GraphAuthority::new();
+        graph.add_task(root.id, None).expect("root graph node");
+        InsertFixture {
+            store,
+            graph,
+            run_id: run.id,
+            root,
+        }
+    }
+
+    #[test]
+    fn template_insert_spawns_manifest_backed_dag() {
+        let fixture = insert_fixture(AgentState::Running);
+        let templates = embedded_registry();
+        assert!(
+            templates.get("planner").is_some(),
+            "the shipped manifest carries the planner prompt asset"
+        );
+        let payload = TemplateInsert {
+            template_id: "planner".to_owned(),
+            project_id: "project-1".to_owned(),
+        };
+        let inserted = insert_template_dag(
+            &templates,
+            &fixture.store,
+            &fixture.graph,
+            Caps::default(),
+            Some(fixture.run_id),
+            &payload,
+        )
+        .expect("insert the manifest-backed DAG");
+        assert_eq!(inserted.len(), 1, "the planner DAG is one node");
+        let task = &inserted[0];
+        assert_eq!(task.role, "planner");
+        assert_eq!(task.run_id, fixture.run_id);
+        assert_eq!(task.parent_task_id, Some(fixture.root.id));
+        assert_eq!(task.state, AgentState::Queued);
+        assert_eq!(task.depth, fixture.root.depth + 1);
+
+        // The node is durable in the store and authoritatively in the graph.
+        let stored = fixture.store.get_task(task.id).expect("task row");
+        assert_eq!(stored, *task);
+        assert_eq!(
+            fixture.graph.state_of(task.id).expect("graph state"),
+            AgentState::Queued
+        );
+        assert_eq!(
+            fixture.graph.parent_of(task.id).expect("graph parent"),
+            Some(fixture.root.id)
+        );
+        assert_eq!(
+            fixture.store.task_count(fixture.run_id).expect("count"),
+            2
+        );
+
+        // The transport frame the ACK path publishes for each inserted node: a
+        // real NODE_SPAWN carrying the server node revision and the parent link.
+        let bus = EventBus::new();
+        for task in &inserted {
+            publish_node_spawn(&bus, &fixture.graph, task);
+        }
+        let events = match bus.replay_after(0) {
+            Replay::Events(events) => events,
+            other => panic!("expected one NODE_SPAWN per inserted node, got {other:?}"),
+        };
+        assert_eq!(events.len(), inserted.len());
+        assert_eq!(events[0].envelope.name, "NODE_SPAWN");
+        assert_eq!(events[0].envelope.run_id, Some(fixture.run_id));
+        let frame = events[0].envelope.payload.as_object().expect("payload");
+        assert_eq!(frame["task_id"], task.id.to_string());
+        assert_eq!(frame["state"], "queued");
+        assert_eq!(
+            frame["rev"], 0_u64,
+            "a fresh graph node starts at revision 0"
+        );
+        assert_eq!(frame["parent_task_id"], fixture.root.id.to_string());
+        assert!(
+            !frame.contains_key("kind"),
+            "kind stays absent until the task tier is threaded: {frame:?}"
+        );
+    }
+
+    #[test]
+    fn template_insert_refuses_the_library_ids_after_a_real_lookup() {
+        let fixture = insert_fixture(AgentState::Running);
+        let templates = embedded_registry();
+        for template_id in ["content-writer", "data-analyst", "code-reviewer", "chatbot"] {
+            let payload = TemplateInsert {
+                template_id: template_id.to_owned(),
+                project_id: "project-1".to_owned(),
+            };
+            assert_eq!(
+                insert_template_dag(
+                    &templates,
+                    &fixture.store,
+                    &fixture.graph,
+                    Caps::default(),
+                    Some(fixture.run_id),
+                    &payload,
+                ),
+                Err(Refusal::TemplateUnknown),
+                "{template_id} has no prompt asset and must be refused by name"
+            );
+        }
+        assert_eq!(
+            fixture.store.task_count(fixture.run_id).expect("count"),
+            1,
+            "a refused insert writes nothing"
+        );
+        let catalog = TemplateDagCatalog::from_registry(&templates);
+        assert_eq!(catalog.template_ids(), templates.template_ids());
+        assert!(catalog.get("planner").is_some());
+        assert!(catalog.get("content-writer").is_none());
+        assert!(!catalog.is_empty());
+    }
+
+    #[test]
+    fn template_insert_requires_an_active_non_terminal_run() {
+        let fixture = insert_fixture(AgentState::Running);
+        let templates = embedded_registry();
+        let payload = TemplateInsert {
+            template_id: "planner".to_owned(),
+            project_id: "project-1".to_owned(),
+        };
+        assert_eq!(
+            insert_template_dag(
+                &templates,
+                &fixture.store,
+                &fixture.graph,
+                Caps::default(),
+                None,
+                &payload,
+            ),
+            Err(Refusal::RunNotFound),
+            "the frozen payload carries no run id, so an insert needs the active run"
+        );
+
+        let terminal = insert_fixture(AgentState::Completed);
+        assert_eq!(
+            insert_template_dag(
+                &templates,
+                &terminal.store,
+                &terminal.graph,
+                Caps::default(),
+                Some(terminal.run_id),
+                &payload,
+            ),
+            Err(Refusal::RunTerminal)
+        );
+
+        let mismatch = TemplateInsert {
+            template_id: "planner".to_owned(),
+            project_id: "another-project".to_owned(),
+        };
+        assert_eq!(
+            insert_template_dag(
+                &templates,
+                &fixture.store,
+                &fixture.graph,
+                Caps::default(),
+                Some(fixture.run_id),
+                &mismatch,
+            ),
+            Err(Refusal::SchemaInvalid),
+            "a node set may not cross the run's project binding"
+        );
+    }
+
+    #[test]
+    fn template_insert_validates_the_payload_before_any_lookup() {
+        let fixture = insert_fixture(AgentState::Running);
+        let templates = embedded_registry();
+        for payload in [
+            TemplateInsert {
+                template_id: String::new(),
+                project_id: "project-1".to_owned(),
+            },
+            TemplateInsert {
+                template_id: "planner".to_owned(),
+                project_id: "  ".to_owned(),
+            },
+            TemplateInsert {
+                template_id: "p".repeat(MAX_TEMPLATE_FIELD_CHARS + 1),
+                project_id: "project-1".to_owned(),
+            },
+        ] {
+            assert_eq!(
+                insert_template_dag(
+                    &templates,
+                    &fixture.store,
+                    &fixture.graph,
+                    Caps::default(),
+                    Some(fixture.run_id),
+                    &payload,
+                ),
+                Err(Refusal::SchemaInvalid)
+            );
+        }
+        assert_eq!(fixture.store.task_count(fixture.run_id).expect("count"), 1);
+    }
+
+    #[test]
+    fn template_insert_needs_a_planned_root_task() {
+        let db = Database::open_in_memory().expect("db");
+        db.migrate().expect("migrate");
+        let store = RunStore::new(Arc::new(db));
+        let run = store
+            .create_run("project-1", "not planned yet", AgentState::Planning)
+            .expect("run");
+        let payload = TemplateInsert {
+            template_id: "planner".to_owned(),
+            project_id: "project-1".to_owned(),
+        };
+        assert_eq!(
+            insert_template_dag(
+                &embedded_registry(),
+                &store,
+                &GraphAuthority::new(),
+                Caps::default(),
+                Some(run.id),
+                &payload,
+            ),
+            Err(Refusal::TaskNotFound),
+            "there is no root node to attach a template node set to"
+        );
+    }
+
+    #[test]
+    fn rewire_switches_context_store() {
+        let contexts = ContextStore::new();
+        let task_id = TaskId::new();
+        let old_parent = TaskId::new();
+        let new_parent = TaskId::new();
+        let mut context = ScopedContext::new(Some(old_parent))
+            .with_fact(old_parent, "style", "old-honeycomb")
+            .with_fact(old_parent, "secret_scope", "old-parent-only");
+        context.allowed_tool_ids = vec!["file_read".to_owned()];
+        context.output_schema_id = Some("plan-v1".to_owned());
+        contexts.set(task_id, context).expect("seed context");
+
+        seed_rewire_context(&contexts, task_id, Some(old_parent)).expect("existing context is kept");
+        let outcome = apply_rewire_context(&contexts, task_id, new_parent).expect("switch");
+
+        assert_eq!(outcome.cleared_parent, Some(old_parent));
+        assert_eq!(outcome.cleared_facts.len(), 2);
+        let tokens = outcome.context.token_set().join("|");
+        assert!(
+            !tokens.contains("old-honeycomb") && !tokens.contains("old-parent-only"),
+            "the previous parent's scoped facts leaked into the new branch: {tokens}"
+        );
+        assert!(
+            outcome.injected_facts.is_empty(),
+            "no producer writes parent facts, so none may be invented"
+        );
+        assert_eq!(outcome.context.parent_task_id, Some(new_parent));
+        let reread = contexts.get(task_id).expect("get").expect("context");
+        assert_eq!(reread.parent_task_id, Some(new_parent));
+        assert!(!reread.contains_parent_facts(old_parent));
+        assert_eq!(
+            reread.allowed_tool_ids,
+            vec!["file_read".to_owned()],
+            "the task keeps its own persona capability set"
+        );
+        assert_eq!(reread.output_schema_id.as_deref(), Some("plan-v1"));
+    }
+
+    #[test]
+    fn rewire_seeds_a_missing_context_from_the_graph_parent() {
+        let contexts = ContextStore::new();
+        let task_id = TaskId::new();
+        let parent = TaskId::new();
+        seed_rewire_context(&contexts, task_id, Some(parent)).expect("seed");
+        let context = contexts.get(task_id).expect("get").expect("context");
+        assert_eq!(context.parent_task_id, Some(parent));
+        assert!(context.facts.is_empty(), "seeding invents no facts");
+
+        // Without a context the switch is refused by name, never fabricated.
+        assert_eq!(
+            apply_rewire_context(&contexts, TaskId::new(), parent),
+            Err(Refusal::TaskNotFound)
+        );
+    }
+
+    #[test]
+    fn rewire_context_switch_appends_no_second_parent_scope() {
+        let contexts = ContextStore::new();
+        let task_id = TaskId::new();
+        let first = TaskId::new();
+        let second = TaskId::new();
+        contexts.set(task_id, ScopedContext::new(None)).expect("seed");
+        apply_rewire_context(&contexts, task_id, first).expect("first switch");
+        apply_rewire_context(&contexts, task_id, second).expect("second switch");
+        let context = contexts.get(task_id).expect("get").expect("context");
+        assert_eq!(context.parent_task_id, Some(second));
+        assert!(!context.contains_parent_facts(first));
+        assert!(!context.contains_parent_facts(second));
+    }
 }
 
