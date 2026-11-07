@@ -31,7 +31,7 @@ use uuid::Uuid;
 use crate::approval_wait::{ApprovalWake, ApprovalWaiters};
 use crate::bus::EventBus;
 use crate::caps::Caps;
-use crate::context::ContextStore;
+use crate::context::{ContextStore, ScopedContext};
 use crate::db::{Database, ToolTurnRecord};
 use crate::entities::{ChatRole, Run, TaskRecord};
 use crate::graph::GraphAuthority;
@@ -45,6 +45,16 @@ use crate::run_state::{self, StateEvent};
 /// Default approval clock: Unix seconds (the approval/TTL unit).
 fn default_now_unix_secs() -> u64 {
     Timestamp::now().unix_secs().unwrap_or(0)
+}
+
+/// Adds the task's model-visible scoped facts to a prompt, bounded by the
+/// context renderer. The prompt is the only path that makes rewiring visible to
+/// the model; storing facts without this step is a no-op.
+fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String {
+    match context.and_then(|context| context.prompt_block(4_000)) {
+        Some(block) => format!("{prompt}\n\n{block}"),
+        None => prompt.to_owned(),
+    }
 }
 
 /// One time source for approval timestamps/CAS (tests inject a fixed clock).
@@ -610,6 +620,24 @@ impl RunEngine {
         Ok(())
     }
 
+    /// Seeds a task's scoped context from its authoritative parent at creation.
+    ///
+    /// Facts are inherited as a snapshot; the parent link is explicit so a later
+    /// rewire can clear only that parent's facts. Empty facts are not invented.
+    fn seed_task_context(
+        &self,
+        task: &TaskRecord,
+        parent_task_id: Option<TaskId>,
+    ) -> Result<(), Refusal> {
+        let mut context = ScopedContext::new(parent_task_id);
+        if let Some(parent_task_id) = parent_task_id {
+            if let Some(parent) = self.contexts.get(parent_task_id)? {
+                context.facts = parent.facts;
+            }
+        }
+        self.contexts.set(task.id, context)
+    }
+
     /// Removes one specific spawned task from the deferred queue.
     fn take_queued_task(&self, task_id: TaskId) -> bool {
         self.spawn_queue.lock().ok().is_some_and(|mut queue| {
@@ -819,6 +847,7 @@ impl RunEngine {
             self.graph.add_task(task.id, Some(parent_task_id))?;
             task
         };
+        self.seed_task_context(&task, Some(parent_task_id))?;
         self.publish_node_spawn(task.run_id, &task);
         // The run dispatch loop drains this queue and executes the child to a
         // terminal state before the run itself can become terminal (M-009).
@@ -1045,19 +1074,30 @@ impl RunEngine {
         };
         self.store.insert_task(&root)?;
         self.graph.add_task(root.id, None)?;
+        self.seed_task_context(&root, None)?;
         self.publish_node_spawn(run.id, &root);
 
         let mut tasks: HashMap<TaskId, TaskRecord> = HashMap::new();
         tasks.insert(root.id, root.clone());
         let mut spawn_seq: u64 = 1;
-        for (index, node) in plan.nodes.iter().enumerate() {
+        // Parents are always at a lower depth by plan validation, so inserting
+        // depth-first guarantees the real parent row and graph node exist before
+        // any child is attached. Legacy parent-less plans still attach to root.
+        let mut planned: Vec<(usize, &crate::planner::PlanNode)> =
+            plan.nodes.iter().enumerate().collect();
+        planned.sort_by_key(|(index, node)| (node.depth, *index));
+        for (index, node) in planned {
             let agents = self.store.task_count(run.id)?;
             self.caps.check_spawn(node.depth, index, agents)?;
+            let parent_id = node.parent.unwrap_or(root.id);
+            if !tasks.contains_key(&parent_id) {
+                return Err(Refusal::SchemaInvalid);
+            }
             spawn_seq = spawn_seq.saturating_add(1);
             let record = TaskRecord {
                 id: node.node_id,
                 run_id: run.id,
-                parent_task_id: Some(root.id),
+                parent_task_id: Some(parent_id),
                 role: node.role.clone(),
                 depth: node.depth,
                 spawn_seq,
@@ -1065,7 +1105,8 @@ impl RunEngine {
                 rev: 0,
             };
             self.store.insert_task(&record)?;
-            self.graph.add_task(record.id, Some(root.id))?;
+            self.graph.add_task(record.id, Some(parent_id))?;
+            self.seed_task_context(&record, Some(parent_id))?;
             self.publish_node_spawn(run.id, &record);
             tasks.insert(record.id, record);
         }
@@ -1113,6 +1154,65 @@ impl RunEngine {
                             // KILL_WORKER (or a kill/resolve race) stopped only
                             // this task; the run and its remaining tasks continue
                             // (M-012).
+                            continue;
+                        }
+                    }
+                    return Err(refusal);
+                }
+            }
+        }
+        // Phase 2: aggregators run after their children, deepest first. The child
+        // result is read from the task-scoped result table, never from the
+        // run-wide chat transcript, so one branch cannot consume another
+        // branch's answer.
+        for aggregator_id in plan.aggregation_order()? {
+            if token.is_cancelled() {
+                return Err(Refusal::ToolCancelled);
+            }
+            let task = tasks
+                .get(&aggregator_id)
+                .cloned()
+                .ok_or(Refusal::InternalError)?;
+            let mut aggregate_prompt = run.prompt.clone();
+            aggregate_prompt.push_str(
+                "\n\nAggregate the completed child results below into this task's final answer. \
+                 Do not invent results for children that have none.\n",
+            );
+            let Some(aggregator) = plan.node(aggregator_id) else {
+                return Err(Refusal::InternalError);
+            };
+            for child in tasks.values().filter(|child| {
+                child.parent_task_id == Some(aggregator_id) || aggregator.deps.contains(&child.id)
+            }) {
+                match self.store.task_result(child.id)? {
+                    Some(text) if !text.trim().is_empty() => {
+                        aggregate_prompt.push_str("\nChild ");
+                        aggregate_prompt.push_str(&child.id.to_string());
+                        aggregate_prompt.push_str(" (role ");
+                        aggregate_prompt.push_str(&child.role);
+                        aggregate_prompt.push_str("):\n");
+                        aggregate_prompt.push_str(&tool_loop::bounded_tool_text(&text));
+                        aggregate_prompt.push('\n');
+                    }
+                    Some(_) | None => {
+                        aggregate_prompt.push_str("\nChild ");
+                        aggregate_prompt.push_str(&child.id.to_string());
+                        aggregate_prompt.push_str(" has no recorded result.\n");
+                    }
+                }
+            }
+            let result = self
+                .execute_task_with_prompt(run, &task, token, &aggregate_prompt)
+                .await;
+            self.commit_run_snapshot(run, self.snapshot_revision(run.id), AgentState::Running);
+            match result {
+                Ok(_) => {}
+                Err(refusal) => {
+                    if !token.is_cancelled()
+                        && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
+                    {
+                        let fresh = self.store.get_task(task.id)?;
+                        if is_terminal_task_state(fresh.state) {
                             continue;
                         }
                     }
@@ -2136,8 +2236,10 @@ impl RunEngine {
         prompt: &str,
     ) -> Result<Option<String>, Refusal> {
         let task_token = self.register_task_token(task.id, token)?;
+        let context = self.contexts.get(task.id)?;
+        let prompt = prompt_with_context(prompt, context.as_ref());
         let result = self
-            .execute_task_inner(run, task, &task_token, prompt)
+            .execute_task_inner(run, task, &task_token, &prompt)
             .await;
         self.unregister_task_token(task.id);
         result
@@ -2394,9 +2496,37 @@ impl RunEngine {
         );
         self.store
             .update_task_state(task.id, AgentState::Completed)?;
+        self.store.record_task_result(run.id, task.id, &text)?;
         let _ = self.graph.set_state(task.id, AgentState::Completed);
         self.publish_node(run.id, task.id, AgentState::Completed);
         Ok(Some(text))
     }
 }
 
+
+
+#[cfg(test)]
+mod prompt_context_tests {
+    use super::*;
+
+    #[test]
+    fn prompt_includes_safe_scoped_facts_and_omits_secrets() {
+        let parent = TaskId::new();
+        let context = ScopedContext::new(Some(parent))
+            .with_fact(parent, "style", "honeycomb")
+            .with_fact(parent, "secret_scope", "do-not-send");
+        let prompt = prompt_with_context("do the work", Some(&context));
+        assert!(prompt.contains("do the work"));
+        assert!(prompt.contains("honeycomb"));
+        assert!(!prompt.contains("do-not-send"));
+    }
+
+    #[test]
+    fn prompt_without_facts_is_unchanged() {
+        assert_eq!(prompt_with_context("plain", None), "plain");
+        assert_eq!(
+            prompt_with_context("plain", Some(&ScopedContext::new(None))),
+            "plain"
+        );
+    }
+}

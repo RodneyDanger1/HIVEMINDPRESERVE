@@ -56,6 +56,44 @@ impl ScopedContext {
         tokens
     }
 
+    /// Renders the model-visible scoped-facts block, or `None` when there are no
+    /// safe facts to show.
+    ///
+    /// Secret-shaped keys are omitted rather than sent to the provider. The
+    /// block is bounded by `max_chars` so a large parent context cannot silently
+    /// consume the whole prompt window.
+    #[must_use]
+    pub fn prompt_block(&self, max_chars: usize) -> Option<String> {
+        const TRUNCATION: &str = "\n[scoped facts truncated]";
+        if max_chars <= TRUNCATION.chars().count() + 16 {
+            return None;
+        }
+        let mut block = String::from("Scoped facts for this branch (authoritative):\n");
+        for (key, value) in &self.facts {
+            if is_sensitive_fact_key(key) {
+                continue;
+            }
+            block.push_str("- ");
+            block.push_str(key);
+            block.push_str(" = ");
+            block.push_str(value);
+            block.push('\n');
+            if block.chars().count() >= max_chars {
+                break;
+            }
+        }
+        if !block.contains(" = ") {
+            return None;
+        }
+        if block.chars().count() > max_chars {
+            let keep = max_chars.saturating_sub(TRUNCATION.chars().count());
+            let mut truncated: String = block.chars().take(keep).collect();
+            truncated.push_str(TRUNCATION);
+            block = truncated;
+        }
+        Some(block)
+    }
+
     /// Whether any fact from `parent` is still present.
     #[must_use]
     pub fn contains_parent_facts(&self, parent: TaskId) -> bool {
@@ -70,6 +108,13 @@ fn parent_prefix(parent: &TaskId) -> String {
 
 fn fact_key(parent: &TaskId, key: &str) -> String {
     format!("{}{key}", parent_prefix(parent))
+}
+
+fn is_sensitive_fact_key(key: &str) -> bool {
+    let key = key.to_ascii_lowercase();
+    ["secret", "token", "password", "api_key", "apikey", "authorization", "credential"]
+        .iter()
+        .any(|marker| key.contains(marker))
 }
 
 /// Result of one context switch.
@@ -115,7 +160,14 @@ pub fn switch_context(
     let mut injected_facts = Vec::new();
     if let Some(new_parent) = new_parent_task_id {
         for (key, value) in new_parent_facts {
-            let scoped = fact_key(&new_parent, key);
+            // Rewire callers can pass either unscoped parent facts or the
+            // already-scoped snapshot from the parent context. Preserve scoped
+            // keys so a child never double-prefixes an ancestor fact.
+            let scoped = if key.starts_with(FACT_PREFIX) {
+                key.clone()
+            } else {
+                fact_key(&new_parent, key)
+            };
             facts.insert(scoped.clone(), value.clone());
             injected_facts.push(scoped);
         }
@@ -270,5 +322,29 @@ mod tests {
             store.switch_on_rewire(TaskId::new(), None, &BTreeMap::new(), Vec::new(), None),
             Err(Refusal::TaskNotFound)
         );
+    }
+
+    #[test]
+    fn prompt_block_renders_safe_facts_and_omits_secrets() {
+        let parent = TaskId::new();
+        let context = ScopedContext::new(Some(parent))
+            .with_fact(parent, "style", "honeycomb")
+            .with_fact(parent, "secret_scope", "do-not-send")
+            .with_fact(parent, "api_key", "sk-test");
+        let block = context.prompt_block(4_000).expect("safe facts");
+        assert!(block.contains("honeycomb"));
+        assert!(!block.contains("do-not-send"));
+        assert!(!block.contains("sk-test"));
+        assert_eq!(context.prompt_block(0), None);
+    }
+
+    #[test]
+    fn prompt_block_is_bounded() {
+        let parent = TaskId::new();
+        let context =
+            ScopedContext::new(Some(parent)).with_fact(parent, "long", &"x".repeat(500));
+        let block = context.prompt_block(120).expect("block");
+        assert!(block.chars().count() <= 120);
+        assert!(block.contains("[scoped facts truncated]"));
     }
 }

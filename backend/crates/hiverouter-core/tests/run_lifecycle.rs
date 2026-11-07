@@ -3,7 +3,7 @@
 //! `run_lifecycle_plans_and_dispatches`, `caps_refused_by_name`, error path).
 
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -27,9 +27,35 @@ fn leaf_plan(count: usize, depth: u8) -> Plan {
             role: "worker".to_owned(),
             deps: Vec::new(),
             depth,
+            parent: None,
         })
         .collect();
     Plan::new(nodes)
+}
+
+fn tree_plan() -> Plan {
+    let super_agent = PlanNode {
+        node_id: TaskId::new(),
+        role: "super".to_owned(),
+        deps: Vec::new(),
+        depth: 1,
+        parent: None,
+    };
+    let agent = PlanNode {
+        node_id: TaskId::new(),
+        role: "worker".to_owned(),
+        deps: Vec::new(),
+        depth: 2,
+        parent: Some(super_agent.node_id),
+    };
+    let subagent = PlanNode {
+        node_id: TaskId::new(),
+        role: "worker".to_owned(),
+        deps: Vec::new(),
+        depth: 3,
+        parent: Some(agent.node_id),
+    };
+    Plan::new(vec![super_agent, agent, subagent])
 }
 
 struct MockExecutor {
@@ -37,6 +63,7 @@ struct MockExecutor {
     fail_on_execute: Option<usize>,
     slow: bool,
     executed: AtomicUsize,
+    prompts: Mutex<Vec<String>>,
 }
 
 impl MockExecutor {
@@ -46,6 +73,7 @@ impl MockExecutor {
             fail_on_execute: None,
             slow: false,
             executed: AtomicUsize::new(0),
+            prompts: Mutex::new(Vec::new()),
         })
     }
 
@@ -55,6 +83,7 @@ impl MockExecutor {
             fail_on_execute: Some(fail_on_execute),
             slow: false,
             executed: AtomicUsize::new(0),
+            prompts: Mutex::new(Vec::new()),
         })
     }
 
@@ -64,6 +93,7 @@ impl MockExecutor {
             fail_on_execute: None,
             slow: true,
             executed: AtomicUsize::new(0),
+            prompts: Mutex::new(Vec::new()),
         })
     }
 }
@@ -83,10 +113,14 @@ impl ProviderExecutor for MockExecutor {
         &self,
         _run_id: hiverouter_contract::RunId,
         task: &hiverouter_core::entities::TaskRecord,
-        _prompt: &str,
+        prompt: &str,
         cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
+        self.prompts
+            .lock()
+            .expect("prompt capture")
+            .push(prompt.to_owned());
         let index = self.executed.fetch_add(1, Ordering::SeqCst);
         if self.slow {
             tokio::select! {
@@ -343,6 +377,61 @@ async fn spawn_sub_hive_unknown_parent_is_refused() {
     assert_eq!(
         harness.engine.spawn_sub_hive(TaskId::new(), "worker"),
         Err(Refusal::TaskNotFound)
+    );
+}
+
+#[tokio::test]
+async fn planned_parent_chain_is_persisted_not_flattened_to_root() {
+    let executor = MockExecutor::new(tree_plan());
+    let harness = test_engine(executor.clone());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("build a hierarchy", "p", Uuid::now_v7())
+        .expect("submit");
+    let mut reply_done = 0;
+    let final_status = loop {
+        let event = wait_for(&mut receiver, |_| true).await;
+        if event_name(&event) == "REPLY_DONE" {
+            reply_done += 1;
+        }
+        if event_name(&event) == "RUN_STATUS" {
+            let status = event.envelope.payload["status"].as_str().unwrap_or_default();
+            if status != "queued" && status != "planning" && status != "running" {
+                break status.to_owned();
+            }
+        }
+    };
+    assert_eq!(final_status, "completed");
+    assert_eq!(reply_done, 3, "leaf + two aggregators must execute");
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    let root = tasks.iter().find(|task| task.depth == 0).expect("root");
+    let super_agent = tasks.iter().find(|task| task.depth == 1).expect("super");
+    let agent = tasks.iter().find(|task| task.depth == 2).expect("agent");
+    let subagent = tasks.iter().find(|task| task.depth == 3).expect("subagent");
+    assert_eq!(super_agent.parent_task_id, Some(root.id));
+    assert_eq!(agent.parent_task_id, Some(super_agent.id));
+    assert_eq!(subagent.parent_task_id, Some(agent.id));
+    for task in &tasks {
+        let context = harness
+            .engine
+            .contexts
+            .get(task.id)
+            .expect("context lookup")
+            .expect("context seeded at task creation");
+        assert_eq!(context.parent_task_id, task.parent_task_id);
+    }
+    for task in [super_agent, agent, subagent] {
+        assert!(
+            harness.store.task_result(task.id).expect("result").is_some(),
+            "every executed task must persist its result"
+        );
+    }
+    let prompts = executor.prompts.lock().expect("prompts");
+    assert_eq!(prompts.len(), 3, "leaf + two aggregators");
+    assert!(
+        prompts.iter().any(|prompt| prompt.contains("Aggregate the completed child results")),
+        "an aggregator must receive child results, not just the original prompt: {prompts:?}"
     );
 }
 

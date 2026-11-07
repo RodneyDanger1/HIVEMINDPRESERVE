@@ -38,6 +38,7 @@ fn leaf_plan() -> Plan {
         role: "worker".to_owned(),
         deps: Vec::new(),
         depth: 1,
+        parent: None,
     }])
 }
 

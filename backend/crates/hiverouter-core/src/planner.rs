@@ -20,6 +20,11 @@ pub struct PlanNode {
     pub deps: Vec<TaskId>,
     /// Spawn depth (1-based, hard-capped at 3 by [`crate::caps`]).
     pub depth: u8,
+    /// Planned parent node. `None` means the run root (legacy flat plans).
+    ///
+    /// When present, the parent must be another planned node at `depth - 1`.
+    #[serde(default)]
+    pub parent: Option<TaskId>,
 }
 
 /// One plan: an acyclic DAG of nodes.
@@ -63,6 +68,29 @@ impl Plan {
                 if !known.contains(dep) {
                     return Err(Refusal::SchemaInvalid);
                 }
+            }
+        }
+        let by_id: HashMap<TaskId, &PlanNode> =
+            self.nodes.iter().map(|node| (node.node_id, node)).collect();
+        for node in &self.nodes {
+            if let Some(parent_id) = node.parent {
+                if parent_id == node.node_id {
+                    return Err(Refusal::SchemaInvalid);
+                }
+                let parent = by_id.get(&parent_id).ok_or(Refusal::SchemaInvalid)?;
+                if parent.depth.saturating_add(1) != node.depth {
+                    return Err(Refusal::SchemaInvalid);
+                }
+            }
+            // A parent chain that loops would make the hierarchy non-tree-shaped
+            // even though the dependency graph is acyclic.
+            let mut seen = HashSet::new();
+            let mut current = Some(node.node_id);
+            while let Some(id) = current {
+                if !seen.insert(id) {
+                    return Err(Refusal::SchemaInvalid);
+                }
+                current = by_id.get(&id).and_then(|item| item.parent);
             }
         }
         if self.topo_order()?.len() != self.nodes.len() {
@@ -122,12 +150,46 @@ impl Plan {
             for dep in &node.deps {
                 depended_on.insert(*dep);
             }
+            if let Some(parent) = node.parent {
+                depended_on.insert(parent);
+            }
         }
         Ok(self
             .topo_order()?
             .into_iter()
             .filter(|id| !depended_on.contains(id))
             .collect())
+    }
+
+    /// Aggregator nodes (they have a child/dependent) in execution order:
+    /// deepest first, then reverse topological order. A parent must run after
+    /// the children whose results it consumes.
+    ///
+    /// # Errors
+    /// Propagates the topological-order refusal.
+    pub fn aggregation_order(&self) -> Result<Vec<TaskId>, Refusal> {
+        let topo = self.topo_order()?;
+        let rank: HashMap<TaskId, usize> = topo
+            .iter()
+            .enumerate()
+            .map(|(index, id)| (*id, index))
+            .collect();
+        let mut aggregators: Vec<&PlanNode> = self
+            .nodes
+            .iter()
+            .filter(|node| {
+                self.nodes.iter().any(|other| {
+                    other.parent == Some(node.node_id) || other.deps.contains(&node.node_id)
+                })
+            })
+            .collect();
+        aggregators.sort_by(|left, right| {
+            right
+                .depth
+                .cmp(&left.depth)
+                .then_with(|| rank[&right.node_id].cmp(&rank[&left.node_id]))
+        });
+        Ok(aggregators.iter().map(|node| node.node_id).collect())
     }
 
     /// Looks a node up by id.
@@ -147,6 +209,7 @@ mod tests {
             role: role.to_owned(),
             deps,
             depth,
+            parent: None,
         }
     }
 
@@ -181,6 +244,48 @@ mod tests {
     #[test]
     fn unknown_dependency_is_refused() {
         let plan = Plan::new(vec![node("worker", vec![TaskId::new()], 1)]);
+        assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
+    }
+
+    #[test]
+    fn parented_hierarchy_is_valid() {
+        let mut super_agent = node("super", Vec::new(), 1);
+        let mut agent = node("worker", Vec::new(), 2);
+        agent.parent = Some(super_agent.node_id);
+        let subagent = {
+            let mut sub = node("worker", Vec::new(), 3);
+            sub.parent = Some(agent.node_id);
+            sub
+        };
+        // Give the first planned node a real root parent only at insertion; the
+        // planner validates the planned-node chain above it.
+        super_agent.parent = None;
+        let plan = Plan::new(vec![super_agent, agent, subagent]);
+        plan.validate().expect("valid parent chain");
+        assert_eq!(plan.nodes[1].parent, Some(plan.nodes[0].node_id));
+        assert_eq!(plan.nodes[2].parent, Some(plan.nodes[1].node_id));
+        assert_eq!(
+            plan.aggregation_order().expect("aggregation order"),
+            vec![plan.nodes[1].node_id, plan.nodes[0].node_id]
+        );
+    }
+
+    #[test]
+    fn parent_depth_mismatch_is_refused() {
+        let mut parent = node("super", Vec::new(), 1);
+        parent.parent = None;
+        let mut child = node("worker", Vec::new(), 3);
+        child.parent = Some(parent.node_id);
+        let plan = Plan::new(vec![parent, child]);
+        assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
+    }
+
+    #[test]
+    fn self_parent_is_refused() {
+        let mut item = node("worker", Vec::new(), 1);
+        let id = item.node_id;
+        item.parent = Some(id);
+        let plan = Plan::new(vec![item]);
         assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
     }
 }

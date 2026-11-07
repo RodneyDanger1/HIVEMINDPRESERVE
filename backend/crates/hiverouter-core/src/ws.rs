@@ -328,12 +328,10 @@ fn seed_rewire_context(
 ///
 /// The old parent's scoped facts are cleared, the new parent's facts are injected
 /// and the task's scoped context now points at the new parent. The parent-fact
-/// source is the new parent's own output facts; no producer writes scoped facts
-/// in this release (`ContextStore::set` has no production caller yet), so the
-/// injected set is empty rather than fabricated. `allowed_tool_ids` /
+/// source is the new parent's own scoped context; an absent parent context
+/// contributes no facts rather than inventing them. `allowed_tool_ids` /
 /// `output_schema_id` keep the task's own values: they are the task's persona
-/// capability set, and the production persona loader that would re-derive them
-/// for a new branch is not wired yet (recorded as a dependency, never invented).
+/// capability set, and the production persona loader is wired separately.
 ///
 /// # Errors
 /// `E_TASK_NOT_FOUND` when the task has no context, `E_INTERNAL_ERROR` when the
@@ -344,7 +342,10 @@ fn apply_rewire_context(
     new_parent: TaskId,
 ) -> Result<ContextSwitchOutcome, Refusal> {
     let current = contexts.get(task_id)?.ok_or(Refusal::TaskNotFound)?;
-    let new_parent_facts = BTreeMap::new();
+    let new_parent_facts = contexts
+        .get(new_parent)?
+        .map(|context| context.facts)
+        .unwrap_or_default();
     contexts.switch_on_rewire(
         task_id,
         Some(new_parent),

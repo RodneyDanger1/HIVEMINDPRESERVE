@@ -464,6 +464,9 @@ struct WireNode {
     deps: Vec<String>,
     #[serde(default = "one")]
     depth: u8,
+    /// Planned parent id. Omitted means the run root (legacy flat plans).
+    #[serde(default)]
+    parent: Option<String>,
 }
 
 const fn one() -> u8 {
@@ -489,11 +492,16 @@ impl WirePlan {
             if node.role.trim().is_empty() || node.depth == 0 || node.depth > 3 {
                 return Err(Refusal::SchemaInvalid);
             }
+            let parent = match node.parent.as_deref().map(str::trim).filter(|id| !id.is_empty()) {
+                Some(parent) => Some(*ids.get(parent).ok_or(Refusal::SchemaInvalid)?),
+                None => None,
+            };
             nodes.push(PlanNode {
                 node_id,
                 role: node.role,
                 deps,
                 depth: node.depth,
+                parent,
             });
         }
         let plan = Plan::new(nodes);
@@ -517,12 +525,14 @@ mod tests {
                     role: "worker".to_owned(),
                     deps: vec![],
                     depth: 1,
+                    parent: None,
                 },
                 WireNode {
                     id: "a".to_owned(),
                     role: "worker".to_owned(),
                     deps: vec![],
                     depth: 1,
+                    parent: None,
                 },
             ],
         };
@@ -538,12 +548,14 @@ mod tests {
                     role: "super".to_owned(),
                     deps: vec![],
                     depth: 1,
+                    parent: None,
                 },
                 WireNode {
                     id: "b".to_owned(),
                     role: "worker".to_owned(),
                     deps: vec!["a".to_owned()],
                     depth: 2,
+                    parent: None,
                 },
             ],
         };
@@ -551,6 +563,44 @@ mod tests {
         assert_eq!(plan.nodes.len(), 2);
         assert_eq!(plan.nodes[1].deps.len(), 1);
         assert_eq!(plan.nodes[1].deps[0], plan.nodes[0].node_id);
+    }
+
+    #[test]
+    fn wire_plan_maps_parent_edges() {
+        let wire = WirePlan {
+            nodes: vec![
+                WireNode {
+                    id: "super".to_owned(),
+                    role: "super".to_owned(),
+                    deps: vec![],
+                    depth: 1,
+                    parent: None,
+                },
+                WireNode {
+                    id: "worker".to_owned(),
+                    role: "worker".to_owned(),
+                    deps: vec![],
+                    depth: 2,
+                    parent: Some("super".to_owned()),
+                },
+            ],
+        };
+        let plan = wire.into_plan().expect("valid parent plan");
+        assert_eq!(plan.nodes[1].parent, Some(plan.nodes[0].node_id));
+    }
+
+    #[test]
+    fn wire_plan_rejects_unknown_parent() {
+        let wire = WirePlan {
+            nodes: vec![WireNode {
+                id: "worker".to_owned(),
+                role: "worker".to_owned(),
+                deps: vec![],
+                depth: 2,
+                parent: Some("missing".to_owned()),
+            }],
+        };
+        assert_eq!(wire.into_plan(), Err(Refusal::SchemaInvalid));
     }
 
     #[test]

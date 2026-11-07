@@ -425,6 +425,59 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Records the bounded final text of a completed task.
+    ///
+    /// One row per task; a retry replaces the same task's row rather than
+    /// duplicating it. Parent aggregators read this table, never the run-wide
+    /// chat transcript, so a child result cannot be attributed to the wrong task.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_task_result(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        text: &str,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO task_results(task_id, run_id, text, created_at)
+                     VALUES (?1, ?2, ?3, ?4)
+                     ON CONFLICT(task_id) DO UPDATE SET text = excluded.text,
+                                                        created_at = excluded.created_at",
+                    params![
+                        task_id.to_string(),
+                        run_id.to_string(),
+                        text,
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Reads a task's recorded final text.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn task_result(&self, task_id: TaskId) -> Result<Option<String>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT text FROM task_results WHERE task_id = ?1",
+                        params![task_id.to_string()],
+                        |row| row.get(0),
+                    )
+                    .optional()
+            })
+            .map_err(map)
+    }
+
+
     /// Records a mutating command receipt (idempotency by correlation id).
     ///
     /// # Errors
