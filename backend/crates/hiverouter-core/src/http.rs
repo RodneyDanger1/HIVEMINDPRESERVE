@@ -429,6 +429,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/api/agents/profiles", get(agent_profiles))
+        .route("/api/usage/runs/{run_id}", get(run_usage))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -622,6 +623,41 @@ async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
         })
         .collect();
     (StatusCode::OK, Json(serde_json::json!({ "profiles": profiles }))).into_response()
+}
+
+async fn run_usage(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    if let Err(refusal) = state.engine.store.get_run(run_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    match state.engine.store.run_usage(run_id) {
+        Ok(Some(usage)) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "usage": {
+                    "prompt_tokens": usage.prompt_tokens,
+                    "completion_tokens": usage.completion_tokens,
+                    "total_tokens": usage.total_tokens,
+                    "prompt_cache_hit_tokens": usage.prompt_cache_hit_tokens,
+                    "prompt_cache_miss_tokens": usage.prompt_cache_miss_tokens,
+                    "reasoning_tokens": usage.reasoning_tokens,
+                },
+            })),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "run_id": run_id.to_string(), "usage": null })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

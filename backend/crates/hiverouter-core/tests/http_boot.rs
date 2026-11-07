@@ -239,6 +239,38 @@ async fn agent_profiles_route_returns_embedded_registry() {
 }
 
 #[tokio::test]
+async fn run_usage_route_returns_persisted_tokens() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "usage", hiverouter_contract::AgentState::Completed)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .record_run_usage(
+            run.id,
+            &hiverouter_contract::Usage {
+                prompt_tokens: Some(7),
+                completion_tokens: Some(3),
+                total_tokens: Some(10),
+                ..hiverouter_contract::Usage::default()
+            },
+        )
+        .expect("usage");
+    let (status, body) = http_get(server.addr, &format!("/api/usage/runs/{}", run.id)).await;
+    assert_eq!(status, 200, "usage route: {body}");
+    let value: Value = serde_json::from_str(&body).expect("usage JSON");
+    assert_eq!(value["usage"]["prompt_tokens"], 7);
+    assert_eq!(value["usage"]["completion_tokens"], 3);
+    assert_eq!(value["usage"]["total_tokens"], 10);
+}
+
+#[tokio::test]
 async fn agent_messages_route_returns_durable_mailbox() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
