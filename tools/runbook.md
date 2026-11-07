@@ -57,6 +57,8 @@ or: `pwsh -NoProfile -ExecutionPolicy Bypass -File tools\build-release.ps1`
    `HIVEROUTER_PROVIDER` (`auto` default; `disabled` forces the honest `E_KEY_MISSING` executor).
    Settings shows model, thinking mode, reasoning effort and key presence (boolean only).
 3. Start the local server (binds 127.0.0.1 only): `.\target\release\hiverouter.exe`
+   Or run the one-click launcher from the repo root: `.\HiveMind.cmd` (starts the server,
+   waits for health, and opens the browser; it reuses an already-healthy `127.0.0.1:8099`).
 4. Open the local UI in a browser: the server prints its `http://127.0.0.1:8080` URL.
 5. Verify health: `hiverouter-cli health --url http://127.0.0.1:8080` → 200 JSON
    with `schema: hiverouter.health.v1`. Diagnose: `hiverouter-cli diagnose`.
