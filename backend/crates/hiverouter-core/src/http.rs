@@ -132,13 +132,27 @@ fn persona_assets_for(
     }
 }
 
-fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
+fn tools_migration_check(db: &Database, checks: &mut Vec<Check>) {
     if let Err(error) = ToolsBridge::migrate(db) {
         tracing::error!(
             code = error.code(),
-            "tools approval-table migration failed; APPROVAL_RESOLVE will refuse by name"
+            "tools approval-table migration failed; required health check fails"
         );
+        checks.push(Check {
+            name: "tools_migration",
+            required: true,
+            ok: false,
+            detail: format!(
+                "tools approval-table migration failed: {} ({})",
+                error.message(),
+                error.code()
+            ),
+            code: Some(error.code()),
+        });
     }
+}
+
+fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
     let now_unix_secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_secs())
@@ -247,6 +261,7 @@ impl AppState {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
         let personas = persona_assets_for(&templates, &mut checks);
+        tools_migration_check(&db, &mut checks);
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
@@ -286,6 +301,7 @@ impl AppState {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
         let personas = persona_assets_for(&templates, &mut checks);
+        tools_migration_check(&db, &mut checks);
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
@@ -314,13 +330,14 @@ impl AppState {
     #[must_use]
     pub fn with_services(
         db: Arc<Database>,
-        checks: Vec<Check>,
+        mut checks: Vec<Check>,
         config: Arc<Config>,
         bus: Arc<EventBus>,
         graph: Arc<GraphAuthority>,
         session: Arc<SessionAuth>,
     ) -> Self {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
+        tools_migration_check(&db, &mut checks);
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), Vec::new(), snapshots.clone(), tools.clone(), false);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
