@@ -470,6 +470,8 @@ async fn boot_persona_allowlist_is_seeded_on_worker_contexts() {
         allowed_tool_ids: vec!["file_read".to_owned()],
         output_schema_id: None,
         refusal_policy: "strict".to_owned(),
+        max_children: None,
+        max_depth: None,
     };
     let harness = test_engine_with_personas(MockExecutor::new(tree_plan()), vec![worker]);
     let mut receiver = harness.bus.subscribe();
@@ -588,6 +590,63 @@ async fn worker_spawn_is_restricted_to_subagents_not_superagents() {
         .expect("worker may spawn a subagent");
     assert_eq!(child.depth, 2);
     assert_eq!(child.parent_task_id, Some(worker.id));
+}
+
+#[tokio::test]
+async fn profile_max_children_tightens_the_global_fanout_cap() {
+    let worker = Persona {
+        id: "worker".to_owned(),
+        display_name: "Worker".to_owned(),
+        tier: PersonaTier::Worker,
+        template_id: "planner".to_owned(),
+        allowed_tool_ids: vec!["spawn_agent".to_owned()],
+        output_schema_id: None,
+        refusal_policy: "strict".to_owned(),
+        max_children: Some(1),
+        max_depth: Some(2),
+    };
+    let harness = test_engine_with_personas(MockExecutor::new(leaf_plan(1, 1)), vec![worker]);
+    let run = harness
+        .store
+        .create_run("p", "profile caps", AgentState::Running)
+        .expect("run");
+    let root = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: run.id,
+        parent_task_id: None,
+        role: "planner".to_owned(),
+        depth: 0,
+        spawn_seq: 1,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    let worker_task = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: run.id,
+        parent_task_id: Some(root.id),
+        role: "worker".to_owned(),
+        depth: 1,
+        spawn_seq: 2,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    harness.store.insert_task(&root).expect("root");
+    harness.store.insert_task(&worker_task).expect("worker");
+    harness.engine.graph.add_task(root.id, None).expect("root graph");
+    harness
+        .engine
+        .graph
+        .add_task(worker_task.id, Some(root.id))
+        .expect("worker graph");
+    harness
+        .engine
+        .spawn_sub_hive(worker_task.id, "subagent")
+        .expect("first child within profile cap");
+    assert_eq!(
+        harness.engine.spawn_sub_hive(worker_task.id, "subagent"),
+        Err(Refusal::FanoutLimit),
+        "the profile's max_children=1 must refuse the second child"
+    );
 }
 
 #[tokio::test]

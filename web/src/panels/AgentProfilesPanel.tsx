@@ -14,6 +14,8 @@ interface AgentProfileRow {
   readonly allowed_tool_ids: readonly string[];
   readonly output_schema_id: string | null;
   readonly refusal_policy: string;
+  readonly max_children: number | null;
+  readonly max_depth: number | null;
 }
 
 type Status = 'loading' | 'ok' | 'error';
@@ -66,6 +68,8 @@ export function AgentProfilesPanel() {
             : [],
           output_schema_id: typeof item.output_schema_id === 'string' ? item.output_schema_id : null,
           refusal_policy: typeof item.refusal_policy === 'string' ? item.refusal_policy : '',
+          max_children: typeof item.max_children === 'number' ? item.max_children : null,
+          max_depth: typeof item.max_depth === 'number' ? item.max_depth : null,
         });
       }
       setProfiles(decoded);
@@ -143,6 +147,11 @@ export function AgentProfilesPanel() {
             <div className="type-mono-meta mt-1 text-meta">
               {profile.template_id} · {profile.allowed_tool_ids.length} tools · {profile.refusal_policy}
             </div>
+            {profile.max_children === null && profile.max_depth === null ? null : (
+              <div className="type-mono-meta mt-1 text-meta">
+                limits: {profile.max_children ?? '—'} children · {profile.max_depth ?? '—'} depth
+              </div>
+            )}
             {BUILTIN_IDS.has(profile.id) ? null : (
               <button
                 type="button"

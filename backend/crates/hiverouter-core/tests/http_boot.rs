@@ -126,7 +126,9 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
         "template_id": "content-writer",
         "allowed_tool_ids": ["file_read", "ask_parent", "finish"],
         "output_schema_id": null,
-        "refusal_policy": "strict"
+        "refusal_policy": "strict",
+        "max_children": 2,
+        "max_depth": 2
     });
     let (status, body) = http_json(
         server.addr,
@@ -141,6 +143,12 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
     let profiles = value["profiles"].as_array().expect("profiles");
     assert_eq!(profiles.len(), 6, "five embedded + one imported");
     assert!(profiles.iter().any(|profile| profile["id"] == "custom-writer"));
+    let custom = profiles
+        .iter()
+        .find(|profile| profile["id"] == "custom-writer")
+        .expect("imported profile");
+    assert_eq!(custom["max_children"], 2);
+    assert_eq!(custom["max_depth"], 2);
 
     // The imported profile is persisted, not just installed in this AppState.
     let boot_config = Config::resolve(

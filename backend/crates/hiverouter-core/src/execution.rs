@@ -546,6 +546,17 @@ impl RunEngine {
             .is_some()
     }
 
+    /// Returns the optional per-profile spawn limits for a role.
+    fn persona_spawn_limits(&self, role: &str) -> (Option<usize>, Option<u8>) {
+        self.personas
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(role)
+            .map_or((None, None), |persona| {
+                (persona.max_children, persona.max_depth)
+            })
+    }
+
     /// Returns the boot-loaded personas in stable id order.
     #[must_use]
     pub fn personas(&self) -> Vec<Persona> {
@@ -1069,6 +1080,14 @@ impl RunEngine {
                 .count();
             let agents = self.store.task_count(parent.run_id)?;
             let depth = parent.depth.saturating_add(1);
+            let (profile_max_children, profile_max_depth) =
+                self.persona_spawn_limits(&parent.role);
+            if profile_max_children.is_some_and(|limit| siblings >= limit) {
+                return Err(Refusal::FanoutLimit);
+            }
+            if profile_max_depth.is_some_and(|limit| depth > limit) {
+                return Err(Refusal::SpawnDepth);
+            }
             self.caps.check_spawn(depth, siblings, agents)?;
             let task = TaskRecord {
                 id: TaskId::new(),

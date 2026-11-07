@@ -387,6 +387,12 @@ pub struct Persona {
     pub output_schema_id: Option<String>,
     /// Named refusal policy for this persona (`strict` / `report`).
     pub refusal_policy: String,
+    /// Optional per-profile child cap (must be <= the global fan-out cap).
+    #[serde(default)]
+    pub max_children: Option<usize>,
+    /// Optional per-profile depth cap (must be <= the global depth cap).
+    #[serde(default)]
+    pub max_depth: Option<u8>,
 }
 
 impl Persona {
@@ -403,6 +409,18 @@ impl Persona {
         }
         if templates.get(&self.template_id).is_none() {
             return Err(Refusal::TemplateUnknown);
+        }
+        if self
+            .max_children
+            .is_some_and(|limit| limit == 0 || limit > crate::caps::MAX_FANOUT)
+        {
+            return Err(Refusal::PersonaUnknown);
+        }
+        if self
+            .max_depth
+            .is_some_and(|limit| limit == 0 || limit > crate::caps::MAX_SPAWN_DEPTH)
+        {
+            return Err(Refusal::PersonaUnknown);
         }
         Ok(())
     }

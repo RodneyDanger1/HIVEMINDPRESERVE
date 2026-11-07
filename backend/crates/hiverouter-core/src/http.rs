@@ -699,6 +699,8 @@ async fn import_agent_profile(
                 "allowed_tool_ids": persona.allowed_tool_ids,
                 "output_schema_id": persona.output_schema_id,
                 "refusal_policy": persona.refusal_policy,
+                "max_children": persona.max_children,
+                "max_depth": persona.max_depth,
             },
             "source": "api",
         })),
@@ -756,6 +758,8 @@ async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
                 "allowed_tool_ids": persona.allowed_tool_ids,
                 "output_schema_id": persona.output_schema_id,
                 "refusal_policy": persona.refusal_policy,
+                "max_children": persona.max_children,
+                "max_depth": persona.max_depth,
             })
         })
         .collect();
