@@ -1491,17 +1491,25 @@ impl RunEngine {
                     ),
                     Ok(plan) => {
                         let execution = match self.authorize_tool_call(task, &plan) {
-                            Err(refusal) => ToolExecution::refused(
-                                plan.tool_call_id.clone(),
-                                refusal.code(),
-                                format!(
-                                    "tool {:?} refused for task role {:?} (tier {}): {}",
-                                    plan.tool,
-                                    task.role,
-                                    task_agent_tier(task).label(),
-                                    refusal.message()
-                                ),
-                            ),
+                            Err(refusal) => {
+                                hiverouter_tools::record_refusal(
+                                    task.run_id,
+                                    refusal,
+                                    ToolId::from_id(&plan.tool),
+                                    tool_loop::permission_for(&self.tool_registry, &plan.tool),
+                                );
+                                ToolExecution::refused(
+                                    plan.tool_call_id.clone(),
+                                    refusal.code(),
+                                    format!(
+                                        "tool {:?} refused for task role {:?} (tier {}): {}",
+                                        plan.tool,
+                                        task.role,
+                                        task_agent_tier(task).label(),
+                                        refusal.message()
+                                    ),
+                                )
+                            }
                             Ok(tier) => {
                                 self.publish_tool_call(run, task, &plan);
                                 if plan.tool == "spawn_agent" {
@@ -1975,6 +1983,12 @@ impl RunEngine {
         // never reaches execute_approved, so the consent is not consumed.
         let tier = task_agent_tier(task);
         if let Err(refusal) = self.authorize_tool_call(task, plan) {
+            hiverouter_tools::record_refusal(
+                task.run_id,
+                refusal,
+                ToolId::from_id(&plan.tool),
+                tool_loop::permission_for(&self.tool_registry, &plan.tool),
+            );
             return Ok(ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),

@@ -42,6 +42,8 @@ pub struct ToolsBridge {
     /// the per-file monotonic `seq` counter and its write lock meaningful across
     /// commands (two fresh `RunLedger`s would each restart at seq 0).
     ledger: Mutex<Option<(PathBuf, RunLedger)>>,
+    /// Config-owned side-effect kill switch (never a raw env read at execute time).
+    side_effects_enabled: bool,
 }
 
 impl ToolsBridge {
@@ -73,6 +75,7 @@ impl ToolsBridge {
             workspace_root: workspace_root.to_path_buf(),
             db,
             ledger: Mutex::new(None),
+            side_effects_enabled: true,
         }
     }
 
@@ -105,6 +108,13 @@ impl ToolsBridge {
     #[must_use]
     pub fn with_approval_ttl(mut self, ttl_secs: u64) -> Self {
         self.gate = hiverouter_tools::approval::ApprovalGate::with_ttl(ttl_secs);
+        self
+    }
+
+    /// Applies the config-owned side-effect gate.
+    #[must_use]
+    pub fn with_side_effects_enabled(mut self, enabled: bool) -> Self {
+        self.side_effects_enabled = enabled;
         self
     }
 
@@ -204,7 +214,7 @@ impl ToolsBridge {
         args: &serde_json::Value,
         cancellation: Option<&tokio_util::sync::CancellationToken>,
     ) -> Result<hiverouter_tools::executor::ExecutedTool, Refusal> {
-        if !side_effects_enabled() {
+        if !self.side_effects_enabled {
             return Ok(hiverouter_tools::executor::ExecutedTool::Refused {
                 code: Refusal::ToolNotAllowed.code().to_owned(),
                 detail: "HIVEROUTER_SIDE_EFFECTS=0 disables granted side effects; \
@@ -588,16 +598,6 @@ impl ToolsBridge {
             tool: resolution.request.tool.id().to_owned(),
             decision: decision.to_owned(),
         }
-    }
-}
-
-fn side_effects_enabled() -> bool {
-    match std::env::var("HIVEROUTER_SIDE_EFFECTS") {
-        Ok(value) => {
-            let normalized = value.trim().to_ascii_lowercase();
-            !(normalized == "0" || normalized == "false" || normalized == "off")
-        }
-        Err(_) => true,
     }
 }
 

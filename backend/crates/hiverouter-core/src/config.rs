@@ -183,12 +183,16 @@ pub struct Config {
     pub workspace_root: PathBuf,
     /// Provider behaviour (model, thinking, effort, caps).
     pub provider: ProviderSettings,
+    /// Whether approved file/shell side effects may execute.
+    pub side_effects_enabled: bool,
 }
 
 /// Environment variable that appends comma-separated extra Origins.
 pub const ALLOWED_ORIGINS_ENV: &str = "HIVEROUTER_ALLOWED_ORIGINS";
 /// Environment variable selecting the workspace root for the jailed file tools.
 pub const WORKSPACE_ROOT_ENV: &str = "HIVEROUTER_WORKSPACE_ROOT";
+/// Environment variable disabling approved side effects (`0`/`false`/`off`).
+pub const SIDE_EFFECTS_ENV: &str = "HIVEROUTER_SIDE_EFFECTS";
 
 /// Default workspace root: the process working directory.
 #[must_use]
@@ -348,6 +352,13 @@ impl Config {
                 })?;
             }
         }
+        let side_effects_enabled = match std::env::var(SIDE_EFFECTS_ENV) {
+            Ok(value) => !matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "0" | "false" | "off" | "disabled" | "no"
+            ),
+            Err(_) => true,
+        };
         Ok(Self {
             bind,
             data_dir,
@@ -357,6 +368,7 @@ impl Config {
                 .map(Path::to_path_buf)
                 .unwrap_or_else(default_workspace_root),
             provider: ProviderSettings::from_env()?,
+            side_effects_enabled,
         })
     }
 

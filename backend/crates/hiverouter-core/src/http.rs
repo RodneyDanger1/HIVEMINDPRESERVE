@@ -154,7 +154,10 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
             "approval boot reaper failed; restart-orphaned rows may remain pending (no in-process waiter survives)"
         ),
     }
-    Arc::new(ToolsBridge::new(&config.workspace_root, db.clone()))
+    Arc::new(
+        ToolsBridge::new(&config.workspace_root, db.clone())
+            .with_side_effects_enabled(config.side_effects_enabled),
+    )
 }
 
 /// Builds the production executor. Missing key or disabled provider falls back
