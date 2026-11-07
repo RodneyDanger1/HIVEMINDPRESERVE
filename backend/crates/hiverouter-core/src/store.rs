@@ -580,10 +580,72 @@ impl RunStore {
     }
 
 
-    /// Records a mutating command receipt (idempotency by correlation id).
+    /// Upserts one durable role-scoped memory entry.
     ///
     /// # Errors
     /// Database refusal.
+    pub fn record_agent_memory(
+        &self,
+        agent_key: &str,
+        key: &str,
+        value: &str,
+        run_id: RunId,
+        task_id: TaskId,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO agent_memory(agent_key, key, value, run_id, task_id, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                     ON CONFLICT(agent_key, key) DO UPDATE SET
+                        value = excluded.value,
+                        run_id = excluded.run_id,
+                        task_id = excluded.task_id,
+                        created_at = excluded.created_at",
+                    params![
+                        agent_key,
+                        key,
+                        value,
+                        run_id.to_string(),
+                        task_id.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Returns the latest durable memories for a role, newest first.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory(
+        &self,
+        agent_key: &str,
+        limit: usize,
+    ) -> Result<Vec<(String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT key, value FROM agent_memory WHERE agent_key = ?1
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?2",
+                )?;
+                let rows = statement.query_map(
+                    params![agent_key, i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                let mut memories = Vec::new();
+                for row in rows {
+                    memories.push(row?);
+                }
+                Ok(memories)
+            })
+            .map_err(map)
+    }
+
+
     pub fn record_receipt(&self, correlation_id: Uuid, run_id: RunId) -> Result<(), Refusal> {
         self.db
             .with_connection(|connection| {
@@ -824,5 +886,23 @@ mod tests {
         assert_ne!(message_id, Uuid::nil());
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
         assert_eq!(store.agent_message_count(RunId::new()).expect("other"), 0);
+    }
+
+    #[test]
+    fn agent_memory_is_durable_and_role_scoped() {
+        let store = store();
+        let run = store
+            .create_run("p", "memory", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory("worker", "task:1", "remembered", run.id, task)
+            .expect("memory");
+        store
+            .record_agent_memory("worker", "task:1", "updated", run.id, task)
+            .expect("upsert");
+        let memories = store.agent_memory("worker", 8).expect("recall");
+        assert_eq!(memories, vec![("task:1".to_owned(), "updated".to_owned())]);
+        assert!(store.agent_memory("other", 8).expect("other").is_empty());
     }
 }

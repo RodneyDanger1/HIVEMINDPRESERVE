@@ -489,6 +489,47 @@ async fn boot_persona_allowlist_is_seeded_on_worker_contexts() {
 }
 
 #[tokio::test]
+async fn durable_role_memory_is_recalled_into_worker_context() {
+    let harness = test_engine(MockExecutor::new(tree_plan()));
+    harness
+        .store
+        .record_agent_memory(
+            "worker",
+            "task:old",
+            "remembered fact",
+            RunId::new(),
+            TaskId::new(),
+        )
+        .expect("memory");
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("recall", "p", Uuid::now_v7())
+        .expect("submit");
+    loop {
+        let event = wait_for(&mut receiver, |_| true).await;
+        if event_name(&event) == "RUN_STATUS" {
+            let status = event.envelope.payload["status"].as_str().unwrap_or_default();
+            if status != "queued" && status != "planning" && status != "running" {
+                break;
+            }
+        }
+    }
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    let worker = tasks.iter().find(|task| task.role == "worker").expect("worker");
+    let context = harness
+        .engine
+        .contexts
+        .get(worker.id)
+        .expect("context lookup")
+        .expect("context");
+    assert_eq!(
+        context.facts.get("memory:task:old"),
+        Some(&"remembered fact".to_owned())
+    );
+}
+
+#[tokio::test]
 async fn streamed_deltas_are_published_before_done_and_not_duplicated() {
     let harness = test_engine(MockExecutor::new(leaf_plan(1, 1)));
     let mut receiver = harness.bus.subscribe();

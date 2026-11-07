@@ -57,6 +57,13 @@ fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String 
     }
 }
 
+/// Memory is model-visible later, so an obvious secret marker is never stored.
+fn memory_text_is_safe(text: &str) -> bool {
+    !["DEEPSEEK_API_KEY", "sk-", "Bearer ", "Authorization:"]
+        .iter()
+        .any(|marker| text.contains(marker))
+}
+
 /// Maximum visible characters in one inter-agent message.
 const MAX_AGENT_MESSAGE_CHARS: usize = 2_000;
 /// Per-run agent-message budget (prevents peer loops).
@@ -741,6 +748,11 @@ impl RunEngine {
         if let Some(persona) = self.personas.get(&task.role) {
             context.allowed_tool_ids = persona.allowed_tool_ids.clone();
             context.output_schema_id = persona.output_schema_id.clone();
+        }
+        if let Ok(memories) = self.store.agent_memory(&task.role, 8) {
+            for (key, value) in memories {
+                context.facts.insert(format!("memory:{key}"), value);
+            }
         }
         self.contexts.set(task.id, context)
     }
@@ -2802,6 +2814,16 @@ impl RunEngine {
         self.store
             .update_task_state(task.id, AgentState::Completed)?;
         self.store.record_task_result(run.id, task.id, &text)?;
+        if !text.trim().is_empty() && memory_text_is_safe(&text) {
+            let bounded: String = text.chars().take(2_000).collect();
+            self.store.record_agent_memory(
+                &task.role,
+                &format!("task:{}", task.id),
+                &bounded,
+                run.id,
+                task.id,
+            )?;
+        }
         let _ = self.graph.set_state(task.id, AgentState::Completed);
         self.publish_node(run.id, task.id, AgentState::Completed);
         Ok(Some(text))
