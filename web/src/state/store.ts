@@ -389,9 +389,10 @@ function initialSnapshot(): SnapshotState {
  *   GET /api/history/runs
  *   GET /api/history/runs/{run_id}/revisions
  *   GET /api/history/runs/{run_id}/state?revision=N
+ *   GET /api/history/runs/{run_id}/messages
  *
- * There is no messages/transcript route: the store cannot restore chat history
- * and reports `messages-unavailable` instead of fabricating it.
+ * The messages route rehydrates the persisted transcript; a failed read is
+ * reported as `messages-unavailable`, never fabricated.
  */
 const HISTORY_RUNS_PATH = '/api/history/runs';
 
@@ -401,6 +402,10 @@ function historyRevisionsPath(runId: string): string {
 
 function historyStatePath(runId: string, revision: number): string {
   return `/api/history/runs/${encodeURIComponent(runId)}/state?revision=${revision}`;
+}
+
+function historyMessagesPath(runId: string): string {
+  return `/api/history/runs/${encodeURIComponent(runId)}/messages`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -450,6 +455,32 @@ function decodeHistoryRuns(body: unknown): readonly HistoryRunSummary[] {
 interface HistoryRevisionList {
   readonly revisions: readonly number[];
   readonly latest: number | null;
+}
+
+function decodeHistoryMessages(body: unknown): readonly ChatMessage[] {
+  const record = asRecord(body);
+  const messages = record?.messages;
+  if (!Array.isArray(messages)) {
+    throw schemaRefusal('GET /api/history/runs/{run_id}/messages did not return a messages array.');
+  }
+  const decoded: ChatMessage[] = [];
+  for (const entry of messages) {
+    const item = asRecord(entry);
+    const id = item?.id;
+    const role = item?.role;
+    const text = item?.text;
+    if (typeof id !== 'string' || (role !== 'user' && role !== 'assistant') || typeof text !== 'string') {
+      throw schemaRefusal('A history message row has no id/user-or-assistant role/text.');
+    }
+    decoded.push({
+      id,
+      role,
+      text,
+      runId: typeof item?.run_id === 'string' ? item.run_id : null,
+      streaming: false,
+    });
+  }
+  return decoded;
 }
 
 function decodeHistoryRevisions(body: unknown): HistoryRevisionList {
@@ -948,8 +979,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
      *
      * The server snapshot is the authority: a run with no committed revision is
      * reported as `degraded`/`no-committed-revision` instead of rendering an
-     * invented graph, and the chat transcript is reported as
-     * `messages-unavailable` because no HTTP route exposes it.
+     * invented graph, and the persisted transcript is rehydrated from the
+     * `/messages` route (a failed read is reported as `messages-unavailable`).
      */
     const performSnapshotRefresh = (source: SnapshotSource): Promise<void> => {
       if (disposed || api.kind === 'mock') {
@@ -979,6 +1010,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           const chosen = chooseHistoryRun(runs, current);
           let list: HistoryRevisionList = { revisions: [], latest: null };
           let projection: HistoryStateProjection | null = null;
+          let historyMessages: readonly ChatMessage[] | null = null;
+          let messagesUnavailable = false;
           if (chosen !== null) {
             list = decodeHistoryRevisions(
               await historyFetch(
@@ -986,6 +1019,18 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 `GET /api/history/runs/${shortId(chosen.runId)}/revisions`,
               ),
             );
+            try {
+              historyMessages = decodeHistoryMessages(
+                await historyFetch(
+                  historyMessagesPath(chosen.runId),
+                  `GET /api/history/runs/${shortId(chosen.runId)}/messages`,
+                ),
+              );
+            } catch {
+              // A broken read path is reported as incomplete, not as an invented
+              // transcript and not as a failure of the whole graph refresh.
+              messagesUnavailable = true;
+            }
             if (list.latest !== null) {
               projection = decodeHistoryState(
                 await historyFetch(
@@ -1049,7 +1094,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           if (chosen === null) {
             incomplete.push('no-run');
           } else {
-            incomplete.push('messages-unavailable');
+            if (messagesUnavailable) {
+              incomplete.push('messages-unavailable');
+            }
             if (projection === null) {
               incomplete.push('no-committed-revision');
             }
@@ -1067,6 +1114,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               : chosen?.status ?? null;
           const resolvedGap = resyncSerial === capturedSerial;
           set({
+            ...(chosen !== null && historyMessages !== null
+              ? { messages: historyMessages }
+              : {}),
             ...(chosen === null
               ? { tasks: {} }
               : projection !== null

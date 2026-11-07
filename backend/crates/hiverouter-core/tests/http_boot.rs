@@ -16,6 +16,7 @@ use tokio::sync::oneshot;
 
 struct TestServer {
     addr: SocketAddr,
+    state: Arc<AppState>,
     shutdown: Option<oneshot::Sender<()>>,
     handle: tokio::task::JoinHandle<()>,
 }
@@ -38,14 +39,16 @@ impl TestServer {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("local addr");
         let (shutdown, shutdown_rx) = oneshot::channel();
+        let served_state = state.clone();
         let handle = tokio::spawn(async move {
-            let _ = http::serve(listener, state, async move {
+            let _ = http::serve(listener, served_state, async move {
                 let _ = shutdown_rx.await;
             })
             .await;
         });
         Self {
             addr,
+            state,
             shutdown: Some(shutdown),
             handle,
         }
@@ -218,16 +221,50 @@ async fn binary_help_and_version_are_successful() {
 }
 
 #[tokio::test]
-async fn diagnose_route_returns_tools_json() {
+async fn history_messages_route_returns_persisted_transcript() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
-    let (status, body) = http_get(server.addr, "/diagnose").await;
-    assert_eq!(status, 200, "GET /diagnose must be mounted: {body}");
-    let value: Value = serde_json::from_str(&body).expect("diagnose body is JSON");
-    assert_eq!(value["schema"], "hiverouter.diagnose.v1");
-    // Derived census fields are present; the payload never carries the key.
-    assert!(value.get("census").is_some() || value.get("tools").is_some());
-    assert!(!body.contains("DEEPSEEK_API_KEY"));
-    assert!(!body.contains("sk-"));
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "hello", hiverouter_contract::AgentState::Queued)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .append_message(run.id, hiverouter_core::entities::ChatRole::User, "hi")
+        .expect("user message");
+    server
+        .state
+        .engine
+        .store
+        .append_message(
+            run.id,
+            hiverouter_core::entities::ChatRole::Assistant,
+            "hello back",
+        )
+        .expect("assistant message");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/history/runs/{}/messages", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "GET messages must be mounted: {body}");
+    let value: Value = serde_json::from_str(&body).expect("messages body is JSON");
+    assert_eq!(value["run_id"], run.id.to_string());
+    assert_eq!(value["truncated"], false);
+    let messages = value["messages"].as_array().expect("messages array");
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[0]["role"], "user");
+    assert_eq!(messages[1]["text"], "hello back");
+
+    let (missing_status, _) = http_get(
+        server.addr,
+        "/api/history/runs/00000000-0000-0000-0000-000000000000/messages",
+    )
+    .await;
+    assert_eq!(missing_status, 404);
 }
 

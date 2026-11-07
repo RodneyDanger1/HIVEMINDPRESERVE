@@ -374,6 +374,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
         .route("/api/history/runs/{run_id}/state", get(history_state))
+        .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -468,6 +469,46 @@ async fn history_state(
             refusal_response(StatusCode::NOT_FOUND, &refusal)
         }
         Err(refusal) => refusal_response(StatusCode::CONFLICT, &refusal),
+    }
+}
+
+async fn history_messages(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    if let Err(refusal) = state.engine.store.get_run(run_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    const MAX_MESSAGES: usize = 1_000;
+    match state.engine.store.messages(run_id) {
+        Ok(messages) => {
+            let truncated = messages.len() > MAX_MESSAGES;
+            let visible = messages.into_iter().take(MAX_MESSAGES);
+            let rows: Vec<serde_json::Value> = visible
+                .map(|message| {
+                    serde_json::json!({
+                        "id": message.id.to_string(),
+                        "run_id": message.run_id.to_string(),
+                        "role": message.role.as_str(),
+                        "text": message.text,
+                        "created_at": message.created_at.as_str(),
+                    })
+                })
+                .collect();
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "run_id": run_id.to_string(),
+                    "messages": rows,
+                    "truncated": truncated,
+                })),
+            )
+                .into_response()
+        }
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }
 
