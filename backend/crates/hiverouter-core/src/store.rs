@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp};
+use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp, Usage};
 use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
@@ -646,6 +646,77 @@ impl RunStore {
     }
 
 
+    /// Persists one run's measured token totals (NULL stays NULL).
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_run_usage(&self, run_id: RunId, usage: &Usage) -> Result<(), Refusal> {
+        let as_sql = |value: Option<u64>| value.map(|value| i64::try_from(value).unwrap_or(i64::MAX));
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO run_usage(run_id, prompt_tokens, completion_tokens, total_tokens,
+                        prompt_cache_hit_tokens, prompt_cache_miss_tokens, reasoning_tokens, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                     ON CONFLICT(run_id) DO UPDATE SET
+                        prompt_tokens = excluded.prompt_tokens,
+                        completion_tokens = excluded.completion_tokens,
+                        total_tokens = excluded.total_tokens,
+                        prompt_cache_hit_tokens = excluded.prompt_cache_hit_tokens,
+                        prompt_cache_miss_tokens = excluded.prompt_cache_miss_tokens,
+                        reasoning_tokens = excluded.reasoning_tokens,
+                        created_at = excluded.created_at",
+                    params![
+                        run_id.to_string(),
+                        as_sql(usage.prompt_tokens),
+                        as_sql(usage.completion_tokens),
+                        as_sql(usage.total_tokens),
+                        as_sql(usage.prompt_cache_hit_tokens),
+                        as_sql(usage.prompt_cache_miss_tokens),
+                        as_sql(usage.reasoning_tokens),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Reads a run's persisted usage, if any.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn run_usage(&self, run_id: RunId) -> Result<Option<Usage>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT prompt_tokens, completion_tokens, total_tokens,
+                                prompt_cache_hit_tokens, prompt_cache_miss_tokens, reasoning_tokens
+                         FROM run_usage WHERE run_id = ?1",
+                        params![run_id.to_string()],
+                        |row| {
+                            let read = |index: usize| -> rusqlite::Result<Option<u64>> {
+                                Ok(row
+                                    .get::<_, Option<i64>>(index)?
+                                    .and_then(|value| u64::try_from(value).ok()))
+                            };
+                            Ok(Usage {
+                                prompt_tokens: read(0)?,
+                                completion_tokens: read(1)?,
+                                total_tokens: read(2)?,
+                                prompt_cache_hit_tokens: read(3)?,
+                                prompt_cache_miss_tokens: read(4)?,
+                                reasoning_tokens: read(5)?,
+                            })
+                        },
+                    )
+                    .optional()
+            })
+            .map_err(map)
+    }
+
     pub fn record_receipt(&self, correlation_id: Uuid, run_id: RunId) -> Result<(), Refusal> {
         self.db
             .with_connection(|connection| {
@@ -904,5 +975,24 @@ mod tests {
         let memories = store.agent_memory("worker", 8).expect("recall");
         assert_eq!(memories, vec![("task:1".to_owned(), "updated".to_owned())]);
         assert!(store.agent_memory("other", 8).expect("other").is_empty());
+    }
+
+    #[test]
+    fn run_usage_persists_nulls_not_zero() {
+        let store = store();
+        let run = store
+            .create_run("p", "usage", AgentState::Running)
+            .expect("run");
+        let usage = Usage {
+            prompt_tokens: Some(10),
+            completion_tokens: None,
+            total_tokens: Some(10),
+            ..Usage::default()
+        };
+        store.record_run_usage(run.id, &usage).expect("usage");
+        let reread = store.run_usage(run.id).expect("read").expect("row");
+        assert_eq!(reread.prompt_tokens, Some(10));
+        assert_eq!(reread.completion_tokens, None);
+        assert_eq!(reread.total_tokens, Some(10));
     }
 }

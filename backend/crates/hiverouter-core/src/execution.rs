@@ -398,6 +398,8 @@ pub struct RunEngine {
     active_run: Mutex<Option<RunId>>,
     /// Last published green percentage per run (delta provenance).
     metrics_last: Mutex<HashMap<RunId, f64>>,
+    /// Accumulated provider usage per run, persisted at terminal.
+    usage_by_run: Mutex<HashMap<RunId, Usage>>,
 }
 
 impl std::fmt::Debug for RunEngine {
@@ -445,6 +447,7 @@ impl RunEngine {
             spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
             metrics_last: Mutex::new(HashMap::new()),
+            usage_by_run: Mutex::new(HashMap::new()),
         }
     }
 
@@ -551,6 +554,7 @@ impl RunEngine {
             spawn_queue: Mutex::new(Vec::new()),
             active_run: Mutex::new(None),
             metrics_last: Mutex::new(HashMap::new()),
+            usage_by_run: Mutex::new(HashMap::new()),
         }
     }
 
@@ -615,6 +619,29 @@ impl RunEngine {
             Some(run_id),
             None,
         );
+    }
+
+    fn add_run_usage(&self, run_id: RunId, usage: Usage) {
+        if let Ok(mut totals) = self.usage_by_run.lock() {
+            let entry = totals.entry(run_id).or_default();
+            *entry = entry.checked_add(&usage);
+        }
+    }
+
+    fn persist_run_usage(&self, run_id: RunId) {
+        let usage = self
+            .usage_by_run
+            .lock()
+            .ok()
+            .and_then(|mut totals| totals.remove(&run_id));
+        if let Some(usage) = usage {
+            if let Err(error) = self.store.record_run_usage(run_id, &usage) {
+                tracing::error!(
+                    code = error.code(),
+                    "failed to persist run usage totals"
+                );
+            }
+        }
     }
 
     fn publish_node(&self, run_id: RunId, task_id: TaskId, state: AgentState) {
@@ -1165,6 +1192,7 @@ impl RunEngine {
         self.commit_run_snapshot(&run, self.snapshot_revision(run.id), final_status);
         let _ = self.set_active(None);
         self.tokens.remove(run.id);
+        self.persist_run_usage(run.id);
         self.executor.finish_run(run.id).await;
     }
 
@@ -2814,6 +2842,7 @@ impl RunEngine {
         self.store
             .update_task_state(task.id, AgentState::Completed)?;
         self.store.record_task_result(run.id, task.id, &text)?;
+        self.add_run_usage(run.id, reply.usage);
         if !text.trim().is_empty() && memory_text_is_safe(&text) {
             let bounded: String = text.chars().take(2_000).collect();
             self.store.record_agent_memory(

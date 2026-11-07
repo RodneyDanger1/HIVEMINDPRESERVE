@@ -253,6 +253,18 @@ async fn run_lifecycle_plans_and_dispatches() {
 
     let stored_run = harness.store.get_run(run.id).expect("run row");
     assert_eq!(stored_run.status, AgentState::Completed);
+    let mut usage = None;
+    for _ in 0..50 {
+        usage = harness.store.run_usage(run.id).expect("usage read");
+        if usage.is_some() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    let usage = usage.expect("terminal usage row");
+    assert_eq!(usage.prompt_tokens, Some(2));
+    assert_eq!(usage.completion_tokens, Some(4));
+    assert_eq!(usage.total_tokens, Some(6));
     assert_eq!(harness.store.task_count(run.id).expect("tasks"), 3);
     let messages = harness.store.messages(run.id).expect("messages");
     assert_eq!(
