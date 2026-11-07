@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-episodes.v1",
  "producer": "FigCraft-HiveMind",
- "generated_at": "2026-11-07T15:54:12-06:00",
+ "generated_at": "2026-11-07T17:16:52-06:00",
  "source_builder": "docs/ui/figcraft/HiveMind/build/build_hive_style.py",
  "command_ids_used": [
   "file.export",
@@ -19,8 +19,8 @@
   {
    "episode": "01_phase1_nodes.json",
    "path": "docs/ui/figcraft/HiveMind/episodes/01_phase1_nodes.json",
-   "sha256": "2bf554e2cd7be16ca785af2fb662daea1e7c922e05be5e56815d618a7aa35630",
-   "commands": 1462,
+   "sha256": "b113b0c39fad7c9e550a1f48d3882c2911d81d30d8c99bc325fa2b0d18e275d7",
+   "commands": 1637,
    "command_ids": [
     "file.new",
     "frame.create",
@@ -31,8 +31,8 @@
   {
    "episode": "02_phase2_tokens_exports.json",
    "path": "docs/ui/figcraft/HiveMind/episodes/02_phase2_tokens_exports.json",
-   "sha256": "1ad676e3f082d8744e5322eb7b669d9a32d4dc02df26e4c29d73fee126752c88",
-   "commands": 84,
+   "sha256": "90282ab69f68a1ba339166bd657267e8213cc5d23d393de186605e81a5dde4a7",
+   "commands": 86,
    "command_ids": [
     "file.export",
     "file.saveAs",

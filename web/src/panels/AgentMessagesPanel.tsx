@@ -3,6 +3,7 @@
  * The server is the source; this panel never invents a message or recipient.
  */
 import { useEffect, useState } from 'react';
+import { apiBaseUrl } from '../api/client';
 import { useUiStore } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -31,7 +32,7 @@ export function AgentMessagesPanel() {
     }
     let cancelled = false;
     setStatus('loading');
-    fetch(`/api/agents/runs/${encodeURIComponent(runId)}/messages`, {
+    fetch(`${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/messages`, {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
@@ -83,7 +84,7 @@ export function AgentMessagesPanel() {
   }, [runId, messageVersion]);
 
   return (
-    <section aria-label="Agent messages" className="mt-4 border-t border-hairline pt-4">
+    <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[14px] p-3">
       <h3 className="type-label text-ink-900">Agent messages</h3>
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading persisted mailbox…</p>

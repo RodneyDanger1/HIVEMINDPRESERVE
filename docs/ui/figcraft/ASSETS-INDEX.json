@@ -1,6 +1,6 @@
 {
   "schema": "hiverouter.assets-index.v1",
-  "generated_at": "2026-11-07T15:54:13-06:00",
+  "generated_at": "2026-11-07T17:16:53-06:00",
   "generated_by": "Lead acceptance (canonical alias of A/B manifests; no pixels copied) + FigCraft-HiveMind set appended; A/B aliases retained byte-identical",
   "source_manifests": {
     "A": {
@@ -13,7 +13,7 @@
     },
     "HiveMind": {
       "path": "docs/ui/figcraft/HiveMind/HiveMind-ASSETS.json",
-      "sha256": "9846909382B25CC9D4DDB89F15DDC29BB943D978405DD5900182776453BE85A6"
+      "sha256": "4F0C928C41438F0CEB7D9C7D0F7FE2F68918AE35674B14FAC1FD827C7BF639FC"
     }
   },
   "design_files": {
@@ -27,7 +27,7 @@
     },
     "HiveMind": {
       "path": "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
-      "sha256": "9671B9818ACAB0FF0264A4AC2A3412854B34398B3CF76BAAB4EC34137330F850"
+      "sha256": "FF6524A169ECDBEF4A990A234B6B48C282F17EA7D297A2898ED650E83B5FA4EC"
     }
   },
   "watchdog": {
@@ -42,8 +42,8 @@
     ]
   },
   "counts": {
-    "assets": 104,
-    "surfaces": 50
+    "assets": 114,
+    "surfaces": 60
   },
   "assets": [
     {
@@ -2676,6 +2676,296 @@
         ]
       },
       "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "DATA-FILES",
+      "owner": "figcraft-hivemind",
+      "name": "Data & files read-only tree (SAMPLE/READ)",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "FILE-PREVIEW",
+      "owner": "figcraft-hivemind",
+      "name": "FILE_READ honest empty preview",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "TOOL-ACTIVITY",
+      "owner": "figcraft-hivemind",
+      "name": "Tool activity ledger rows (no fabricated calls)",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "RUN-DETAIL",
+      "owner": "figcraft-hivemind",
+      "name": "Run detail: id/state/timestamps/revision/stages",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "FAILURE-LEDGER",
+      "owner": "figcraft-hivemind",
+      "name": "Failure / refusal ledger with named codes",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MODEL-STATUS",
+      "owner": "figcraft-hivemind",
+      "name": "Model/provider status",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "USAGE-COUNTERS",
+      "owner": "figcraft-hivemind",
+      "name": "Six usage counters (prompt/completion/total/cache hit/cache miss/reasoning)",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "SETTINGS-KEY",
+      "owner": "figcraft-hivemind",
+      "name": "Key-present / missing status",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "SETTINGS-REDUCED-MOTION",
+      "owner": "figcraft-hivemind",
+      "name": "Reduced-motion setting (PROPOSED)",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "SETTINGS-DIFF-GATED",
+      "owner": "figcraft-hivemind",
+      "name": "No diff control (DECISION-GATED)",
+      "page": "12 · Run Detail & Files",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+      "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (board 12)",
       "set": "HiveMind"
     }
   ]

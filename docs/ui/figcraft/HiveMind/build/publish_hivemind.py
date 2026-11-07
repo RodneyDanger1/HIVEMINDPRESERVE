@@ -1,7 +1,7 @@
 """Publish the regenerated HiveMind FigCraft set.
 
 Reads the regenerated HiveMind-Style-System.figcraft + CLI info + exports, then:
-  1. exports one SVG per artboard (12) into docs/ui/figcraft/ASSETS/
+  1. exports one SVG per artboard (13) into docs/ui/figcraft/ASSETS/
   2. copies the CLI-generated 1x/2x PNG exports into ASSETS as hivemind-*.png
   3. writes HiveMind/HiveMind-ASSETS.json (design file, frames, exports, surfaces)
   4. writes HiveMind/HiveMind-SOURCE-EVIDENCE.json (hashes of preserved evidence)
@@ -47,6 +47,7 @@ FRAMES = [
     ("09", "09 · HMAS Governance", "hmas-governance", 1440, 900),
     ("10", "10 · States & Refusals", "states-and-refusals", 1440, 900),
     ("11", "11 · Motion & Live", "motion-and-live", 1440, 900),
+    ("12", "12 · Run Detail & Files", "run-detail-and-files", 1440, 900),
 ]
 
 SURFACES = [
@@ -100,6 +101,16 @@ SURFACES = [
     ("MOTION-RISE-HOVER", "Node rise/hover (240ms / 120ms, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
     ("MOTION-FOCUS-RING", "Focus ring ink-700 2px (160ms, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
     ("MOTION-REDUCED", "Reduced-motion fallback (PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("DATA-FILES", "Data & files read-only tree (SAMPLE/READ)", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("FILE-PREVIEW", "FILE_READ honest empty preview", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("TOOL-ACTIVITY", "Tool activity ledger rows (no fabricated calls)", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("RUN-DETAIL", "Run detail: id/state/timestamps/revision/stages", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("FAILURE-LEDGER", "Failure / refusal ledger with named codes", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("MODEL-STATUS", "Model/provider status", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("USAGE-COUNTERS", "Six usage counters (prompt/completion/total/cache hit/cache miss/reasoning)", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("SETTINGS-KEY", "Key-present / missing status", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("SETTINGS-REDUCED-MOTION", "Reduced-motion setting (PROPOSED)", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
+    ("SETTINGS-DIFF-GATED", "No diff control (DECISION-GATED)", "run-detail-and-files", "PROPOSED-ADDITION (board 12)"),
 ]
 
 
@@ -417,6 +428,9 @@ def write_readme():
         "- Board 11 motion/live is a design proposal: durations/easing are PROPOSED, not",
         "  measured; no component behaviour is frozen. It shows the current app chat variant",
         "  400x480 while board 07 remains the authoritative 420x500.",
+        "- Board 12 Run Detail & Files covers Data & Files, Tool activity, Run detail,",
+        "  failure/refusal ledger, Model status & usage (six counters) and Settings.",
+        "  Values on that board are labelled SAMPLE or READ; no data is invented.",
     ]
     with open(os.path.join(HM, "README.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")

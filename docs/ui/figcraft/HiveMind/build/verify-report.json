@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-07T15:54:15-06:00",
+ "generated_at": "2026-11-07T17:17:42-06:00",
  "checks": [
   {
    "check": "info parses design file",
@@ -12,9 +12,9 @@
    "detail": "'HiveMind Style System'"
   },
   {
-   "check": "12 artboards with exact names/sizes",
+   "check": "13 artboards with exact names/sizes",
    "status": "PASS",
-   "detail": "[('00 · Cover', 1440, 900), ('01 · Colour', 1440, 1240), ('02 · Typography', 1440, 1340), ('03 · Space & Depth', 1440, 1000), ('04 · Brand Lockups', 1440, 1000), ('05 · Agent Cards', 1440, 1300), ('06 · Controls & HUD', 1440, 1040), ('07 · Spatial Canvas', 1440, 900), ('08 · HMAS Hierarchy', 1440, 900), ('09 · HMAS Governance', 1440, 900), ('10 · States & Refusals', 1440, 900), ('11 · Motion & Live', 1440, 900)]"
+   "detail": "[('00 · Cover', 1440, 900), ('01 · Colour', 1440, 1240), ('02 · Typography', 1440, 1340), ('03 · Space & Depth', 1440, 1000), ('04 · Brand Lockups', 1440, 1000), ('05 · Agent Cards', 1440, 1300), ('06 · Controls & HUD', 1440, 1040), ('07 · Spatial Canvas', 1440, 900), ('08 · HMAS Hierarchy', 1440, 900), ('09 · HMAS Governance', 1440, 900), ('10 · States & Refusals', 1440, 900), ('11 · Motion & Live', 1440, 900), ('12 · Run Detail & Files', 1440, 900)]"
   },
   {
    "check": "no missing fonts",
@@ -24,17 +24,17 @@
   {
    "check": "phase-1 ids match the CLI-returned ids",
    "status": "PASS",
-   "detail": "1461 expected nodes; mismatches=[]"
+   "detail": "1636 expected nodes; mismatches=[]"
   },
   {
    "check": "phase-1 run ok + one result per command",
    "status": "PASS",
-   "detail": "1462 results / 1461 expected"
+   "detail": "1637 results / 1636 expected"
   },
   {
    "check": "first 8 artboards structurally match the preserved source builder",
    "status": "PASS",
-   "detail": "source nodes=959 matched=951 new_boards_nodes=499 mismatches=[]"
+   "detail": "source nodes=959 matched=951 new_boards_nodes=674 mismatches=[]"
   },
   {
    "check": "no HiveRouter/HIVEROUTER in generated board text",
@@ -82,6 +82,11 @@
    "detail": "ink-700 vector nodes=[1363]"
   },
   {
+   "check": "board 12 run detail & files surfaces present (files/tools/run detail/ledger/model+six counters/settings)",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
    "check": "board 07 authoritative composition (topbar/rail/library/canvas/chat/HUD/minimap)",
    "status": "PASS",
    "detail": "missing=[]"
@@ -99,10 +104,10 @@
   {
    "check": "exports exist/nonzero + hashes + dimensions match manifest",
    "status": "PASS",
-   "detail": "12 exports; problems=[]"
+   "detail": "13 exports; problems=[]"
   },
   {
-   "check": "existing untouched artboards byte-identical (9 boards)",
+   "check": "existing untouched artboards byte-identical (11 boards)",
    "status": "PASS",
    "detail": "changed=[]"
   },
@@ -119,7 +124,7 @@
   {
    "check": "no invented colour tokens in exported SVGs",
    "status": "PASS",
-   "detail": "svg hex colours=1718; offenders={}"
+   "detail": "svg hex colours=1899; offenders={}"
   },
   {
    "check": "source evidence preserved byte-identically",
@@ -134,7 +139,7 @@
   {
    "check": "ASSETS-INDEX updated for HiveMind only; A/B aliases intact",
    "status": "PASS",
-   "detail": "hiveMind rows=49 assets=104 surfaces=50 A/B=True"
+   "detail": "hiveMind rows=59 assets=114 surfaces=60 A/B=True"
   },
   {
    "check": "C is marked superseded (no C exports/index rows)",
@@ -145,7 +150,7 @@
  "values": {
   "info": {
    "name": "HiveMind Style System",
-   "nodes": 1462,
+   "nodes": 1637,
    "styles": 36,
    "variables": 21,
    "missingFonts": []
@@ -210,12 +215,17 @@
     "11 · Motion & Live",
     1440,
     900
+   ],
+   [
+    "12 · Run Detail & Files",
+    1440,
+    900
    ]
   ],
-  "expected_ids": 1461,
-  "phase1_results": 1462,
-  "text_nodes": 547,
-  "exports": 12,
+  "expected_ids": 1636,
+  "phase1_results": 1637,
+  "text_nodes": 664,
+  "exports": 13,
   "figcraft_files": [
    "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
    "docs/ui/figcraft/HiveMind/build/base.figcraft",

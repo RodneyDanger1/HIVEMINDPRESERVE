@@ -950,6 +950,28 @@
 "command": "file.export",
 "params": {
 "ids": [
+1463
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-run-detail-and-files.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+1463
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-run-detail-and-files@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
 6
 ],
 "format": "svg",

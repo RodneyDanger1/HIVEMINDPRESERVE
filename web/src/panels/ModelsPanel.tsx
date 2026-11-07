@@ -1,5 +1,6 @@
 /** Models (read-only): only values the server reports; contract reference labelled READ. */
 import { useEffect, useState } from 'react';
+import { apiBaseUrl } from '../api/client';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { PanelTitle, EmptyState } from './StatePack';
@@ -8,6 +9,9 @@ interface RunUsage {
   readonly prompt_tokens: number | null;
   readonly completion_tokens: number | null;
   readonly total_tokens: number | null;
+  readonly prompt_cache_hit_tokens: number | null;
+  readonly prompt_cache_miss_tokens: number | null;
+  readonly reasoning_tokens: number | null;
 }
 
 function tokenLabel(value: number | null): string {
@@ -17,6 +21,7 @@ function tokenLabel(value: number | null): string {
 export function ModelsPanel() {
   const settings = useUiStore((state) => state.settings);
   const runId = useUiStore((state) => state.run?.id ?? null);
+  const runStatus = useUiStore((state) => state.run?.status ?? null);
   const [usage, setUsage] = useState<RunUsage | null>(null);
   const [usageError, setUsageError] = useState(false);
 
@@ -27,7 +32,7 @@ export function ModelsPanel() {
       return;
     }
     let cancelled = false;
-    fetch(`/api/usage/runs/${encodeURIComponent(runId)}`, {
+    fetch(`${apiBaseUrl()}/api/usage/runs/${encodeURIComponent(runId)}`, {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
@@ -51,6 +56,12 @@ export function ModelsPanel() {
             prompt_tokens: typeof item.prompt_tokens === 'number' ? item.prompt_tokens : null,
             completion_tokens: typeof item.completion_tokens === 'number' ? item.completion_tokens : null,
             total_tokens: typeof item.total_tokens === 'number' ? item.total_tokens : null,
+            prompt_cache_hit_tokens:
+              typeof item.prompt_cache_hit_tokens === 'number' ? item.prompt_cache_hit_tokens : null,
+            prompt_cache_miss_tokens:
+              typeof item.prompt_cache_miss_tokens === 'number' ? item.prompt_cache_miss_tokens : null,
+            reasoning_tokens:
+              typeof item.reasoning_tokens === 'number' ? item.reasoning_tokens : null,
           });
           setUsageError(false);
         }
@@ -64,7 +75,7 @@ export function ModelsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [runId]);
+  }, [runId, runStatus]);
 
   return (
     <div className="mx-auto max-w-[760px] p-4">
@@ -87,6 +98,12 @@ export function ModelsPanel() {
           <dd className="type-mono-code text-ink-900">{tokenLabel(usage.completion_tokens)}</dd>
           <dt className="type-mono-meta text-meta">Total tokens</dt>
           <dd className="type-mono-code text-ink-900">{tokenLabel(usage.total_tokens)}</dd>
+          <dt className="type-mono-meta text-meta">Cache hit / miss</dt>
+          <dd className="type-mono-code text-ink-900">
+            {tokenLabel(usage.prompt_cache_hit_tokens)} / {tokenLabel(usage.prompt_cache_miss_tokens)}
+          </dd>
+          <dt className="type-mono-meta text-meta">Reasoning tokens</dt>
+          <dd className="type-mono-code text-ink-900">{tokenLabel(usage.reasoning_tokens)}</dd>
         </dl>
       ) : null}
       {usageError ? (

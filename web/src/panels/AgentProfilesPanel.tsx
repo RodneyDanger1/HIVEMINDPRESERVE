@@ -4,6 +4,7 @@
  * removes the persisted row and restores any embedded profile it overrode.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { apiBaseUrl } from '../api/client';
 import { EmptyState } from './StatePack';
 
 interface AgentProfileRow {
@@ -39,7 +40,7 @@ export function AgentProfilesPanel() {
   const loadProfiles = useCallback(async () => {
     setStatus('loading');
     try {
-      const response = await fetch('/api/agents/profiles', {
+      const response = await fetch(`${apiBaseUrl()}/api/agents/profiles`, {
         headers: { Accept: 'application/json' },
       });
       if (!response.ok) {
@@ -93,7 +94,7 @@ export function AgentProfilesPanel() {
       setImportStatus('Import refused: the text is not valid JSON.');
       return;
     }
-    fetch('/api/agents/profiles/import', {
+    fetch(`${apiBaseUrl()}/api/agents/profiles/import`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ profile: parsed }),
@@ -112,7 +113,7 @@ export function AgentProfilesPanel() {
   };
 
   const removeProfile = (profileId: string): void => {
-    fetch(`/api/agents/profiles/${encodeURIComponent(profileId)}`, { method: 'DELETE' })
+    fetch(`${apiBaseUrl()}/api/agents/profiles/${encodeURIComponent(profileId)}`, { method: 'DELETE' })
       .then(async (response) => {
         if (!response.ok) {
           const body = (await response.json().catch(() => ({}))) as { code?: string };
@@ -126,7 +127,7 @@ export function AgentProfilesPanel() {
   };
 
   return (
-    <section aria-label="Agent profiles" className="mt-4 border-t border-hairline pt-4">
+    <section aria-label="Agent profiles" className="surface-panel mt-3 rounded-[14px] p-3">
       <h3 className="type-label text-ink-900">Agent profiles</h3>
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading boot profiles…</p>

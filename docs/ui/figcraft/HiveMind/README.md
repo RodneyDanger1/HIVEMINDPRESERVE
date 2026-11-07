@@ -35,6 +35,7 @@ exports live in `exports/` (generated) and the canonical copies in
 | 09 | 09 · HMAS Governance | 1440x900 | `hivemind-hmas-governance.png` |
 | 10 | 10 · States & Refusals | 1440x900 | `hivemind-states-and-refusals.png` |
 | 11 | 11 · Motion & Live | 1440x900 | `hivemind-motion-and-live.png` |
+| 12 | 12 · Run Detail & Files | 1440x900 | `hivemind-run-detail-and-files.png` |
 
 ## Provenance / claims
 - Source style kit + target spec + original exports are preserved byte-identically
@@ -53,3 +54,6 @@ exports live in `exports/` (generated) and the canonical copies in
 - Board 11 motion/live is a design proposal: durations/easing are PROPOSED, not
   measured; no component behaviour is frozen. It shows the current app chat variant
   400x480 while board 07 remains the authoritative 420x500.
+- Board 12 Run Detail & Files covers Data & Files, Tool activity, Run detail,
+  failure/refusal ledger, Model status & usage (six counters) and Settings.
+  Values on that board are labelled SAMPLE or READ; no data is invented.

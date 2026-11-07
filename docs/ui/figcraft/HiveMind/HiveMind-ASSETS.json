@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-assets.v1",
  "producer": "FigCraft-HiveMind",
- "generated_at": "2026-11-07T15:54:13-06:00",
+ "generated_at": "2026-11-07T17:16:53-06:00",
  "source": {
   "authoritative_set": "HiveRouter/design/hive-style (external; read-only)",
   "preserved_evidence": "docs/ui/figcraft/HiveMind/source-evidence/",
@@ -16,7 +16,7 @@
   "commands": 597,
   "info": {
    "name": "HiveMind Style System",
-   "nodes": 1462,
+   "nodes": 1637,
    "styles": 36,
    "variables": 21,
    "missingFonts": []
@@ -24,10 +24,10 @@
  },
  "design_file": {
   "path": "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
-  "sha256": "9671b9818acab0ff0264a4ac2a3412854b34398b3cf76baab4ec34137330f850",
-  "bytes": 250961,
-  "frames": 12,
-  "nodes": 1462,
+  "sha256": "ff6524a169ecdbef4a990a234b6b48c282f17ea7d297a2898ed650e83b5fa4ec",
+  "bytes": 241254,
+  "frames": 13,
+  "nodes": 1637,
   "pages": [
    {
     "frames": [
@@ -114,12 +114,19 @@
       "name": "11 · Motion & Live",
       "type": "FRAME",
       "width": 1440.0
+     },
+     {
+      "height": 900.0,
+      "id": 1463,
+      "name": "12 · Run Detail & Files",
+      "type": "FRAME",
+      "width": 1440.0
      }
     ],
     "id": 1,
     "name": "Page 1",
-    "nodes": 1461,
-    "topLevel": 12
+    "nodes": 1636,
+    "topLevel": 13
    }
   ]
  },
@@ -219,6 +226,14 @@
    "width": 1440,
    "height": 900,
    "export": "hivemind-motion-and-live.png"
+  },
+  {
+   "code": "12",
+   "frame": "12 · Run Detail & Files",
+   "slug": "run-detail-and-files",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-run-detail-and-files.png"
   }
  ],
  "exports": {
@@ -227,12 +242,12 @@
    "svg": "docs/ui/figcraft/ASSETS/hivemind-cover.svg",
    "png": "docs/ui/figcraft/ASSETS/hivemind-cover.png",
    "png_2x": "docs/ui/figcraft/ASSETS/hivemind-cover@2x.png",
-   "sha256_svg": "58a223c7f841381d627572e88ff066af6613939b439f1ca01fc423f0311acb2c",
-   "sha256_png": "2cc33d5de476e322de1b47fc17f35594186f58984aa82ea68e8e93a66e56717e",
-   "sha256_png_2x": "389da516cbb1a34bd418a3db02751694820b1dd57994ea7afcbcee9d15e26567",
-   "svg_bytes": 304683,
-   "png_bytes": 645144,
-   "png_2x_bytes": 1776850,
+   "sha256_svg": "ad9f04ede5c800196e72a37f8496088190bcf840f07b2029fc4ea2fa5746ed62",
+   "sha256_png": "682701180611e4f764ab7778428965e72f9aed9a634faf81488b8b5766b550bf",
+   "sha256_png_2x": "1d339332875ef127ef17beee3808325136b6cc4762b49b859f85e30e679327ca",
+   "svg_bytes": 305096,
+   "png_bytes": 645148,
+   "png_2x_bytes": 1776882,
    "dimensions": {
     "board": [
      1440,
@@ -530,6 +545,33 @@
    "svg_bytes": 798976,
    "png_bytes": 303443,
    "png_2x_bytes": 740068,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "run-detail-and-files": {
+   "frame": "12 · Run Detail & Files",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "sha256_png_2x": "4b9d6455c659010419e884b90cac3db3057e1c8e1d05db1c29b00e55668d1480",
+   "svg_bytes": 894743,
+   "png_bytes": 233782,
+   "png_2x_bytes": 559011,
    "dimensions": {
     "board": [
      1440,
@@ -1870,6 +1912,276 @@
     ]
    },
    "provenance": "PROPOSED-ADDITION (motion proposal)"
+  },
+  {
+   "surface_id": "DATA-FILES",
+   "owner": "figcraft-hivemind",
+   "name": "Data & files read-only tree (SAMPLE/READ)",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "FILE-PREVIEW",
+   "owner": "figcraft-hivemind",
+   "name": "FILE_READ honest empty preview",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "TOOL-ACTIVITY",
+   "owner": "figcraft-hivemind",
+   "name": "Tool activity ledger rows (no fabricated calls)",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "RUN-DETAIL",
+   "owner": "figcraft-hivemind",
+   "name": "Run detail: id/state/timestamps/revision/stages",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "FAILURE-LEDGER",
+   "owner": "figcraft-hivemind",
+   "name": "Failure / refusal ledger with named codes",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "MODEL-STATUS",
+   "owner": "figcraft-hivemind",
+   "name": "Model/provider status",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "USAGE-COUNTERS",
+   "owner": "figcraft-hivemind",
+   "name": "Six usage counters (prompt/completion/total/cache hit/cache miss/reasoning)",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "SETTINGS-KEY",
+   "owner": "figcraft-hivemind",
+   "name": "Key-present / missing status",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "SETTINGS-REDUCED-MOTION",
+   "owner": "figcraft-hivemind",
+   "name": "Reduced-motion setting (PROPOSED)",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
+  },
+  {
+   "surface_id": "SETTINGS-DIFF-GATED",
+   "owner": "figcraft-hivemind",
+   "name": "No diff control (DECISION-GATED)",
+   "board": "12 · Run Detail & Files",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files@2x.png",
+   "sha256_svg": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+   "sha256_png": "9ab52f30bbb4f5cc524be41a3f7b8e3c433fa40f27713512507069d6343f516e",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (board 12)"
   }
  ],
  "episodes": {
@@ -1878,8 +2190,8 @@
    {
     "episode": "01_phase1_nodes.json",
     "path": "docs/ui/figcraft/HiveMind/episodes/01_phase1_nodes.json",
-    "sha256": "2bf554e2cd7be16ca785af2fb662daea1e7c922e05be5e56815d618a7aa35630",
-    "commands": 1462,
+    "sha256": "b113b0c39fad7c9e550a1f48d3882c2911d81d30d8c99bc325fa2b0d18e275d7",
+    "commands": 1637,
     "command_ids": [
      "file.new",
      "frame.create",
@@ -1890,8 +2202,8 @@
    {
     "episode": "02_phase2_tokens_exports.json",
     "path": "docs/ui/figcraft/HiveMind/episodes/02_phase2_tokens_exports.json",
-    "sha256": "1ad676e3f082d8744e5322eb7b669d9a32d4dc02df26e4c29d73fee126752c88",
-    "commands": 84,
+    "sha256": "90282ab69f68a1ba339166bd657267e8213cc5d23d393de186605e81a5dde4a7",
+    "commands": 86,
     "command_ids": [
      "file.export",
      "file.saveAs",
@@ -2067,8 +2379,8 @@
   }
  ],
  "build": {
-  "phase1_commands": 1462,
-  "phase2_commands": 84,
+  "phase1_commands": 1637,
+  "phase2_commands": 86,
   "run_logs": [
    "docs/ui/figcraft/HiveMind/build/run_phase1.log",
    "docs/ui/figcraft/HiveMind/build/run_phase2.log"

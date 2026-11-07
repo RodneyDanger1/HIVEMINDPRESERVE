@@ -242,6 +242,14 @@ export function ChatCore() {
                   </button>
                 ))}
               </div>
+              <div className="mt-6 flex flex-col items-center gap-1.5 opacity-70" aria-hidden="true">
+                <svg width="46" height="46" viewBox="0 0 46 46">
+                  <path d="M23 4 39 13v18L23 40 7 31V13Z" fill="none" stroke="var(--color-honey-400)" strokeWidth="1.2" />
+                  <path d="M23 13 32 18v10l-9 5-9-5V18Z" fill="var(--color-honey-100)" stroke="var(--color-honey-500)" strokeWidth="1" />
+                  <circle cx="23" cy="22" r="3" fill="var(--color-honey-500)" />
+                </svg>
+                <span className="type-mono-meta text-[8px] tracking-[0.14em] text-meta">READY · NO RUN YET</span>
+              </div>
             </div>
           ) : (
             messages.map((message) => (

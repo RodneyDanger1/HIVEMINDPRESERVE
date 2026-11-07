@@ -46,6 +46,7 @@ EXPECTED_FRAMES = [
     ("06 · Controls & HUD", 1440, 1040), ("07 · Spatial Canvas", 1440, 900),
     ("08 · HMAS Hierarchy", 1440, 900), ("09 · HMAS Governance", 1440, 900),
     ("10 · States & Refusals", 1440, 900), ("11 · Motion & Live", 1440, 900),
+    ("12 · Run Detail & Files", 1440, 900),
 ]
 
 
@@ -119,7 +120,7 @@ def main():
             str(info.get("name", "")).startswith("HiveMind")
             and "HiveRouter" not in str(info.get("name", "")),
             repr(info.get("name")))
-    c.check("12 artboards with exact names/sizes", got == EXPECTED_FRAMES, str(got))
+    c.check("13 artboards with exact names/sizes", got == EXPECTED_FRAMES, str(got))
     c.check("no missing fonts", info.get("missingFonts") == [],
             repr(info.get("missingFonts")))
     report["values"]["info"] = {k: info.get(k) for k in
@@ -264,6 +265,20 @@ def main():
                 focus_ring.append(cnode.get("id"))
     c.check("focus ring is ink-700 (not honey)", bool(focus_ring),
             "ink-700 vector nodes=%s" % focus_ring[:4])
+
+    # C4. board 12 run detail & files surfaces
+    run_labels = ["DATA & FILES", "TOOL ACTIVITY", "RUN DETAIL",
+                  "FAILURE / REFUSAL LEDGER", "MODEL STATUS & USAGE",
+                  "SETTINGS", "SAMPLE", "READ", "AUTHORITATIVE SURFACES",
+                  "prompt", "completion", "total", "cache hit", "cache miss",
+                  "reasoning", "E_APPROVAL_TIMEOUT", "E_KILL_DENIED",
+                  "E_RUN_TERMINAL", "DECISION-GATED",
+                  "no fabricated calls", "NO DATA INVENTED"]
+    run_text = frame_text("12 · Run Detail & Files")
+    missing = [l for l in run_labels if l not in run_text]
+    c.check("board 12 run detail & files surfaces present (files/tools/run "
+            "detail/ledger/model+six counters/settings)", not missing,
+            "missing=%s" % missing)
     report["values"]["text_nodes"] = len(texts)
 
     # D. authoritative composition on board 07 (+ crimson error card on 05)
@@ -350,9 +365,9 @@ def main():
     if os.path.isfile(prev_path):
         prev = json.load(open(prev_path, encoding="utf-8"))
         unchanged_slugs = ["colour", "typography", "space-and-depth",
-                           "brand-lockups", "controls-and-hud", "spatial-canvas",
-                           "hmas-hierarchy", "hmas-governance",
-                           "states-and-refusals"]
+                           "brand-lockups", "agent-cards", "controls-and-hud",
+                           "spatial-canvas", "hmas-hierarchy", "hmas-governance",
+                           "states-and-refusals", "motion-and-live"]
         changed = []
         for slug in unchanged_slugs:
             old = prev["exports"].get(slug)
@@ -363,10 +378,10 @@ def main():
             for key in ("sha256_svg", "sha256_png", "sha256_png_2x"):
                 if old[key] != new[key]:
                     changed.append("%s/%s" % (slug, key))
-        c.check("existing untouched artboards byte-identical (9 boards)",
+        c.check("existing untouched artboards byte-identical (11 boards)",
                 not changed, "changed=%s" % changed[:6])
     else:
-        c.check("existing untouched artboards byte-identical (9 boards)",
+        c.check("existing untouched artboards byte-identical (11 boards)",
                 False, "prev-assets.json missing")
 
     # E2. episodes: manifest lists the copied phase scripts with matching hashes

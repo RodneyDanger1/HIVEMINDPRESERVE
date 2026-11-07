@@ -71,9 +71,10 @@ export function LibraryPanel() {
               <li key={task.id} className="w-12">
                 <button
                   type="button"
-                  className="flex flex-col items-center gap-1 text-center"
+                  className="flex w-12 flex-col items-center gap-1 text-center"
                   onClick={() => selectTask(task.id)}
                   aria-label={`${task.label} (${visualFor(task.state).label})`}
+                  title={task.label}
                 >
                   <span
                     className="flex h-10 w-10 items-center justify-center bg-ink-900 text-honey-300"
@@ -84,7 +85,7 @@ export function LibraryPanel() {
                   >
                     <StateDot state={task.state} size={9} />
                   </span>
-                  <span className="type-mono-meta w-full truncate text-[8px] text-ink-700">{task.label}</span>
+                  <span className="type-mono-meta block w-12 truncate text-[8px] text-ink-700">{task.label}</span>
                 </button>
               </li>
             ))}

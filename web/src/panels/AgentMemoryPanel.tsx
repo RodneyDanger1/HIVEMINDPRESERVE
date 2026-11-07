@@ -3,6 +3,7 @@
  * a real DELETE and the panel refreshes from the result, never locally guessed.
  */
 import { useCallback, useEffect, useState } from 'react';
+import { apiBaseUrl } from '../api/client';
 import { EmptyState } from './StatePack';
 
 interface MemoryRow {
@@ -22,7 +23,7 @@ export function AgentMemoryPanel() {
 
   const refresh = useCallback(() => {
     setStatus('loading');
-    fetch('/api/agents/memory', { headers: { Accept: 'application/json' } })
+    fetch(`${apiBaseUrl()}/api/agents/memory`, { headers: { Accept: 'application/json' } })
       .then(async (response) => {
         if (!response.ok) {
           throw new Error(`memory HTTP ${response.status}`);
@@ -72,7 +73,7 @@ export function AgentMemoryPanel() {
   }, [refresh]);
 
   const clear = (agentKey: string): void => {
-    fetch(`/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
+    fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`clear HTTP ${response.status}`);
@@ -83,7 +84,7 @@ export function AgentMemoryPanel() {
   };
 
   return (
-    <section aria-label="Agent memory" className="mt-4 border-t border-hairline pt-4">
+    <section aria-label="Agent memory" className="surface-panel mt-3 rounded-[14px] p-3">
       <h3 className="type-label text-ink-900">Agent memory</h3>
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading durable memory…</p>

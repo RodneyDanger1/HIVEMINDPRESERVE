@@ -1,7 +1,7 @@
 {
  "schema": "hivemind.figcraft-source-evidence.v1",
  "source": "HiveRouter/design/hive-style (external; read-only)",
- "generated_at": "2026-11-07T15:54:13-06:00",
+ "generated_at": "2026-11-07T17:16:53-06:00",
  "files": [
   {
    "path": "docs/ui/figcraft/HiveMind/source-evidence/build_hive_style.py",

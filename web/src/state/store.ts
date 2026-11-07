@@ -322,8 +322,31 @@ export interface UiState {
 const HEALTHY_GREEN: readonly AgentState[] = ['healthy', 'completed'];
 
 function baseProject(): { id: string; name: string; owner: string } {
+  const key = 'hivemind.project-id';
+  let id: string | null = null;
+  try {
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem(key);
+      if (stored !== null && stored.trim().length > 0) {
+        id = stored;
+      }
+    }
+  } catch {
+    // Storage can be unavailable in a locked-down embedding context; a fresh
+    // id is still a real project key, never a fabricated display value.
+  }
+  if (id === null) {
+    id = uuidv7();
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, id);
+      }
+    } catch {
+      // Same fallback: the id lives for this page only.
+    }
+  }
   return {
-    id: uuidv7(),
+    id,
     name: STRINGS.library.projectFallback,
     owner: STRINGS.chat.userLabel,
   };
