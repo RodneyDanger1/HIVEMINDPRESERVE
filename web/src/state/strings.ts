@@ -39,6 +39,7 @@ export const STRINGS = {
     superagents: 'SUPERAGENTS',
     workers: 'WORKERS',
     green: 'GREEN',
+    noMetrics: 'NO METRICS',
     deltaLabel: 'since previous metrics frame',
     sourceServer: 'live',
     sourceDerived: 'derived',

@@ -35,11 +35,17 @@ export function HudBadge() {
         />
         <span className="font-semibold">{STRINGS.node.hyperAgent}</span>
         <span aria-hidden="true">·</span>
-        <span>{formatCount(hud.superagents)} {STRINGS.hud.superagents}</span>
-        <span aria-hidden="true">·</span>
-        <span>{formatCount(hud.workers)} {STRINGS.hud.workers}</span>
-        <span aria-hidden="true">·</span>
-        <span>{formatPercent(hud.greenPct)} {STRINGS.hud.green}</span>
+        {hud.source === 'none' ? (
+          <span className="text-ink-500">{STRINGS.hud.noMetrics}</span>
+        ) : (
+          <>
+            <span>{formatCount(hud.superagents)} {STRINGS.hud.superagents}</span>
+            <span aria-hidden="true">·</span>
+            <span>{formatCount(hud.workers)} {STRINGS.hud.workers}</span>
+            <span aria-hidden="true">·</span>
+            <span>{formatPercent(hud.greenPct)} {STRINGS.hud.green}</span>
+          </>
+        )}
         {hud.delta === null ? null : (
           <span className="text-ink-800">{formatDelta(hud.delta)}</span>
         )}

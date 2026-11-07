@@ -41,13 +41,37 @@ export function LibraryPanel() {
         </span>
       </div>
 
-      <div role="tablist" aria-label={STRINGS.tabs.aria} className="grid grid-cols-2 gap-1">
+      <div
+        role="tablist"
+        aria-label={STRINGS.tabs.aria}
+        className="grid grid-cols-2 gap-1"
+        onKeyDown={(event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+            return;
+          }
+          event.preventDefault();
+          const current = TABS.findIndex((entry) => entry.id === tab);
+          const next =
+            event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? TABS.length - 1
+                : (current + (event.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length;
+          const target = TABS[next];
+          if (target !== undefined) {
+            setTab(target.id);
+            requestAnimationFrame(() => document.getElementById(`library-tab-${target.id}`)?.focus());
+          }
+        }}
+      >
         {TABS.map((entry) => (
           <button
             key={entry.id}
+            id={`library-tab-${entry.id}`}
             type="button"
             role="tab"
             aria-selected={tab === entry.id}
+            tabIndex={tab === entry.id ? 0 : -1}
             onClick={() => setTab(entry.id)}
             className={
               'type-label rounded-[7px] border px-1 py-1 text-[9px] ' +

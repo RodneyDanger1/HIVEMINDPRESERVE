@@ -63,7 +63,9 @@ export function Header() {
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-honey-200 text-[11px] font-semibold text-ink-800">
             {project.owner === 'You' ? 'HM' : project.owner.slice(0, 2).toUpperCase()}
           </span>
-          <span className="type-mono-meta hidden text-ink-800 sm:block">{project.owner}</span>
+          <span className="type-mono-meta hidden text-ink-800 sm:block">
+            {project.owner === 'You' ? 'Operator' : project.owner}
+          </span>
         </div>
       </div>
       {searchOpen ? (
