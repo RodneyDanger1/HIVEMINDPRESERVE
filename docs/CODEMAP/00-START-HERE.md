@@ -33,6 +33,7 @@ This is the map of **every path in the working tree**, not a marketing overview.
 13. [`13-HISTORICAL-AUDIT.md`](13-HISTORICAL-AUDIT.md) — the historical 30-finding audit register and its current disposition.
 14. [`14-GITDIAGRAM-ARCHITECTURE.md`](14-GITDIAGRAM-ARCHITECTURE.md) — the external 25-component/30-connection diagram, mapped and corrected.
 15. [`15-INPUT-PROVENANCE.md`](15-INPUT-PROVENANCE.md) — provenance of the two dumps and the HTML diagram; duplicate proof.
+16. [`16-GITNEXUS-FINDINGS.md`](16-GITNEXUS-FINDINGS.md) — current GitNexus audit: broken template dispatch, dead Library buttons, dark audit sink, lost NODE kind, dead persona check, missing telemetry/persistence.
 
 Machine data:
 - [`_data/inventory.csv`](_data/inventory.csv) — **36,480 rows**, every path (tracked and ignored), size, area, extension, tracked flag, and SHA-256 for tracked files.

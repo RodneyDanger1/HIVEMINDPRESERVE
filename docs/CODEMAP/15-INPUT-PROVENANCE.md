@@ -38,8 +38,9 @@ The **audit paper inside the dump** is a historical `v1.0.0` audit at `3988622`/
 | Sections still present at HEAD | **635 / 635** |
 | Dump-only paths | 0 |
 | Current tracked files with no dump section | **188** (89 text, 99 binary/UTF-16) |
-| Content identical after normalization | 586 |
-| Content materially changed | 1 (`docs/CODEMAP/00-START-HERE.md`) |
+| Content identical after normalization (at anchor) | 587 |
+| Content materially changed at anchor | 0 |
+| Docs changed after capture (working-tree drift) | 3 (`00-START-HERE`, `09-RISKS-GAPS`, `12-GITHUB-PUSH`) |
 | Empty sentinels | 28 |
 | Binary sentinels | 20 |
 
@@ -48,10 +49,12 @@ By area: docs 174, plans 109, backend 106, audit **69**, web 69, runtime-test 46
 ## What the dump does **not** contain
 
 - 188 current tracked files, including 99 binaries/UTF-16 and 89 text files.
-- `backend/crates/hiverouter-core/src/execution.rs`, `ws.rs`, `tools/src/approval.rs`, and other current core files are among the 188 extras. The dump is a **strict subset**; this is a selection/export limitation, not evidence those files were absent.
+- `backend/crates/hiverouter-core/src/execution.rs`, `ws.rs`, `tools/src/approval.rs`, and other current core files are among the 188 extras. They exceed the dump's observed ~49.7 KB capture ceiling, and the dump's own `lib.rs`/`http.rs` declare/import them; this is a **capture omission, not a pre-1.2 state**. The dump is a strict subset, not evidence those files were absent.
 - The audit’s own `FILE-MANIFEST*`, `QUALITY-MATRIX.csv`, `APPENDIX-FILE-CENSUS.md`, and `backend/Cargo.lock` are absent, so its 507-file hash claim is read, not self-verified.
-- 49 bodies are placeholders (28 `[Empty file]`, 20 `[Binary file]`); one “binary” is actually Markdown (`plans/waves/W1-CORE-RECOVERY.md`).
+- 48 bodies are placeholders (28 `[Empty file]`, 20 `[Binary file]`); one “binary” is actually Markdown (`plans/waves/W1-CORE-RECOVERY.md`).
 - 4 control characters corrupt identifiers inside the dump’s copy of `plans/foresight/RUN-3.md`.
+- One unexplained small omission: `backend/crates/hiverouter-tools/src/bin/hiverouter.rs` (579 B). Reported as unexplained, not forced into a rule.
+- Current 5db2f21 tracked count is **829**; the earlier 823 anchor excludes the 6 follow-up CODEMAP files.
 
 ## GitDiagram provenance
 
