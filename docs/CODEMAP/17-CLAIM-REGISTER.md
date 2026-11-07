@@ -1,7 +1,7 @@
 # 17 — Claim Register (post-wave 3)
 
 Status: `VERIFIED` (command/test/proof), `READ` (source read), `UNVERIFIED`, `CONTRADICTED`.
-This register is rebuilt from the current tree after commits up to `42763d2`; it is not the frozen census.
+This register is rebuilt from the current tree after commits up to `ec43534`; it is not the frozen census.
 
 | ID | Claim | Status | Evidence |
 |---|---|---|---|
@@ -25,7 +25,7 @@ This register is rebuilt from the current tree after commits up to `42763d2`; it
 | C-18 | `send_to_sibling` is same-parent/run only and emits `AGENT_MESSAGE` | VERIFIED (positive) / UNVERIFIED (negative) | `ask_parent` test asserts event + row; no foreign-parent test |
 | C-19 | Side effects are Config-owned and visible in `/diagnose` | READ | `Config.side_effects_enabled`; `ToolsBridge` builder; diagnose field; no env-parsing test yet |
 | C-20 | HMAS/AWN is complete | **CONTRADICTED** | Profiles are read-only (5 boot personas); no import/editor, controller, cross-branch approval, or full HMAS UI |
-| C-21 | Four-level Agent→Subagent spawning exists | **CONTRADICTED** | Current spawn remains Hyper/Super and 3-tier; profiles/H2 pending |
+| C-21 | Worker/Agent→Subagent spawning exists | **PARTIAL** | Worker may spawn `subagent` and cannot escalate to Super; no profile-driven spawn policy yet |
 | C-22 | Memory lasts forever across runs | **PARTIAL** | `agent_memory` migration v7 + role-scoped recall into context; no editor/clear/consent UI and no semantic retrieval |
 | C-23 | Usage/cost persists across restart | **PARTIAL** | `run_usage` migration v8 persists measured tokens; cost is not persisted/settled |
 | C-24 | Approval replay >20 is complete | **UNVERIFIED** | Cap remains 20; no paging |

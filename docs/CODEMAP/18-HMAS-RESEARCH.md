@@ -145,5 +145,7 @@ two of three; (4) no first-party LICENSE/NOTICE and an incomplete census (`09-RI
 - Memory: migration v7 `agent_memory`; role-scoped upsert/recall (latest 8) into task context; terminal task
   text is remembered when it carries no obvious secret marker. No editor/clear/consent UI yet.
 - Usage: migration v8 `run_usage`; measured token totals persist with NULL-not-zero; cost is not settled.
-- Still **not** done: profile import/editor, cross-branch approval gate, memory controls/semantic retrieval,
-  HMAS controller, full HMAS UI. Do not claim HMAS complete.
+- Hierarchy policy: Workers may spawn `subagent` only; Super escalation from a Worker is refused by `spawn_sub_hive`;
+  Hyper/Super retain broader spawn rights; caps still global (no per-profile cap yet).
+- Still **not** done: profile import/editor, cross-branch approval gate, semantic retrieval, HMAS controller,
+  full HMAS UI, per-run cap profiles. Do not claim HMAS complete.
