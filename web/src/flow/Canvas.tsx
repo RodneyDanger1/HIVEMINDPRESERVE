@@ -36,12 +36,21 @@ function CanvasInner() {
   const tasks = useUiStore((state) => state.tasks);
   const selectedTaskId = useUiStore((state) => state.selectedTaskId);
   const selectTask = useUiStore((state) => state.selectTask);
+  const rewireSelected = useUiStore((state) => state.rewireSelected);
+  const runId = useUiStore((state) => state.run?.id ?? null);
   const setViewport = useUiStore((state) => state.setViewport);
   const connection = useUiStore((state) => state.connection);
   const history = useUiStore((state) => state.history);
   const reduced = useAppReducedMotion();
-  const { setCenter, getZoom, zoomIn, zoomOut, fitView } = useReactFlow();
+  const { setCenter, getZoom, zoomIn, zoomOut, fitView, getIntersectingNodes } = useReactFlow();
   const [zoomLabel, setZoomLabel] = useState('100%');
+  const [positionOverrides, setPositionOverrides] = useState<
+    Readonly<Record<string, { x: number; y: number }>>
+  >({});
+
+  useEffect(() => {
+    setPositionOverrides({});
+  }, [runId]);
 
   const handleSelect = useCallback(
     (taskId: string) => {
@@ -54,8 +63,12 @@ function CanvasInner() {
     if (history.replayGraph) {
       return [];
     }
-    return buildNodes(tasks, selectedTaskId, handleSelect);
-  }, [tasks, selectedTaskId, handleSelect, history.replayGraph]);
+    const laidOut = buildNodes(tasks, selectedTaskId, handleSelect);
+    return laidOut.map((node) => {
+      const override = positionOverrides[node.id];
+      return override ? { ...node, position: override } : node;
+    });
+  }, [tasks, selectedTaskId, handleSelect, history.replayGraph, positionOverrides]);
 
   const edges = useMemo<Edge[]>(() => buildEdges(tasks), [tasks]);
 
@@ -146,6 +159,32 @@ function CanvasInner() {
         onNodeClick={(_, node) => {
           if (!history.replayGraph) {
             handleSelect(node.id);
+          }
+        }}
+        onNodeDragStop={(_, node: Node) => {
+          if (history.replayGraph) {
+            return;
+          }
+          setPositionOverrides((previous) => ({
+            ...previous,
+            [node.id]: { x: node.position.x, y: node.position.y },
+          }));
+          const task = tasks[node.id];
+          if (!task || task.kind !== 'worker') {
+            return;
+          }
+          const target = getIntersectingNodes(node).find((candidate) => {
+            const candidateTask = tasks[candidate.id];
+            return (
+              candidate.id !== node.id &&
+              candidateTask !== undefined &&
+              (candidateTask.kind === 'superagent' || candidateTask.kind === 'hyperagent') &&
+              candidate.id !== task.parentId
+            );
+          });
+          if (target !== undefined) {
+            selectTask(node.id);
+            void rewireSelected(target.id);
           }
         }}
         onPaneClick={() => selectTask(null)}
