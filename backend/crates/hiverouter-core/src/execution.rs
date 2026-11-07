@@ -1686,8 +1686,32 @@ impl RunEngine {
                                         .await
                                 } else if plan.tool == "ask_parent" {
                                     self.execute_ask_parent(run, task, &plan)
+                                } else if plan.tool == "send_to_sibling"
+                                    && self.is_cross_branch_message(task, &plan)
+                                {
+                                    // Cross-branch peer messages are a context-leak
+                                    // boundary: require an operator decision on the
+                                    // exact target/text before the message is written.
+                                    if self.tools.is_some() && self.tool_workspace.is_some() {
+                                        self.db
+                                            .increment_run_tool_counters(run.id, 0, 1)
+                                            .map_err(|error| error.refusal())?;
+                                        precounted = precounted.saturating_add(1);
+                                        self.suspend_for_approval(
+                                            run, task, call, &plan, turn, token,
+                                        )
+                                        .await?
+                                    } else {
+                                        ToolExecution::refused(
+                                            plan.tool_call_id.clone(),
+                                            Refusal::ToolNotAllowed.code(),
+                                            "cross-branch message requires an approval bridge; \
+                                             nothing was written"
+                                                .to_owned(),
+                                        )
+                                    }
                                 } else if plan.tool == "send_to_sibling" {
-                                    self.execute_send_to_sibling(run, task, &plan)
+                                    self.execute_send_to_sibling(run, task, &plan, false)
                                 } else if tool_loop::requires_approval(&self.tool_registry, &plan.tool)
                                     && self.tools.is_some()
                                     && self.tool_workspace.is_some()
@@ -2169,6 +2193,10 @@ impl RunEngine {
                 ),
             ));
         }
+        if plan.tool == "send_to_sibling" {
+            // The approval row is the gate; the message write is the effect.
+            return Ok(self.execute_send_to_sibling(run, task, plan, true));
+        }
         let executed = tools
             .execute_approved(
                 &self.shell_policy,
@@ -2456,11 +2484,28 @@ impl RunEngine {
     ///
     /// Same-parent only: this is the narrow, non-leaking peer route until a
     /// profile-level cross-branch approval gate lands.
+    /// True when a `send_to_sibling` call targets another branch in the same run.
+    fn is_cross_branch_message(&self, task: &TaskRecord, plan: &ToolCallPlan) -> bool {
+        let Ok(args) = serde_json::from_value::<SendToSiblingArgs>(plan.args.clone()) else {
+            return false;
+        };
+        let Ok(target_id) = args.target_task_id.parse::<TaskId>() else {
+            return false;
+        };
+        let Ok(target) = self.store.get_task(target_id) else {
+            return false;
+        };
+        target.run_id == task.run_id
+            && target.id != task.id
+            && target.parent_task_id != task.parent_task_id
+    }
+
     fn execute_send_to_sibling(
         &self,
         run: &Run,
         task: &TaskRecord,
         plan: &ToolCallPlan,
+        allow_cross_parent: bool,
     ) -> ToolExecution {
         let args: SendToSiblingArgs = match serde_json::from_value(plan.args.clone()) {
             Ok(args) => args,
@@ -2496,11 +2541,15 @@ impl RunEngine {
                 );
             }
         };
-        if target.run_id != task.run_id || target.parent_task_id != task.parent_task_id {
+        if target.run_id != task.run_id
+            || (target.parent_task_id != task.parent_task_id && !allow_cross_parent)
+        {
             return ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 Refusal::ToolNotAllowed.code(),
-                "send_to_sibling is limited to the same run and the same parent".to_owned(),
+                "send_to_sibling is limited to the same run and the same parent unless an \
+                 operator approval grants this cross-branch message"
+                    .to_owned(),
             );
         }
         let text = args.text.trim();

@@ -105,6 +105,13 @@ impl ScriptedExecutor {
             replies: Mutex::new(replies.into()),
         })
     }
+
+    fn with_plan(plan: Plan, replies: Vec<StreamedReply>) -> Arc<Self> {
+        Arc::new(Self {
+            plan,
+            replies: Mutex::new(replies.into()),
+        })
+    }
 }
 
 #[async_trait]
@@ -188,6 +195,18 @@ fn write_call(tool_call_id: &str, path: &str, content: &str, index: u32) -> Asse
         id: tool_call_id.to_owned(),
         name: "file_write".to_owned(),
         arguments: write_args(path, content),
+    }
+}
+
+fn sibling_call(tool_call_id: &str, target: TaskId, text: &str, index: u32) -> AssembledToolCall {
+    AssembledToolCall {
+        index,
+        id: tool_call_id.to_owned(),
+        name: "send_to_sibling".to_owned(),
+        arguments: serde_json::json!({
+            "target_task_id": target.to_string(),
+            "text": text,
+        }),
     }
 }
 
@@ -393,7 +412,10 @@ async fn begin_approval(
         }
         if let Some(status) = collected.final_run_status.as_deref() {
             if is_terminal_status(status) {
-                panic!("run terminated before requesting approval: {status}");
+                panic!(
+                    "run terminated before requesting approval: {status}; terminal={:?}; events={:?}; results={:?}",
+                    collected.terminal_status, collected.sequence, collected.tool_results
+                );
             }
         }
     }
@@ -445,6 +467,79 @@ fn tool_turns(harness: &Harness, run: RunId) -> Vec<hiverouter_core::db::ToolTur
 /* ------------------------------------------------------------------ */
 /* 1. suspend                                                          */
 /* ------------------------------------------------------------------ */
+
+#[tokio::test]
+async fn cross_branch_message_requires_approval_then_writes_once() {
+    let super_a = TaskId::new();
+    let super_b = TaskId::new();
+    let worker_a = TaskId::new();
+    let worker_b = TaskId::new();
+    let plan = Plan::new(vec![
+        PlanNode {
+            node_id: super_a,
+            role: "super".to_owned(),
+            deps: Vec::new(),
+            depth: 1,
+            parent: None,
+        },
+        PlanNode {
+            node_id: super_b,
+            role: "super".to_owned(),
+            deps: Vec::new(),
+            depth: 1,
+            parent: None,
+        },
+        PlanNode {
+            node_id: worker_a,
+            role: "worker".to_owned(),
+            deps: Vec::new(),
+            depth: 2,
+            parent: Some(super_a),
+        },
+        PlanNode {
+            node_id: worker_b,
+            role: "worker".to_owned(),
+            deps: Vec::new(),
+            depth: 2,
+            parent: Some(super_b),
+        },
+    ]);
+    let executor = ScriptedExecutor::with_plan(
+        plan,
+        vec![
+            tool_only_reply(vec![sibling_call("call-cross", worker_a, "hello branch", 0)]),
+            final_answer(),
+            final_answer(),
+        ],
+    );
+    let harness = harness(executor, true, 120);
+    let (run, request, receiver, collected) = begin_approval(&harness, "cross branch").await;
+    assert_eq!(request.tool, "send_to_sibling");
+    assert_eq!(
+        harness
+            .engine
+            .store
+            .agent_message_count(run.id)
+            .expect("message count"),
+        0,
+        "nothing is written before approval"
+    );
+    assert_eq!(collected.tool_results.len(), 0);
+
+    let resolution = harness.resolve(&request, "approve").expect("approve");
+    assert!(harness.engine.notify_approval_resolved(&resolution));
+    let collected = settle(receiver, collected).await;
+    assert_eq!(collected.final_run_status.as_deref(), Some("completed"));
+    assert_eq!(
+        harness
+            .engine
+            .store
+            .agent_message_count(run.id)
+            .expect("message count"),
+        1,
+        "the approved message is written exactly once"
+    );
+}
 
 #[tokio::test]
 async fn suspend_publishes_awaiting_approval_and_approval_request() {

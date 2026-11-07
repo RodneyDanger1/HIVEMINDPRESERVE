@@ -344,8 +344,8 @@ impl ToolRegistry {
             ),
             contract(
                 ToolId::SendToSibling,
-                "Send a bounded message to a sibling under the same parent (no cross-branch leak).",
-                PermissionClass::Read,
+                "Send a bounded message to a sibling; cross-branch targets require operator approval.",
+                PermissionClass::Mutate,
                 schema_of!(SendToSiblingArgs),
             ),
             contract(
