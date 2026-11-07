@@ -75,6 +75,7 @@ export function ChatCore() {
   const pinChat = useUiStore((state) => state.pinChat);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
   const streamingRunId = useUiStore((state) => state.streamingRunId);
+  const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
   const reduced = useAppReducedMotion();
   const store = useUiStoreApi();
   const [draft, setDraft] = useState('');
@@ -196,6 +197,15 @@ export function ChatCore() {
             </button>
           </div>
         </header>
+
+        {runErrorCode === null ? null : (
+          <p
+            role="alert"
+            className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-signal bg-recessed px-2 py-1 text-signal"
+          >
+            Run refused: {runErrorCode}
+          </p>
+        )}
 
         <div
           ref={listRef}
