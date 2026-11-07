@@ -1,0 +1,99 @@
+{
+ "schema": "hivemind.figcraft-episodes.v1",
+ "producer": "FigCraft-A",
+ "generated": "2026-11-06T05:12:30-0600",
+ "command_ids_used": [
+  "effect.add",
+  "effect.set",
+  "file.new",
+  "frame.create",
+  "node.set",
+  "object.group",
+  "page.add",
+  "page.list",
+  "page.rename",
+  "page.select",
+  "page.setBackground",
+  "shape.ellipse",
+  "shape.line",
+  "shape.polygon",
+  "shape.rectangle",
+  "style.create",
+  "text.create",
+  "variable.create",
+  "variable.createCollection"
+ ],
+ "command_id_count": 19,
+ "episodes": [
+  "docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json",
+  "docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json",
+  "docs/ui/figcraft/EPISODES/a-a-exports.json"
+ ],
+ "rejected_syntax_guesses": [],
+ "failures": [
+  {
+   "kind": "discovered",
+   "detail": "object.group sends the new group to the FRONT of the frame stack; a full-panel group hides same-band siblings created earlier. Fixed by leaving the buttons band panel ungrouped. Not a schema guess.",
+   "evidence": "A/build/c4.png empty buttons panel vs probe-s04c.png standalone render"
+  },
+  {
+   "kind": "avoided",
+   "detail": "shape.line with width 0 was rejected pre-emptively by inspection; minimap edges redrawn as 1px rects. No command rejection occurred.",
+   "evidence": "A/build/pages_components.py minimap"
+  },
+  {
+   "kind": "fixed",
+   "detail": "PowerShell Get-Content rewrote a UTF-8 source file as mojibake; the board source was rewritten through the write tool and all later edits done in Python.",
+   "evidence": "A/build/pages_foundations.py"
+  },
+  {
+   "kind": "watchdog_residual_fixed",
+   "detail": "Specimens loading spinner inherited FigCraft's default shape grey #D9D9D9 via an unfilled ellipse; now fill:none with a honey-500 stroke. Components REFUSED column now prints the named refusal codes E_SPAWN_DEPTH / E_CYCLE / E_RUN_TERMINAL / E_KILL_DENIED and the band note prints DIFF_* DECISION-GATED (S25).",
+   "evidence": "A-SELF-CHECK.json checks.svg_only_printed_token_hexes=true; all four SVGs contain only the 20 printed token hexes (0 off-token)"
+  }
+ ],
+ "generator_sources": [
+  {
+   "path": "docs/ui/figcraft/A/build/fig.py",
+   "sha256": "7793bf9656fa40da1dd029b14e35d007b01a89e5ec60bead2ed95c22122f3782"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/gen_common.py",
+   "sha256": "697cb7b80527c02721cae7a745601d270602f7f050bb781d86caf5692f9aec25"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/pages_foundations.py",
+   "sha256": "aa365521dd750549b6e2927e9dfdbf3969ddcb4a7f6064565fee05b5344b4417"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/pages_brand.py",
+   "sha256": "6a0dbfc4c77e98d62a4b1f5d75bc5bb1d2879ed2c2b2e384618b0735b2b64850"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/pages_components.py",
+   "sha256": "bfe7ded25a8cbec9893d8a7760d79900bb091613b1848ccd96d3c8a791dcecf1"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/pages_specimens.py",
+   "sha256": "3fedb4165d41cedf16a00635dda535c234900daf0726a8b8f17ff34f89e9f794"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/gen_build.py",
+   "sha256": "156cc41465354353d3400e30e98900dfa30eb5877820c524bc0e4dc96065230c"
+  },
+  {
+   "path": "docs/ui/figcraft/A/build/gen_manifest.py",
+   "sha256": "61d800cf7e0a4929cadb9004a933a33ac1a507a5f13268d1ac7fa6e5039cd893"
+  }
+ ],
+ "self_check": "docs/ui/figcraft/A/A-SELF-CHECK.json"
+}

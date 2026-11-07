@@ -8,6 +8,7 @@ import dagre from '@dagrejs/dagre';
 import type { Edge, Node } from '@xyflow/react';
 import type { TaskRecord } from '../state/store';
 import { isAgentState, type NodeKindLabel } from '../state/agentState';
+import { LAYOUT } from '../tokens/tokens';
 
 export interface CanvasNodeData extends Record<string, unknown> {
   readonly task: TaskRecord;
@@ -22,17 +23,25 @@ export interface Point2 {
   readonly y: number;
 }
 
+/** Invisible edge anchor at the hive core. The backend hyperagent task renders
+ * as the fixed ChatCore overlay, not as a second 420x500 canvas card. */
+export const HIVE_ANCHOR_ID = 'hive-core-anchor';
+
 const NODE_SIZE: Record<NodeKindLabel, { width: number; height: number }> = {
-  hyperagent: { width: 280, height: 150 },
-  superagent: { width: 232, height: 132 },
-  worker: { width: 208, height: 112 },
-  tool: { width: 190, height: 104 },
-  error: { width: 232, height: 120 },
+  hyperagent: { width: LAYOUT.chat.width, height: LAYOUT.chat.height },
+  superagent: LAYOUT.cards.superagent,
+  worker: LAYOUT.cards.worker,
+  tool: LAYOUT.cards.tool,
+  error: LAYOUT.cards.error,
 };
+
+export function nodeSize(kind: NodeKindLabel): { readonly width: number; readonly height: number } {
+  return NODE_SIZE[kind];
+}
 
 export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record<string, Point2> {
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 90, marginx: 40, marginy: 40 });
+  graph.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 90, marginx: 40, marginy: 40 });
   graph.setDefaultEdgeLabel(() => ({}));
   const ids = Object.keys(tasks);
   for (const id of ids) {
@@ -54,6 +63,20 @@ export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record
     const node = graph.node(id) as { x: number; y: number; width: number; height: number };
     positions[id] = { x: node.x - node.width / 2, y: node.y - node.height / 2 };
   }
+  // World origin is the centre of the hyper/hive node (spatial-canvas spec).
+  // Shift every dagre coordinate so the root's centre is exactly (0,0); the
+  // fixed chat overlay and Ctrl+0 recentre then share the same anchor.
+  const root = ids.find((id) => tasks[id]?.parentId === null);
+  if (root !== undefined) {
+    const rootTask = tasks[root];
+    const size = NODE_SIZE[rootTask.kind];
+    const rootPosition = positions[root];
+    const dx = rootPosition.x + size.width / 2;
+    const dy = rootPosition.y + size.height / 2;
+    for (const id of ids) {
+      positions[id] = { x: positions[id].x - dx, y: positions[id].y - dy };
+    }
+  }
   return positions;
 }
 
@@ -64,27 +87,44 @@ export function buildNodes(
   interactive = true,
 ): CanvasNode[] {
   const positions = layoutTasks(tasks);
-  return Object.values(tasks).map((task) => ({
-    id: task.id,
-    type: task.kind,
-    position: positions[task.id] ?? { x: 0, y: 0 },
-    data: { task, selected: task.id === selectedTaskId, onSelect },
-    ariaLabel: `${task.label} (${task.kind}, ${task.state})`,
-    draggable: interactive,
-    selectable: interactive,
-  }));
+  return Object.values(tasks)
+    .filter((task) => task.kind !== 'hyperagent')
+    .map((task) => {
+      const size = nodeSize(task.kind);
+      return {
+        id: task.id,
+        type: task.kind,
+        position: positions[task.id] ?? { x: 0, y: 0 },
+        style: { width: size.width, height: size.height },
+        data: { task, selected: task.id === selectedTaskId, onSelect },
+        ariaLabel: `${task.label} (${task.kind}, ${task.state})`,
+        draggable: interactive,
+        selectable: interactive,
+      };
+    });
 }
 
 export function buildEdges(tasks: Readonly<Record<string, TaskRecord>>): Edge[] {
   return Object.values(tasks)
     .filter((task) => task.parentId !== null && tasks[task.parentId] !== undefined)
-    .map((task) => ({
-      id: `edge-${task.parentId}-${task.id}`,
-      source: task.parentId ?? '',
-      target: task.id,
-      type: 'bee',
-      animated: false,
-    }));
+    .map((task) => {
+      const parent = task.parentId === null ? undefined : tasks[task.parentId];
+      const source = parent?.kind === 'hyperagent' ? HIVE_ANCHOR_ID : (task.parentId ?? '');
+      return {
+        id: `edge-${task.parentId}-${task.id}`,
+        source,
+        target: task.id,
+        type: 'bee',
+        animated: false,
+        data: {
+          broken:
+            task.kind === 'error' ||
+            task.state === 'failed' ||
+            task.state === 'killed' ||
+            task.state === 'interrupted',
+        },
+      };
+    });
 }
 
 /**

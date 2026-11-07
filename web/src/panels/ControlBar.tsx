@@ -19,6 +19,7 @@ export function ControlBar() {
   const killWorker = useUiStore((state) => state.killWorker);
   const rewireSelected = useUiStore((state) => state.rewireSelected);
   const selectTask = useUiStore((state) => state.selectTask);
+  const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const [target, setTarget] = useState('');
 
   const selected = selectedTaskId ? tasks[selectedTaskId] : null;
@@ -29,12 +30,12 @@ export function ControlBar() {
     (task) => (task.kind === 'superagent' || task.kind === 'hyperagent') && task.id !== selectedTaskId,
   );
 
-  const canSpawn = connected && runActive && !anyPending;
+  const canSpawn = connected && runActive && !anyPending && !replaying;
   const canRewire =
-    connected && runActive && !anyPending && selected !== null && selected.kind === 'worker' && target !== '';
-  const canCancel = connected && runActive && !anyPending;
+    connected && runActive && !anyPending && !replaying && selected !== null && selected.kind === 'worker' && target !== '';
+  const canCancel = connected && runActive && !anyPending && !replaying;
   const canKill =
-    connected && runActive && !anyPending && selected !== null && selected.kind === 'worker';
+    connected && runActive && !anyPending && !replaying && selected !== null && selected.kind === 'worker';
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-t border-hairline bg-panel px-3 py-2">
@@ -43,6 +44,7 @@ export function ControlBar() {
         className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1 text-ink-800"
         aria-label={`${STRINGS.node.workerLabel}: ${STRINGS.controls.reroute}`}
         value={selectedTaskId ?? ''}
+        disabled={replaying}
         onChange={(event) => selectTask(event.target.value === '' ? null : event.target.value)}
       >
         <option value="">{STRINGS.node.noMetrics}</option>

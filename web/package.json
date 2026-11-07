@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.2.0-dev",
   "type": "module",
-  "description": "HiveMind spatial execution environment \u00e2\u20ac\u201d React 19 + Vite 8 localhost UI for the verified blueprint.",
+  "description": "HiveMind spatial execution environment â€” React 19 + Vite 8 localhost UI for the verified blueprint.",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@dagrejs/dagre": "3.1.3",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource/playfair-display": "^5.2.8",
     "@xyflow/react": "12.12.1",
     "motion": "14.9.1",
     "partysocket": "1.3.0",

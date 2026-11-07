@@ -4,6 +4,7 @@ import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import type { NavSection } from '../state/store';
 import { nextRovingIndex } from '../a11y/keyboard';
+import { NavIcon } from './NavIcon';
 
 const ITEMS: ReadonlyArray<{ id: NavSection; label: string }> = [
   { id: 'workspace', label: STRINGS.nav.workspace },
@@ -22,7 +23,7 @@ export function NavRail() {
   return (
     <nav
       aria-label={STRINGS.nav.aria}
-      className="flex w-[72px] shrink-0 flex-col items-center gap-1 border-r border-hairline bg-panel py-3"
+      className="flex w-[72px] shrink-0 flex-col items-center gap-[20px] border-r border-hairline bg-panel py-3"
       onKeyDown={(event) => {
         if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
           return;
@@ -33,9 +34,6 @@ export function NavRail() {
         refs.current[next]?.focus();
       }}
     >
-      <div className="type-mono-meta mb-1 text-meta" aria-hidden="true">
-        HM
-      </div>
       {ITEMS.map((item, index) => (
         <button
           key={item.id}
@@ -46,14 +44,26 @@ export function NavRail() {
           aria-current={nav === item.id ? 'page' : undefined}
           tabIndex={nav === item.id ? 0 : -1}
           onClick={() => setNav(item.id)}
-          className={
-            'flex h-11 w-14 items-center justify-center rounded-[var(--radius-md)] border px-1 text-center text-[10px] leading-tight ' +
-            (nav === item.id
-              ? 'border-honey-400 bg-honey-100 text-ink-900'
-              : 'border-transparent text-ink-500 hover:border-hairline hover:bg-panel-alt')
-          }
+          className="flex w-full flex-col items-center gap-1.5 text-center"
         >
-          {item.label}
+          <span
+            className={
+              'flex h-12 w-12 items-center justify-center rounded-[11px] border ' +
+              (nav === item.id
+                ? 'border-ink-900 bg-ink-900'
+                : 'border-transparent hover:border-hairline hover:bg-panel-alt')
+            }
+          >
+            <NavIcon id={item.id} active={nav === item.id} />
+          </span>
+          <span
+            className={
+              'text-[8px] font-medium leading-tight ' +
+              (nav === item.id ? 'text-ink-900' : 'text-ink-500')
+            }
+          >
+            {item.label}
+          </span>
         </button>
       ))}
     </nav>

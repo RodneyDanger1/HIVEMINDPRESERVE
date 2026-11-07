@@ -1,0 +1,51 @@
+{
+ "schema": "hivemind.figcraft-episodes.v1",
+ "producer": "FigCraft-HiveMind",
+ "generated_at": "2026-11-07T15:03:15-06:00",
+ "source_builder": "docs/ui/figcraft/HiveMind/build/build_hive_style.py",
+ "command_ids_used": [
+  "file.export",
+  "file.new",
+  "file.saveAs",
+  "frame.create",
+  "node.create",
+  "style.create",
+  "text.create",
+  "variable.create",
+  "variable.createCollection"
+ ],
+ "command_id_count": 9,
+ "episodes": [
+  {
+   "episode": "01_phase1_nodes.json",
+   "path": "docs/ui/figcraft/HiveMind/episodes/01_phase1_nodes.json",
+   "sha256": "a04a8cebc9be49d4c148406583ae2138290c41d497438f5b4b4d164644465ba3",
+   "commands": 1262,
+   "command_ids": [
+    "file.new",
+    "frame.create",
+    "node.create",
+    "text.create"
+   ]
+  },
+  {
+   "episode": "02_phase2_tokens_exports.json",
+   "path": "docs/ui/figcraft/HiveMind/episodes/02_phase2_tokens_exports.json",
+   "sha256": "945ff5f53f4d745e70bc136290e894f03ed178996641e2a16b8628e72477ac20",
+   "commands": 82,
+   "command_ids": [
+    "file.export",
+    "file.saveAs",
+    "style.create",
+    "variable.create",
+    "variable.createCollection"
+   ]
+  }
+ ],
+ "rejected_syntax_guesses": [],
+ "failures": [],
+ "notes": [
+  "Phase 1 creates 11 artboards + all nodes; phase 2 creates native paint/text/effect styles, 21 colour variables and the 11 board exports.",
+  "Builder is the authoritative HiveRouter style-system builder copied into this repo; patch = rename to HiveMind + three 1440x900 boards (08 HMAS hierarchy, 09 HMAS governance, 10 states & refusals)."
+ ]
+}

@@ -73,28 +73,34 @@ function AppFrame() {
     );
 
   return (
-    <div className="flex h-full min-h-0 bg-canvas text-ink-900">
+    <div className="flex h-full min-h-0 flex-col bg-canvas text-ink-900">
       <a className="skip-link" href="#hive-canvas">
         {STRINGS.app.skipToCanvas}
       </a>
-      <NavRail />
-      <main className="flex min-w-0 flex-1 flex-col">
-        <Header />
-        {apiKind === 'mock' ? (
-          <div className="type-mono-meta border-b border-amber bg-recessed px-4 py-1 text-ink-800">
-            {STRINGS.connection.mock}
-          </div>
-        ) : null}
-        {banner ? (
-          <div role="alert" className="type-mono-meta border-b border-signal bg-panel px-4 py-1 text-signal">
-            {banner}
-          </div>
-        ) : null}
-        <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
-        {nav === 'workspace' ? <ControlBar /> : null}
-        {nav === 'workspace' ? <Scrubber /> : null}
-      </main>
-      <LibraryPanel />
+      <Header />
+      <div className="flex min-h-0 flex-1">
+        <NavRail />
+        <LibraryPanel />
+        <main className="relative flex min-w-0 flex-1 flex-col">
+          {apiKind === 'mock' ? (
+            <div className="type-mono-meta border-b border-amber bg-recessed px-4 py-1 text-ink-800">
+              {STRINGS.connection.mock}
+            </div>
+          ) : null}
+          {banner ? (
+            <div role="alert" className="type-mono-meta border-b border-signal bg-panel px-4 py-1 text-signal">
+              {banner}
+            </div>
+          ) : null}
+          <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
+          {nav === 'workspace' ? (
+            <div className="absolute inset-x-0 bottom-0 z-30">
+              <ControlBar />
+              <Scrubber />
+            </div>
+          ) : null}
+        </main>
+      </div>
       <ToastRegion />
       <ApprovalOverlay />
     </div>

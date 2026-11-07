@@ -157,3 +157,31 @@ export const SEMANTIC = {
   nodeFailed: 'signal',
   bee: 'ink-800',
 } as const;
+
+/**
+ * Component geometry from the authoritative HiveRouter spatial style system
+ * (build_hive_style.py board 07 and card functions). These are layout facts,
+ * not sampled values; designParity.test.ts pins them.
+ */
+export const LAYOUT = {
+  topbar: 52,
+  navRail: 72,
+  library: 240,
+  chat: { width: 400, height: 480, radius: 18 },
+  hud: { width: 460, height: 44 },
+  minimap: { width: 220, height: 150 },
+  cards: {
+    superagent: { width: 420, height: 150, radius: 14 },
+    worker: { width: 320, height: 96, radius: 12 },
+    tool: { width: 420, height: 240, radius: 14 },
+    error: { width: 320, height: 110, radius: 12 },
+  },
+} as const;
+
+/**
+ * Chrome-only values that are not one of the 20 printed palette swatches.
+ * Kept separate so the swatch census stays exact (tokens.test.ts pins 20).
+ */
+export const CHROME_TOKENS = {
+  borderGold: '#E5C27A',
+} as const;

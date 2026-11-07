@@ -1,0 +1,168 @@
+{
+ "schema": "hivemind.figcraft-source-evidence.v1",
+ "source": "HiveRouter/design/hive-style (external; read-only)",
+ "generated_at": "2026-11-07T15:03:16-06:00",
+ "files": [
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/build_hive_style.py",
+   "sha256": "881d776f102144661dd5b99f475c357dbf5b1fb4096d8771bee7fbd2af02406a",
+   "source_path": "HiveRouter/design/hive-style/build_hive_style.py",
+   "source_sha256": "881d776f102144661dd5b99f475c357dbf5b1fb4096d8771bee7fbd2af02406a",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/HiveRouter-Style-System.figcraft",
+   "sha256": "3a35a4d406f9dd7949bd52e5523d6ceeacafc692dd4392aa1fda07252a058c1c",
+   "source_path": "HiveRouter/design/hive-style/HiveRouter-Style-System.figcraft",
+   "source_sha256": "3a35a4d406f9dd7949bd52e5523d6ceeacafc692dd4392aa1fda07252a058c1c",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/base.figcraft",
+   "sha256": "62216f720fe8f52e57c52cb6aecedd849e2ee157d09227132ea8a148c81fa7a9",
+   "source_path": "HiveRouter/design/hive-style/base.figcraft",
+   "source_sha256": "62216f720fe8f52e57c52cb6aecedd849e2ee157d09227132ea8a148c81fa7a9",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/HiveRouter-Style-Kit.md",
+   "sha256": "62ad05f05d93f76be94205ebf325723aa2f6c34896e583788cd2303baaa6c115",
+   "source_path": "HiveRouter/design/hive-style/HiveRouter-Style-Kit.md",
+   "source_sha256": "62ad05f05d93f76be94205ebf325723aa2f6c34896e583788cd2303baaa6c115",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/FIGCRAFT-COMMAND-ANALYSIS.md",
+   "sha256": "fb4a9ceb762f2fefd1764fef7b13dc8424c4cff2816d8a3b115816f82d5a845f",
+   "source_path": "HiveRouter/design/hive-style/FIGCRAFT-COMMAND-ANALYSIS.md",
+   "source_sha256": "fb4a9ceb762f2fefd1764fef7b13dc8424c4cff2816d8a3b115816f82d5a845f",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/SPEC/HIVEROUTER-TARGET-SPEC.md",
+   "sha256": "4d042d4edfff086f8ac6cb34ba95b9a8147571627e089ae5523892653018b796",
+   "source_path": "HiveRouter/design/hive-style/SPEC/HIVEROUTER-TARGET-SPEC.md",
+   "source_sha256": "4d042d4edfff086f8ac6cb34ba95b9a8147571627e089ae5523892653018b796",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-agent-cards.png",
+   "sha256": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-agent-cards.png",
+   "source_sha256": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-agent-cards@2x.png",
+   "sha256": "91d8cb29f1da5bc0df4126d43cedd1978e64e396338f89cd2d8f8a1c55fdc813",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-agent-cards@2x.png",
+   "source_sha256": "91d8cb29f1da5bc0df4126d43cedd1978e64e396338f89cd2d8f8a1c55fdc813",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups.png",
+   "sha256": "e9cc244bea5dc8af6bb84a5aa38191bf80ab5128747cc45116ad2e297a25d8e1",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups.png",
+   "source_sha256": "e9cc244bea5dc8af6bb84a5aa38191bf80ab5128747cc45116ad2e297a25d8e1",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups.svg",
+   "sha256": "b261a9f1f8efe5b650cd3b41aeed5dfde042d98cc8bd4cbd241613ff37afdf04",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups.svg",
+   "source_sha256": "b261a9f1f8efe5b650cd3b41aeed5dfde042d98cc8bd4cbd241613ff37afdf04",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups@2x.png",
+   "sha256": "ca8cfa1daa9f14f328299f3959dada305f8d1f7bc9f3060ae55bebde5f39852e",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups@2x.png",
+   "source_sha256": "ca8cfa1daa9f14f328299f3959dada305f8d1f7bc9f3060ae55bebde5f39852e",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-colour.png",
+   "sha256": "1d616d76fd22652d1a9b7005ae946ac5b6dbb23d370ae89efc4149287b6ea9a8",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-colour.png",
+   "source_sha256": "1d616d76fd22652d1a9b7005ae946ac5b6dbb23d370ae89efc4149287b6ea9a8",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-colour@2x.png",
+   "sha256": "e302bf6d1579bc93b4403c2bb8b8761c75c2da8823ee477e5ec222aacfe77cdb",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-colour@2x.png",
+   "source_sha256": "e302bf6d1579bc93b4403c2bb8b8761c75c2da8823ee477e5ec222aacfe77cdb",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-controls-and-hud.png",
+   "sha256": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-controls-and-hud.png",
+   "source_sha256": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-controls-and-hud@2x.png",
+   "sha256": "7f04ac9059adc54fd60557e2517067d639fb5d09598017655f83d12db0c03c6b",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-controls-and-hud@2x.png",
+   "source_sha256": "7f04ac9059adc54fd60557e2517067d639fb5d09598017655f83d12db0c03c6b",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-cover.png",
+   "sha256": "7396d2587229c15646fa2a35df6d7c3abc7033c3d3fed39327fa3797ea14f373",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-cover.png",
+   "source_sha256": "7396d2587229c15646fa2a35df6d7c3abc7033c3d3fed39327fa3797ea14f373",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-cover@2x.png",
+   "sha256": "cd2dcb98642e53b7c80ce9de1306fa454bbf4610a371fc32088bc85c0b0d824d",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-cover@2x.png",
+   "source_sha256": "cd2dcb98642e53b7c80ce9de1306fa454bbf4610a371fc32088bc85c0b0d824d",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-space-and-depth.png",
+   "sha256": "5608de3f4f7bce7b57e21b2a990455238fdefc274f7743c6a2678d824c6d97eb",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-space-and-depth.png",
+   "source_sha256": "5608de3f4f7bce7b57e21b2a990455238fdefc274f7743c6a2678d824c6d97eb",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-space-and-depth@2x.png",
+   "sha256": "f18760218e814b6483ab82323d17cd687d763083c6208e13f62287a5e36cd7c9",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-space-and-depth@2x.png",
+   "source_sha256": "f18760218e814b6483ab82323d17cd687d763083c6208e13f62287a5e36cd7c9",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-spatial-canvas.png",
+   "sha256": "126a1b9cd0ee42990fc0578e7222ce7e8adda83a5bd2f0bff6bed68355a10e12",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-spatial-canvas.png",
+   "source_sha256": "126a1b9cd0ee42990fc0578e7222ce7e8adda83a5bd2f0bff6bed68355a10e12",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-spatial-canvas@2x.png",
+   "sha256": "31e3d5f5ef92df5c3aa3c01d80067408f26dad34f26157be1afe085c7d6e7b60",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-spatial-canvas@2x.png",
+   "source_sha256": "31e3d5f5ef92df5c3aa3c01d80067408f26dad34f26157be1afe085c7d6e7b60",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-typography.png",
+   "sha256": "37c189b1bb0319bc99c40dc9291d80d90b4926c847fea14d49ce9199c1591f9b",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-typography.png",
+   "source_sha256": "37c189b1bb0319bc99c40dc9291d80d90b4926c847fea14d49ce9199c1591f9b",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-typography@2x.png",
+   "sha256": "fd8962edd85539eba9df24300812f9c94a388684a03723359f07a11dfc1ad977",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-typography@2x.png",
+   "source_sha256": "fd8962edd85539eba9df24300812f9c94a388684a03723359f07a11dfc1ad977",
+   "preserved": true
+  }
+ ]
+}

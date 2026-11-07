@@ -24,15 +24,17 @@ export function BeeEdge(props: EdgeProps) {
     { x: props.targetX, y: props.targetY },
   ) * 180) /
     Math.PI;
+  const broken = (props.data as { broken?: boolean } | undefined)?.broken === true;
   return (
     <>
       <BaseEdge
         id={props.id}
         path={path}
         style={{
-          stroke: 'var(--color-honey-600)',
+          stroke: broken ? 'var(--color-signal)' : 'var(--color-honey-400)',
           strokeWidth: 1.5,
-          strokeDasharray: '6 4',
+          strokeDasharray: broken ? '6 6' : '10 10',
+          animation: 'bee-dash 1.2s linear infinite',
         }}
       />
       <EdgeLabelRenderer>
@@ -41,7 +43,7 @@ export function BeeEdge(props: EdgeProps) {
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${angle}deg)`,
             pointerEvents: 'none',
-            color: 'var(--color-ink-800)',
+            color: broken ? 'var(--color-signal)' : 'var(--color-ink-800)',
           }}
           aria-hidden="true"
         >

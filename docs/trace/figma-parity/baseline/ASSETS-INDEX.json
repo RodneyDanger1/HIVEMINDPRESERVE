@@ -1,0 +1,1253 @@
+{
+  "schema": "hiverouter.assets-index.v1",
+  "generated_at": "2026-11-06T11:26:02.293641+00:00",
+  "generated_by": "Lead acceptance (canonical alias of A/B manifests; no pixels copied)",
+  "source_manifests": {
+    "A": {
+      "path": "docs/ui/figcraft/A/A-ASSETS.json",
+      "sha256": "88832272CB6C81DDFF234D77F5ABBDF4D9811AE1E8D787B7B02F1C07F11E77F1"
+    },
+    "B": {
+      "path": "docs/ui/figcraft/B/B-ASSETS.json",
+      "sha256": "A8A81E74BFBFBB3B9BCA9150DB734E8A1444D9B9E04F82CEF5C71A17F55D1F4D"
+    }
+  },
+  "design_files": {
+    "A": {
+      "path": "docs/ui/figcraft/A/A-design.figcraft",
+      "sha256": "3C5531ABA40ABD2C98B2855818CDA85475FB46985FB9146EF97C537CC1D8D6C0"
+    },
+    "B": {
+      "path": "docs/ui/figcraft/B/B-canvas.figcraft",
+      "sha256": "DAE6068926E30C99E89A43A1B15257FF8F16B1FD6C943AE990A4F383C0418288"
+    }
+  },
+  "watchdog": {
+    "ledger": "ledgers/ui-watchdog.json",
+    "overall": "PASS",
+    "allow_frontend": true,
+    "fail_count": 0,
+    "non_blocking": [
+      "A specimens spinner #D9D9D9 (fix in progress)",
+      "pixel-layout fidelity UNVERIFIED",
+      "S25 DECISION-GATED"
+    ]
+  },
+  "counts": {
+    "assets": 55,
+    "surfaces": 28
+  },
+  "assets": [
+    {
+      "surface_id": "S01",
+      "owner": "figcraft-a",
+      "name": "Infinite canvas + honeycomb background",
+      "page": "03 Specimens",
+      "node_id": 1202,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-specimens.png",
+      "sha256_svg": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+      "sha256_png": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
+      "dimensions": {
+        "board": [
+          1440,
+          1400
+        ],
+        "png_2x": [
+          2880,
+          2800
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:113-114,303-305"
+    },
+    {
+      "surface_id": "S02",
+      "owner": "figcraft-a",
+      "name": "HyperAgent hive chat core (pinned)",
+      "page": "02 Components",
+      "node_id": 1114,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:175-184,296-302"
+    },
+    {
+      "surface_id": "S03",
+      "owner": "figcraft-a",
+      "name": "Composer / HyperAgent input",
+      "page": "02 Components",
+      "node_id": 1115,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:235-237,302"
+    },
+    {
+      "surface_id": "S04",
+      "owner": "figcraft-a",
+      "name": "Button: Spawn sub-hive",
+      "page": "02 Components",
+      "node_id": 740,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:238-240"
+    },
+    {
+      "surface_id": "S05",
+      "owner": "figcraft-a",
+      "name": "Button: Re-route",
+      "page": "02 Components",
+      "node_id": 755,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S06",
+      "owner": "figcraft-a",
+      "name": "Button: Cancel",
+      "page": "02 Components",
+      "node_id": 770,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S07",
+      "owner": "figcraft-a",
+      "name": "Button: Kill worker",
+      "page": "02 Components",
+      "node_id": 785,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S08",
+      "owner": "figcraft-a",
+      "name": "Tabs: Workspace / Swarm / Routing / History",
+      "page": "02 Components",
+      "node_id": 1117,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:241-242"
+    },
+    {
+      "surface_id": "S09",
+      "owner": "figcraft-a",
+      "name": "HUD throughput badge",
+      "page": "02 Components",
+      "node_id": 1118,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:243-245,303"
+    },
+    {
+      "surface_id": "S10",
+      "owner": "figcraft-a",
+      "name": "Time-travel scrubber",
+      "page": "02 Components",
+      "node_id": 1126,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:246-247"
+    },
+    {
+      "surface_id": "S11",
+      "owner": "figcraft-a",
+      "name": "Nav rail (72px, 6 items)",
+      "page": "02 Components",
+      "node_id": 1123,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:248-254,276-281"
+    },
+    {
+      "surface_id": "S12",
+      "owner": "figcraft-a",
+      "name": "Library panel (260px)",
+      "page": "02 Components",
+      "node_id": 1124,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:255-266,282-290"
+    },
+    {
+      "surface_id": "S13",
+      "owner": "figcraft-a",
+      "name": "Mini-map (260x170)",
+      "page": "02 Components",
+      "node_id": 1125,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:267-268"
+    },
+    {
+      "surface_id": "S14",
+      "owner": "figcraft-a",
+      "name": "Refusal toast",
+      "page": "02 Components",
+      "node_id": 1116,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:269-273"
+    },
+    {
+      "surface_id": "S15",
+      "owner": "figcraft-a",
+      "name": "SuperAgent sub-hive card",
+      "page": "02 Components",
+      "node_id": 1108,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:185-191"
+    },
+    {
+      "surface_id": "S16",
+      "owner": "figcraft-a",
+      "name": "WorkerAgent card",
+      "page": "02 Components",
+      "node_id": 1109,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:192-196,222"
+    },
+    {
+      "surface_id": "S17",
+      "owner": "figcraft-a",
+      "name": "ToolAgent card",
+      "page": "02 Components",
+      "node_id": 1110,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:197-204"
+    },
+    {
+      "surface_id": "S18",
+      "owner": "figcraft-a",
+      "name": "Broken-route error card",
+      "page": "02 Components",
+      "node_id": 1111,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:205-210"
+    },
+    {
+      "surface_id": "S19",
+      "owner": "figcraft-a",
+      "name": "Agent chips / state dot",
+      "page": "02 Components",
+      "node_id": 1113,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:211-217"
+    },
+    {
+      "surface_id": "S20",
+      "owner": "figcraft-a",
+      "name": "Zoom controls + shortcut hint",
+      "page": "02 Components",
+      "node_id": 1119,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:304,183"
+    },
+    {
+      "surface_id": "S21",
+      "owner": "figcraft-a",
+      "name": "Settings / key status",
+      "page": "02 Components",
+      "node_id": 1121,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:254"
+    },
+    {
+      "surface_id": "S22",
+      "owner": "figcraft-a",
+      "name": "File/code hierarchy viewer",
+      "page": "02 Components",
+      "node_id": 1127,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:291-295"
+    },
+    {
+      "surface_id": "S23",
+      "owner": "figcraft-a",
+      "name": "Brand lockups / bee glyph",
+      "page": "01 Brand",
+      "node_id": 270,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-brand.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-brand.png",
+      "sha256_svg": "94cf946703c14355601813367f9a5fa11105d4e744990dd66ac7b0e5ad0a9522",
+      "sha256_png": "47680984aa5dacb1bf6a3576b42a11b01864c646068f33e5ca4acfe124f4a918",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:148-169"
+    },
+    {
+      "surface_id": "S24",
+      "owner": "figcraft-a",
+      "name": "Elevation e1/e2/e3",
+      "page": "00 Foundations",
+      "node_id": 213,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-foundations.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-foundations.png",
+      "sha256_svg": "24536354e6ffe9ba4dda2c9682b526bb44bedea6aea7f1d21fd4e3aeb75e551a",
+      "sha256_png": "e49b788a812e8a4962a29a926d25970b0a39218ade8dd34ee9c8c7079bdc53bc",
+      "dimensions": {
+        "board": [
+          1440,
+          1200
+        ],
+        "png_2x": [
+          2880,
+          2400
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:137-146"
+    },
+    {
+      "surface_id": "S25",
+      "owner": "figcraft-a",
+      "name": "Code-diff review modal (no artboard)",
+      "page": "03 Specimens",
+      "node_id": 1263,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-specimens.png",
+      "sha256_svg": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+      "sha256_png": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
+      "dimensions": {
+        "board": [
+          1440,
+          1400
+        ],
+        "png_2x": [
+          2880,
+          2800
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "U3 G-03 PROPOSED"
+    },
+    {
+      "surface_id": "S26",
+      "owner": "figcraft-a",
+      "name": "First-run / empty / loading / offline states",
+      "page": "03 Specimens",
+      "node_id": 1212,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-specimens.png",
+      "sha256_svg": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+      "sha256_png": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
+      "dimensions": {
+        "board": [
+          1440,
+          1400
+        ],
+        "png_2x": [
+          2880,
+          2800
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF silent"
+    },
+    {
+      "surface_id": "S27",
+      "owner": "figcraft-a",
+      "name": "Streamed reply / cards",
+      "page": "03 Specimens",
+      "node_id": 1284,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-specimens.png",
+      "sha256_svg": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+      "sha256_png": "da0f4cb7d435e46cdabea31074845f9e54eeeb828c274d661104810b6807814b",
+      "dimensions": {
+        "board": [
+          1440,
+          1400
+        ],
+        "png_2x": [
+          2880,
+          2800
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "SOURCE src:1738"
+    },
+    {
+      "surface_id": "S28",
+      "owner": "figcraft-a",
+      "name": "Project identity",
+      "page": "02 Components",
+      "node_id": 879,
+      "export_svg": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/a-components.png",
+      "sha256_svg": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "sha256_png": "f4fcc4c63caec0e40fa5911709e34c8102eb976da0864063ba7273cbaa85c65a",
+      "dimensions": {
+        "board": [
+          1440,
+          2580
+        ],
+        "png_2x": [
+          2880,
+          5160
+        ],
+        "svg": "vector"
+      },
+      "provenance_pdf_lines": "PDF:256,275-282"
+    },
+    {
+      "surface_id": "S01",
+      "owner": "figcraft-b",
+      "name": "Infinite canvas + honeycomb lattice",
+      "page": "Canvas / default",
+      "node_id": 10,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:113-114,303-305"
+    },
+    {
+      "surface_id": "S10",
+      "owner": "figcraft-b",
+      "name": "Time-travel scrubber",
+      "page": "Canvas / default",
+      "node_id": 211,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:246-247"
+    },
+    {
+      "surface_id": "S13",
+      "owner": "figcraft-b",
+      "name": "Mini-map 260x170",
+      "page": "Canvas / default",
+      "node_id": 221,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:267-268"
+    },
+    {
+      "surface_id": "S19",
+      "owner": "figcraft-b",
+      "name": "Agent chips / state dot",
+      "page": "Canvas / default",
+      "node_id": 65,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:211-217"
+    },
+    {
+      "surface_id": "S20",
+      "owner": "figcraft-b",
+      "name": "Zoom controls + Ctrl+0 hint",
+      "page": "Canvas / default",
+      "node_id": 205,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:303-304,183"
+    },
+    {
+      "surface_id": "S24",
+      "owner": "figcraft-b",
+      "name": "Elevation e1/e2/e3",
+      "page": "Canvas / interaction states",
+      "node_id": 435,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-interaction.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:137-146"
+    },
+    {
+      "surface_id": "S25",
+      "owner": "figcraft-b",
+      "name": "Code-diff review modal (decision-gated)",
+      "page": "Canvas / interaction states",
+      "node_id": 448,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-interaction.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "U3 G-03; UI-COMMANDS-v1 \u00a72"
+    },
+    {
+      "surface_id": "S02",
+      "owner": "figcraft-b",
+      "name": "HyperAgent hive chat core (pinned)",
+      "page": "Canvas / default",
+      "node_id": 174,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:175-184,296-302"
+    },
+    {
+      "surface_id": "S03",
+      "owner": "figcraft-b",
+      "name": "Composer / HyperAgent input",
+      "page": "Canvas / default",
+      "node_id": 186,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:235-237,302"
+    },
+    {
+      "surface_id": "S04",
+      "owner": "figcraft-b",
+      "name": "Button: Spawn sub-hive",
+      "page": "Canvas / default",
+      "node_id": 194,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:238-240"
+    },
+    {
+      "surface_id": "S05",
+      "owner": "figcraft-b",
+      "name": "Button: Re-route",
+      "page": "Canvas / default",
+      "node_id": 196,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S06",
+      "owner": "figcraft-b",
+      "name": "Button: Cancel",
+      "page": "Canvas / default",
+      "node_id": 198,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S07",
+      "owner": "figcraft-b",
+      "name": "Button: Kill worker",
+      "page": "Canvas / default",
+      "node_id": 200,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:239"
+    },
+    {
+      "surface_id": "S08",
+      "owner": "figcraft-b",
+      "name": "Tabs: Workspace/Swarm/Routing/History",
+      "page": "Canvas / default",
+      "node_id": 94,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:241-242"
+    },
+    {
+      "surface_id": "S09",
+      "owner": "figcraft-b",
+      "name": "HUD throughput badge",
+      "page": "Canvas / default",
+      "node_id": 102,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:243-245,303"
+    },
+    {
+      "surface_id": "S11",
+      "owner": "figcraft-b",
+      "name": "Nav rail 72px, 6 items",
+      "page": "Canvas / default",
+      "node_id": 11,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:248-254,276-281"
+    },
+    {
+      "surface_id": "S12",
+      "owner": "figcraft-b",
+      "name": "Library panel 260px",
+      "page": "Canvas / default",
+      "node_id": 34,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:255-266,282-290"
+    },
+    {
+      "surface_id": "S14",
+      "owner": "figcraft-b",
+      "name": "Refusal toast",
+      "page": "Canvas / interaction states",
+      "node_id": 393,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-interaction.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:269-273"
+    },
+    {
+      "surface_id": "S15",
+      "owner": "figcraft-b",
+      "name": "SuperAgent sub-hive card",
+      "page": "Canvas / default",
+      "node_id": 129,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:185-191"
+    },
+    {
+      "surface_id": "S16",
+      "owner": "figcraft-b",
+      "name": "WorkerAgent card",
+      "page": "Canvas / default",
+      "node_id": 139,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:192-196,222"
+    },
+    {
+      "surface_id": "S17",
+      "owner": "figcraft-b",
+      "name": "ToolAgent card",
+      "page": "Canvas / default",
+      "node_id": 146,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:197-204"
+    },
+    {
+      "surface_id": "S18",
+      "owner": "figcraft-b",
+      "name": "Broken-route error card",
+      "page": "Canvas / default",
+      "node_id": 157,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:205-210"
+    },
+    {
+      "surface_id": "S21",
+      "owner": "figcraft-b",
+      "name": "Settings / key status",
+      "page": "Canvas / default",
+      "node_id": 88,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:254"
+    },
+    {
+      "surface_id": "S22",
+      "owner": "figcraft-b",
+      "name": "File/code hierarchy viewer",
+      "page": "Canvas / default",
+      "node_id": 75,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:291-295"
+    },
+    {
+      "surface_id": "S23",
+      "owner": "figcraft-b",
+      "name": "Brand lockups / bee glyph",
+      "page": "Canvas / default",
+      "node_id": 13,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:148-169"
+    },
+    {
+      "surface_id": "S27",
+      "owner": "figcraft-b",
+      "name": "Streamed reply / cards",
+      "page": "Canvas / default",
+      "node_id": 181,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:296-302; source:1738"
+    },
+    {
+      "surface_id": "S28",
+      "owner": "figcraft-b",
+      "name": "Project identity",
+      "page": "Canvas / default",
+      "node_id": 37,
+      "export_svg": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/b-canvas-default.png",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PDF:256,275-282"
+    }
+  ]
+}

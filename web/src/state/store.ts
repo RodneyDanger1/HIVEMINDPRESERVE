@@ -251,6 +251,7 @@ export interface UiState {
   readonly selectedTaskId: string | null;
   readonly messages: readonly ChatMessage[];
   readonly streamingRunId: string | null;
+  readonly agentMessageVersion: number;
   readonly metrics: RunMetricsPayload | null;
   readonly history: HistoryState;
   /** Last server-authoritative rehydration (boot/reload/reconnect/resync). */
@@ -1451,6 +1452,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           }
           return;
         }
+        case 'AGENT_MESSAGE': {
+          set({ agentMessageVersion: get().agentMessageVersion + 1 });
+          return;
+        }
         case 'RUN_METRICS': {
           set({ metrics: event.payload });
           return;
@@ -1702,6 +1707,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       selectedTaskId: null,
       messages: [],
       streamingRunId: null,
+      agentMessageVersion: 0,
       metrics: null,
       history: initialHistory(),
       snapshot: initialSnapshot(),
@@ -1807,16 +1813,23 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         if (!current) {
           return;
         }
+        const tasks = get().tasks;
         const selected = get().selectedTaskId;
-        const parent =
-          selected ??
-          Object.values(get().tasks).find((task) => task.kind === 'superagent')?.id ??
-          Object.keys(get().tasks)[0];
-        if (!parent) {
+        const parentTask =
+          (selected !== null ? tasks[selected] : undefined) ??
+          Object.values(tasks).find((task) => task.kind === 'hyperagent') ??
+          Object.values(tasks)[0];
+        if (parentTask === undefined) {
           pushRefusal(clientRefusal('E_TASK_NOT_FOUND'));
           return;
         }
-        await run('SPAWN_SUB_HIVE', { parent_task_id: parent, role: STRINGS.node.superAgent });
+        const role =
+          parentTask.kind === 'hyperagent'
+            ? STRINGS.node.superAgent
+            : parentTask.kind === 'superagent'
+              ? STRINGS.node.workerAgent
+              : 'Subagent';
+        await run('SPAWN_SUB_HIVE', { parent_task_id: parentTask.id, role });
       },
 
       async rewireSelected(newParentId: string): Promise<void> {

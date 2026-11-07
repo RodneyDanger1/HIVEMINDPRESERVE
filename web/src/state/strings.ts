@@ -51,7 +51,7 @@ export const STRINGS = {
     reconnecting: 'Reconnecting',
     closed: 'Disconnected',
     error: 'Connection failed',
-    mock: 'DEV MOCK Â· simulated data',
+    mock: 'DEV MOCK · simulated data',
     offlineBanner: 'The local server is unreachable — start it with cargo run --release, then retry.',
     reconnectBanner: 'Reconnecting to the local server; mutations are blocked until the socket is open.',
   },
@@ -80,7 +80,7 @@ export const STRINGS = {
     unpin: 'Unpin chat',
     close: 'Hide chat',
     reopen: 'Show chat',
-    empty: 'Drop a repository into the core hive and the HyperAgent maps its architecture before a single worker spawns.',
+    empty: 'Type a prompt to create the first run. The HyperAgent maps the work before any worker spawns.',
     assistantName: 'Hive AI Assistant',
     userLabel: 'You',
     closeAria: 'Hide the chat core (the hive stays)',
@@ -89,7 +89,7 @@ export const STRINGS = {
   composer: {
     placeholder: 'Type your prompt...',
     submit: 'Submit prompt',
-    hint: 'Enter submits Â· Shift+Enter newline Â· Ctrl+0 recentres',
+    hint: 'Enter submits · Shift+Enter newline · Ctrl+0 recentres',
     emptyRefusal: 'Prompt is empty',
   },
   controls: {
@@ -277,6 +277,10 @@ export const STRINGS = {
     toolAgent: 'ToolAgent',
     errorState: 'Error state',
     role: 'role',
+    roleCaption: 'decomposes intent, owns the sub-hive',
+    workersMetric: 'workers',
+    noToolOutput: 'tool output not measured',
+    brokenRoute: 'broken route · error state',
     workers: 'workers',
     ctx: 'ctx',
     progress: 'progress',
@@ -305,6 +309,11 @@ export const STRINGS = {
     howToFix: 'Record the frame and report a contract gap; do not retry blindly.',
   },
   clientRefusals: {
+    E_KEY_MISSING: {
+      message: 'No provider key is configured on the local server.',
+      howToFix: 'Set DEEPSEEK_API_KEY in the server process environment, then restart the server.',
+      retryable: true,
+    },
     E_PROMPT_EMPTY: {
       message: 'The prompt is empty.',
       howToFix: 'Type a prompt before submitting (1-8000 characters).',

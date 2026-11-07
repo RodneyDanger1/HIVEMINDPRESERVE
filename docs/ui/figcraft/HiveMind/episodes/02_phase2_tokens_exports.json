@@ -1,0 +1,943 @@
+[
+{
+"command": "variable.createCollection",
+"params": {
+"name": "Hive / Colour"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "surface/canvas",
+"type": "color",
+"value": "#F8F4EB"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "surface/panel",
+"type": "color",
+"value": "#FFFFFF"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "surface/panel-alt",
+"type": "color",
+"value": "#FBF8F1"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "surface/recessed",
+"type": "color",
+"value": "#F1E9CF"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "border/hairline",
+"type": "color",
+"value": "#E5E1D8"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/100",
+"type": "color",
+"value": "#FBF3DC"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/200",
+"type": "color",
+"value": "#F6E7BE"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/300",
+"type": "color",
+"value": "#F0C050"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/400",
+"type": "color",
+"value": "#E8B850"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/500",
+"type": "color",
+"value": "#D9A02F"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/600",
+"type": "color",
+"value": "#C88030"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/700",
+"type": "color",
+"value": "#8A5A1C"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "honey/800",
+"type": "color",
+"value": "#604818"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "ink/900",
+"type": "color",
+"value": "#282010"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "ink/800",
+"type": "color",
+"value": "#3F3115"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "ink/700",
+"type": "color",
+"value": "#4E3A15"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "ink/500",
+"type": "color",
+"value": "#75663F"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "accent/amber",
+"type": "color",
+"value": "#B7791F"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "state/error",
+"type": "color",
+"value": "#B23A2E"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "state/success",
+"type": "color",
+"value": "#3F7A55"
+}
+},
+{
+"command": "variable.create",
+"params": {
+"collection": "Hive / Colour",
+"name": "canvas/honeycomb-line",
+"type": "color",
+"value": "#EFE7D2"
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Surface/Canvas",
+"value": [
+"#F8F4EB"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Surface/Paper",
+"value": [
+"#FFFFFF"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Surface/Panel Alt",
+"value": [
+"#FBF8F1"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Surface/Recess",
+"value": [
+"#F1E9CF"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Surface/Hairline",
+"value": [
+"#E5E1D8"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 100",
+"value": [
+"#FBF3DC"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 200",
+"value": [
+"#F6E7BE"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 300",
+"value": [
+"#F0C050"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 400",
+"value": [
+"#E8B850"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 500",
+"value": [
+"#D9A02F"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 600",
+"value": [
+"#C88030"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 700",
+"value": [
+"#8A5A1C"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Honey/Honey 800",
+"value": [
+"#604818"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Ink/Ink 900",
+"value": [
+"#282010"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Ink/Ink 800",
+"value": [
+"#3F3115"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Ink/Ink 700",
+"value": [
+"#4E3A15"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/Ink/Ink 500",
+"value": [
+"#75663F"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/State/Amber",
+"value": [
+"#B7791F"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/State/Signal",
+"value": [
+"#B23A2E"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "paint",
+"name": "Hive/State/Verify",
+"value": [
+"#3F7A55"
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "Brand/Display XXL",
+"value": {
+"fontFamily": "Playfair Display",
+"fontStyle": "SemiBold",
+"fontSize": 96,
+"lineHeight": "104%",
+"letterSpacing": "-3%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "Brand/Display L",
+"value": {
+"fontFamily": "Playfair Display",
+"fontStyle": "SemiBold",
+"fontSize": 56,
+"lineHeight": "107%",
+"letterSpacing": "-2%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Heading H1",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "SemiBold",
+"fontSize": 40,
+"lineHeight": "120%",
+"letterSpacing": "-1.5%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Heading H3",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "SemiBold",
+"fontSize": 24,
+"lineHeight": "133%",
+"letterSpacing": "-0.5%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Heading H4",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "SemiBold",
+"fontSize": 20,
+"lineHeight": "140%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Body L",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "Regular",
+"fontSize": 17,
+"lineHeight": "165%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Body M",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "Regular",
+"fontSize": 15,
+"lineHeight": "160%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Body S",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "Regular",
+"fontSize": 13,
+"lineHeight": "154%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Label",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "SemiBold",
+"fontSize": 12,
+"lineHeight": "133%",
+"letterSpacing": "8%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "UI/Label Micro",
+"value": {
+"fontFamily": "Inter",
+"fontStyle": "SemiBold",
+"fontSize": 9.5,
+"lineHeight": "133%",
+"letterSpacing": "12%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "Mono/Code",
+"value": {
+"fontFamily": "Consolas",
+"fontStyle": "Regular",
+"fontSize": 13,
+"lineHeight": "169%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "Mono/Code S",
+"value": {
+"fontFamily": "Consolas",
+"fontStyle": "Regular",
+"fontSize": 10.5,
+"lineHeight": "150%",
+"letterSpacing": "0%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "text",
+"name": "Mono/Meta",
+"value": {
+"fontFamily": "Consolas",
+"fontStyle": "Regular",
+"fontSize": 11,
+"lineHeight": "145%",
+"letterSpacing": "8%",
+"textAlign": "left"
+}
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "effect",
+"name": "Depth/e1-node",
+"value": [
+{
+"type": "dropShadow",
+"offset": [
+0,
+1
+],
+"radius": 3,
+"spread": 0,
+"color": "#28201012",
+"showBehind": true
+},
+{
+"type": "dropShadow",
+"offset": [
+0,
+8
+],
+"radius": 24,
+"spread": 0,
+"color": "#28201014",
+"showBehind": true
+}
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "effect",
+"name": "Depth/e2-float",
+"value": [
+{
+"type": "dropShadow",
+"offset": [
+0,
+2
+],
+"radius": 6,
+"spread": 0,
+"color": "#28201014",
+"showBehind": true
+},
+{
+"type": "dropShadow",
+"offset": [
+0,
+20
+],
+"radius": 48,
+"spread": 0,
+"color": "#2820101F",
+"showBehind": true
+}
+]
+}
+},
+{
+"command": "style.create",
+"params": {
+"type": "effect",
+"name": "Depth/e3-hive",
+"value": [
+{
+"type": "dropShadow",
+"offset": [
+0,
+0
+],
+"radius": 80,
+"spread": -10,
+"color": "#8A5A1C3D",
+"showBehind": true
+},
+{
+"type": "dropShadow",
+"offset": [
+0,
+24
+],
+"radius": 48,
+"spread": 0,
+"color": "#60481833",
+"showBehind": true
+}
+]
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+2
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-cover.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+2
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-cover@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+3
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-colour.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+3
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-colour@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+4
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-typography.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+4
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-typography@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+5
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-space-and-depth.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+5
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-space-and-depth@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+6
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-brand-lockups.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+6
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-brand-lockups@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+7
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-agent-cards.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+7
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-agent-cards@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+8
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-controls-and-hud.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+8
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-controls-and-hud@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+9
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-spatial-canvas.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+9
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-spatial-canvas@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+10
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-hmas-hierarchy.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+10
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-hmas-hierarchy@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+11
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-hmas-governance.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+11
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-hmas-governance@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+12
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-states-and-refusals.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+12
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-states-and-refusals@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+6
+],
+"format": "svg",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-brand-lockups.svg"
+}
+},
+{
+"command": "file.saveAs",
+"params": {
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft"
+}
+}
+]

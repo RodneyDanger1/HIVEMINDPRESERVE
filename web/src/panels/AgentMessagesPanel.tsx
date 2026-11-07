@@ -19,6 +19,7 @@ type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function AgentMessagesPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
+  const messageVersion = useUiStore((state) => state.agentMessageVersion);
   const [status, setStatus] = useState<Status>('idle');
   const [messages, setMessages] = useState<readonly AgentMessageEntry[]>([]);
 
@@ -79,7 +80,7 @@ export function AgentMessagesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [runId]);
+  }, [runId, messageVersion]);
 
   return (
     <section aria-label="Agent messages" className="mt-4 border-t border-hairline pt-4">

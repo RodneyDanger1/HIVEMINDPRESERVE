@@ -126,6 +126,132 @@
   opacity: 0.9;
 }
 
+/* Spatial reference: minimap is inset 100px from the right and 50px from the
+   bottom, and the viewport mask is not a grey veil. */
+.react-flow__minimap {
+  margin: 0 100px 120px 0;
+}
+.react-flow__minimap-mask {
+  fill: transparent;
+  stroke: var(--color-ink-900);
+  stroke-width: 1.4;
+}
+
+.react-flow__node.selectable:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Live feel: slow, low-cost ambient motion. All is disabled by the existing  */
+/* reduced-motion rules above; no raster, no layout thrash, no filter chains. */
+/* ------------------------------------------------------------------------- */
+
+@keyframes hive-breathe {
+  0%, 100% { opacity: 0.28; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.035); }
+}
+
+@keyframes hive-sheen {
+  0% { background-position: 220% 0; }
+  100% { background-position: -120% 0; }
+}
+
+@keyframes bee-dash {
+  to { stroke-dashoffset: -40; }
+}
+
+@keyframes bee-bob {
+  0%, 100% { transform: translateY(0) rotate(var(--bee-rotation, 0deg)); }
+  50% { transform: translateY(-1.5px) rotate(var(--bee-rotation, 0deg)); }
+}
+
+@keyframes state-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.8); }
+}
+
+@keyframes bee-work {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes node-rise {
+  from { opacity: 0; transform: translateY(4px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes soft-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hive-ambient-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 48%,
+    color-mix(in srgb, var(--color-honey-300) 34%, transparent) 0,
+    color-mix(in srgb, var(--color-honey-200) 16%, transparent) 30%,
+    transparent 62%
+  );
+  animation: hive-breathe 11s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.hive-sheen {
+  position: absolute;
+  inset: 8% 18%;
+  pointer-events: none;
+  border-radius: 50%;
+  background: linear-gradient(
+    112deg,
+    transparent 38%,
+    color-mix(in srgb, var(--color-honey-100) 46%, transparent) 49%,
+    transparent 60%
+  );
+  background-size: 240% 100%;
+  mix-blend-mode: soft-light;
+  animation: hive-sheen 10s linear infinite;
+  will-change: background-position;
+}
+
+.hive-node {
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+  animation: node-rise 180ms ease-out both;
+}
+
+.hive-node:hover {
+  box-shadow: var(--shadow-e2);
+}
+
+.state-pulse {
+  animation: state-pulse 1.6s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.bee-work-icon {
+  animation: bee-work 2.4s linear infinite;
+  transform-origin: center;
+}
+
+.chat-message {
+  animation: soft-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hive-ambient-glow,
+  .hive-sheen,
+  .hive-node,
+  .state-pulse,
+  .bee-work-icon,
+  .chat-message,
+  .bee-dash,
+  .bee-bob {
+    animation: none !important;
+  }
+}
+
 /* Small helper for the pinned chat core and panels. */
 .surface-panel {
   background: var(--color-panel);

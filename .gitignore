@@ -1,4 +1,4 @@
-﻿target/
+target/
 node_modules/
 dist/
 tools/w64devkit/
@@ -7,6 +7,10 @@ tools/w64devkit/
 docs/ui/figcraft/*/*.figcraft
 docs/ui/figcraft/ASSETS/*.png
 docs/ui/figcraft/ASSETS/*.svg
+# HiveMind authoritative design set is versioned even though historical
+# FigCraft exports were ignored.
+!docs/ui/figcraft/ASSETS/hivemind-*
+!docs/ui/figcraft/HiveMind/*.figcraft
 .env
 .env.*
 .live-smoke-data/

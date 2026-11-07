@@ -11,7 +11,6 @@ export function SettingsPanel() {
   const probeHealth = useUiStore((state) => state.probeHealth);
   const reducedOverride = useUiStore((state) => state.reducedMotionOverride);
   const setReducedMotionOverride = useUiStore((state) => state.setReducedMotionOverride);
-  const openDiffModal = useUiStore((state) => state.openDiffModal);
   const probed = useRef(false);
 
   useEffect(() => {
@@ -111,15 +110,8 @@ export function SettingsPanel() {
             checked={reducedOverride}
             onChange={(event) => setReducedMotionOverride(event.target.checked)}
           />
-          {STRINGS.states.replay} · reduced motion override
+          Reduced motion override
         </label>
-        <button
-          type="button"
-          className="type-label mt-3 rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-900 hover:bg-honey-100"
-          onClick={openDiffModal}
-        >
-          {STRINGS.diff.title}
-        </button>
       </section>
 
       <DevGallery />

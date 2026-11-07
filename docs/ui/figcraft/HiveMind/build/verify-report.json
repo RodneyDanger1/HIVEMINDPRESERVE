@@ -1,0 +1,247 @@
+{
+ "generated_at": "2026-11-07T15:03:21-06:00",
+ "checks": [
+  {
+   "check": "info parses design file",
+   "status": "PASS",
+   "detail": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\ui\\figcraft\\HiveMind\\HiveMind-Style-System.figcraft"
+  },
+  {
+   "check": "info name is HiveMind (not HiveRouter)",
+   "status": "PASS",
+   "detail": "'HiveMind Style System'"
+  },
+  {
+   "check": "11 artboards with exact names/sizes",
+   "status": "PASS",
+   "detail": "[('00 · Cover', 1440, 900), ('01 · Colour', 1440, 1240), ('02 · Typography', 1440, 1340), ('03 · Space & Depth', 1440, 1000), ('04 · Brand Lockups', 1440, 1000), ('05 · Agent Cards', 1440, 1300), ('06 · Controls & HUD', 1440, 1040), ('07 · Spatial Canvas', 1440, 900), ('08 · HMAS Hierarchy', 1440, 900), ('09 · HMAS Governance', 1440, 900), ('10 · States & Refusals', 1440, 900)]"
+  },
+  {
+   "check": "no missing fonts",
+   "status": "PASS",
+   "detail": "[]"
+  },
+  {
+   "check": "phase-1 ids match the CLI-returned ids",
+   "status": "PASS",
+   "detail": "1261 expected nodes; mismatches=[]"
+  },
+  {
+   "check": "phase-1 run ok + one result per command",
+   "status": "PASS",
+   "detail": "1262 results / 1261 expected"
+  },
+  {
+   "check": "first 8 artboards structurally match the preserved source builder",
+   "status": "PASS",
+   "detail": "source nodes=959 matched=951 new_boards_nodes=299 mismatches=[]"
+  },
+  {
+   "check": "no HiveRouter/HIVEROUTER in generated board text",
+   "status": "PASS",
+   "detail": "hiverouter occurrences=0"
+  },
+  {
+   "check": "HiveMind branding present on boards",
+   "status": "PASS",
+   "detail": "HiveMind text nodes=10"
+  },
+  {
+   "check": "HMAS hierarchy/topology board surfaces present",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
+   "check": "HMAS governance board surfaces present (profiles/import/memory/mailbox/projects/usage/approval)",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
+   "check": "states board present (refusal/reconnect/empty/loading/kill/replay/diff-gated)",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
+   "check": "board 07 authoritative composition (topbar/rail/library/canvas/chat/HUD/minimap)",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
+   "check": "authoritative agent card sizes (board 05: SuperAgent 420x150, WorkerAgent 320x96, ToolAgent 420x240)",
+   "status": "PASS",
+   "detail": "missing=[]"
+  },
+  {
+   "check": "error card crimson (320x110, #B23A2E border)",
+   "status": "PASS",
+   "detail": "node=502"
+  },
+  {
+   "check": "exports exist/nonzero + hashes + dimensions match manifest",
+   "status": "PASS",
+   "detail": "11 exports; problems=[]"
+  },
+  {
+   "check": "episodes written and match manifest",
+   "status": "PASS",
+   "detail": "2 episodes; problems=[]"
+  },
+  {
+   "check": "figcraft-cli info parses every .figcraft in HiveMind",
+   "status": "PASS",
+   "detail": "4 files; failures=[]"
+  },
+  {
+   "check": "no invented colour tokens in exported SVGs",
+   "status": "PASS",
+   "detail": "svg hex colours=1503; offenders={}"
+  },
+  {
+   "check": "source evidence preserved byte-identically",
+   "status": "PASS",
+   "detail": "23 files; not preserved=[]"
+  },
+  {
+   "check": "renamed spec has no HiveRouter legacy brand",
+   "status": "PASS",
+   "detail": "spec bytes=15986"
+  },
+  {
+   "check": "ASSETS-INDEX updated for HiveMind only; A/B aliases intact",
+   "status": "PASS",
+   "detail": "hiveMind rows=40 assets=95 surfaces=41 A/B=True"
+  },
+  {
+   "check": "C is marked superseded (no C exports/index rows)",
+   "status": "PASS",
+   "detail": "superseded note=True"
+  }
+ ],
+ "values": {
+  "info": {
+   "name": "HiveMind Style System",
+   "nodes": 1262,
+   "styles": 36,
+   "variables": 21,
+   "missingFonts": []
+  },
+  "frames": [
+   [
+    "00 · Cover",
+    1440,
+    900
+   ],
+   [
+    "01 · Colour",
+    1440,
+    1240
+   ],
+   [
+    "02 · Typography",
+    1440,
+    1340
+   ],
+   [
+    "03 · Space & Depth",
+    1440,
+    1000
+   ],
+   [
+    "04 · Brand Lockups",
+    1440,
+    1000
+   ],
+   [
+    "05 · Agent Cards",
+    1440,
+    1300
+   ],
+   [
+    "06 · Controls & HUD",
+    1440,
+    1040
+   ],
+   [
+    "07 · Spatial Canvas",
+    1440,
+    900
+   ],
+   [
+    "08 · HMAS Hierarchy",
+    1440,
+    900
+   ],
+   [
+    "09 · HMAS Governance",
+    1440,
+    900
+   ],
+   [
+    "10 · States & Refusals",
+    1440,
+    900
+   ]
+  ],
+  "expected_ids": 1261,
+  "phase1_results": 1262,
+  "text_nodes": 468,
+  "exports": 11,
+  "figcraft_files": [
+   "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
+   "docs/ui/figcraft/HiveMind/build/base.figcraft",
+   "docs/ui/figcraft/HiveMind/source-evidence/base.figcraft",
+   "docs/ui/figcraft/HiveMind/source-evidence/HiveRouter-Style-System.figcraft"
+  ],
+  "palette": [
+   "#14100a",
+   "#282010",
+   "#28201012",
+   "#28201014",
+   "#2820101f",
+   "#3f3115",
+   "#3f7a55",
+   "#4e3a15",
+   "#604818",
+   "#60481833",
+   "#6b5a33",
+   "#6fbf73",
+   "#75663f",
+   "#7a4e14",
+   "#8a5a1c",
+   "#8a5a1c3d",
+   "#8a7a52",
+   "#a0916f",
+   "#a99b7c",
+   "#b23a2e",
+   "#b7791f",
+   "#c88030",
+   "#d9a02f",
+   "#d9cfb8",
+   "#dcd2b8",
+   "#e05b4a",
+   "#e5c27a",
+   "#e5e1d8",
+   "#e8b850",
+   "#e8d9b4",
+   "#ede9e2",
+   "#efe6ce",
+   "#efe7d2",
+   "#f0c050",
+   "#f1e9cf",
+   "#f3f1ec",
+   "#f6e7be",
+   "#f8f4eb",
+   "#fbf3dc",
+   "#fbf8f1",
+   "#fff7f5",
+   "#fff8e5",
+   "#fffdf4",
+   "#ffffff",
+   "#ffffff14",
+   "#ffffff70",
+   "#ffffffb0"
+  ]
+ },
+ "status": "PASS",
+ "failed_checks": 0
+}

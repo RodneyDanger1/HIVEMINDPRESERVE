@@ -26,6 +26,10 @@
   --color-signal: #b23a2e;
   --color-verify: #3f7a55;
 
+  /* Chrome-only value from the authoritative spatial style system. Not a
+     21st printed swatch; pinned by designParity.test.ts. */
+  --color-border-gold: #e5c27a;
+
   /* Faces (PDF:95-127; Playfair/Inter bundled via @fontsource) */
   --font-display: "Playfair Display Variable", "Playfair Display", Georgia, serif;
   --font-sans: "Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;

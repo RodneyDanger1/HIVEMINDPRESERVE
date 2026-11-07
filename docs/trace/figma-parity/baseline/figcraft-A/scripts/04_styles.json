@@ -1,0 +1,358 @@
+[
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    213
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    213
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    217
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    217
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "effect.add",
+  "params": {
+   "ids": [
+    221
+   ],
+   "type": "dropShadow"
+  }
+ },
+ {
+  "command": "effect.set",
+  "params": {
+   "ids": [
+    221
+   ],
+   "index": 0,
+   "effect": {
+    "type": "dropShadow",
+    "color": {
+     "r": 0.157,
+     "g": 0.125,
+     "b": 0.063,
+     "a": 0.1
+    },
+    "offset": [
+     0,
+     8
+    ],
+    "radius": 24,
+    "spread": 0,
+    "visible": true,
+    "showBehind": false,
+    "blend": "normal"
+   }
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "surface/canvas",
+   "from": 18
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "surface/panel",
+   "from": 22
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "surface/panel-alt",
+   "from": 26
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "surface/recessed",
+   "from": 30
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "border/hairline",
+   "from": 34
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/100",
+   "from": 38
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/200",
+   "from": 42
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/300",
+   "from": 46
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/400",
+   "from": 50
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/500",
+   "from": 54
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/600",
+   "from": 58
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/700",
+   "from": 62
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "honey/800",
+   "from": 66
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "ink/900",
+   "from": 70
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "ink/800",
+   "from": 74
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "ink/700",
+   "from": 78
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "ink/500",
+   "from": 82
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "accent/amber",
+   "from": 86
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "state/error",
+   "from": 90
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "paint",
+   "name": "state/success",
+   "from": 94
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "display/xxl",
+   "from": 101
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "heading/h1",
+   "from": 103
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "body/l",
+   "from": 105
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "mono/code",
+   "from": 107
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "display/l",
+   "from": 109
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "heading/h3",
+   "from": 111
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "label",
+   "from": 113
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "text",
+   "name": "mono/meta",
+   "from": 115
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "effect",
+   "name": "e1/node",
+   "from": 213
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "effect",
+   "name": "e2/float",
+   "from": 217
+  }
+ },
+ {
+  "command": "style.create",
+  "params": {
+   "type": "effect",
+   "name": "e3/hive",
+   "from": 221
+  }
+ }
+]

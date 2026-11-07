@@ -9,6 +9,7 @@ import { useUiStore, useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
+import { clientRefusal } from '../api/refusals';
 import type { ChatMessage, ToastRefusal } from '../state/store';
 
 /** Baselines captured immediately before SUBMIT_PROMPT is dispatched. */
@@ -72,10 +73,12 @@ export function ChatCore() {
   const pending = useUiStore((state) => state.pendingCommands);
   const connection = useUiStore((state) => state.connection);
   const chat = useUiStore((state) => state.chat);
-  const pinChat = useUiStore((state) => state.pinChat);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
   const streamingRunId = useUiStore((state) => state.streamingRunId);
+  const runStatus = useUiStore((state) => state.run?.status ?? null);
+  const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
+  const runRefusal = runErrorCode === null ? null : clientRefusal(runErrorCode);
   const reduced = useAppReducedMotion();
   const store = useUiStoreApi();
   const [draft, setDraft] = useState('');
@@ -165,64 +168,77 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="pointer-events-auto surface-panel w-[min(600px,92%)] rounded-[var(--radius-card)] p-3"
+        className="pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] flex-col rounded-[18px] p-3"
         style={{ boxShadow: 'var(--shadow-e3)', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
-        <header className="flex items-center justify-between gap-2">
-          <div>
-            <div className="type-heading-h3 text-ink-900">{STRINGS.chat.title}</div>
-            <div className="type-mono-meta text-meta">
-              {chat.pinned ? STRINGS.chat.pinned : STRINGS.chat.pin} ·{' '}
-              {connection === 'open' ? STRINGS.connection.open : STRINGS.connection[connection]}
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
-              onClick={() => {
-                void pinChat(!chat.pinned);
-              }}
-              aria-pressed={chat.pinned}
+        <header
+          className="-mx-3 -mt-3 mb-2 flex h-11 items-center justify-between gap-2 rounded-t-[18px] px-3 text-white"
+          style={{ background: 'linear-gradient(135deg, var(--color-ink-800), var(--color-honey-800))' }}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <svg
+              className={
+                'h-4 w-4 shrink-0 ' +
+                (streamingRunId !== null || runStatus === 'running' || runStatus === 'thinking' || runStatus === 'planning'
+                  ? 'bee-work-icon'
+                  : '')
+              }
+              viewBox="0 0 20 20"
+              aria-hidden="true"
             >
-              {chat.pinned ? STRINGS.chat.unpin : STRINGS.chat.pin}
-            </button>
+              <ellipse cx="10" cy="11" rx="5" ry="3.4" fill="var(--color-honey-300)" />
+              <path d="M5.5 11h9M7 8.8h6M7 13.2h6" stroke="var(--color-ink-800)" strokeWidth="1.1" />
+              <path d="M8 7.6C6.7 5.8 4.8 5.4 3.6 6.1c1.5.5 2.3 1.2 4.1 2.2ZM12 7.6c1.3-1.8 3.2-2.2 4.4-1.5-1.5.5-2.3 1.2-4.1 2.2Z" fill="var(--color-honey-100)" opacity="0.9" />
+              <circle cx="10" cy="10" r="9" fill="none" stroke="var(--color-honey-300)" strokeWidth="0.8" strokeDasharray="2 5" opacity="0.8" />
+            </svg>
+            <div className="truncate text-[14px] font-semibold leading-[18px]">{STRINGS.chat.title}</div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
+              className="type-mono-meta whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-2 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10"
               onClick={() => setChatVisible(false)}
               aria-label={STRINGS.chat.closeAria}
             >
-              {STRINGS.controls.close}
+              ×
             </button>
           </div>
         </header>
 
-        {runErrorCode === null ? null : (
-          <p
+        {runRefusal === null ? null : (
+          <div
             role="alert"
-            className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-signal bg-recessed px-2 py-1 text-signal"
+            className="mt-2 rounded-[var(--radius-sm)] border border-signal bg-ink-900 px-2 py-1.5 text-canvas"
           >
-            Run refused: {runErrorCode}
-          </p>
+            <div className="type-label text-honey-200">Run refused</div>
+            <div className="type-mono-meta mt-0.5 text-honey-200">{runRefusal.code}</div>
+            <div className="mt-1 text-[12.5px] leading-[17px]">{runRefusal.message}</div>
+            <div className="type-mono-meta mt-1 text-honey-100/85">how_to_fix: {runRefusal.how_to_fix}</div>
+          </div>
         )}
 
         <div
           ref={listRef}
-          className="mt-2 max-h-[42vh] min-h-[72px] overflow-y-auto rounded-[var(--radius-sm)] bg-panel-alt px-2 py-2"
+          className="mt-2 min-h-0 flex-1 overflow-y-auto rounded-[var(--radius-sm)] bg-panel-alt px-2 py-2"
           aria-live="polite"
           aria-label={STRINGS.chat.aria}
         >
           {messages.length === 0 ? (
-            <p className="type-body-l text-ink-500">{STRINGS.chat.empty}</p>
+            <p className="text-[12.5px] leading-[18px] text-ink-500">{STRINGS.chat.empty}</p>
           ) : (
             messages.map((message) => (
-              <article key={message.id} className="mb-2 last:mb-0">
+              <article
+                key={message.id}
+                className={
+                  'chat-message mb-2 rounded-[10px] px-2 py-1.5 last:mb-0 ' +
+                  (message.role === 'assistant' ? 'bg-honey-100' : 'bg-panel-alt')
+                }
+              >
                 <div className="type-mono-meta text-meta">
                   {message.role === 'assistant' ? STRINGS.chat.assistantName : STRINGS.chat.userLabel}
                   {message.streaming ? ` · ${STRINGS.states.loading}` : ''}
                 </div>
-                <div className="type-body-l whitespace-pre-wrap text-ink-900">{message.text}</div>
+                <div className="whitespace-pre-wrap text-[12.5px] leading-[18px] text-ink-900">{message.text}</div>
               </article>
             ))
           )}
@@ -239,7 +255,7 @@ export function ChatCore() {
           </label>
           <textarea
             id="composer"
-            className="type-mono-code min-h-[44px] min-w-0 flex-1 resize-y rounded-[var(--radius-md)] border border-hairline bg-panel-alt px-3 py-2 text-ink-900"
+            className="type-mono-code min-h-[40px] min-w-0 flex-1 resize-none rounded-[var(--radius-md)] border border-hairline bg-panel-alt px-3 py-2 text-ink-900"
             placeholder={STRINGS.composer.placeholder}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -250,12 +266,12 @@ export function ChatCore() {
               }
             }}
             rows={2}
-            disabled={connection !== 'open'}
+            disabled={connection !== 'open' || replaying}
           />
           <button
             type="submit"
-            className="type-label rounded-[var(--radius-button)] bg-honey-300 px-4 py-2 text-ink-900 hover:bg-honey-400 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={connection !== 'open' || submitting || draft.trim().length === 0}
+            className="type-label rounded-[var(--radius-button)] bg-honey-300 px-3 py-2 text-ink-900 hover:bg-honey-400 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={connection !== 'open' || replaying || submitting || draft.trim().length === 0}
           >
             {submitting ? STRINGS.states.loading : STRINGS.composer.submit}
           </button>

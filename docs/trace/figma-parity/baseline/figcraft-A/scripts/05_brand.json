@@ -1,0 +1,2784 @@
+[
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 0,
+   "y": 0,
+   "width": 1440,
+   "height": 900,
+   "props": {
+    "fill": "#F8F4EB"
+   },
+   "parent": 6,
+   "name": "01/board-bg"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "04 / BRAND  ·  ONE MARK / FOUR LOCKUPS / CLEAR SPACE 0.25× MARK HEIGHT  ·  BEE MIN 56 · 32 · 16  ·  PDF p5:148-169",
+   "x": 48,
+   "y": 44,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "parent": 6,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "One mark. Four lockups.",
+   "x": 48,
+   "y": 64,
+   "props": {
+    "fontSize": 56,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 60,
+    "letterSpacing": "-2%"
+   },
+   "width": 1000,
+   "parent": 6,
+   "name": "01/title"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The bee always flies toward the route direction — it is a routing arrow, not decoration. One clear-space rule governs every lockup.",
+   "x": 48,
+   "y": 140,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 28
+   },
+   "width": 860,
+   "parent": 6,
+   "name": "body"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIVEROUTER  ·  BRAND  /  V1.0",
+   "x": 1092,
+   "y": 44,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 6,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "FIGCRAFT NATIVE  ·  1440 × 900",
+   "x": 1092,
+   "y": 62,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "8%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 6,
+   "name": "eyebrow"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "LOCKUPS · PRIMARY / STACKED / INVERSE / ICON",
+   "x": 48,
+   "y": 196,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 696,
+   "parent": 6,
+   "name": "sec/lockups · primary / stac"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:151-166",
+   "x": 758,
+   "y": 196,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 6,
+   "name": "secnote/lockups · primary "
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 218,
+   "width": 860,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "secrule/lockups · primary / stac"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 220,
+   "width": 420,
+   "height": 230,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/panel"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PRIMARY / ON PAPER",
+   "x": 64,
+   "y": 234,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 260,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:151-153",
+   "x": 452,
+   "y": 234,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 120,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 82,
+   "y": 288,
+   "width": 56,
+   "height": 56,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 100.0,
+   "y": 301.0,
+   "width": 14.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 111.0,
+   "y": 300.0,
+   "width": 13.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 88.0,
+   "y": 313.2,
+   "width": 8.0,
+   "height": 5.5,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FBF3DC",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 93.0,
+   "y": 309.5,
+   "width": 19.0,
+   "height": 13.0,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 95.5,
+   "y": 310.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 99.0,
+   "y": 310.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 107.5,
+   "y": 311.0,
+   "width": 10.0,
+   "height": 10.0,
+   "props": {
+    "fill": "#D9A02F"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 115.5,
+   "y": 312.0,
+   "width": 8.5,
+   "height": 8.5,
+   "props": {
+    "fill": "#FBF3DC"
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 118.0,
+   "y": 310.5,
+   "width": 6.5,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.3,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 119.0,
+   "y": 313.0,
+   "width": 5.0,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.3,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/lockup/primary/mark/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveRouter",
+   "x": 156,
+   "y": 286,
+   "props": {
+    "fontSize": 40,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 44,
+    "letterSpacing": "-1.5%"
+   },
+   "width": 280,
+   "parent": 6,
+   "name": "01/lockup/primary/word"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SPATIAL EXECUTION ENVIRONMENT",
+   "x": 158,
+   "y": 336,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13,
+    "letterSpacing": "12%"
+   },
+   "width": 290,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Default lockup. Mark min 56px; wordmark min 20px.",
+   "x": 64,
+   "y": 416,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 488,
+   "y": 220,
+   "width": 420,
+   "height": 230,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/panel"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "STACKED / ON PAPER",
+   "x": 504,
+   "y": 234,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 260,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:154-156",
+   "x": 892,
+   "y": 234,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 120,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 666,
+   "y": 266,
+   "width": 64,
+   "height": 64,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 686.5714285714286,
+   "y": 280.85714285714283,
+   "width": 16.0,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 699.1428571428571,
+   "y": 279.7142857142857,
+   "width": 14.857142857142856,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 672.8571428571429,
+   "y": 294.8,
+   "width": 9.142857142857142,
+   "height": 6.285714285714286,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FBF3DC",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 678.5714285714286,
+   "y": 290.57142857142856,
+   "width": 21.71428571428571,
+   "height": 14.857142857142856,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 681.4285714285714,
+   "y": 291.14285714285717,
+   "width": 2.2857142857142856,
+   "height": 13.714285714285714,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 685.4285714285714,
+   "y": 291.14285714285717,
+   "width": 2.2857142857142856,
+   "height": 13.714285714285714,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 695.1428571428571,
+   "y": 292.2857142857143,
+   "width": 11.428571428571427,
+   "height": 11.428571428571427,
+   "props": {
+    "fill": "#D9A02F"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 704.2857142857143,
+   "y": 293.42857142857144,
+   "width": 9.714285714285714,
+   "height": 9.714285714285714,
+   "props": {
+    "fill": "#FBF3DC"
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 707.1428571428571,
+   "y": 291.7142857142857,
+   "width": 7.428571428571428,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 708.2857142857143,
+   "y": 294.57142857142856,
+   "width": 5.7142857142857135,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/lockup/stacked/mark/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveRouter",
+   "x": 488,
+   "y": 342,
+   "props": {
+    "fontSize": 34,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 38,
+    "letterSpacing": "-1%",
+    "textAlign": "center"
+   },
+   "width": 420,
+   "parent": 6,
+   "name": "01/lockup/stacked/word"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SPATIAL EXECUTION ENVIRONMENT",
+   "x": 488,
+   "y": 382,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "12%",
+    "textAlign": "center"
+   },
+   "width": 420,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "For narrow columns and splash panels.",
+   "x": 504,
+   "y": 416,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 470,
+   "width": 420,
+   "height": 230,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 12
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/panel"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "INVERSE / ON INK",
+   "x": 64,
+   "y": 484,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#F6E7BE",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 260,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:157-159",
+   "x": 452,
+   "y": 484,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#F6E7BE",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 120,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 82,
+   "y": 538,
+   "width": 56,
+   "height": 56,
+   "props": {
+    "pointCount": 6,
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 100.0,
+   "y": 551.0,
+   "width": 14.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FBF3DC",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 111.0,
+   "y": 550.0,
+   "width": 13.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FBF3DC",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 88.0,
+   "y": 563.2,
+   "width": 8.0,
+   "height": 5.5,
+   "props": {
+    "pointCount": 3,
+    "fill": "#282010",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 93.0,
+   "y": 559.5,
+   "width": 19.0,
+   "height": 13.0,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 95.5,
+   "y": 560.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 99.0,
+   "y": 560.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 107.5,
+   "y": 561.0,
+   "width": 10.0,
+   "height": 10.0,
+   "props": {
+    "fill": "#3F3115"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 115.5,
+   "y": 562.0,
+   "width": 8.5,
+   "height": 8.5,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 118.0,
+   "y": 560.5,
+   "width": 6.5,
+   "props": {
+    "stroke": "#282010",
+    "strokeWeight": 1.3,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 119.0,
+   "y": 563.0,
+   "width": 5.0,
+   "props": {
+    "stroke": "#282010",
+    "strokeWeight": 1.3,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/lockup/inverse/mark/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveRouter",
+   "x": 156,
+   "y": 536,
+   "props": {
+    "fontSize": 40,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#FFFFFF",
+    "lineHeight": 44,
+    "letterSpacing": "-1.5%"
+   },
+   "width": 280,
+   "parent": 6,
+   "name": "01/lockup/inverse/word"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SPATIAL EXECUTION ENVIRONMENT",
+   "x": 158,
+   "y": 586,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#F6E7BE",
+    "lineHeight": 13,
+    "letterSpacing": "12%"
+   },
+   "width": 290,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "On ink-900 only; never on honey-500 or darker honey.",
+   "x": 64,
+   "y": 666,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#F6E7BE",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 488,
+   "y": 470,
+   "width": 420,
+   "height": 230,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/panel"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ICON / APP MONO · ONE COLOUR",
+   "x": 504,
+   "y": 484,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 300,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:160-165",
+   "x": 892,
+   "y": 484,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 120,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 524,
+   "y": 530,
+   "width": 64,
+   "height": 64,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 544.5714285714286,
+   "y": 544.8571428571429,
+   "width": 16.0,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 557.1428571428571,
+   "y": 543.7142857142857,
+   "width": 14.857142857142856,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 530.8571428571429,
+   "y": 558.8,
+   "width": 9.142857142857142,
+   "height": 6.285714285714286,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FFFFFF",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 536.5714285714286,
+   "y": 554.5714285714286,
+   "width": 21.71428571428571,
+   "height": 14.857142857142856,
+   "props": {
+    "fill": "#FFFFFF"
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/abdomen"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 553.1428571428571,
+   "y": 556.2857142857143,
+   "width": 11.428571428571427,
+   "height": 11.428571428571427,
+   "props": {
+    "fill": "#FFFFFF"
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 562.2857142857143,
+   "y": 557.4285714285714,
+   "width": 9.714285714285714,
+   "height": 9.714285714285714,
+   "props": {
+    "fill": "#FFFFFF"
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 565.1428571428571,
+   "y": 555.7142857142857,
+   "width": 7.428571428571428,
+   "props": {
+    "stroke": "#FFFFFF",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 566.2857142857143,
+   "y": 558.5714285714286,
+   "width": 5.7142857142857135,
+   "props": {
+    "stroke": "#FFFFFF",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/lockup/icon/mark/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveRouter",
+   "x": 606,
+   "y": 544,
+   "props": {
+    "fontSize": 20,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 24,
+    "letterSpacing": "-0.5%"
+   },
+   "width": 200,
+   "parent": 6,
+   "name": "01/lockup/icon/word"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "wordmark min 20px",
+   "x": 606,
+   "y": 570,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 180,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "One ink only: hexagon silhouette, bee knocked out.",
+   "x": 504,
+   "y": 620,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Mono 1-colour lockup = fallback for single-ink print.",
+   "x": 504,
+   "y": 636,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "32px and 16px use the same silhouette; below 24px the inner bee is dropped.",
+   "x": 504,
+   "y": 666,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 388,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CLEAR SPACE · 0.25 × MARK HEIGHT",
+   "x": 932,
+   "y": 196,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 296,
+   "parent": 6,
+   "name": "sec/clear space · 0.25 × mar"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:160",
+   "x": 1242,
+   "y": 196,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 6,
+   "name": "secnote/clear space · 0.25"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 932,
+   "y": 218,
+   "width": 460,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "secrule/clear space · 0.25 × mar"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 932,
+   "y": 220,
+   "width": 460,
+   "height": 220,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/clearspace/panel"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 972,
+   "y": 274,
+   "width": 96,
+   "height": 96,
+   "props": {
+    "fill": "none",
+    "cornerRadius": 4,
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "strokeAlign": "inside",
+    "dashes": [
+     4,
+     4
+    ]
+   },
+   "parent": 6,
+   "name": "01/clearspace/guide"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 988,
+   "y": 290,
+   "width": 64,
+   "height": 64,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1008.5714285714286,
+   "y": 304.85714285714283,
+   "width": 16.0,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1021.1428571428571,
+   "y": 303.7142857142857,
+   "width": 14.857142857142856,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 994.8571428571429,
+   "y": 318.8,
+   "width": 9.142857142857142,
+   "height": 6.285714285714286,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FBF3DC",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1000.5714285714286,
+   "y": 314.57142857142856,
+   "width": 21.71428571428571,
+   "height": 14.857142857142856,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1003.4285714285714,
+   "y": 315.14285714285717,
+   "width": 2.2857142857142856,
+   "height": 13.714285714285714,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1007.4285714285714,
+   "y": 315.14285714285717,
+   "width": 2.2857142857142856,
+   "height": 13.714285714285714,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1017.1428571428571,
+   "y": 316.2857142857143,
+   "width": 11.428571428571427,
+   "height": 11.428571428571427,
+   "props": {
+    "fill": "#D9A02F"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1026.2857142857142,
+   "y": 317.42857142857144,
+   "width": 9.714285714285714,
+   "height": 9.714285714285714,
+   "props": {
+    "fill": "#FBF3DC"
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1029.142857142857,
+   "y": 315.7142857142857,
+   "width": 7.428571428571428,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1030.2857142857142,
+   "y": 318.57142857142856,
+   "width": 5.7142857142857135,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.4857142857142858,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/clearspace/mark/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "h = 64  ·  clear space 0.25h = 16  ·  box 1.5h = 96",
+   "x": 972,
+   "y": 378,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 200,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "16",
+   "x": 966,
+   "y": 336,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 30,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "16",
+   "x": 966,
+   "y": 258,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#B23A2E",
+    "lineHeight": 12,
+    "textAlign": "right"
+   },
+   "width": 30,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Clear space = 0.25 × mark height on every side.",
+   "x": 1142,
+   "y": 264,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 14
+   },
+   "width": 250,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "No type, rule, edge or other mark may enter the clear space. The guide box is 1.5h square around a 1h mark.",
+   "x": 1142,
+   "y": 296,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 14
+   },
+   "width": 250,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "MEASURE / mm-free",
+   "x": 1142,
+   "y": 348,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 250,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "0.25 × mark height, all four sides",
+   "x": 1142,
+   "y": 364,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 250,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "BEE GLYPH · CONSTRUCTION",
+   "x": 932,
+   "y": 456,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 296,
+   "parent": 6,
+   "name": "sec/bee glyph · construction"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:162-169",
+   "x": 1242,
+   "y": 456,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 150,
+   "parent": 6,
+   "name": "secnote/bee glyph · constr"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 932,
+   "y": 478,
+   "width": 460,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "secrule/bee glyph · construction"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 932,
+   "y": 480,
+   "width": 460,
+   "height": 250,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/anatomy/panel"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1074,
+   "y": 518,
+   "width": 48,
+   "height": 18,
+   "props": {
+    "fill": "#FBF3DC",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.2,
+    "rotation": -30
+   },
+   "parent": 6,
+   "name": "01/bee/wing-1"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1118,
+   "y": 514,
+   "width": 44,
+   "height": 16,
+   "props": {
+    "fill": "#FFFFFF",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.2,
+    "rotation": 24
+   },
+   "parent": 6,
+   "name": "01/bee/wing-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1062,
+   "y": 544,
+   "width": 58,
+   "height": 38,
+   "props": {
+    "fill": "#F0C050",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.4
+   },
+   "parent": 6,
+   "name": "01/bee/abdomen"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1112,
+   "y": 545,
+   "width": 34,
+   "height": 33,
+   "props": {
+    "fill": "#D9A02F",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.4
+   },
+   "parent": 6,
+   "name": "01/bee/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 1144,
+   "y": 548,
+   "width": 25,
+   "height": 25,
+   "props": {
+    "fill": "#3F3115"
+   },
+   "parent": 6,
+   "name": "01/bee/head"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1076,
+   "y": 550,
+   "width": 6,
+   "height": 26,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 3
+   },
+   "parent": 6,
+   "name": "01/bee/band-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 1089,
+   "y": 550,
+   "width": 6,
+   "height": 26,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 3
+   },
+   "parent": 6,
+   "name": "01/bee/band-2"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1158,
+   "y": 546,
+   "width": 17,
+   "props": {
+    "stroke": "#282010",
+    "strokeWeight": 2,
+    "rotation": -55
+   },
+   "parent": 6,
+   "name": "01/bee/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1162,
+   "y": 550,
+   "width": 15,
+   "props": {
+    "stroke": "#282010",
+    "strokeWeight": 2,
+    "rotation": -20
+   },
+   "parent": 6,
+   "name": "01/bee/antenna-2"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 1046,
+   "y": 556,
+   "width": 15,
+   "height": 11,
+   "props": {
+    "pointCount": 3,
+    "fill": "#282010",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/bee/stinger"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "wings",
+   "x": 1074,
+   "y": 486,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 60,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1094,
+   "y": 514,
+   "width": 20,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "rotation": 42
+   },
+   "parent": 6,
+   "name": "01/bee/leader-wing"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "antennae",
+   "x": 1168,
+   "y": 518,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 70,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1164,
+   "y": 534,
+   "width": 16,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "rotation": 115
+   },
+   "parent": 6,
+   "name": "01/bee/leader-antenna"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "head",
+   "x": 1176,
+   "y": 560,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 50,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1170,
+   "y": 562,
+   "width": 6,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "01/bee/leader-head"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "thorax",
+   "x": 1118,
+   "y": 594,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 60,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1128,
+   "y": 580,
+   "width": 8,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "rotation": -80
+   },
+   "parent": 6,
+   "name": "01/bee/leader-thorax"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "abdomen",
+   "x": 982,
+   "y": 532,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 70,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1028,
+   "y": 546,
+   "width": 40,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "rotation": 6
+   },
+   "parent": 6,
+   "name": "01/bee/leader-abdomen"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "stinger",
+   "x": 978,
+   "y": 586,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 60,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 1034,
+   "y": 570,
+   "width": 56,
+   "props": {
+    "stroke": "#75663F",
+    "strokeWeight": 1,
+    "rotation": -14
+   },
+   "parent": 6,
+   "name": "01/bee/leader-stinger"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "BEE FLIES +x  ·  SOURCE → TARGET (±1°)",
+   "x": 978,
+   "y": 618,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 320,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The bee is the routing arrow: head leads, stinger trails, so the glyph reads source → target.",
+   "x": 948,
+   "y": 700,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 430,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "MINIMUM SIZES · BEE 56 / 32 / 16  ·  WORDMARK MIN 20",
+   "x": 48,
+   "y": 736,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 16,
+    "letterSpacing": "8%"
+   },
+   "width": 1030,
+   "parent": 6,
+   "name": "sec/minimum sizes · bee 56 /"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PDF p5:160-169",
+   "x": 1092,
+   "y": 736,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 16,
+    "letterSpacing": "4%",
+    "textAlign": "right"
+   },
+   "width": 300,
+   "parent": 6,
+   "name": "secnote/minimum sizes · be"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 758,
+   "width": 1344,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "secrule/minimum sizes · bee 56 /"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 48,
+   "y": 760,
+   "width": 1344,
+   "height": 100,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "strokeAlign": "inside"
+   },
+   "parent": 6,
+   "name": "01/minsizes/panel"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 72,
+   "y": 772,
+   "width": 56,
+   "height": 56,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 90.0,
+   "y": 785.0,
+   "width": 14.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 101.0,
+   "y": 784.0,
+   "width": 13.0,
+   "height": 6.5,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 78.0,
+   "y": 797.2,
+   "width": 8.0,
+   "height": 5.5,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FBF3DC",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 83.0,
+   "y": 793.5,
+   "width": 19.0,
+   "height": 13.0,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 85.5,
+   "y": 794.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 89.0,
+   "y": 794.0,
+   "width": 2.0,
+   "height": 12.0,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 97.5,
+   "y": 795.0,
+   "width": 10.0,
+   "height": 10.0,
+   "props": {
+    "fill": "#D9A02F"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 105.5,
+   "y": 796.0,
+   "width": 8.5,
+   "height": 8.5,
+   "props": {
+    "fill": "#FBF3DC"
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 108.0,
+   "y": 794.5,
+   "width": 6.5,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.3,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 109.0,
+   "y": 797.0,
+   "width": 5.0,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 1.3,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/minsizes/56/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "56 · app icon / hero",
+   "x": 66,
+   "y": 836,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 150,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 232,
+   "y": 784,
+   "width": 32,
+   "height": 32,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/hex"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 242.28571428571428,
+   "y": 791.4285714285714,
+   "width": 8.0,
+   "height": 3.714285714285714,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": -24
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/wing-l"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 248.57142857142858,
+   "y": 790.8571428571429,
+   "width": 7.428571428571428,
+   "height": 3.714285714285714,
+   "props": {
+    "fill": "#FFFFFF",
+    "rotation": 20
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/wing-r"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 235.42857142857142,
+   "y": 798.4,
+   "width": 4.571428571428571,
+   "height": 3.142857142857143,
+   "props": {
+    "pointCount": 3,
+    "fill": "#FBF3DC",
+    "rotation": 90
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/stinger"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 238.28571428571428,
+   "y": 796.2857142857143,
+   "width": 10.857142857142856,
+   "height": 7.428571428571428,
+   "props": {
+    "fill": "#F0C050"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/abdomen"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 239.71428571428572,
+   "y": 796.5714285714286,
+   "width": 1.1428571428571428,
+   "height": 6.857142857142857,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/stripe-1"
+  }
+ },
+ {
+  "command": "shape.rectangle",
+  "params": {
+   "x": 241.71428571428572,
+   "y": 796.5714285714286,
+   "width": 1.1428571428571428,
+   "height": 6.857142857142857,
+   "props": {
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/stripe-2"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 246.57142857142858,
+   "y": 797.1428571428571,
+   "width": 5.7142857142857135,
+   "height": 5.7142857142857135,
+   "props": {
+    "fill": "#D9A02F"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/thorax"
+  }
+ },
+ {
+  "command": "shape.ellipse",
+  "params": {
+   "x": 251.14285714285714,
+   "y": 797.7142857142857,
+   "width": 4.857142857142857,
+   "height": 4.857142857142857,
+   "props": {
+    "fill": "#FBF3DC"
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/head"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 252.57142857142858,
+   "y": 796.8571428571429,
+   "width": 3.714285714285714,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 0.7428571428571429,
+    "rotation": -45
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/antenna-1"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 253.14285714285714,
+   "y": 798.2857142857143,
+   "width": 2.8571428571428568,
+   "props": {
+    "stroke": "#FBF3DC",
+    "strokeWeight": 0.7428571428571429,
+    "rotation": -12
+   },
+   "parent": 6,
+   "name": "01/minsizes/32/antenna-2"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "32 · node chip",
+   "x": 212,
+   "y": 836,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 120,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.polygon",
+  "params": {
+   "x": 344,
+   "y": 792,
+   "width": 16,
+   "height": 16,
+   "props": {
+    "pointCount": 6,
+    "fill": "#282010"
+   },
+   "parent": 6,
+   "name": "01/minsizes/16/hex"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "16 · favicon — inner bee dropped below 24px",
+   "x": 316,
+   "y": 836,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 220,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Never below 16px.",
+   "x": 556,
+   "y": 772,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 13
+   },
+   "width": 180,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Below 24px drop the inner bee and keep the hexagon silhouette only.",
+   "x": 556,
+   "y": 788,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12
+   },
+   "width": 180,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "24–55px: inner bee may drop.",
+   "x": 556,
+   "y": 828,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 180,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveRouter",
+   "x": 760,
+   "y": 776,
+   "props": {
+    "fontSize": 20,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "lineHeight": 24,
+    "letterSpacing": "-0.5%"
+   },
+   "width": 200,
+   "parent": 6,
+   "name": "01/minsizes/wordmark"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "wordmark min 20px",
+   "x": 760,
+   "y": 804,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 160,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "≥56px: full construction.",
+   "x": 760,
+   "y": 824,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 160,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "MONO 1-COLOUR LOCKUP IS THE FALLBACK",
+   "x": 932,
+   "y": 772,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 12,
+    "letterSpacing": "8%"
+   },
+   "width": 380,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "for single-ink print and embroidery. The mark may rotate with the edge angle (±1°); never mirror the bee.",
+   "x": 932,
+   "y": 788,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "lineHeight": 14
+   },
+   "width": 440,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Clear space scales with h — 0.25 × h on every side.",
+   "x": 932,
+   "y": 828,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 12
+   },
+   "width": 440,
+   "parent": 6,
+   "name": "text"
+  }
+ },
+ {
+  "command": "shape.line",
+  "params": {
+   "x": 48,
+   "y": 872,
+   "width": 1344,
+   "props": {
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   },
+   "parent": 6,
+   "name": "01/footer-rule"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIVEROUTER  ·  BRAND  /  V1.0  ·  01 BRAND  ·  FIGCRAFT NATIVE",
+   "x": 48,
+   "y": 878,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "letterSpacing": "8%"
+   },
+   "width": 900,
+   "parent": 6,
+   "name": "01/footer"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PAGE 2 / 4  ·  PDF p5",
+   "x": 1192,
+   "y": 878,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAlign": "right"
+   },
+   "width": 200,
+   "parent": 6,
+   "name": "01/footer-no"
+  }
+ }
+]

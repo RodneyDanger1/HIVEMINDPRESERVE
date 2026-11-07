@@ -1,0 +1,92 @@
+/**
+ * CSS mirror of `tokens/tokens.ts` — the only other file allowed to contain
+ * hex literals (G-UI-11: zero hex outside the token module). Every value
+ * carries the same PDF provenance as the TS table (evidence/pdf/pages.txt).
+ */
+@theme {
+  /* 20 printed swatches (PDF:20-79) */
+  --color-canvas: #f8f4eb;
+  --color-panel: #ffffff;
+  --color-panel-alt: #fbf8f1;
+  --color-recessed: #f1e9cf;
+  --color-hairline: #e5e1d8;
+  --color-honey-100: #fbf3dc;
+  --color-honey-200: #f6e7be;
+  --color-honey-300: #f0c050;
+  --color-honey-400: #e8b850;
+  --color-honey-500: #d9a02f;
+  --color-honey-600: #c88030;
+  --color-honey-700: #8a5a1c;
+  --color-honey-800: #604818;
+  --color-ink-900: #282010;
+  --color-ink-800: #3f3115;
+  --color-ink-700: #4e3a15;
+  --color-ink-500: #75663f;
+  --color-amber: #b7791f;
+  --color-signal: #b23a2e;
+  --color-verify: #3f7a55;
+
+  /* Faces (PDF:95-127; Playfair/Inter bundled via @fontsource) */
+  --font-display: "Playfair Display Variable", "Playfair Display", Georgia, serif;
+  --font-sans: "Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: Consolas, "JetBrains Mono", "Cascadia Mono", monospace;
+
+  /* Radii (PDF:134-136 + exceptions 10/14, R-U14) */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --radius-button: 10px;
+  --radius-card: 14px;
+
+  /* Elevation: one printed warm-ink value (PDF:137-146); tiering UNVERIFIED */
+  --shadow-e1: 0 2px 8px 0 rgb(40 32 16 / 0.09);
+  --shadow-e2: 0 6px 20px 0 rgb(40 32 16 / 0.12);
+  --shadow-e3: 0 12px 34px 0 rgb(40 32 16 / 0.13);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Semantic corrections forced by R-U3/DELTA R-10 */
+  --text-primary: var(--color-ink-900);
+  --text-secondary: var(--color-ink-500);
+  --meta-text: var(--color-ink-500);
+  --focus-ring: var(--color-ink-700);
+
+  /* Type steps (PDF:111-124); declared totals do not reconcile — printed only */
+  --text-display-xxl: 96px;
+  --text-display-xxl-line: 100px;
+  --tracking-display-xxl: -0.03em;
+  --text-display-l: 56px;
+  --text-display-l-line: 60px;
+  --tracking-display-l: -0.02em;
+  --text-heading-h1: 40px;
+  --text-heading-h1-line: 48px;
+  --tracking-heading-h1: -0.015em;
+  --text-heading-h3: 24px;
+  --text-heading-h3-line: 32px;
+  --tracking-heading-h3: -0.005em;
+  --text-body-l: 17px;
+  --text-body-l-line: 28px;
+  --tracking-body-l: 0;
+  --text-label: 12px;
+  --text-label-line: 16px;
+  --tracking-label: 0.08em;
+  --text-mono-code: 13px;
+  --text-mono-code-line: 22px;
+  --tracking-mono-code: 0;
+  --text-mono-meta: 11px;
+  --text-mono-meta-line: 16px;
+  --tracking-mono-meta: 0.08em;
+  --text-card-name: 14.5px;
+  --text-card-meta: 9.5px;
+
+  /* Canvas constants (source 898/PDF:304) */
+  --zoom-min: 0.1;
+  --zoom-max: 3;
+  --snap-radius: 150px;
+  --honeycomb-spacing: 24px;
+}

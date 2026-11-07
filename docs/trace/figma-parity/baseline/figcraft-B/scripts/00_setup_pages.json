@@ -1,0 +1,37 @@
+[
+ {
+  "command": "file.new",
+  "params": {
+   "name": "HiveMind v1 - Canvas (B)"
+  }
+ },
+ {
+  "command": "page.rename",
+  "params": {
+   "id": 1,
+   "name": "Canvas / default"
+  }
+ },
+ {
+  "command": "page.add",
+  "params": {
+   "name": "Canvas / zoom states"
+  }
+ },
+ {
+  "command": "page.add",
+  "params": {
+   "name": "Canvas / interaction states"
+  }
+ },
+ {
+  "command": "page.add",
+  "params": {
+   "name": "Brand hero"
+  }
+ },
+ {
+  "command": "page.list",
+  "params": {}
+ }
+]
