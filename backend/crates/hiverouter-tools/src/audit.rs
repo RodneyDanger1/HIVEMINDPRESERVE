@@ -126,7 +126,7 @@ pub fn record_tool_call(
     tool: ToolId,
     permission_class: PermissionClass,
     outcome: &str,
-    refusal_code: Option<&'static str>,
+    refusal_code: Option<&str>,
 ) {
     tracing::info!(
         target: "hiverouter.audit",

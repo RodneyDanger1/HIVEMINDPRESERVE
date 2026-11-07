@@ -23,7 +23,7 @@ use hiverouter_tools::approval::{ApprovalDecision, ApprovalResolution};
 use hiverouter_tools::shell::ShellPolicy;
 use hiverouter_tools::{
     execute_read_only, AgentTier, ExecutedTool as ToolsExecutedTool, PermissionClass,
-    SpawnAgentArgs, ToolRegistry, WorkspaceJail,
+    SpawnAgentArgs, ToolId, ToolRegistry, WorkspaceJail,
 };
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -1669,6 +1669,18 @@ impl RunEngine {
             turn,
             created_at: Timestamp::now(),
         };
+        if let (Some(tool_id), Some(permission_class)) = (
+            ToolId::from_id(&call.name),
+            tool_loop::permission_for(&self.tool_registry, &call.name),
+        ) {
+            hiverouter_tools::record_tool_call(
+                run.id,
+                tool_id,
+                permission_class,
+                execution.outcome.as_str(),
+                execution.code.as_deref(),
+            );
+        }
         self.db
             .record_tool_turn(&record)
             .map_err(|error| error.refusal())

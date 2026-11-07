@@ -14,11 +14,9 @@ use hiverouter_core::recovery::recover_on_boot;
 use hiverouter_core::run_checks;
 use hiverouter_core::snapshot::SnapshotStore;
 use tokio::net::TcpListener;
-use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    init_tracing();
     if let Err(code) = run().await {
         return code;
     }
@@ -47,6 +45,14 @@ async fn run() -> Result<(), ExitCode> {
         Ok(config) => config,
         Err(error) => {
             eprintln!("hiverouter: {error}");
+            return Err(ExitCode::FAILURE);
+        }
+    };
+
+    let _audit_guard = match hiverouter_tools::init_json_audit(config.data_dir.join("audit")) {
+        Ok(guard) => guard,
+        Err(error) => {
+            eprintln!("hiverouter: cannot initialise the JSON audit sink: {error}");
             return Err(ExitCode::FAILURE);
         }
     };
@@ -177,13 +183,6 @@ async fn shutdown_signal() {
     tracing::info!("shutdown signal received");
 }
 
-fn init_tracing() {
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    tracing_subscriber::fmt()
-        .with_env_filter(filter)
-        .with_target(false)
-        .init();
-}
 
 fn print_usage() {
     println!(
