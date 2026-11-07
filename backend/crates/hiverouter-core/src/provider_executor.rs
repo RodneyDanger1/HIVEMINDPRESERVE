@@ -134,6 +134,7 @@ impl ProviderExecutorAdapter {
             })?;
 
         let mut text = String::new();
+        let mut reasoning = String::new();
         let mut tool_calls_seen = false;
         let mut assembler = ToolCallAssembler::new();
         let (usage, finish_reason) = loop {
@@ -165,7 +166,13 @@ impl ProviderExecutorAdapter {
                     let _ = budget.record_call(self.settings.model, None, now_unix_secs());
                     return Err(error.refusal());
                 }
-                Some(Ok(StreamEvent::Delta { content, .. })) => {
+                Some(Ok(StreamEvent::Delta {
+                    content,
+                    reasoning_content,
+                })) => {
+                    if let Some(fragment) = reasoning_content {
+                        reasoning.push_str(&fragment);
+                    }
                     if content.is_empty() {
                         continue;
                     }
@@ -242,6 +249,7 @@ impl ProviderExecutorAdapter {
             deltas: vec![text],
             usage: usage.unwrap_or_default(),
             tool_calls,
+            reasoning,
         })
     }
 }
@@ -343,14 +351,20 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                     arguments,
                 ));
             }
-            messages.push(if turn.assistant_text.trim().is_empty() {
+            let assistant = if turn.assistant_text.trim().is_empty() {
                 ChatMessage::assistant_tool_calls(tool_calls)
             } else {
                 ChatMessage::assistant_tool_calls_with_content(
                     &turn.assistant_text,
                     tool_calls,
                 )
-            });
+            };
+            let assistant = if turn.reasoning.is_empty() {
+                assistant
+            } else {
+                assistant.with_reasoning_content(turn.reasoning.clone())
+            };
+            messages.push(assistant);
             for (_, execution) in &turn.results {
                 messages.push(ChatMessage::tool_result(
                     execution.tool_call_id.clone(),

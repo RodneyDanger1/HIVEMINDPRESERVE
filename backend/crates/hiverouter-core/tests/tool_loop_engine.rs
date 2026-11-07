@@ -133,6 +133,7 @@ impl ProviderExecutor for ScriptedExecutor {
             deltas: Vec::new(),
             usage: Usage::default(),
             tool_calls: self.tool_calls.clone(),
+            reasoning: String::new(),
         })
     }
 
@@ -180,6 +181,7 @@ fn final_answer() -> StreamedReply {
         deltas: vec!["final answer".to_owned()],
         usage: Usage::default(),
         tool_calls: Vec::new(),
+        reasoning: String::new(),
     }
 }
 
@@ -188,6 +190,7 @@ fn tool_only_reply(tool_calls: Vec<AssembledToolCall>) -> StreamedReply {
         deltas: Vec::new(),
         usage: Usage::default(),
         tool_calls,
+        reasoning: String::new(),
     }
 }
 
@@ -668,3 +671,4 @@ async fn continuation_refusal_fails_the_task_by_name() {
         "no assistant message is persisted for a failed tool loop"
     );
 }
+

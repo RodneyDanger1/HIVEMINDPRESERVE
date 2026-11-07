@@ -47,14 +47,19 @@ pub fn recover_on_boot(
     let store = RunStore::new(db);
     let mut report = RecoveryReport::default();
 
-    let active: Vec<RunId> = store
+    let active: Vec<(RunId, AgentState)> = store
         .list_runs(500)?
         .into_iter()
         .filter(|run| !run.status.is_terminal() && run.status != AgentState::Interrupted)
-        .map(|run| run.id)
+        .map(|run| (run.id, run.status))
         .collect();
-    for run_id in active {
-        store.set_run_status(run_id, AgentState::Interrupted, None)?;
+    for (run_id, status) in active {
+        let error_code = if status == AgentState::AwaitingApproval {
+            Some(Refusal::ApprovalTimeout.code())
+        } else {
+            None
+        };
+        store.set_run_status(run_id, AgentState::Interrupted, error_code)?;
         report.interrupted_runs.push(run_id);
     }
 

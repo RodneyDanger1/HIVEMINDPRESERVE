@@ -111,6 +111,21 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
             "tools approval-table migration failed; APPROVAL_RESOLVE will refuse by name"
         );
     }
+    let now_unix_secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    match ToolsBridge::expire_pending_approvals(db, now_unix_secs) {
+        Ok(0) => {}
+        Ok(expired) => tracing::warn!(
+            expired,
+            "consumed restart-orphaned pending approvals at boot; no waiter survives restart"
+        ),
+        Err(error) => tracing::error!(
+            code = error.code(),
+            "approval boot reaper failed; restart-orphaned rows may remain pending (no in-process waiter survives)"
+        ),
+    }
     Arc::new(ToolsBridge::new(&config.workspace_root, db.clone()))
 }
 

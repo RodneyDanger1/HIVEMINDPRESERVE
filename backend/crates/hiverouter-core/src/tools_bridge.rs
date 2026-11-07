@@ -87,6 +87,20 @@ impl ToolsBridge {
         })
     }
 
+    /// Boot-time orphan reaper: no in-process waiter survives a restart, so every
+    /// still-pending approval is consumed (`decision = expired`) regardless of its
+    /// remaining TTL. A late UI decision is then refused by name (timeout/replay)
+    /// and can never execute a side effect.
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the approval table cannot be read/updated.
+    pub fn expire_pending_approvals(db: &Database, now_unix_secs: u64) -> Result<u64, Refusal> {
+        db.with_connection_refusal(|conn| {
+            hiverouter_tools::approval::expire_orphaned_pending(conn, now_unix_secs)
+                .map_err(|error| error.refusal())
+        })
+    }
+
     /// Workspace root the jail was opened against.
     #[must_use]
     pub fn workspace_root(&self) -> &Path {

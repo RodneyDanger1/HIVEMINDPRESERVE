@@ -302,9 +302,10 @@ fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<ApprovalR
 ///
 /// # Errors
 /// - [`Refusal::ApprovalRequired`] when no approval with that id exists;
-/// - [`Refusal::ApprovalReplay`] when the nonce already consumed a decision;
-/// - [`Refusal::ApprovalTimeout`] when the request is past its TTL (the row is
-///   marked expired so it can never be replayed).
+/// - [`Refusal::ApprovalReplay`] when the stored decision is a non-expired
+///   decision (the nonce already consumed a decision);
+/// - [`Refusal::ApprovalTimeout`] when the request is past its TTL, or when the
+///   stored decision is `expired` (a TTL or boot reaper already consumed it).
 pub fn resolve(
     conn: &Connection,
     approval_id: &str,
@@ -326,7 +327,10 @@ pub fn resolve(
         )
         .optional()?;
     match existing {
-        Some(Some(_)) => {
+        Some(Some(stored)) => {
+            if stored == "expired" {
+                return Err(expired_decision_refusal());
+            }
             return Err(ToolError::new(
                 Refusal::ApprovalReplay,
                 "this approval nonce already consumed a decision; replay is refused",
@@ -397,19 +401,50 @@ pub fn session_allowed(
     Ok(count > 0)
 }
 
+/// Compares the presented one-time nonce with the stored one without an early exit.
+///
+/// # Threat model
+/// The nonce is a uuid v7 string (fixed 36-byte hyphenated form) that authorizes a
+/// side effect, and it arrives over the session-authenticated WebSocket. A byte-wise
+/// `==` returns on the first differing byte, which gives a remote timing oracle on a
+/// capability value. This comparison touches every byte of both inputs and folds any
+/// length mismatch into the same accumulator before returning, so only the input
+/// length class is observable (the expected length is fixed and public). Length is
+/// not secret: a wrong-length nonce can never match. This is deliberately not a
+/// general-purpose constant-time primitive for variable-length secrets.
+///
+/// The result is used only to decide whether to return the replay refusal; the value
+/// is never logged or embedded in the refusal message.
+fn nonce_matches(stored: &str, presented: &str) -> bool {
+    let stored = stored.as_bytes();
+    let presented = presented.as_bytes();
+    let mut diff = (stored.len() ^ presented.len()) as u32;
+    let max_len = stored.len().max(presented.len());
+    for index in 0..max_len {
+        let left = stored.get(index).copied().unwrap_or(0);
+        let right = presented.get(index).copied().unwrap_or(0);
+        diff |= u32::from(left ^ right);
+    }
+    diff == 0
+}
+
 /// Resolves a pending approval via the frozen `APPROVAL_RESOLVE` wire shape:
 /// `approval_id` + one-time `nonce` + `decision` (`approve`/`deny`) + optional
 /// reason.
 ///
 /// The nonce binds the decision to exactly one presented request; a mismatched
 /// nonce is refused without revealing anything about the stored request, and a
-/// used nonce can never be replayed.
+/// used nonce can never be replayed. The comparison is performed by
+/// [`nonce_matches`] rather than `==` (the nonce authorizes a side effect, so it is
+/// treated as a capability value, not an ordinary string).
 ///
 /// # Errors
 /// - [`Refusal::ApprovalRequired`] when no approval with that id exists (the
 ///   contract patch maps this to `E_APPROVAL_NOT_FOUND` once the variant lands);
-/// - [`Refusal::ApprovalReplay`] for a mismatched/already-used nonce;
-/// - [`Refusal::ApprovalTimeout`] when the request is past its TTL;
+/// - [`Refusal::ApprovalReplay`] for a mismatched/already-used nonce whose
+///   stored decision is not `expired`;
+/// - [`Refusal::ApprovalTimeout`] when the request is past its TTL, or when the
+///   stored decision is `expired` (a TTL or boot reaper already consumed it);
 /// - [`Refusal::SchemaInvalid`] for a decision that is not `approve`/`deny`
 ///   (contract patch: `E_APPROVAL_DECISION_INVALID`).
 pub fn resolve_with_nonce(
@@ -427,7 +462,7 @@ pub fn resolve_with_nonce(
             format!("no approval request with id {approval_id}"),
         )
     })?;
-    if request.nonce != nonce {
+    if !nonce_matches(&request.nonce, nonce) {
         return Err(ToolError::new(
             Refusal::ApprovalReplay,
             "the approval nonce does not match the pending request; a decision cannot be replayed \
@@ -458,7 +493,10 @@ fn resolve_with_reason(
         )
         .optional()?;
     match existing {
-        Some(Some(_)) => {
+        Some(Some(stored)) => {
+            if stored == "expired" {
+                return Err(expired_decision_refusal());
+            }
             return Err(ToolError::new(
                 Refusal::ApprovalReplay,
                 "this approval nonce already consumed a decision; replay is refused",
@@ -511,6 +549,87 @@ fn resolve_with_reason(
         decision,
         decided_at,
     })
+}
+
+/// The refusal for a row already consumed as `expired`: a TTL or boot reaper
+/// ended it, so the honest answer is a timeout, not a replay/forgery signal.
+fn expired_decision_refusal() -> ToolError {
+    ToolError::new(
+        Refusal::ApprovalTimeout,
+        "this approval was already consumed as expired (TTL or boot restart); no side effect \
+         was performed and a late decision cannot resurrect it",
+    )
+}
+
+/// Consumes every still-pending approval at boot.
+///
+/// No in-process waiter survives a restart, so every pending row is
+/// restart-orphaned: the TTL is deliberately not consulted (the deadline may
+/// still be in the future when the process dies). Marking the rows `expired`
+/// (never approved) keeps a late decision from being accepted as a resolution;
+/// the resolve path reports its named timeout refusal instead.
+///
+/// This is distinct from [`expire_pending`] (the TTL reaper used for a live
+/// process): boot orphan expiry is unconditional.
+///
+/// # Errors
+/// Database failure, reported as `E_INTERNAL_ERROR`.
+pub fn expire_orphaned_pending(conn: &Connection, now_unix_secs: u64) -> Result<u64, ToolError> {
+    let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+    let changed = conn.execute(
+        "UPDATE approvals SET decision = 'expired', decided_at = ?1
+         WHERE decision IS NULL",
+        params![decided_at.as_str()],
+    )?;
+    u64::try_from(changed).map_err(|_| {
+        ToolError::new(
+            Refusal::InternalError,
+            "approval row count exceeded u64 range",
+        )
+    })
+}
+
+/// Consumes every pending approval whose TTL has elapsed.
+///
+/// This is the live-process TTL reaper; the boot path uses
+/// [`expire_orphaned_pending`] instead because no waiter survives a restart.
+/// An expired request is marked `expired` so a late UI decision can never
+/// execute it. Returns the number of rows consumed.
+///
+/// # Errors
+/// Database or stored-timestamp failures, reported as `E_INTERNAL_ERROR`.
+pub fn expire_pending(conn: &Connection, now_unix_secs: u64) -> Result<u64, ToolError> {
+    let mut statement =
+        conn.prepare("SELECT approval_id, expires_at FROM approvals WHERE decision IS NULL")?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut expired = 0_u64;
+    for (approval_id, raw_expires) in rows {
+        let expires = Timestamp::parse(&raw_expires).map_err(|error| {
+            ToolError::new(
+                Refusal::InternalError,
+                format!("stored approval has an invalid expires_at: {error}"),
+            )
+        })?;
+        let is_expired = expires
+            .unix_secs()
+            .map(|at| now_unix_secs >= at)
+            .unwrap_or(true);
+        if !is_expired {
+            continue;
+        }
+        let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+        let changed = conn.execute(
+            "UPDATE approvals SET decision = 'expired', decided_at = ?1
+             WHERE approval_id = ?2 AND decision IS NULL",
+            params![decided_at.as_str(), approval_id],
+        )?;
+        expired = expired.saturating_add(u64::try_from(changed).unwrap_or(1));
+    }
+    Ok(expired)
 }
 
 /// Pending (undecided) approvals for a run, oldest first.
@@ -807,6 +926,75 @@ mod tests {
     }
 
     #[test]
+    fn expire_pending_consumes_only_elapsed_requests() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let expiry = request.expires_at.unix_secs().expect("expires");
+        assert_eq!(
+            expire_pending(&conn, expiry.saturating_sub(1)).expect("before expiry"),
+            0,
+            "a live approval is not consumed"
+        );
+        assert_eq!(
+            pending_for_run(&conn, request.run_id).expect("pending").len(),
+            1
+        );
+        assert_eq!(
+            expire_pending(&conn, expiry).expect("at expiry"),
+            1,
+            "the elapsed approval is consumed once"
+        );
+        assert!(
+            pending_for_run(&conn, request.run_id)
+                .expect("pending after expiry")
+                .is_empty(),
+            "expired rows are no longer pending"
+        );
+        // A late decision cannot resurrect the consumed request; because the
+        // row was consumed as `expired` (not replay/forgery), the named refusal
+        // is the honest timeout.
+        let error = ApprovalGate::default()
+            .decide(
+                &conn,
+                &request.approval_id.to_string(),
+                ApprovalDecision::AllowOnce,
+                expiry.saturating_add(1),
+            )
+            .expect_err("expired approval cannot be decided");
+        assert_eq!(error.code(), "E_APPROVAL_TIMEOUT");
+    }
+
+    #[test]
+    fn expire_orphaned_pending_consumes_live_requests_at_boot() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let expiry = request.expires_at.unix_secs().expect("expires");
+
+        // Boot runs before the TTL elapsed: every pending row is orphaned because
+        // no in-process waiter survives a restart, so the boot reaper must consume
+        // it even though the wall-clock TTL is still in the future.
+        assert_eq!(
+            expire_orphaned_pending(&conn, expiry.saturating_sub(1)).expect("boot reaper"),
+            1
+        );
+        assert!(
+            pending_for_run(&conn, request.run_id)
+                .expect("pending after boot")
+                .is_empty(),
+            "no resolvable row may survive boot"
+        );
+        let error = ApprovalGate::default()
+            .decide(
+                &conn,
+                &request.approval_id.to_string(),
+                ApprovalDecision::AllowOnce,
+                expiry.saturating_sub(1),
+            )
+            .expect_err("late decision after boot expiry");
+        assert_eq!(error.code(), "E_APPROVAL_TIMEOUT");
+    }
+
+    #[test]
     fn approval_suspend_resume_roundtrip() {
         let conn = memory_db();
         let request = begin(&conn);
@@ -903,7 +1091,8 @@ mod tests {
             side_effects += 1;
         }
         assert_eq!(side_effects, 0, "TTL expiry performed no side effect");
-        // A late decision can never resurrect the expired request.
+        // A late decision can never resurrect the expired request; the row was
+        // consumed as `expired`, so the named refusal is a timeout.
         assert_eq!(
             gate.decide(
                 &conn,
@@ -913,7 +1102,7 @@ mod tests {
             )
             .expect_err("consumed expired row")
             .code(),
-            "E_APPROVAL_REPLAY"
+            "E_APPROVAL_TIMEOUT"
         );
     }
 

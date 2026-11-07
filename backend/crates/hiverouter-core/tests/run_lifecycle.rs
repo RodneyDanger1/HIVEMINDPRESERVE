@@ -113,6 +113,7 @@ impl ProviderExecutor for MockExecutor {
                 ..Usage::default()
             },
             tool_calls: Vec::new(),
+            reasoning: String::new(),
         })
     }
 }

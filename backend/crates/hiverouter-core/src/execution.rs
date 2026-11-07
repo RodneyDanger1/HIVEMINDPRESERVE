@@ -118,6 +118,8 @@ pub struct StreamedReply {
     pub usage: Usage,
     /// Assembled tool calls from this assistant turn (empty for plain replies).
     pub tool_calls: Vec<hiverouter_provider::tool_assembler::AssembledToolCall>,
+    /// Provider reasoning content for the turn (empty when thinking is off).
+    pub reasoning: String,
 }
 
 impl StreamedReply {
@@ -137,6 +139,8 @@ impl StreamedReply {
 pub struct ToolTurnTranscript {
     /// Visible assistant text of the turn that requested the tools.
     pub assistant_text: String,
+    /// Provider reasoning content to pass back for the next tool turn.
+    pub reasoning: String,
     /// Planned calls and their bounded results/refusals, provider order.
     pub results: Vec<(ToolCallPlan, ToolExecution)>,
 }
@@ -1050,6 +1054,7 @@ impl RunEngine {
             }
             transcript.push(ToolTurnTranscript {
                 assistant_text: final_reply.text(),
+                reasoning: final_reply.reasoning.clone(),
                 results: turn.executed,
             });
             let (continuation_sink, continuation_streamed) = self.reply_delta_sink(run.id);
