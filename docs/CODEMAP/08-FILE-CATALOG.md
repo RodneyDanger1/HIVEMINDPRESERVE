@@ -1,0 +1,844 @@
+# 08 — File Catalog (805 tracked files)
+
+Every tracked file with working-tree SHA-256, size, encoding, depth label and role. `DEEP` files are explained in the area docs; `INDEXED` entries are covered by their area doc. Ignored files (35,675) are in `_data/inventory.csv` and `01-SCOPE-AND-CENSUS.md`.
+
+## (root)
+
+- [`.gitignore`](../../.gitignore) — 258 B · sha256 `8956f1b63713be1a…` · utf-8-bom · INDEXED — Repository file
+- [`CHANGE-LEDGER-IMPL.md`](../../CHANGE-LEDGER-IMPL.md) — 2.34 KiB · sha256 `3995499955b942f3…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`README.md`](../../README.md) — 4.23 KiB · sha256 `141e07f1b4705047…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`rust-toolchain.toml`](../../rust-toolchain.toml) — 108 B · sha256 `6f03e2211329ac20…` · utf-8 · INDEXED — TOML manifest/config
+
+## .cargo
+
+- [`.cargo/config.toml`](../../.cargo/config.toml) — 229 B · sha256 `85d8e753bd64e6bf…` · utf-8-bom · INDEXED — TOML manifest/config
+
+## audit
+
+- [`audit/APPENDIX-FILE-CENSUS.md`](../../audit/APPENDIX-FILE-CENSUS.md) — 51.76 KiB · sha256 `61beb510c9616d18…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/APPENDIX-IGNORED-DELIVERABLES.md`](../../audit/APPENDIX-IGNORED-DELIVERABLES.md) — 3.52 KiB · sha256 `bf475dfd109e2a47…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/diagrams/01-system-topology.mmd`](../../audit/diagrams/01-system-topology.mmd) — 1.22 KiB · sha256 `758b526dab5d28bc…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/diagrams/01-system-topology.png`](../../audit/diagrams/01-system-topology.png) — 63.51 KiB · sha256 `1fc4be77ce1abb71…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/01-system-topology.svg`](../../audit/diagrams/01-system-topology.svg) — 35.78 KiB · sha256 `e6f649d91c9684ca…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/diagrams/02-data-flow.mmd`](../../audit/diagrams/02-data-flow.mmd) — 890 B · sha256 `5ba2e4760f5da0b7…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/diagrams/02-data-flow.png`](../../audit/diagrams/02-data-flow.png) — 50.11 KiB · sha256 `9e2815379615583e…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/02-data-flow.svg`](../../audit/diagrams/02-data-flow.svg) — 34.25 KiB · sha256 `919d88d6bc70f691…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/diagrams/03-module-dependencies.mmd`](../../audit/diagrams/03-module-dependencies.mmd) — 518 B · sha256 `0350f306cf66ecbc…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/diagrams/03-module-dependencies.png`](../../audit/diagrams/03-module-dependencies.png) — 30.85 KiB · sha256 `d5d264bf42ece93c…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/03-module-dependencies.svg`](../../audit/diagrams/03-module-dependencies.svg) — 20.00 KiB · sha256 `06834392b87b4128…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/diagrams/04-state-inventory.mmd`](../../audit/diagrams/04-state-inventory.mmd) — 619 B · sha256 `adf5bba937a1561d…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/diagrams/04-state-inventory.png`](../../audit/diagrams/04-state-inventory.png) — 26.58 KiB · sha256 `8f389e75c11d8b95…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/04-state-inventory.svg`](../../audit/diagrams/04-state-inventory.svg) — 12.76 KiB · sha256 `cfd0f3d3995757b7…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/diagrams/05-dependency-lineage.mmd`](../../audit/diagrams/05-dependency-lineage.mmd) — 1.17 KiB · sha256 `93db866c60c25977…` · utf-8-bom · INDEXED — Mermaid diagram source
+- [`audit/diagrams/05-dependency-lineage.png`](../../audit/diagrams/05-dependency-lineage.png) — 89.81 KiB · sha256 `7c9c6bbc584f4a2b…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/05-dependency-lineage.svg`](../../audit/diagrams/05-dependency-lineage.svg) — 29.31 KiB · sha256 `f2a778a1691a0df3…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/diagrams/06-migration-target.mmd`](../../audit/diagrams/06-migration-target.mmd) — 662 B · sha256 `94a127fa46de065e…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/diagrams/06-migration-target.png`](../../audit/diagrams/06-migration-target.png) — 28.72 KiB · sha256 `29f4e5adc8d91fca…` · nul-binary · INDEXED — Raster UI asset
+- [`audit/diagrams/06-migration-target.svg`](../../audit/diagrams/06-migration-target.svg) — 15.05 KiB · sha256 `a244e7efb1833d52…` · utf-8 · INDEXED — Vector UI asset
+- [`audit/FINDINGS-REGISTER.md`](../../audit/FINDINGS-REGISTER.md) — 8.50 KiB · sha256 `e07fe00c2991bee2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/HIVEMIND-AUDIT-PAPER.md`](../../audit/HIVEMIND-AUDIT-PAPER.md) — 25.12 KiB · sha256 `f92c117d9170c132…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/IGNORED-DELIVERABLES.csv`](../../audit/IGNORED-DELIVERABLES.csv) — 2.77 KiB · sha256 `5dc04c4af92f3f2f…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/inventory/ASSIGNMENTS.json`](../../audit/inventory/ASSIGNMENTS.json) — 80.51 KiB · sha256 `49d2f5487dec03c6…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/inventory/CODE-STATS.md`](../../audit/inventory/CODE-STATS.md) — 4.91 KiB · sha256 `cfe1a7d2678de163…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/inventory/DEEP-LIST.md`](../../audit/inventory/DEEP-LIST.md) — 2.37 KiB · sha256 `7b6d3900bd314276…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/inventory/DIRECTORY-CENSUS.md`](../../audit/inventory/DIRECTORY-CENSUS.md) — 4.17 KiB · sha256 `e8276ef71819f9a0…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/inventory/FILE-MANIFEST-ENRICHED.csv`](../../audit/inventory/FILE-MANIFEST-ENRICHED.csv) — 86.25 KiB · sha256 `0929348bd12b129b…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/inventory/FILE-MANIFEST-ENRICHED.json`](../../audit/inventory/FILE-MANIFEST-ENRICHED.json) — 197.72 KiB · sha256 `f2ba9d472d708676…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/inventory/FILE-MANIFEST.csv`](../../audit/inventory/FILE-MANIFEST.csv) — 81.96 KiB · sha256 `26d04fe40fd37908…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/inventory/FILE-MANIFEST.json`](../../audit/inventory/FILE-MANIFEST.json) — 176.61 KiB · sha256 `d198c5a17de65fe3…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/parts/b-core/DEPENDENCIES.md`](../../audit/parts/b-core/DEPENDENCIES.md) — 5.86 KiB · sha256 `3711f252e08f1c70…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-core/EVIDENCE.md`](../../audit/parts/b-core/EVIDENCE.md) — 4.61 KiB · sha256 `33104e5fa9abfbf9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-core/FILES.md`](../../audit/parts/b-core/FILES.md) — 46.52 KiB · sha256 `9b154d34fa7587a5…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-core/FINDINGS.md`](../../audit/parts/b-core/FINDINGS.md) — 7.87 KiB · sha256 `5cd3967334f76a8c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-core/QUALITY.csv`](../../audit/parts/b-core/QUALITY.csv) — 6.38 KiB · sha256 `a639a8c58cc75b99…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/parts/b-provider/DEPENDENCIES.md`](../../audit/parts/b-provider/DEPENDENCIES.md) — 8.71 KiB · sha256 `b16b83e3ce2d4289…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-provider/EVIDENCE.md`](../../audit/parts/b-provider/EVIDENCE.md) — 6.02 KiB · sha256 `f4954040add01e01…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-provider/FILES.md`](../../audit/parts/b-provider/FILES.md) — 38.65 KiB · sha256 `ecc8146bc2088db0…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-provider/FINDINGS.md`](../../audit/parts/b-provider/FINDINGS.md) — 11.50 KiB · sha256 `f49b7af682747b49…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/b-provider/QUALITY.csv`](../../audit/parts/b-provider/QUALITY.csv) — 4.50 KiB · sha256 `209dd38e9568a7c7…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/parts/figcraft-a/DEPENDENCIES.md`](../../audit/parts/figcraft-a/DEPENDENCIES.md) — 3.18 KiB · sha256 `6d1da181c458b5e9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-a/diagrams/asset-lineage.mmd`](../../audit/parts/figcraft-a/diagrams/asset-lineage.mmd) — 1.08 KiB · sha256 `b822368e395800c6…` · utf-8 · INDEXED — Mermaid diagram source
+- [`audit/parts/figcraft-a/EVIDENCE.md`](../../audit/parts/figcraft-a/EVIDENCE.md) — 3.77 KiB · sha256 `91502790224ca696…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-a/FILES.md`](../../audit/parts/figcraft-a/FILES.md) — 130.83 KiB · sha256 `de63de1506d339f9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-a/FINDINGS.md`](../../audit/parts/figcraft-a/FINDINGS.md) — 4.36 KiB · sha256 `76d9c89cf8c0d3de…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-a/QUALITY.csv`](../../audit/parts/figcraft-a/QUALITY.csv) — 11.19 KiB · sha256 `577a2f0c1b5e69d1…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/parts/figcraft-b/_digest.json`](../../audit/parts/figcraft-b/_digest.json) — 262.46 KiB · sha256 `1fc032411c883433…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/parts/figcraft-b/DEPENDENCIES.md`](../../audit/parts/figcraft-b/DEPENDENCIES.md) — 10.09 KiB · sha256 `04e771a683c33248…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-b/EVIDENCE.md`](../../audit/parts/figcraft-b/EVIDENCE.md) — 4.11 KiB · sha256 `7614bd2eb299fb8c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-b/FILES.md`](../../audit/parts/figcraft-b/FILES.md) — 89.18 KiB · sha256 `b25ca15611d829b8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-b/FINDINGS.md`](../../audit/parts/figcraft-b/FINDINGS.md) — 6.93 KiB · sha256 `e54d87a4f89b27fd…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/figcraft-b/QUALITY.csv`](../../audit/parts/figcraft-b/QUALITY.csv) — 10.98 KiB · sha256 `5ae593b56121f6f0…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/parts/figcraft-b/tools/extract.py`](../../audit/parts/figcraft-b/tools/extract.py) — 5.93 KiB · sha256 `c65d6b82bd55ef00…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/parts/figcraft-b/tools/gen_outputs.py`](../../audit/parts/figcraft-b/tools/gen_outputs.py) — 11.65 KiB · sha256 `a2d5e76b8f84bfe2…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/parts/figcraft-b/tools/write_findings.py`](../../audit/parts/figcraft-b/tools/write_findings.py) — 13.51 KiB · sha256 `6bfe6cc1cbda17e1…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/parts/strip-watchdog/EVIDENCE.md`](../../audit/parts/strip-watchdog/EVIDENCE.md) — 7.77 KiB · sha256 `3db02b1aac782712…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/strip-watchdog/VERIFICATION.md`](../../audit/parts/strip-watchdog/VERIFICATION.md) — 7.98 KiB · sha256 `d617e8e08c1d8555…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/DEPENDENCIES.md`](../../audit/parts/ui-watchdog/DEPENDENCIES.md) — 5.94 KiB · sha256 `4a55cd5e25be1a8b…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/EVIDENCE.md`](../../audit/parts/ui-watchdog/EVIDENCE.md) — 4.05 KiB · sha256 `4dbe7ef8297f42d6…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/FILES.md`](../../audit/parts/ui-watchdog/FILES.md) — 35.58 KiB · sha256 `eeee71b6a52ad5c2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/FINDINGS.md`](../../audit/parts/ui-watchdog/FINDINGS.md) — 4.82 KiB · sha256 `9210613fe851ef4c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/PROVENANCE.md`](../../audit/parts/ui-watchdog/PROVENANCE.md) — 7.90 KiB · sha256 `5ffdaa1e69309be9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/ui-watchdog/QUALITY.csv`](../../audit/parts/ui-watchdog/QUALITY.csv) — 4.60 KiB · sha256 `cfaec935efd5a952…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/parts/watchdog-1/DEPENDENCIES.md`](../../audit/parts/watchdog-1/DEPENDENCIES.md) — 11.12 KiB · sha256 `279e168525ac7ff4…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-1/EVIDENCE.md`](../../audit/parts/watchdog-1/EVIDENCE.md) — 6.46 KiB · sha256 `3aeec9f250fbf598…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-1/FILES.md`](../../audit/parts/watchdog-1/FILES.md) — 100.42 KiB · sha256 `378223fa99d334dc…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-1/FINDINGS.md`](../../audit/parts/watchdog-1/FINDINGS.md) — 9.97 KiB · sha256 `4941594ea57b9fd5…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-1/QUALITY.csv`](../../audit/parts/watchdog-1/QUALITY.csv) — 5.48 KiB · sha256 `ca59173bc9a2cb8e…` · utf-8-bom · INDEXED — CSV data/evidence table
+- [`audit/parts/watchdog-2/DEPENDENCIES.md`](../../audit/parts/watchdog-2/DEPENDENCIES.md) — 2.98 KiB · sha256 `5b7efffcb9b30b51…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-2/EVIDENCE.md`](../../audit/parts/watchdog-2/EVIDENCE.md) — 6.47 KiB · sha256 `5b37b3a1273571b5…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-2/FILES.md`](../../audit/parts/watchdog-2/FILES.md) — 111.76 KiB · sha256 `1afaa44a0bfb1658…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-2/FINDINGS.md`](../../audit/parts/watchdog-2/FINDINGS.md) — 11.43 KiB · sha256 `43ee67f21a63f5d6…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/parts/watchdog-2/QUALITY.csv`](../../audit/parts/watchdog-2/QUALITY.csv) — 14.04 KiB · sha256 `2e0d9732b62f185a…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/QUALITY-CODE-STATS.json`](../../audit/QUALITY-CODE-STATS.json) — 1.73 KiB · sha256 `a26b4bd29d5f9df9…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/QUALITY-CODE-STATS.md`](../../audit/QUALITY-CODE-STATS.md) — 863 B · sha256 `7a83beb5c7523172…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/QUALITY-MATRIX.csv`](../../audit/QUALITY-MATRIX.csv) — 61.03 KiB · sha256 `fa1309ddbf4d2741…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/QUALITY-SUMMARY.json`](../../audit/QUALITY-SUMMARY.json) — 2.19 KiB · sha256 `e0e98ad551cec089…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`audit/ROADMAP-TASKS.csv`](../../audit/ROADMAP-TASKS.csv) — 34.22 KiB · sha256 `06869f6c6e8bd7a8…` · utf-8 · INDEXED — CSV data/evidence table
+- [`audit/ROADMAP.md`](../../audit/ROADMAP.md) — 13.48 KiB · sha256 `4d69a25ad60be517…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`audit/tools/build_appendix.py`](../../audit/tools/build_appendix.py) — 1.82 KiB · sha256 `f918d3625fffdb52…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/build_inventory.py`](../../audit/tools/build_inventory.py) — 9.77 KiB · sha256 `e7d3a9e53def9f2a…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/build_roadmap.py`](../../audit/tools/build_roadmap.py) — 7.13 KiB · sha256 `8fb5ff89f109d4e6…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/census_ignored_deliverables.py`](../../audit/tools/census_ignored_deliverables.py) — 4.56 KiB · sha256 `6b91347be663e8bf…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/complete_figcraft_a.py`](../../audit/tools/complete_figcraft_a.py) — 5.30 KiB · sha256 `30a1981f90f54917…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/dedupe_figcraft_a.py`](../../audit/tools/dedupe_figcraft_a.py) — 4.73 KiB · sha256 `322996ee6624ee15…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/enrich_manifest.py`](../../audit/tools/enrich_manifest.py) — 3.38 KiB · sha256 `e8647e0d224b28b8…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/finalize_audit.py`](../../audit/tools/finalize_audit.py) — 5.52 KiB · sha256 `a39f677810b43bde…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/merge_quality.py`](../../audit/tools/merge_quality.py) — 2.46 KiB · sha256 `6bc19e132186ade5…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/quality_code_stats.py`](../../audit/tools/quality_code_stats.py) — 2.33 KiB · sha256 `62c60f5e8a6cc70c…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/tools/synthesize_paper.py`](../../audit/tools/synthesize_paper.py) — 9.94 KiB · sha256 `18d200424493161a…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`audit/VERIFICATION.md`](../../audit/VERIFICATION.md) — 9.70 KiB · sha256 `99c3a398ceaf7336…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`audit/WAVE-SHEET.md`](../../audit/WAVE-SHEET.md) — 5.85 KiB · sha256 `1d5fcd877e420635…` · utf-8 · INDEXED — Markdown documentation/evidence
+
+## backend
+
+- [`backend/Cargo.lock`](../../backend/Cargo.lock) — 97.83 KiB · sha256 `670136559b5e08fd…` · utf-8 · INDEXED — Dependency lockfile
+- [`backend/Cargo.toml`](../../backend/Cargo.toml) — 1.72 KiB · sha256 `323a5865a3ed81f1…` · utf-8 · INDEXED — TOML manifest/config
+- [`backend/crates/hiverouter-contract/Cargo.toml`](../../backend/crates/hiverouter-contract/Cargo.toml) — 522 B · sha256 `edc9647fdfde4d84…` · utf-8 · INDEXED — TOML manifest/config
+- [`backend/crates/hiverouter-contract/schemas/contract-v1.json`](../../backend/crates/hiverouter-contract/schemas/contract-v1.json) — 59.79 KiB · sha256 `7492dd974b32ccb7…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`backend/crates/hiverouter-contract/src/command.rs`](../../backend/crates/hiverouter-contract/src/command.rs) — 22.20 KiB · sha256 `a4bc67ce983ab54b…` · utf-8 · INDEXED — 17-command contract, validation, decision-gated diff commands.
+- [`backend/crates/hiverouter-contract/src/envelope.rs`](../../backend/crates/hiverouter-contract/src/envelope.rs) — 6.20 KiB · sha256 `a8c647e94b9cbbfd…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/event.rs`](../../backend/crates/hiverouter-contract/src/event.rs) — 39.32 KiB · sha256 `fce3aef4a9f9e0e8…` · utf-8 · INDEXED — 23-event wire contract incl. NODE topology fields and bounded redacted args preview.
+- [`backend/crates/hiverouter-contract/src/ids.rs`](../../backend/crates/hiverouter-contract/src/ids.rs) — 3.17 KiB · sha256 `2ab28a180dc0225c…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/lib.rs`](../../backend/crates/hiverouter-contract/src/lib.rs) — 2.00 KiB · sha256 `ce0e555ba3c78f73…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/refusal.rs`](../../backend/crates/hiverouter-contract/src/refusal.rs) — 16.83 KiB · sha256 `9c99c4475df6cbcb…` · utf-8 · INDEXED — Stable E_* refusal table with how_to_fix/retryable metadata.
+- [`backend/crates/hiverouter-contract/src/schema.rs`](../../backend/crates/hiverouter-contract/src/schema.rs) — 13.54 KiB · sha256 `bc6ab685c0709e81…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/state.rs`](../../backend/crates/hiverouter-contract/src/state.rs) — 4.68 KiB · sha256 `dea156dd9764d00e…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/timestamp.rs`](../../backend/crates/hiverouter-contract/src/timestamp.rs) — 10.85 KiB · sha256 `43bb8ec910f258a2…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/src/usage.rs`](../../backend/crates/hiverouter-contract/src/usage.rs) — 3.61 KiB · sha256 `c2a945135482fe2b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/tests/common/mod.rs`](../../backend/crates/hiverouter-contract/tests/common/mod.rs) — 14.52 KiB · sha256 `584d4ed8459687b8…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/tests/golden_schemas.rs`](../../backend/crates/hiverouter-contract/tests/golden_schemas.rs) — 4.27 KiB · sha256 `d406302fbfc24333…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/tests/schema_roundtrip.rs`](../../backend/crates/hiverouter-contract/tests/schema_roundtrip.rs) — 6.48 KiB · sha256 `6a01458add58e9ae…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-contract/tests/ui_command_matrix.rs`](../../backend/crates/hiverouter-contract/tests/ui_command_matrix.rs) — 4.82 KiB · sha256 `dfedbe3bacb9c006…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/assets/prompts/manifest.json`](../../backend/crates/hiverouter-core/assets/prompts/manifest.json) — 192 B · sha256 `487c00282a9b9955…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`backend/crates/hiverouter-core/assets/prompts/personas.json`](../../backend/crates/hiverouter-core/assets/prompts/personas.json) — 214 B · sha256 `ca16628ebabe80ec…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`backend/crates/hiverouter-core/assets/prompts/planner.prompty`](../../backend/crates/hiverouter-core/assets/prompts/planner.prompty) — 462 B · sha256 `15239626aa4ae2a9…` · utf-8 · INDEXED — Prompt asset
+- [`backend/crates/hiverouter-core/build.rs`](../../backend/crates/hiverouter-core/build.rs) — 2.05 KiB · sha256 `aa5ea8bd665fca0b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/Cargo.toml`](../../backend/crates/hiverouter-core/Cargo.toml) — 1.09 KiB · sha256 `60fe0914c16db6d6…` · utf-8 · INDEXED — TOML manifest/config
+- [`backend/crates/hiverouter-core/src/approval_wait.rs`](../../backend/crates/hiverouter-core/src/approval_wait.rs) — 6.10 KiB · sha256 `6dc5f549c9eff504…` · utf-8-bom · INDEXED — In-process approval waiter map and one-shot wake semantics.
+- [`backend/crates/hiverouter-core/src/bus.rs`](../../backend/crates/hiverouter-core/src/bus.rs) — 8.92 KiB · sha256 `5e8e966806dcc49c…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/caps.rs`](../../backend/crates/hiverouter-core/src/caps.rs) — 2.85 KiB · sha256 `d21061f2fa3c5a53…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/checks.rs`](../../backend/crates/hiverouter-core/src/checks.rs) — 6.90 KiB · sha256 `6cc41b430bec0083…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/config.rs`](../../backend/crates/hiverouter-core/src/config.rs) — 17.38 KiB · sha256 `d94f2cc1cce99661…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/context.rs`](../../backend/crates/hiverouter-core/src/context.rs) — 9.09 KiB · sha256 `b09d11f3af246223…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/db.rs`](../../backend/crates/hiverouter-core/src/db.rs) — 31.51 KiB · sha256 `5f5bbb9e57e1829d…` · utf-8 · INDEXED — SQLite open/migrations/connection policy; schema v4.
+- [`backend/crates/hiverouter-core/src/entities.rs`](../../backend/crates/hiverouter-core/src/entities.rs) — 2.67 KiB · sha256 `8f6dc673e06f1ab0…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/execution.rs`](../../backend/crates/hiverouter-core/src/execution.rs) — 94.12 KiB · sha256 `5fb2ff69a53c4ed6…` · utf-8 · INDEXED — Engine: run lifecycle, planner/task execution, tool loop, approval suspension/resume, side effects, snapshots, spawn queue, terminal reconciliation.
+- [`backend/crates/hiverouter-core/src/graph.rs`](../../backend/crates/hiverouter-core/src/graph.rs) — 14.23 KiB · sha256 `8b3a24a29e425ee4…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/handshake.rs`](../../backend/crates/hiverouter-core/src/handshake.rs) — 8.23 KiB · sha256 `d7647b54eab33122…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/history.rs`](../../backend/crates/hiverouter-core/src/history.rs) — 3.54 KiB · sha256 `fc236bcbb0d4dce3…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/http.rs`](../../backend/crates/hiverouter-core/src/http.rs) — 22.91 KiB · sha256 `b25d401cf0a9ab72…` · utf-8 · INDEXED — Boot/HTTP/WS server composition: database, event bus, graph, tools bridge, engine, routes, static UI.
+- [`backend/crates/hiverouter-core/src/lib.rs`](../../backend/crates/hiverouter-core/src/lib.rs) — 2.12 KiB · sha256 `571a5bb52235219c…` · utf-8-bom · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/main.rs`](../../backend/crates/hiverouter-core/src/main.rs) — 6.64 KiB · sha256 `6dfa63c69fd50d8c…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/planner.rs`](../../backend/crates/hiverouter-core/src/planner.rs) — 5.91 KiB · sha256 `4bad5aac1cd69284…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/prompts.rs`](../../backend/crates/hiverouter-core/src/prompts.rs) — 14.48 KiB · sha256 `d9f3697913ae6135…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/provider_executor.rs`](../../backend/crates/hiverouter-core/src/provider_executor.rs) — 19.67 KiB · sha256 `2f6fb954c59e8b69…` · utf-8 · INDEXED — DeepSeek adapter: planning/leaf/continuation calls, streaming deltas, tool specs, per-run budget.
+- [`backend/crates/hiverouter-core/src/recovery.rs`](../../backend/crates/hiverouter-core/src/recovery.rs) — 33.48 KiB · sha256 `b35493c23123eab3…` · utf-8 · INDEXED — Boot crash recovery: interrupted runs, task settlement, graph repair, snapshot revisions.
+- [`backend/crates/hiverouter-core/src/run_state.rs`](../../backend/crates/hiverouter-core/src/run_state.rs) — 46.16 KiB · sha256 `261ddcae48b17214…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/snapshot.rs`](../../backend/crates/hiverouter-core/src/snapshot.rs) — 9.80 KiB · sha256 `4811cc72a354e50c…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/static_ui.rs`](../../backend/crates/hiverouter-core/src/static_ui.rs) — 3.71 KiB · sha256 `c53a13caf93b8745…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/src/store.rs`](../../backend/crates/hiverouter-core/src/store.rs) — 22.71 KiB · sha256 `883591f58de33775…` · utf-8 · INDEXED — Run/task/message persistence and atomic task-state terminal guard.
+- [`backend/crates/hiverouter-core/src/tool_loop.rs`](../../backend/crates/hiverouter-core/src/tool_loop.rs) — 12.03 KiB · sha256 `e571f2ab198db1c8…` · utf-8 · INDEXED — Tool-call planning/validation, caps, tool specs, bounded result text.
+- [`backend/crates/hiverouter-core/src/tools_bridge.rs`](../../backend/crates/hiverouter-core/src/tools_bridge.rs) — 40.77 KiB · sha256 `3ff0e73045924094…` · utf-8 · INDEXED — Approval gate projection, grant verification, preflight/commit side effects, ledgered resolve.
+- [`backend/crates/hiverouter-core/src/ws.rs`](../../backend/crates/hiverouter-core/src/ws.rs) — 51.95 KiB · sha256 `4abe8c1a4e721e7b…` · utf-8 · INDEXED — WebSocket command dispatch, event fan-out, approval replay/wake, template insert, rewire/context switch.
+- [`backend/crates/hiverouter-core/tests/approval_ledger.rs`](../../backend/crates/hiverouter-core/tests/approval_ledger.rs) — 8.66 KiB · sha256 `d608a2b074e9c8d4…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/chat_store.rs`](../../backend/crates/hiverouter-core/tests/chat_store.rs) — 5.12 KiB · sha256 `0c741ded7ea1f530…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/context_switch.rs`](../../backend/crates/hiverouter-core/tests/context_switch.rs) — 2.27 KiB · sha256 `284bb4b96503945b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/graph_authority.rs`](../../backend/crates/hiverouter-core/tests/graph_authority.rs) — 4.17 KiB · sha256 `daf11fd613c19715…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/handshake.rs`](../../backend/crates/hiverouter-core/tests/handshake.rs) — 2.84 KiB · sha256 `954b65e0aaa239d6…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/http_boot.rs`](../../backend/crates/hiverouter-core/tests/http_boot.rs) — 8.64 KiB · sha256 `81670cf34271e8c6…` · utf-8-bom · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/kill_restore.rs`](../../backend/crates/hiverouter-core/tests/kill_restore.rs) — 4.69 KiB · sha256 `b76470d6bf83023a…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/lead_bugcheck_boot.rs`](../../backend/crates/hiverouter-core/tests/lead_bugcheck_boot.rs) — 5.13 KiB · sha256 `8679a8df4682fb20…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/prompt_assets.rs`](../../backend/crates/hiverouter-core/tests/prompt_assets.rs) — 4.42 KiB · sha256 `bda3c600c1e7ced5…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/prompt_assets_wiring.rs`](../../backend/crates/hiverouter-core/tests/prompt_assets_wiring.rs) — 8.63 KiB · sha256 `76e2452f820152a2…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/provider_adapter.rs`](../../backend/crates/hiverouter-core/tests/provider_adapter.rs) — 4.57 KiB · sha256 `5c1aca2118eb5faa…` · utf-8-bom · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/provider_live.rs`](../../backend/crates/hiverouter-core/tests/provider_live.rs) — 3.14 KiB · sha256 `d202e2666939a281…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/provider_streaming.rs`](../../backend/crates/hiverouter-core/tests/provider_streaming.rs) — 10.04 KiB · sha256 `e71c6a4cb71d45b5…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/recovery_gates.rs`](../../backend/crates/hiverouter-core/tests/recovery_gates.rs) — 4.34 KiB · sha256 `d3920c962277999f…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/run_lifecycle.rs`](../../backend/crates/hiverouter-core/tests/run_lifecycle.rs) — 12.79 KiB · sha256 `907dd696ee848760…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/snapshot_history.rs`](../../backend/crates/hiverouter-core/tests/snapshot_history.rs) — 7.65 KiB · sha256 `a348bc8de1a5dbc5…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/support/mod.rs`](../../backend/crates/hiverouter-core/tests/support/mod.rs) — 12.40 KiB · sha256 `6457b80f8dbed03b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/suspension.rs`](../../backend/crates/hiverouter-core/tests/suspension.rs) — 36.61 KiB · sha256 `e9451953c3665373…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/tool_loop_engine.rs`](../../backend/crates/hiverouter-core/tests/tool_loop_engine.rs) — 23.23 KiB · sha256 `bd907a4cbc19a674…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/tool_loop_matrix.rs`](../../backend/crates/hiverouter-core/tests/tool_loop_matrix.rs) — 16.30 KiB · sha256 `3e12204a824e7e5a…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-core/tests/ws_transport.rs`](../../backend/crates/hiverouter-core/tests/ws_transport.rs) — 18.90 KiB · sha256 `98155316f8e68cb0…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/Cargo.toml`](../../backend/crates/hiverouter-provider/Cargo.toml) — 757 B · sha256 `334fcaa3a696ce15…` · utf-8 · INDEXED — TOML manifest/config
+- [`backend/crates/hiverouter-provider/src/accounting.rs`](../../backend/crates/hiverouter-provider/src/accounting.rs) — 16.66 KiB · sha256 `7bda95f2a98177ed…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/budget.rs`](../../backend/crates/hiverouter-provider/src/budget.rs) — 23.40 KiB · sha256 `0b685a5ed36b97dc…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/client.rs`](../../backend/crates/hiverouter-provider/src/client.rs) — 29.13 KiB · sha256 `edb7e22f87dbe721…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/dto.rs`](../../backend/crates/hiverouter-provider/src/dto.rs) — 29.09 KiB · sha256 `4e6a4bb3a7faeb89…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/error.rs`](../../backend/crates/hiverouter-provider/src/error.rs) — 4.38 KiB · sha256 `56e7116e9155c315…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/lib.rs`](../../backend/crates/hiverouter-provider/src/lib.rs) — 2.67 KiB · sha256 `7501fae14e2825ad…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/pricing.rs`](../../backend/crates/hiverouter-provider/src/pricing.rs) — 9.73 KiB · sha256 `28e627929595016a…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/secret.rs`](../../backend/crates/hiverouter-provider/src/secret.rs) — 3.27 KiB · sha256 `297e6a7e4a783dd2…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/src/tool_assembler.rs`](../../backend/crates/hiverouter-provider/src/tool_assembler.rs) — 25.98 KiB · sha256 `f68ec0a457fec1b1…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/error_matrix.rs`](../../backend/crates/hiverouter-provider/tests/error_matrix.rs) — 12.74 KiB · sha256 `98b9dcfa6f55e7db…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/refusal_matrix.rs`](../../backend/crates/hiverouter-provider/tests/refusal_matrix.rs) — 11.21 KiB · sha256 `80389102fb8a2cc3…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/streaming.rs`](../../backend/crates/hiverouter-provider/tests/streaming.rs) — 11.57 KiB · sha256 `165e5c6ba0ef9534…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/tool_assembler.rs`](../../backend/crates/hiverouter-provider/tests/tool_assembler.rs) — 6.46 KiB · sha256 `ce2001d1042653e5…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/tool_call_transport.rs`](../../backend/crates/hiverouter-provider/tests/tool_call_transport.rs) — 9.72 KiB · sha256 `e3454d5b746f990b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/tool_continuation.rs`](../../backend/crates/hiverouter-provider/tests/tool_continuation.rs) — 8.52 KiB · sha256 `653e00f7709488cc…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-provider/tests/tool_conversation.rs`](../../backend/crates/hiverouter-provider/tests/tool_conversation.rs) — 8.56 KiB · sha256 `b45e50bca1c42a4a…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/benches/engine_benches.rs`](../../backend/crates/hiverouter-tools/benches/engine_benches.rs) — 3.19 KiB · sha256 `2ce34adf5b6c3b57…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/Cargo.toml`](../../backend/crates/hiverouter-tools/Cargo.toml) — 1.17 KiB · sha256 `69a3590cfaa3c52d…` · utf-8 · INDEXED — TOML manifest/config
+- [`backend/crates/hiverouter-tools/src/approval.rs`](../../backend/crates/hiverouter-tools/src/approval.rs) — 57.06 KiB · sha256 `0b6fa92801fea59b…` · utf-8 · INDEXED — Approval rows, nonce/args digest, TTL, CAS resolve, ledger primitive tests.
+- [`backend/crates/hiverouter-tools/src/audit.rs`](../../backend/crates/hiverouter-tools/src/audit.rs) — 10.44 KiB · sha256 `960e793a5369765f…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/bin/hiverouter.rs`](../../backend/crates/hiverouter-tools/src/bin/hiverouter.rs) — 579 B · sha256 `6a0fa448ca080530…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/cancel.rs`](../../backend/crates/hiverouter-tools/src/cancel.rs) — 10.17 KiB · sha256 `61c76d60bbf75e97…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/census.rs`](../../backend/crates/hiverouter-tools/src/census.rs) — 10.47 KiB · sha256 `8fb32c6c6ba7f0a3…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/cli.rs`](../../backend/crates/hiverouter-tools/src/cli.rs) — 37.03 KiB · sha256 `a9f583eecafb1961…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/cli_support.rs`](../../backend/crates/hiverouter-tools/src/cli_support.rs) — 6.20 KiB · sha256 `cd09012c8899a806…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/commands.rs`](../../backend/crates/hiverouter-tools/src/commands.rs) — 7.18 KiB · sha256 `639e2376892fd462…` · utf-8-bom · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/env_safety.rs`](../../backend/crates/hiverouter-tools/src/env_safety.rs) — 2.30 KiB · sha256 `21c0547bd70ab89b…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/error.rs`](../../backend/crates/hiverouter-tools/src/error.rs) — 2.65 KiB · sha256 `d987c3e066aa08c6…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/executor.rs`](../../backend/crates/hiverouter-tools/src/executor.rs) — 15.27 KiB · sha256 `5783da58b21624ee…` · utf-8 · INDEXED — Read-class executor for file_read/file_list/report_result/finish.
+- [`backend/crates/hiverouter-tools/src/health.rs`](../../backend/crates/hiverouter-tools/src/health.rs) — 15.38 KiB · sha256 `91afd4d1fa92a032…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/jail.rs`](../../backend/crates/hiverouter-tools/src/jail.rs) — 23.06 KiB · sha256 `3b4afcb43eff9035…` · utf-8 · INDEXED — Workspace jail path resolution, read/list, atomic write.
+- [`backend/crates/hiverouter-tools/src/ledger.rs`](../../backend/crates/hiverouter-tools/src/ledger.rs) — 18.75 KiB · sha256 `9473e14a354f6389…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/lib.rs`](../../backend/crates/hiverouter-tools/src/lib.rs) — 3.84 KiB · sha256 `5fa418e81bd54d26…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/settings.rs`](../../backend/crates/hiverouter-tools/src/settings.rs) — 2.03 KiB · sha256 `5571c1f7c6b9b2a7…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/sha256.rs`](../../backend/crates/hiverouter-tools/src/sha256.rs) — 5.25 KiB · sha256 `8135bcdc28ea1215…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/shell.rs`](../../backend/crates/hiverouter-tools/src/shell.rs) — 16.89 KiB · sha256 `d1ddd6fe18f36134…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/src/side_effects.rs`](../../backend/crates/hiverouter-tools/src/side_effects.rs) — 30.71 KiB · sha256 `4094a1b4ac71acd4…` · utf-8 · INDEXED — Granted file_write/shell_exec preflight, atomic write, allowlisted shell commit.
+- [`backend/crates/hiverouter-tools/src/tool.rs`](../../backend/crates/hiverouter-tools/src/tool.rs) — 19.15 KiB · sha256 `353ab4e67695c7aa…` · utf-8 · INDEXED — Tool registry, tiers, allowlists, schemas, permission classes.
+- [`backend/crates/hiverouter-tools/src/watcher.rs`](../../backend/crates/hiverouter-tools/src/watcher.rs) — 7.76 KiB · sha256 `1d894543c1755722…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/tests/audit_jsonl.rs`](../../backend/crates/hiverouter-tools/tests/audit_jsonl.rs) — 2.11 KiB · sha256 `336d4431a0545ae8…` · utf-8 · INDEXED — Rust source module
+- [`backend/crates/hiverouter-tools/tests/lead_bugcheck_wp01.rs`](../../backend/crates/hiverouter-tools/tests/lead_bugcheck_wp01.rs) — 6.25 KiB · sha256 `ee31937131c35fed…` · utf-8 · INDEXED — Rust source module
+
+## dist
+
+- [`dist/HiveMind-1.0.0-win64.zip`](../../dist/HiveMind-1.0.0-win64.zip) — 8.05 MiB · sha256 `46305fcb1fe1bee2…` · nul-binary · INDEXED — Archive/artifact bundle
+- [`dist/HiveMind-1.0.0-win64.zip.sha256`](../../dist/HiveMind-1.0.0-win64.zip.sha256) — 66 B · sha256 `c1b99a2721904e82…` · utf-8 · INDEXED — Hash manifest
+- [`dist/HiveMind-1.1.0-win64.zip`](../../dist/HiveMind-1.1.0-win64.zip) — 8.21 MiB · sha256 `af2345f663643f1c…` · nul-binary · INDEXED — Archive/artifact bundle
+- [`dist/HiveMind-1.1.0-win64.zip.sha256`](../../dist/HiveMind-1.1.0-win64.zip.sha256) — 65 B · sha256 `2db1561b6c78843b…` · utf-8 · INDEXED — Hash manifest
+
+## docs
+
+- [`docs/audit/BASELINE-VERIFICATION.md`](../../docs/audit/BASELINE-VERIFICATION.md) — 14.72 KiB · sha256 `dc11f4811f4e1256…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/audit/evidence/controls-verifier-skeleton.json`](../../docs/audit/evidence/controls-verifier-skeleton.json) — 38.80 KiB · sha256 `2ae3c3f74a8cd378…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/final/cli-diagnose-final.err`](../../docs/audit/evidence/final/cli-diagnose-final.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/final/cli-diagnose-final.out`](../../docs/audit/evidence/final/cli-diagnose-final.out) — 6.10 KiB · sha256 `6596ad0fde6ae8c0…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/final/cli-health-final.out`](../../docs/audit/evidence/final/cli-health-final.out) — 1.42 KiB · sha256 `fc5fe6f367a1d692…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/final/live-probe-final.json`](../../docs/audit/evidence/final/live-probe-final.json) — 5.74 KiB · sha256 `5ae601760acfa8fc…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/final/live-probe-final.mjs`](../../docs/audit/evidence/final/live-probe-final.mjs) — 6.63 KiB · sha256 `854f35d3f6696635…` · utf-8 · INDEXED — Node ESM script
+- [`docs/audit/evidence/final/live-probe-final.out.txt`](../../docs/audit/evidence/final/live-probe-final.out.txt) — 7.60 KiB · sha256 `9ff94fe9feb7494e…` · utf-16le-bom · INDEXED — Plain-text data/evidence
+- [`docs/audit/evidence/final/pw-out/.last-run.json`](../../docs/audit/evidence/final/pw-out/.last-run.json) — 96 B · sha256 `9c10e541b3ff84b2…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md`](../../docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/error-context.md) — 3.04 KiB · sha256 `bdf922489455595e…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png`](../../docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/test-failed-1.png) — 4.15 KiB · sha256 `3878570f4a62a0d6…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip`](../../docs/audit/evidence/final/pw-out/ws-contract-WS-transport-c-9a060-refusal-has-code-how-to-fix-chrome/trace.zip) — 10.94 KiB · sha256 `7835bf048a538279…` · nul-binary · INDEXED — Archive/artifact bundle
+- [`docs/audit/evidence/gen_controls.py`](../../docs/audit/evidence/gen_controls.py) — 15.56 KiB · sha256 `8ebc94962f25917a…` · utf-8-bom · INDEXED — Python tooling/analysis script
+- [`docs/audit/evidence/phase-b/cli/census-verify.json`](../../docs/audit/evidence/phase-b/cli/census-verify.json) — 4.85 KiB · sha256 `1e0139f367d7bd1a…` · utf-16le-bom · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/phase-b/cli/census.err`](../../docs/audit/evidence/phase-b/cli/census.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/census.out`](../../docs/audit/evidence/phase-b/cli/census.out) — 4.85 KiB · sha256 `1e0139f367d7bd1a…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/diagnose_live.err`](../../docs/audit/evidence/phase-b/cli/diagnose_live.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/diagnose_live.out`](../../docs/audit/evidence/phase-b/cli/diagnose_live.out) — 964 B · sha256 `45750e20d2529f12…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/health_dryrun.err`](../../docs/audit/evidence/phase-b/cli/health_dryrun.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/health_dryrun.out`](../../docs/audit/evidence/phase-b/cli/health_dryrun.out) — 568 B · sha256 `b687c7df18b9eace…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/health_live.err`](../../docs/audit/evidence/phase-b/cli/health_live.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/health_live.out`](../../docs/audit/evidence/phase-b/cli/health_live.out) — 1.42 KiB · sha256 `594b46239d6a2183…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/preflight-path.err`](../../docs/audit/evidence/phase-b/cli/preflight-path.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/preflight-path.out`](../../docs/audit/evidence/phase-b/cli/preflight-path.out) — 1.34 KiB · sha256 `c39af6af2c1b2645…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/preflight.err`](../../docs/audit/evidence/phase-b/cli/preflight.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/preflight.out`](../../docs/audit/evidence/phase-b/cli/preflight.out) — 1.60 KiB · sha256 `2457b48ab44cf069…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/provider_offpeak.err`](../../docs/audit/evidence/phase-b/cli/provider_offpeak.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/provider_offpeak.out`](../../docs/audit/evidence/phase-b/cli/provider_offpeak.out) — 1.78 KiB · sha256 `d04dfca68b01bb11…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/provider_peak.err`](../../docs/audit/evidence/phase-b/cli/provider_peak.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/provider_peak.out`](../../docs/audit/evidence/phase-b/cli/provider_peak.out) — 1.77 KiB · sha256 `0fbe228f6b9af4bb…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/schema.err`](../../docs/audit/evidence/phase-b/cli/schema.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/schema.out`](../../docs/audit/evidence/phase-b/cli/schema.out) — 3.91 KiB · sha256 `bb9f478733f49fe5…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tool_missing.err`](../../docs/audit/evidence/phase-b/cli/tool_missing.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tool_missing.out`](../../docs/audit/evidence/phase-b/cli/tool_missing.out) — 834 B · sha256 `c9411a2ca776c312…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tools_describe.err`](../../docs/audit/evidence/phase-b/cli/tools_describe.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tools_describe.out`](../../docs/audit/evidence/phase-b/cli/tools_describe.out) — 1.89 KiB · sha256 `3c3d6efe7b6f3814…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tools_list.err`](../../docs/audit/evidence/phase-b/cli/tools_list.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/tools_list.out`](../../docs/audit/evidence/phase-b/cli/tools_list.out) — 2.38 KiB · sha256 `8778881423599856…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/unknown.err`](../../docs/audit/evidence/phase-b/cli/unknown.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/unknown.out`](../../docs/audit/evidence/phase-b/cli/unknown.out) — 824 B · sha256 `f89a0ceb8515ea8d…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/usage_error.err`](../../docs/audit/evidence/phase-b/cli/usage_error.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/usage_error.out`](../../docs/audit/evidence/phase-b/cli/usage_error.out) — 704 B · sha256 `f621505e51474a1f…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/version-human.err`](../../docs/audit/evidence/phase-b/cli/version-human.err) — 726 B · sha256 `23cf6824d5209a97…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/version-human.out`](../../docs/audit/evidence/phase-b/cli/version-human.out) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/version.err`](../../docs/audit/evidence/phase-b/cli/version.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/cli/version.out`](../../docs/audit/evidence/phase-b/cli/version.out) — 818 B · sha256 `84befdb61a976c7d…` · utf-16le-bom · INDEXED — Generated command evidence/stream log
+- [`docs/audit/evidence/phase-b/live-probe-verifier-v2.json`](../../docs/audit/evidence/phase-b/live-probe-verifier-v2.json) — 4.78 KiB · sha256 `19d660fbebb3c9ea…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt`](../../docs/audit/evidence/phase-b/live-probe-verifier-v2.out.txt) — 8.67 KiB · sha256 `8a87f5d00137028c…` · utf-16le-bom · INDEXED — Plain-text data/evidence
+- [`docs/audit/evidence/phase-b/live-probe-verifier.json`](../../docs/audit/evidence/phase-b/live-probe-verifier.json) — 4.78 KiB · sha256 `19d660fbebb3c9ea…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/audit/evidence/phase-b/live-probe-verifier.mjs`](../../docs/audit/evidence/phase-b/live-probe-verifier.mjs) — 6.26 KiB · sha256 `5c21cd473e430de4…` · utf-8 · INDEXED — Node ESM script
+- [`docs/audit/evidence/phase-b/live-probe-verifier.out.txt`](../../docs/audit/evidence/phase-b/live-probe-verifier.out.txt) — 9.20 KiB · sha256 `25b4ce4e8aeff40d…` · utf-16le-bom · INDEXED — Plain-text data/evidence
+- [`docs/audit/evidence/toolchain/hello.c`](../../docs/audit/evidence/toolchain/hello.c) — 75 B · sha256 `1567b81e13e47b8a…` · utf-8 · INDEXED — C fixture/tool source
+- [`docs/audit/evidence/toolchain/hello.exe`](../../docs/audit/evidence/toolchain/hello.exe) — 48.71 KiB · sha256 `8f186ff8b9b159dd…` · nul-binary · INDEXED — Compiled Windows executable
+- [`docs/audit/evidence/toolchain/hello.rs`](../../docs/audit/evidence/toolchain/hello.rs) — 45 B · sha256 `913d97c057d169da…` · utf-8 · INDEXED — Rust source module
+- [`docs/audit/evidence/toolchain/hello_rs.exe`](../../docs/audit/evidence/toolchain/hello_rs.exe) — 4.85 MiB · sha256 `8df34e8a4d2c7109…` · nul-binary · INDEXED — Compiled Windows executable
+- [`docs/audit/FINAL-CLOSEOUT.md`](../../docs/audit/FINAL-CLOSEOUT.md) — 3.14 KiB · sha256 `81d45a5c4615af15…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/audit/FINAL-DELTA-VERIFICATION.md`](../../docs/audit/FINAL-DELTA-VERIFICATION.md) — 12.86 KiB · sha256 `a4acbcbb1d17da92…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/audit/PHASE-B-VERIFICATION.md`](../../docs/audit/PHASE-B-VERIFICATION.md) — 19.42 KiB · sha256 `ca6e76d1c942ef85…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/audit/QA-ENV.md`](../../docs/audit/QA-ENV.md) — 6.45 KiB · sha256 `e3ed721740daf0e2…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`docs/claims/CLAIM-REGISTER.csv`](../../docs/claims/CLAIM-REGISTER.csv) — 24.49 KiB · sha256 `09119e6fef17100e…` · utf-8 · INDEXED — CSV data/evidence table
+- [`docs/claims/CLAIM-REGISTER.json`](../../docs/claims/CLAIM-REGISTER.json) — 3.64 KiB · sha256 `e79aaa141025b094…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/claims/SKILL-USE.md`](../../docs/claims/SKILL-USE.md) — 1.50 KiB · sha256 `7d649cacb3a441dd…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/contracts/ADAPTERS.md`](../../docs/contracts/ADAPTERS.md) — 10.38 KiB · sha256 `ed7feee4747cf898…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/contracts/UI-COMMANDS-v1.md`](../../docs/contracts/UI-COMMANDS-v1.md) — 8.44 KiB · sha256 `322a8f8dae5da9c6…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/diagrams/agent-lifecycle-state.mmd`](../../docs/diagrams/agent-lifecycle-state.mmd) — 1.62 KiB · sha256 `e8dcd06fb84ceb22…` · utf-8 · INDEXED — Mermaid diagram source
+- [`docs/diagrams/agent-lifecycle-state.png`](../../docs/diagrams/agent-lifecycle-state.png) — 133.66 KiB · sha256 `97f3984d1f22d64a…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/diagrams/agent-lifecycle-state.svg`](../../docs/diagrams/agent-lifecycle-state.svg) — 70.80 KiB · sha256 `559347bd2dd440dd…` · utf-8 · INDEXED — Vector UI asset
+- [`docs/diagrams/architecture.mmd`](../../docs/diagrams/architecture.mmd) — 2.03 KiB · sha256 `4a1f683dc05275f5…` · utf-8 · INDEXED — Mermaid diagram source
+- [`docs/diagrams/architecture.png`](../../docs/diagrams/architecture.png) — 117.39 KiB · sha256 `05475658bc89c592…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/diagrams/architecture.svg`](../../docs/diagrams/architecture.svg) — 40.51 KiB · sha256 `89e8a0c76c25577e…` · utf-8 · INDEXED — Vector UI asset
+- [`docs/diagrams/er-schema.mmd`](../../docs/diagrams/er-schema.mmd) — 2.66 KiB · sha256 `b6e82a96fd19aef1…` · utf-8 · INDEXED — Mermaid diagram source
+- [`docs/diagrams/er-schema.png`](../../docs/diagrams/er-schema.png) — 116.57 KiB · sha256 `075a77fc69cabf60…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/diagrams/er-schema.svg`](../../docs/diagrams/er-schema.svg) — 213.87 KiB · sha256 `47a4c5844b6b426f…` · utf-8 · INDEXED — Vector UI asset
+- [`docs/diagrams/run-sequence.mmd`](../../docs/diagrams/run-sequence.mmd) — 2.15 KiB · sha256 `18ff2a7fe8afba17…` · utf-8 · INDEXED — Mermaid diagram source
+- [`docs/diagrams/run-sequence.png`](../../docs/diagrams/run-sequence.png) — 146.38 KiB · sha256 `e9703e3e6b0b3a1c…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/diagrams/run-sequence.svg`](../../docs/diagrams/run-sequence.svg) — 46.70 KiB · sha256 `f4ab892c62692347…` · utf-8 · INDEXED — Vector UI asset
+- [`docs/diagrams/ui-control-event-sequence.mmd`](../../docs/diagrams/ui-control-event-sequence.mmd) — 1.84 KiB · sha256 `1cb4689e29310fce…` · utf-8 · INDEXED — Mermaid diagram source
+- [`docs/diagrams/ui-control-event-sequence.png`](../../docs/diagrams/ui-control-event-sequence.png) — 95.71 KiB · sha256 `0c71c776ffc17a9c…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/diagrams/ui-control-event-sequence.svg`](../../docs/diagrams/ui-control-event-sequence.svg) — 42.89 KiB · sha256 `6cc5da36a603a2de…` · utf-8 · INDEXED — Vector UI asset
+- [`docs/evidence/key-validation.md`](../../docs/evidence/key-validation.md) — 1.01 KiB · sha256 `71ea686846cc5055…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/evidence/live-1.1-paid.log`](../../docs/evidence/live-1.1-paid.log) — 1.55 KiB · sha256 `801025948428a582…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`docs/evidence/live-provider-smoke.md`](../../docs/evidence/live-provider-smoke.md) — 1.45 KiB · sha256 `42c6ebd40a1bc22a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/evidence/live-trace-1.1.md`](../../docs/evidence/live-trace-1.1.md) — 6.03 KiB · sha256 `eaaba15403a17e73…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/D2-D3-WIRING-EVIDENCE.md`](../../docs/plans/D2-D3-WIRING-EVIDENCE.md) — 6.87 KiB · sha256 `77f6d5cd0bfd3505…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/FRONTEND-STATUS.md`](../../docs/plans/FRONTEND-STATUS.md) — 10.55 KiB · sha256 `a697f19e876a3389…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/HASH-VERIFICATION.md`](../../docs/plans/HASH-VERIFICATION.md) — 2.91 KiB · sha256 `1caecea3cf33f0ad…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-0-RECON.md`](../../docs/plans/PHASE-0-RECON.md) — 1.36 KiB · sha256 `d52e9ef05217d661…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-1-EVIDENCE.md`](../../docs/plans/PHASE-1-EVIDENCE.md) — 11.88 KiB · sha256 `af6c28d6543ce2b2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-1-RECON.md`](../../docs/plans/PHASE-1-RECON.md) — 4.87 KiB · sha256 `9745db35a2055c23…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-11-EVIDENCE.md`](../../docs/plans/PHASE-11-EVIDENCE.md) — 6.46 KiB · sha256 `2ce0f35ef15ababd…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-11-RECON.md`](../../docs/plans/PHASE-11-RECON.md) — 3.90 KiB · sha256 `52113636ec3839e5…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-12-EVIDENCE.md`](../../docs/plans/PHASE-12-EVIDENCE.md) — 9.86 KiB · sha256 `3b434d6954bb1e92…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-12-RECON.md`](../../docs/plans/PHASE-12-RECON.md) — 3.65 KiB · sha256 `83de50fdf69c33ec…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-2-EVIDENCE.md`](../../docs/plans/PHASE-2-EVIDENCE.md) — 7.99 KiB · sha256 `5ab509605fa86cdf…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-2-RECON.md`](../../docs/plans/PHASE-2-RECON.md) — 5.34 KiB · sha256 `f0ffc149b0bd0d03…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-3-EVIDENCE.md`](../../docs/plans/PHASE-3-EVIDENCE.md) — 5.49 KiB · sha256 `e7e398223c8ce99d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-3-RECON.md`](../../docs/plans/PHASE-3-RECON.md) — 4.46 KiB · sha256 `f21666ecf1cea59f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-4-EVIDENCE.md`](../../docs/plans/PHASE-4-EVIDENCE.md) — 6.10 KiB · sha256 `274efbb4fb512a58…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-4-RECON.md`](../../docs/plans/PHASE-4-RECON.md) — 4.06 KiB · sha256 `24f408b03ac901d7…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-5-EVIDENCE.md`](../../docs/plans/PHASE-5-EVIDENCE.md) — 6.37 KiB · sha256 `4a176cd2beff7774…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-5-RECON.md`](../../docs/plans/PHASE-5-RECON.md) — 4.00 KiB · sha256 `c930023a320bde7f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-6-EVIDENCE.md`](../../docs/plans/PHASE-6-EVIDENCE.md) — 10.02 KiB · sha256 `de6eefb3e8040b06…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-6-RECON.md`](../../docs/plans/PHASE-6-RECON.md) — 4.15 KiB · sha256 `e43ce35a86312638…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-7-8-10-EVIDENCE.md`](../../docs/plans/PHASE-7-8-10-EVIDENCE.md) — 11.46 KiB · sha256 `8714d474f62bfe79…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-7-8-10-RECON.md`](../../docs/plans/PHASE-7-8-10-RECON.md) — 4.67 KiB · sha256 `a707e9314d4c867d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-9-EVIDENCE.md`](../../docs/plans/PHASE-9-EVIDENCE.md) — 5.48 KiB · sha256 `699e1de3dde3f669…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/PHASE-9-RECON.md`](../../docs/plans/PHASE-9-RECON.md) — 3.82 KiB · sha256 `920896015bd7c601…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/SESSION-PLAN.md`](../../docs/plans/SESSION-PLAN.md) — 2.76 KiB · sha256 `839b691ce96ae57f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/plans/TOOLCHAIN.md`](../../docs/plans/TOOLCHAIN.md) — 1.97 KiB · sha256 `86f2b9c21eb8c318…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/RELEASE-EVIDENCE.md`](../../docs/RELEASE-EVIDENCE.md) — 12.57 KiB · sha256 `f16467fae618443f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/RELEASE.md`](../../docs/RELEASE.md) — 4.76 KiB · sha256 `68820b7456902fc4…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/reports/FINAL-REPORT.md`](../../docs/reports/FINAL-REPORT.md) — 7.12 KiB · sha256 `aad02034b8ad1c18…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/A11Y-CONTRAST-PLAN.md`](../../docs/trace/A11Y-CONTRAST-PLAN.md) — 5.70 KiB · sha256 `8db0269da711ae2c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/capture-live-1.1.json`](../../docs/trace/capture-live-1.1.json) — 8.04 KiB · sha256 `ffc100d41574e2e5…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/capture-registry.json`](../../docs/trace/capture-registry.json) — 3.95 KiB · sha256 `851bcad2cceed86d…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/CAPTURE-REGISTRY.md`](../../docs/trace/CAPTURE-REGISTRY.md) — 6.75 KiB · sha256 `067dc770383c1ad8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/controls.json`](../../docs/trace/controls.json) — 116.23 KiB · sha256 `1bc70c277d2fe3d7…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/events.json`](../../docs/trace/events.json) — 2.29 KiB · sha256 `acf07ffb5723e1cf…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/app-boot-full.png`](../../docs/trace/live/app-boot-full.png) — 110.28 KiB · sha256 `6368078ae15d3b99…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/app-boot.png`](../../docs/trace/live/app-boot.png) — 110.23 KiB · sha256 `e0c1b0ad6c9815bf…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/captures/w11/live-replay.json`](../../docs/trace/live/captures/w11/live-replay.json) — 6.60 KiB · sha256 `1dba23c750588e34…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/captures/w11/live-streaming.json`](../../docs/trace/live/captures/w11/live-streaming.json) — 5.04 KiB · sha256 `02a8a24015b550c4…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/captures/w12/CAP-S22-RECHECK/dom.json`](../../docs/trace/live/captures/w12/CAP-S22-RECHECK/dom.json) — 14.66 KiB · sha256 `519240c49baf7c57…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/captures/w12/CAP-S22-RECHECK/frames.jsonl`](../../docs/trace/live/captures/w12/CAP-S22-RECHECK/frames.jsonl) — 4.29 KiB · sha256 `dd2e45175cc7558b…` · utf-8 · INDEXED — JSONL event/ledger data
+- [`docs/trace/live/captures/w12/CAP-S22-RECHECK/manifest.json`](../../docs/trace/live/captures/w12/CAP-S22-RECHECK/manifest.json) — 1.09 KiB · sha256 `9cf320c84adff880…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/captures/w12/CAP-S22-RECHECK/shot.png`](../../docs/trace/live/captures/w12/CAP-S22-RECHECK/shot.png) — 97.09 KiB · sha256 `1deaa94958a6baef…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/inspect.json`](../../docs/trace/live/inspect.json) — 10.22 KiB · sha256 `ca23ad61b0e8e569…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/01-boot.json`](../../docs/trace/live/live-app/01-boot.json) — 231 B · sha256 `b3ded1cd14658daf…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/02-skip-link.json`](../../docs/trace/live/live-app/02-skip-link.json) — 131 B · sha256 `1246c1ea54b02384…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/03-console.json`](../../docs/trace/live/live-app/03-console.json) — 46 B · sha256 `4e768728e3a67852…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/04-census.json`](../../docs/trace/live/live-app/04-census.json) — 639 B · sha256 `b2e5124a529dc8c4…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/05-tabs.json`](../../docs/trace/live/live-app/05-tabs.json) — 56 B · sha256 `81de340b8378d8a1…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/06-nav.json`](../../docs/trace/live/live-app/06-nav.json) — 122 B · sha256 `b92debdbb0b57e3b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/07-zoom.json`](../../docs/trace/live/live-app/07-zoom.json) — 197 B · sha256 `8e27d5ef0dbebc52…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/08-chat-pin.json`](../../docs/trace/live/live-app/08-chat-pin.json) — 334 B · sha256 `892cc160997f0901…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/09-empty-prompt.json`](../../docs/trace/live/live-app/09-empty-prompt.json) — 50 B · sha256 `1ced73cef3179d73…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/10-ws-handshake.json`](../../docs/trace/live/live-app/10-ws-handshake.json) — 200 B · sha256 `9f4b564ea9ce146b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/11-colours.json`](../../docs/trace/live/live-app/11-colours.json) — 265 B · sha256 `70b0f44c187c3cc5…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/12-settings-status.json`](../../docs/trace/live/live-app/12-settings-status.json) — 266 B · sha256 `5ba61e4c91d46141…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/13-contract-drift.json`](../../docs/trace/live/live-app/13-contract-drift.json) — 443 B · sha256 `4d93e38d8f022589…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/14-file-tree.json`](../../docs/trace/live/live-app/14-file-tree.json) — 504 B · sha256 `7d8a09750959415c…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/15-data-size.json`](../../docs/trace/live/live-app/15-data-size.json) — 678 B · sha256 `4e026fd90d1a53ea…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/boot.png`](../../docs/trace/live/live-app/boot.png) — 97.04 KiB · sha256 `9ea23060505b5c65…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/live-app/live-resync-gap.json`](../../docs/trace/live/live-app/live-resync-gap.json) — 337 B · sha256 `ef24abd6c72d85a5…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-resync-keyless.json`](../../docs/trace/live/live-app/live-resync-keyless.json) — 337 B · sha256 `37528dfc6a66a10a…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-allowed-origin-option.json`](../../docs/trace/live/live-app/live-security-allowed-origin-option.json) — 453 B · sha256 `ea1422ac11544149…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-bad-token.json`](../../docs/trace/live/live-app/live-security-bad-token.json) — 401 B · sha256 `40dd5f6333dcaaf0…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-foreign-browser.json`](../../docs/trace/live/live-app/live-security-foreign-browser.json) — 391 B · sha256 `d2ba1ba8d493f43c…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-foreign-browser.png`](../../docs/trace/live/live-app/live-security-foreign-browser.png) — 5.82 KiB · sha256 `fb647f56ca5d3185…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/live-app/live-security-foreign-origin.json`](../../docs/trace/live/live-app/live-security-foreign-origin.json) — 691 B · sha256 `aa515c777ae7ec37…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-missing-origin.json`](../../docs/trace/live/live-app/live-security-missing-origin.json) — 415 B · sha256 `45bb24e773d1b94e…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/live-security-positive.json`](../../docs/trace/live/live-app/live-security-positive.json) — 311 B · sha256 `2a76bf470dcb836a…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/live/live-app/surface-census.png`](../../docs/trace/live/live-app/surface-census.png) — 97.04 KiB · sha256 `9ea23060505b5c65…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/trace/live/README.md`](../../docs/trace/live/README.md) — 7.97 KiB · sha256 `ce342e8ee7aca22d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/live/trace-capture.json`](../../docs/trace/live/trace-capture.json) — 286 B · sha256 `81bf45a7f4bad0ba…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/trace/QA-HARNESS.md`](../../docs/trace/QA-HARNESS.md) — 20.85 KiB · sha256 `5c849ff3a084a364…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/terminal-truth.md`](../../docs/trace/terminal-truth.md) — 3.84 KiB · sha256 `7496482e7f2bfbed…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/TRACE-SCHEMA.md`](../../docs/trace/TRACE-SCHEMA.md) — 8.68 KiB · sha256 `b140fbb825488aba…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/trace/traces.json`](../../docs/trace/traces.json) — 1.99 KiB · sha256 `84fb2510951fe9cc…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/A-ASSETS.json`](../../docs/ui/figcraft/A/A-ASSETS.json) — 18.10 KiB · sha256 `88832272cb6c81dd…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/A-EPISODES.json`](../../docs/ui/figcraft/A/A-EPISODES.json) — 3.80 KiB · sha256 `bd7593f710483c82…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/A-SELF-CHECK.json`](../../docs/ui/figcraft/A/A-SELF-CHECK.json) — 10.98 KiB · sha256 `063066bf47e14579…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/build/build-state.json`](../../docs/ui/figcraft/A/build/build-state.json) — 100.96 KiB · sha256 `7874f3459d50aea7…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/build/c4.png`](../../docs/ui/figcraft/A/build/c4.png) — 84.22 KiB · sha256 `956dd5baffde6849…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/ui/figcraft/A/build/fig.py`](../../docs/ui/figcraft/A/build/fig.py) — 3.30 KiB · sha256 `7793bf9656fa40da…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/gen_build.py`](../../docs/ui/figcraft/A/build/gen_build.py) — 10.02 KiB · sha256 `156cc41465354353…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/gen_common.py`](../../docs/ui/figcraft/A/build/gen_common.py) — 20.71 KiB · sha256 `697cb7b80527c027…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/gen_manifest.py`](../../docs/ui/figcraft/A/build/gen_manifest.py) — 17.34 KiB · sha256 `61d800cf7e0a4929…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/page00.figcraft`](../../docs/ui/figcraft/A/build/page00.figcraft) — 76.27 KiB · sha256 `1aebf14df36aab0d…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page00g.figcraft`](../../docs/ui/figcraft/A/build/page00g.figcraft) — 76.70 KiB · sha256 `2e17e137d3219120…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page01.figcraft`](../../docs/ui/figcraft/A/build/page01.figcraft) — 86.38 KiB · sha256 `8fa909a270925f44…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page01g.figcraft`](../../docs/ui/figcraft/A/build/page01g.figcraft) — 86.70 KiB · sha256 `3b1faf4b0e788cf3…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page02.figcraft`](../../docs/ui/figcraft/A/build/page02.figcraft) — 112.98 KiB · sha256 `5a23dfa3b9d9db04…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page02g.figcraft`](../../docs/ui/figcraft/A/build/page02g.figcraft) — 114.05 KiB · sha256 `08e11cdb797f1845…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page03.figcraft`](../../docs/ui/figcraft/A/build/page03.figcraft) — 123.86 KiB · sha256 `f22935bb1d259df7…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/page03g.figcraft`](../../docs/ui/figcraft/A/build/page03g.figcraft) — 124.21 KiB · sha256 `3c5531aba40abd2c…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/pages_brand.py`](../../docs/ui/figcraft/A/build/pages_brand.py) — 16.00 KiB · sha256 `6a0dbfc4c77e98d6…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/pages_components.py`](../../docs/ui/figcraft/A/build/pages_components.py) — 42.79 KiB · sha256 `bfe7ded25a8cbec9…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/pages_foundations.py`](../../docs/ui/figcraft/A/build/pages_foundations.py) — 13.55 KiB · sha256 `aa365521dd750549…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/pages_specimens.py`](../../docs/ui/figcraft/A/build/pages_specimens.py) — 18.51 KiB · sha256 `3fedb4165d41cedf…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/A/build/probe-s04c.png`](../../docs/ui/figcraft/A/build/probe-s04c.png) — 22.55 KiB · sha256 `28eb4e30d1cdfb5a…` · nul-binary · INDEXED — Raster UI asset
+- [`docs/ui/figcraft/A/build/stage0.figcraft`](../../docs/ui/figcraft/A/build/stage0.figcraft) — 1.06 KiB · sha256 `4e7f14ecd87d467e…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/stage1.figcraft`](../../docs/ui/figcraft/A/build/stage1.figcraft) — 4.85 KiB · sha256 `475466f7cf702ebe…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/build/styles.figcraft`](../../docs/ui/figcraft/A/build/styles.figcraft) — 78.52 KiB · sha256 `3132f03047e7f204…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/A/scripts/00_setup_pages.json`](../../docs/ui/figcraft/A/scripts/00_setup_pages.json) — 3.59 KiB · sha256 `622b84004114282a…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/01_frames.json`](../../docs/ui/figcraft/A/scripts/01_frames.json) — 1.44 KiB · sha256 `2cd4f67cd7d82d9a…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/02_foundations.json`](../../docs/ui/figcraft/A/scripts/02_foundations.json) — 74.59 KiB · sha256 `6886d2ee933f861c…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/03_foundations_groups.json`](../../docs/ui/figcraft/A/scripts/03_foundations_groups.json) — 2.81 KiB · sha256 `9d9d0034a550cc0e…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/04_styles.json`](../../docs/ui/figcraft/A/scripts/04_styles.json) — 4.80 KiB · sha256 `3d1e3edc382832ed…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/05_brand.json`](../../docs/ui/figcraft/A/scripts/05_brand.json) — 47.96 KiB · sha256 `ddae3ec1779c62e9…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/06_brand_groups.json`](../../docs/ui/figcraft/A/scripts/06_brand_groups.json) — 1.82 KiB · sha256 `7fc718d847f507c4…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/07_components.json`](../../docs/ui/figcraft/A/scripts/07_components.json) — 195.65 KiB · sha256 `1401820bf674c6cc…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/08_components_groups.json`](../../docs/ui/figcraft/A/scripts/08_components_groups.json) — 7.13 KiB · sha256 `40cfb4d040dbd8fa…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/09_specimens.json`](../../docs/ui/figcraft/A/scripts/09_specimens.json) — 66.42 KiB · sha256 `5b968cda478faf53…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/A/scripts/10_specimens_groups.json`](../../docs/ui/figcraft/A/scripts/10_specimens_groups.json) — 3.46 KiB · sha256 `0fa384767f117478…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/ASSETS-INDEX.json`](../../docs/ui/figcraft/ASSETS-INDEX.json) — 35.15 KiB · sha256 `c5763bfa74a82c1d…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/B-ASSETS.json`](../../docs/ui/figcraft/B/B-ASSETS.json) — 26.18 KiB · sha256 `a8a81e74bfbfbb3b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/build/__pycache__/board_default.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/board_default.cpython-314.pyc) — 28.80 KiB · sha256 `2f6955f9a0a59371…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/__pycache__/board_hero.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/board_hero.cpython-314.pyc) — 14.95 KiB · sha256 `3e36b8b717f04fb1…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/__pycache__/board_interaction.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/board_interaction.cpython-314.pyc) — 24.42 KiB · sha256 `90b8e94e740d88ea…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/__pycache__/board_zoom.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/board_zoom.cpython-314.pyc) — 16.44 KiB · sha256 `a8bff67f3f04ab58…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/__pycache__/boards_common.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/boards_common.cpython-314.pyc) — 25.47 KiB · sha256 `ba2199207293eaf6…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/__pycache__/fig_b.cpython-314.pyc`](../../docs/ui/figcraft/B/build/__pycache__/fig_b.cpython-314.pyc) — 4.88 KiB · sha256 `3e2fd13ef12be71c…` · nul-binary · INDEXED — Compiled Python bytecode
+- [`docs/ui/figcraft/B/build/_run.json`](../../docs/ui/figcraft/B/build/_run.json) — 16.95 KiB · sha256 `55fad1fbd94af2cf…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/build/board_default.py`](../../docs/ui/figcraft/B/build/board_default.py) — 21.57 KiB · sha256 `1c30304d871cf883…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/board_hero.py`](../../docs/ui/figcraft/B/build/board_hero.py) — 11.54 KiB · sha256 `8b1a2393c1ce3462…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/board_interaction.py`](../../docs/ui/figcraft/B/build/board_interaction.py) — 18.72 KiB · sha256 `b371f88c0fb81680…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/board_zoom.py`](../../docs/ui/figcraft/B/build/board_zoom.py) — 11.64 KiB · sha256 `6bb6352ec2bd21e1…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/boards_common.py`](../../docs/ui/figcraft/B/build/boards_common.py) — 18.62 KiB · sha256 `1ad83890997df604…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/build-state.json`](../../docs/ui/figcraft/B/build/build-state.json) — 28.61 KiB · sha256 `44e3ef35f9a03932…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/build/build_b.py`](../../docs/ui/figcraft/B/build/build_b.py) — 9.73 KiB · sha256 `df43373e99874076…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/fig_b.py`](../../docs/ui/figcraft/B/build/fig_b.py) — 2.71 KiB · sha256 `0e0bf626f49fe0ec…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/info-B.json`](../../docs/ui/figcraft/B/build/info-B.json) — 1.43 KiB · sha256 `a6c32597c3bf666d…` · utf-8-bom · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/build/make_manifest.py`](../../docs/ui/figcraft/B/build/make_manifest.py) — 13.99 KiB · sha256 `46ac706599d47302…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch3.py`](../../docs/ui/figcraft/B/build/patch3.py) — 15.12 KiB · sha256 `c94f86cfbde18b0b…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch4.py`](../../docs/ui/figcraft/B/build/patch4.py) — 8.20 KiB · sha256 `625ee45b7e2eac9a…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch5.py`](../../docs/ui/figcraft/B/build/patch5.py) — 2.41 KiB · sha256 `1b6cb7c71fc3df3c…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch_default.py`](../../docs/ui/figcraft/B/build/patch_default.py) — 7.10 KiB · sha256 `a5cc8af47ef7c9b5…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch_default2.py`](../../docs/ui/figcraft/B/build/patch_default2.py) — 3.10 KiB · sha256 `bbb639ac2891df0b…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch_manifest.py`](../../docs/ui/figcraft/B/build/patch_manifest.py) — 832 B · sha256 `85bc4269a30c0041…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch_manifest2.py`](../../docs/ui/figcraft/B/build/patch_manifest2.py) — 1.35 KiB · sha256 `9898a90c0f842073…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/patch_verify.py`](../../docs/ui/figcraft/B/build/patch_verify.py) — 2.74 KiB · sha256 `35866b160ebc1a32…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/build/tmp/board00.figcraft`](../../docs/ui/figcraft/B/build/tmp/board00.figcraft) — 94.27 KiB · sha256 `cb67ef889ce96ab7…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/board01.figcraft`](../../docs/ui/figcraft/B/build/tmp/board01.figcraft) — 151.10 KiB · sha256 `30b82b71dfcb74f9…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/board02.figcraft`](../../docs/ui/figcraft/B/build/tmp/board02.figcraft) — 180.09 KiB · sha256 `e15f74a99f70e651…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/board03.figcraft`](../../docs/ui/figcraft/B/build/tmp/board03.figcraft) — 215.52 KiB · sha256 `43cb51073086b629…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/effects.figcraft`](../../docs/ui/figcraft/B/build/tmp/effects.figcraft) — 221.42 KiB · sha256 `dae6068926e30c99…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/step0.figcraft`](../../docs/ui/figcraft/B/build/tmp/step0.figcraft) — 479 B · sha256 `e1a337c46b6f9579…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/tmp/step1.figcraft`](../../docs/ui/figcraft/B/build/tmp/step1.figcraft) — 3.42 KiB · sha256 `55f239bc554356c5…` · nul-binary · INDEXED — FigCraft design/build asset
+- [`docs/ui/figcraft/B/build/verify_b.py`](../../docs/ui/figcraft/B/build/verify_b.py) — 8.74 KiB · sha256 `f1ca91f75590597a…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`docs/ui/figcraft/B/scripts/00_setup_pages.json`](../../docs/ui/figcraft/B/scripts/00_setup_pages.json) — 483 B · sha256 `b4cb27577b250aee…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/01_frames.json`](../../docs/ui/figcraft/B/scripts/01_frames.json) — 1.44 KiB · sha256 `12fc72e51658f428…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/02_canvas_default.json`](../../docs/ui/figcraft/B/scripts/02_canvas_default.json) — 95.88 KiB · sha256 `b7e3b8506254ccde…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/03_zoom_states.json`](../../docs/ui/figcraft/B/scripts/03_zoom_states.json) — 101.92 KiB · sha256 `72ba962f41293411…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/04_interaction.json`](../../docs/ui/figcraft/B/scripts/04_interaction.json) — 81.36 KiB · sha256 `12279e3a5f9a24a6…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/05_hero.json`](../../docs/ui/figcraft/B/scripts/05_hero.json) — 73.12 KiB · sha256 `912f15b627b251b7…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/B/scripts/06_effects.json`](../../docs/ui/figcraft/B/scripts/06_effects.json) — 16.95 KiB · sha256 `68fd956ddc8e23d6…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/BRIEF-A.md`](../../docs/ui/figcraft/BRIEF-A.md) — 5.67 KiB · sha256 `f8eba08a45485465…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/ui/figcraft/BRIEF-B.md`](../../docs/ui/figcraft/BRIEF-B.md) — 3.15 KiB · sha256 `1028f4548476e3f1…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json`](../../docs/ui/figcraft/EPISODES/a-a-build-00-00_setup_pages.json) — 2.94 KiB · sha256 `a9074bac5ede735b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json`](../../docs/ui/figcraft/EPISODES/a-a-build-01-01_frames.json) — 1.66 KiB · sha256 `9bc9ea665c31f958…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json`](../../docs/ui/figcraft/EPISODES/a-a-build-02-02_foundations.json) — 1.66 KiB · sha256 `d3bd839378ee6c55…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json`](../../docs/ui/figcraft/EPISODES/a-a-build-03-03_foundations_groups.json) — 1.65 KiB · sha256 `7212b7ddd0cf7cf9…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json`](../../docs/ui/figcraft/EPISODES/a-a-build-04-04_styles.json) — 1.64 KiB · sha256 `1cac392cafb69a4a…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json`](../../docs/ui/figcraft/EPISODES/a-a-build-05-05_brand.json) — 1.68 KiB · sha256 `62e14a06c79e9e3d…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json`](../../docs/ui/figcraft/EPISODES/a-a-build-06-06_brand_groups.json) — 1.63 KiB · sha256 `c63aa5dc342790a6…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json`](../../docs/ui/figcraft/EPISODES/a-a-build-07-07_components.json) — 1.70 KiB · sha256 `823cb7ded9bf9e81…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json`](../../docs/ui/figcraft/EPISODES/a-a-build-08-08_components_groups.json) — 1.65 KiB · sha256 `917168e3d7fad732…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json`](../../docs/ui/figcraft/EPISODES/a-a-build-09-09_specimens.json) — 1.70 KiB · sha256 `2f0d52054e04be6f…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json`](../../docs/ui/figcraft/EPISODES/a-a-build-10-10_specimens_groups.json) — 1.65 KiB · sha256 `2799c4b396bc169e…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/a-a-exports.json`](../../docs/ui/figcraft/EPISODES/a-a-exports.json) — 13.95 KiB · sha256 `958bce12bfc978ea…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-00_setup_pages.json`](../../docs/ui/figcraft/EPISODES/b-00_setup_pages.json) — 1.52 KiB · sha256 `3e4901e24386d9d2…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-01_frames.json`](../../docs/ui/figcraft/EPISODES/b-01_frames.json) — 1.62 KiB · sha256 `d23f056ce12bbcf4…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-02_canvas_default.json`](../../docs/ui/figcraft/EPISODES/b-02_canvas_default.json) — 1.64 KiB · sha256 `9fb241e8a755345d…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-03_zoom_states.json`](../../docs/ui/figcraft/EPISODES/b-03_zoom_states.json) — 1.60 KiB · sha256 `9fe70d6ae9414785…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-04_interaction.json`](../../docs/ui/figcraft/EPISODES/b-04_interaction.json) — 1.65 KiB · sha256 `bb8b9b393232eb44…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-05_hero.json`](../../docs/ui/figcraft/EPISODES/b-05_hero.json) — 1.60 KiB · sha256 `2bf94673ac84148b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-06_effects.json`](../../docs/ui/figcraft/EPISODES/b-06_effects.json) — 1.59 KiB · sha256 `d2aca9b04df4c327…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/EPISODES/b-exports.json`](../../docs/ui/figcraft/EPISODES/b-exports.json) — 2.86 KiB · sha256 `ce54fcbc5a52fa40…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`docs/ui/figcraft/WATCHDOG-BRIEF.md`](../../docs/ui/figcraft/WATCHDOG-BRIEF.md) — 3.00 KiB · sha256 `916c743ff1a69534…` · utf-8 · INDEXED — Markdown documentation/evidence
+
+## e2e
+
+- [`e2e/.gitignore`](../../e2e/.gitignore) — 125 B · sha256 `ec621caf388828c9…` · utf-8 · INDEXED — Repository file
+- [`e2e/data-probe.mjs`](../../e2e/data-probe.mjs) — 1022 B · sha256 `e0e5a045390f6d6d…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/data/control-matrix.json`](../../e2e/data/control-matrix.json) — 14.63 KiB · sha256 `d42e3342dc3175b8…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`e2e/GATE-EXCLUSIONS.md`](../../e2e/GATE-EXCLUSIONS.md) — 6.39 KiB · sha256 `24787cbafd95fa13…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`e2e/helpers/app.ts`](../../e2e/helpers/app.ts) — 2.00 KiB · sha256 `cb9ae9f946471b6f…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/contrast.ts`](../../e2e/helpers/contrast.ts) — 2.16 KiB · sha256 `646ed79df15d2a30…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/evidence.ts`](../../e2e/helpers/evidence.ts) — 2.85 KiB · sha256 `066430f0a36e9f9a…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/live-server.ts`](../../e2e/helpers/live-server.ts) — 21.23 KiB · sha256 `843589b1919b891f…` · utf-8 · INDEXED — Live server harness, paid gates, allowed origins, binary selection.
+- [`e2e/helpers/matrix.ts`](../../e2e/helpers/matrix.ts) — 1.96 KiB · sha256 `bc101b3505e1f98b…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/replay-harness.ts`](../../e2e/helpers/replay-harness.ts) — 14.80 KiB · sha256 `390b45551cada31f…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/trace.ts`](../../e2e/helpers/trace.ts) — 1.27 KiB · sha256 `404ce7202a8c8a55…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/helpers/ws-tap.ts`](../../e2e/helpers/ws-tap.ts) — 1.75 KiB · sha256 `4e667f62d942b736…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/live-check2.mjs`](../../e2e/live-check2.mjs) — 712 B · sha256 `042eacc4f2919579…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/live-inspect.mjs`](../../e2e/live-inspect.mjs) — 6.41 KiB · sha256 `ddd46289ff4eb760…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/live-probe.mjs`](../../e2e/live-probe.mjs) — 1019 B · sha256 `6c90ee5c0b7fda7c…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/live-shot.mjs`](../../e2e/live-shot.mjs) — 529 B · sha256 `349e459dbfb88ec7…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/live-smoke.mjs`](../../e2e/live-smoke.mjs) — 1.04 KiB · sha256 `50e507618d831b6c…` · utf-8-bom · INDEXED — Node ESM script
+- [`e2e/package-lock.json`](../../e2e/package-lock.json) — 1.71 KiB · sha256 `883c7a729f40d01b…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`e2e/package.json`](../../e2e/package.json) — 752 B · sha256 `649e47f849f1d72f…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`e2e/playwright.config.ts`](../../e2e/playwright.config.ts) — 2.00 KiB · sha256 `2fb618bc5da58012…` · utf-8 · INDEXED — Playwright projects, web server, mocked/live harness configuration.
+- [`e2e/README.md`](../../e2e/README.md) — 4.61 KiB · sha256 `566522894e805a08…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`e2e/run-guarded.mjs`](../../e2e/run-guarded.mjs) — 1.39 KiB · sha256 `0009ce0061aa1948…` · utf-8 · INDEXED — Node ESM script
+- [`e2e/specs/a11y-gates.spec.ts`](../../e2e/specs/a11y-gates.spec.ts) — 1.48 KiB · sha256 `7444cbe68531ec6d…` · utf-8-bom · INDEXED — TypeScript source/test module
+- [`e2e/specs/approval-flow.spec.ts`](../../e2e/specs/approval-flow.spec.ts) — 13.46 KiB · sha256 `151f60e845259376…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/control-matrix.spec.ts`](../../e2e/specs/control-matrix.spec.ts) — 3.67 KiB · sha256 `e4b16d3e05bd57ae…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/gui-gates.spec.ts`](../../e2e/specs/gui-gates.spec.ts) — 17.39 KiB · sha256 `96a86ade443975bd…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/gui-residual.spec.ts`](../../e2e/specs/gui-residual.spec.ts) — 6.88 KiB · sha256 `a9feae70b6b8e5bc…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-app.spec.ts`](../../e2e/specs/live-app.spec.ts) — 19.37 KiB · sha256 `cb3a5e8d70ef35f9…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-replay.spec.ts`](../../e2e/specs/live-replay.spec.ts) — 5.92 KiB · sha256 `fdce1e6b36ccb613…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-resync.spec.ts`](../../e2e/specs/live-resync.spec.ts) — 18.27 KiB · sha256 `2de1ca4cd5d63836…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-security.spec.ts`](../../e2e/specs/live-security.spec.ts) — 15.24 KiB · sha256 `87db908422563a0e…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-streaming.spec.ts`](../../e2e/specs/live-streaming.spec.ts) — 7.21 KiB · sha256 `f0fd9c1d3db0c21b…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-tool-turn.spec.ts`](../../e2e/specs/live-tool-turn.spec.ts) — 18.91 KiB · sha256 `130ad9004422dd2f…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/live-trace-capture.spec.ts`](../../e2e/specs/live-trace-capture.spec.ts) — 17.34 KiB · sha256 `4a537d38bb83c240…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/replay-state.spec.ts`](../../e2e/specs/replay-state.spec.ts) — 6.06 KiB · sha256 `6bc087309bd2540d…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/tool-loop.spec.ts`](../../e2e/specs/tool-loop.spec.ts) — 12.18 KiB · sha256 `a85f3a7c12932215…` · utf-8-bom · INDEXED — TypeScript source/test module
+- [`e2e/specs/trace-hops.spec.ts`](../../e2e/specs/trace-hops.spec.ts) — 17.23 KiB · sha256 `03b8b6a4f1122f49…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/specs/ws-contract.spec.ts`](../../e2e/specs/ws-contract.spec.ts) — 1.10 KiB · sha256 `59b10d550b402d33…` · utf-8 · INDEXED — TypeScript source/test module
+- [`e2e/tsconfig.json`](../../e2e/tsconfig.json) — 228 B · sha256 `6d92ae9d89b3f28e…` · utf-8 · INDEXED — JSON config/data/evidence
+
+## ledgers
+
+- [`ledgers/ui-watchdog.json`](../../ledgers/ui-watchdog.json) — 8.45 KiB · sha256 `810a5aa01e648857…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`ledgers/ui-watchdog.md`](../../ledgers/ui-watchdog.md) — 6.17 KiB · sha256 `3ea59e7cde69da53…` · utf-8 · INDEXED — Markdown documentation/evidence
+
+## plans
+
+- [`plans/1.1-WAVE-1-RECOVERY.md`](../../plans/1.1-WAVE-1-RECOVERY.md) — 3.90 KiB · sha256 `4797b563bc52e76f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/APPROVAL-SUSPENSION-PLAN.md`](../../plans/foresight/APPROVAL-SUSPENSION-PLAN.md) — 56.80 KiB · sha256 `0facfa27380d310d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/APPROVAL-UX-PLAN.md`](../../plans/foresight/APPROVAL-UX-PLAN.md) — 23.53 KiB · sha256 `539933b27e23bc79…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/CODE-APPROVAL-ENGINE.md`](../../plans/foresight/CODE-APPROVAL-ENGINE.md) — 99.70 KiB · sha256 `78513f63fbe597cb…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/CODE-APPROVAL-UX.md`](../../plans/foresight/CODE-APPROVAL-UX.md) — 64.49 KiB · sha256 `0dde4379622bea07…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/CODE-PROOF.md`](../../plans/foresight/CODE-PROOF.md) — 27.68 KiB · sha256 `2115fc8bd40104c7…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/CODE-SIDE-EFFECTS.md`](../../plans/foresight/CODE-SIDE-EFFECTS.md) — 39.97 KiB · sha256 `0526aadfb193ed94…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/COMPILED-LEDGER.md`](../../plans/foresight/COMPILED-LEDGER.md) — 51.85 KiB · sha256 `e705d73b2e1b7276…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/PROOF-RELEASE-PLAN.md`](../../plans/foresight/PROOF-RELEASE-PLAN.md) — 32.49 KiB · sha256 `97ff01511e55fbc1…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN-1.md`](../../plans/foresight/RUN-1.md) — 4.83 KiB · sha256 `b53805975ecf891d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN-2.md`](../../plans/foresight/RUN-2.md) — 3.28 KiB · sha256 `afa30b8cb82def26…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN-3.md`](../../plans/foresight/RUN-3.md) — 19.73 KiB · sha256 `e14cb2f2830ba0b4…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN2-COMPILED-LEDGER.md`](../../plans/foresight/RUN2-COMPILED-LEDGER.md) — 48.59 KiB · sha256 `953ebf182e2be831…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN2-ENGINE-CODE.md`](../../plans/foresight/RUN2-ENGINE-CODE.md) — 66.24 KiB · sha256 `b2bc41cbd20eee99…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN2-PROOF-CODE.md`](../../plans/foresight/RUN2-PROOF-CODE.md) — 25.41 KiB · sha256 `c1a96330eac1334d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN2-SIDE-EFFECT-CODE.md`](../../plans/foresight/RUN2-SIDE-EFFECT-CODE.md) — 45.56 KiB · sha256 `6f3927fcfd40c315…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/RUN2-WEB-CODE.md`](../../plans/foresight/RUN2-WEB-CODE.md) — 35.04 KiB · sha256 `5baa9aa84a9f9c4f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/foresight/SIDE-EFFECT-EXECUTOR-PLAN.md`](../../plans/foresight/SIDE-EFFECT-EXECUTOR-PLAN.md) — 38.18 KiB · sha256 `4821d642fa84b916…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/HIVEMIND-1.0-EXECUTION-PLAN.md`](../../plans/HIVEMIND-1.0-EXECUTION-PLAN.md) — 8.15 KiB · sha256 `5cdbdba4221974a2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/HIVEMIND-1.0-SEAT-ASSIGNMENTS.md`](../../plans/HIVEMIND-1.0-SEAT-ASSIGNMENTS.md) — 3.54 KiB · sha256 `4f688b242c961044…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-01/GATE-CY-1.md`](../../plans/planners/PLANNER-01/GATE-CY-1.md) — 4.67 KiB · sha256 `c46febef58ecae34…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-01/GATE-CY-2.md`](../../plans/planners/PLANNER-01/GATE-CY-2.md) — 5.22 KiB · sha256 `a90a2960e3ea29f7…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-01/GATE-CY-3.md`](../../plans/planners/PLANNER-01/GATE-CY-3.md) — 2.84 KiB · sha256 `9aad8351dcd5f3d8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-01/PLANNER-01.md`](../../plans/planners/PLANNER-01/PLANNER-01.md) — 18.05 KiB · sha256 `9be50eee2c6299a9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-02/GATE-CY-1.md`](../../plans/planners/PLANNER-02/GATE-CY-1.md) — 4.80 KiB · sha256 `fcf8afca09f27fb9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-02/GATE-CY-2.md`](../../plans/planners/PLANNER-02/GATE-CY-2.md) — 6.12 KiB · sha256 `03a0e63693bef80f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-02/GATE-CY-3.md`](../../plans/planners/PLANNER-02/GATE-CY-3.md) — 3.11 KiB · sha256 `6a90c12a29277d22…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-02/PLANNER-02.md`](../../plans/planners/PLANNER-02/PLANNER-02.md) — 18.66 KiB · sha256 `6f3c31753593e680…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-03/GATE-CY-1.md`](../../plans/planners/PLANNER-03/GATE-CY-1.md) — 5.05 KiB · sha256 `d24a7f1e6b20c0b9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-03/GATE-CY-2.md`](../../plans/planners/PLANNER-03/GATE-CY-2.md) — 4.49 KiB · sha256 `6c57824f7fcecbb2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-03/GATE-CY-3.md`](../../plans/planners/PLANNER-03/GATE-CY-3.md) — 6.40 KiB · sha256 `ff96df1d22146bc6…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-03/PLANNER-03.md`](../../plans/planners/PLANNER-03/PLANNER-03.md) — 14.79 KiB · sha256 `dacbdb85d4ea9dd6…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-04/GATE-CY-1.md`](../../plans/planners/PLANNER-04/GATE-CY-1.md) — 1.62 KiB · sha256 `f144768b7d68b112…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-04/GATE-CY-2.md`](../../plans/planners/PLANNER-04/GATE-CY-2.md) — 2.16 KiB · sha256 `d8a7900373dc1245…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-04/GATE-CY-3.md`](../../plans/planners/PLANNER-04/GATE-CY-3.md) — 1.93 KiB · sha256 `11bf654b84dffa21…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-04/PLANNER-04.md`](../../plans/planners/PLANNER-04/PLANNER-04.md) — 16.85 KiB · sha256 `89a3575062b525a3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/planners/PLANNER-04/READLOG.md`](../../plans/planners/PLANNER-04/READLOG.md) — 9.25 KiB · sha256 `a9e019d73ef501dc…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/EVIDENCE.md`](../../plans/seats/SEAT-01/EVIDENCE.md) — 7.17 KiB · sha256 `a0b0a5bdaad843b7…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/GATE-CY-1.md`](../../plans/seats/SEAT-01/GATE-CY-1.md) — 2.74 KiB · sha256 `b56594a3c60f36bd…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/GATE-CY-2.md`](../../plans/seats/SEAT-01/GATE-CY-2.md) — 2.99 KiB · sha256 `cfd08bd163d1c1e3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/GATE-CY-3.md`](../../plans/seats/SEAT-01/GATE-CY-3.md) — 3.60 KiB · sha256 `a3775dcd298f5131…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/READLOG.md`](../../plans/seats/SEAT-01/READLOG.md) — 11.45 KiB · sha256 `46813d59fa398416…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-01/REPORT.md`](../../plans/seats/SEAT-01/REPORT.md) — 19.20 KiB · sha256 `b606970fe4446758…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/EVIDENCE.md`](../../plans/seats/SEAT-02/EVIDENCE.md) — 8.05 KiB · sha256 `f7a495cc1de03bcc…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/GATE-CY-1.md`](../../plans/seats/SEAT-02/GATE-CY-1.md) — 5.59 KiB · sha256 `d4831a3c178ee590…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/GATE-CY-2.md`](../../plans/seats/SEAT-02/GATE-CY-2.md) — 1.90 KiB · sha256 `5a74ee4efafe0a87…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/GATE-CY-3.md`](../../plans/seats/SEAT-02/GATE-CY-3.md) — 3.60 KiB · sha256 `0343b23a67591fe5…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/READLOG.md`](../../plans/seats/SEAT-02/READLOG.md) — 7.92 KiB · sha256 `7a4ee53dca64feb2…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-02/REPORT.md`](../../plans/seats/SEAT-02/REPORT.md) — 11.13 KiB · sha256 `b2551ebb52f06a6c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/EVIDENCE.md`](../../plans/seats/SEAT-03/EVIDENCE.md) — 5.83 KiB · sha256 `22e11c3a9301936a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/GATE-CY-1.md`](../../plans/seats/SEAT-03/GATE-CY-1.md) — 2.23 KiB · sha256 `a1b34b30e6532adb…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/GATE-CY-2.md`](../../plans/seats/SEAT-03/GATE-CY-2.md) — 3.29 KiB · sha256 `480270649bcd2f19…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/GATE-CY-3.md`](../../plans/seats/SEAT-03/GATE-CY-3.md) — 2.33 KiB · sha256 `2b99ba6e115650e8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/READLOG.md`](../../plans/seats/SEAT-03/READLOG.md) — 8.35 KiB · sha256 `6f343fe536c8a94f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-03/REPORT.md`](../../plans/seats/SEAT-03/REPORT.md) — 17.09 KiB · sha256 `02744209a21f40c0…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/EVIDENCE.md`](../../plans/seats/SEAT-04/EVIDENCE.md) — 2.55 KiB · sha256 `69cf2852e564b6f3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/GATE-CY-1.md`](../../plans/seats/SEAT-04/GATE-CY-1.md) — 1.08 KiB · sha256 `bae4445129ace558…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/GATE-CY-2.md`](../../plans/seats/SEAT-04/GATE-CY-2.md) — 1.48 KiB · sha256 `8b1bd6a8d59b6bea…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/GATE-CY-3.md`](../../plans/seats/SEAT-04/GATE-CY-3.md) — 1.29 KiB · sha256 `ff6387faf12d785d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/READLOG.md`](../../plans/seats/SEAT-04/READLOG.md) — 21.12 KiB · sha256 `6c9ccac253fe538b…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-04/REPORT.md`](../../plans/seats/SEAT-04/REPORT.md) — 11.52 KiB · sha256 `07c91a7777abc9a6…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/EVIDENCE.md`](../../plans/seats/SEAT-05/EVIDENCE.md) — 8.60 KiB · sha256 `3442d948695b895c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/GATE-CY-1.md`](../../plans/seats/SEAT-05/GATE-CY-1.md) — 6.70 KiB · sha256 `ba8b8426a40ef74a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/GATE-CY-2.md`](../../plans/seats/SEAT-05/GATE-CY-2.md) — 3.01 KiB · sha256 `dfd3124c757be86b…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/GATE-CY-3.md`](../../plans/seats/SEAT-05/GATE-CY-3.md) — 4.18 KiB · sha256 `47dca24e70ce06b8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/READLOG.md`](../../plans/seats/SEAT-05/READLOG.md) — 10.65 KiB · sha256 `259e6698ec4d274a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-05/REPORT.md`](../../plans/seats/SEAT-05/REPORT.md) — 18.45 KiB · sha256 `f2770f9809ac2125…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/EVIDENCE.md`](../../plans/seats/SEAT-06/EVIDENCE.md) — 4.64 KiB · sha256 `5bbae593abe4c464…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/GATE-CY-1.md`](../../plans/seats/SEAT-06/GATE-CY-1.md) — 2.59 KiB · sha256 `06f334bf8cb625d3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/GATE-CY-2.md`](../../plans/seats/SEAT-06/GATE-CY-2.md) — 1.60 KiB · sha256 `ca789b7060c02064…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/GATE-CY-3.md`](../../plans/seats/SEAT-06/GATE-CY-3.md) — 1.99 KiB · sha256 `0d179c4b25546f20…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/READLOG.md`](../../plans/seats/SEAT-06/READLOG.md) — 10.15 KiB · sha256 `19b68c6670ddc119…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/REPORT.md`](../../plans/seats/SEAT-06/REPORT.md) — 8.82 KiB · sha256 `f1f521079d5205b9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-06/tools/write_seat.py`](../../plans/seats/SEAT-06/tools/write_seat.py) — 31.29 KiB · sha256 `83f6c4c318b21c41…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`plans/seats/SEAT-07/EVIDENCE.md`](../../plans/seats/SEAT-07/EVIDENCE.md) — 5.60 KiB · sha256 `aef37e9830adb74b…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-07/GATE-CY-1.md`](../../plans/seats/SEAT-07/GATE-CY-1.md) — 1.77 KiB · sha256 `971634393eab0c97…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-07/GATE-CY-2.md`](../../plans/seats/SEAT-07/GATE-CY-2.md) — 1.47 KiB · sha256 `e912af57ef1b814d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-07/GATE-CY-3.md`](../../plans/seats/SEAT-07/GATE-CY-3.md) — 1.60 KiB · sha256 `248d31a07d744aaa…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-07/READLOG.md`](../../plans/seats/SEAT-07/READLOG.md) — 16.58 KiB · sha256 `fe0fe51e009a9e6f…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-07/REPORT.md`](../../plans/seats/SEAT-07/REPORT.md) — 15.74 KiB · sha256 `2940b0b4d8dde4b3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/EVIDENCE.md`](../../plans/seats/SEAT-08/EVIDENCE.md) — 6.50 KiB · sha256 `2b2d44c54a4f9f8e…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/GATE-CY-1.md`](../../plans/seats/SEAT-08/GATE-CY-1.md) — 3.65 KiB · sha256 `504ebe858ca8006e…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/GATE-CY-2.md`](../../plans/seats/SEAT-08/GATE-CY-2.md) — 4.57 KiB · sha256 `90065cfe5bbeebbf…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/GATE-CY-3.md`](../../plans/seats/SEAT-08/GATE-CY-3.md) — 3.45 KiB · sha256 `cf69e2caa7f61d37…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/READLOG.md`](../../plans/seats/SEAT-08/READLOG.md) — 7.71 KiB · sha256 `e21cdaa426562438…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/seats/SEAT-08/REPORT.md`](../../plans/seats/SEAT-08/REPORT.md) — 14.29 KiB · sha256 `519f2a30224ac3bc…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/verification/FINAL-AUDIT.md`](../../plans/verification/FINAL-AUDIT.md) — 12.54 KiB · sha256 `57ff7c57378fddec…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/verification/LEAD-BUGCHECK-RUN2.md`](../../plans/verification/LEAD-BUGCHECK-RUN2.md) — 15.47 KiB · sha256 `c05c365aed683c09…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/verification/LEAD-BUGCHECK.md`](../../plans/verification/LEAD-BUGCHECK.md) — 16.33 KiB · sha256 `a5c496f80956186a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/verification/RELEASE-1.1-AUDIT.md`](../../plans/verification/RELEASE-1.1-AUDIT.md) — 15.24 KiB · sha256 `2b4657f44a6d4bbc…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/verification/RELEASE-GATE-AUDIT.md`](../../plans/verification/RELEASE-GATE-AUDIT.md) — 16.17 KiB · sha256 `0c09b4fd817e413d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/README.md`](../../plans/waves/README.md) — 26.40 KiB · sha256 `80b2ddb98f43605d…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W1-CORE-RECOVERY.md`](../../plans/waves/W1-CORE-RECOVERY.md) — 9.77 KiB · sha256 `b61318230cce1759…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W10-TOOL-LOOP-DECISION.md`](../../plans/waves/W10-TOOL-LOOP-DECISION.md) — 28.91 KiB · sha256 `9222f0825ed0e303…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-CONTRACT.md`](../../plans/waves/W11-CONTRACT.md) — 17.83 KiB · sha256 `61537ff90af30c81…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-GATES.md`](../../plans/waves/W11-GATES.md) — 12.95 KiB · sha256 `3ef5d985c8c3b719…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-GUI-RESIDUAL.md`](../../plans/waves/W11-GUI-RESIDUAL.md) — 10.27 KiB · sha256 `f9f94ae24d28ff15…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-SUSPENSION-DESIGN.md`](../../plans/waves/W11-SUSPENSION-DESIGN.md) — 40.70 KiB · sha256 `264861e349455478…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-TOOL-ASSEMBLER.md`](../../plans/waves/W11-TOOL-ASSEMBLER.md) — 14.49 KiB · sha256 `4434e68d0876edd0…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-TRACE.md`](../../plans/waves/W11-TRACE.md) — 9.91 KiB · sha256 `9d38938780354eb3…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W11-UI-TOOL-ACTIVITY.md`](../../plans/waves/W11-UI-TOOL-ACTIVITY.md) — 42.03 KiB · sha256 `931c21ac9e48a1eb…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W12-INTERFACES.md`](../../plans/waves/W12-INTERFACES.md) — 6.87 KiB · sha256 `2bb7f8fb92164693…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W2-PROVIDER-MATRIX.md`](../../plans/waves/W2-PROVIDER-MATRIX.md) — 14.87 KiB · sha256 `43d1c00e36ce9f38…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W3-STREAMING.md`](../../plans/waves/W3-STREAMING.md) — 13.12 KiB · sha256 `c80788a4b60a181a…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W4-LIVE-HARNESS.md`](../../plans/waves/W4-LIVE-HARNESS.md) — 14.45 KiB · sha256 `afc715f19964c807…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W4-REPLAY-PROOF.md`](../../plans/waves/W4-REPLAY-PROOF.md) — 11.78 KiB · sha256 `4633117185049097…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W4-TRACE-CAPTURE.md`](../../plans/waves/W4-TRACE-CAPTURE.md) — 13.95 KiB · sha256 `cf1884bf5e7346d5…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W5-PROMPT-ASSETS.md`](../../plans/waves/W5-PROMPT-ASSETS.md) — 15.75 KiB · sha256 `babbe64bc6a9831b…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W5B-UI-TESTS.md`](../../plans/waves/W5B-UI-TESTS.md) — 11.05 KiB · sha256 `35f317ddcbabcde8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W7-RELEASE-ENGINEERING.md`](../../plans/waves/W7-RELEASE-ENGINEERING.md) — 13.22 KiB · sha256 `9367dfd8921827a9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W8-DOCS-CHECK.md`](../../plans/waves/W8-DOCS-CHECK.md) — 12.96 KiB · sha256 `0911c7495338cdc7…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W8-DOCS-TRUTH.md`](../../plans/waves/W8-DOCS-TRUTH.md) — 13.62 KiB · sha256 `c593dbedbb1d242e…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W9-GUI-E2E.md`](../../plans/waves/W9-GUI-E2E.md) — 8.64 KiB · sha256 `be72b595b1f84c30…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`plans/waves/W9-TRACE-TRUTH.md`](../../plans/waves/W9-TRACE-TRUTH.md) — 10.69 KiB · sha256 `959ed7a68bd0203e…` · utf-8 · INDEXED — Markdown documentation/evidence
+
+## runtime-test
+
+- [`runtime-test/data2/hiverouter.db`](../../runtime-test/data2/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data2/hiverouter.db-shm`](../../runtime-test/data2/hiverouter.db-shm) — 32.00 KiB · sha256 `b86eda07432c5f92…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data2/hiverouter.db-wal`](../../runtime-test/data2/hiverouter.db-wal) — 92.57 KiB · sha256 `66b34bf73c5cb379…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data3/hiverouter.db`](../../runtime-test/data3/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data3/hiverouter.db-shm`](../../runtime-test/data3/hiverouter.db-shm) — 32.00 KiB · sha256 `ac5ed03284d6adb4…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data3/hiverouter.db-wal`](../../runtime-test/data3/hiverouter.db-wal) — 92.57 KiB · sha256 `dfdbc19177bd835c…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data4/hiverouter.db`](../../runtime-test/data4/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data4/hiverouter.db-shm`](../../runtime-test/data4/hiverouter.db-shm) — 32.00 KiB · sha256 `a7ad9aa038535d86…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data4/hiverouter.db-wal`](../../runtime-test/data4/hiverouter.db-wal) — 148.90 KiB · sha256 `a258ebd0ff9f7f1d…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data4/snapshots/01a1b119-2f34-7228-974e-03b1c27856fc/0000000000.json`](../../runtime-test/data4/snapshots/01a1b119-2f34-7228-974e-03b1c27856fc/0000000000.json) — 271 B · sha256 `b3384389368e4136…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`runtime-test/data5/hiverouter.db`](../../runtime-test/data5/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data5/hiverouter.db-shm`](../../runtime-test/data5/hiverouter.db-shm) — 32.00 KiB · sha256 `48edb60fe77a7613…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data5/hiverouter.db-wal`](../../runtime-test/data5/hiverouter.db-wal) — 92.57 KiB · sha256 `6cb19a0bb68c37c6…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data6/hiverouter.db`](../../runtime-test/data6/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data6/hiverouter.db-shm`](../../runtime-test/data6/hiverouter.db-shm) — 32.00 KiB · sha256 `41607360c495452b…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data6/hiverouter.db-wal`](../../runtime-test/data6/hiverouter.db-wal) — 148.90 KiB · sha256 `fcf13bb6d6c7f607…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data6/snapshots/01a1b11d-90f3-73b3-bca9-616a21cd2e54/0000000000.json`](../../runtime-test/data6/snapshots/01a1b11d-90f3-73b3-bca9-616a21cd2e54/0000000000.json) — 271 B · sha256 `208d3889264a830e…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`runtime-test/data7/hiverouter.db`](../../runtime-test/data7/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data7/hiverouter.db-shm`](../../runtime-test/data7/hiverouter.db-shm) — 32.00 KiB · sha256 `6202d05b99fccf25…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data7/hiverouter.db-wal`](../../runtime-test/data7/hiverouter.db-wal) — 124.76 KiB · sha256 `dbfa36bc2423dd8c…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data8/hiverouter.db`](../../runtime-test/data8/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data8/hiverouter.db-shm`](../../runtime-test/data8/hiverouter.db-shm) — 32.00 KiB · sha256 `94d110727614c178…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data8/hiverouter.db-wal`](../../runtime-test/data8/hiverouter.db-wal) — 124.76 KiB · sha256 `705014adda043f55…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data9/hiverouter.db`](../../runtime-test/data9/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data9/hiverouter.db-shm`](../../runtime-test/data9/hiverouter.db-shm) — 32.00 KiB · sha256 `e8620d36d8403129…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data9/hiverouter.db-wal`](../../runtime-test/data9/hiverouter.db-wal) — 181.09 KiB · sha256 `655543f8fbc42f10…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data9/snapshots/01a1b16d-7530-75e4-b51e-83b6bc3fdcca/0000000000.json`](../../runtime-test/data9/snapshots/01a1b16d-7530-75e4-b51e-83b6bc3fdcca/0000000000.json) — 271 B · sha256 `bd2270f596523038…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`runtime-test/data/hiverouter.db`](../../runtime-test/data/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data/hiverouter.db-shm`](../../runtime-test/data/hiverouter.db-shm) — 32.00 KiB · sha256 `f6fcffaf91e43d08…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/data/hiverouter.db-wal`](../../runtime-test/data/hiverouter.db-wal) — 92.57 KiB · sha256 `90a60cd79ba2da4c…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-cli-final/CHECKSUMS.txt`](../../runtime-test/pkg-cli-final/CHECKSUMS.txt) — 712 B · sha256 `842e44c7439268b5…` · utf-8-bom · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-cli-final/data/hiverouter.db`](../../runtime-test/pkg-cli-final/data/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-cli-final/data/hiverouter.db-shm`](../../runtime-test/pkg-cli-final/data/hiverouter.db-shm) — 32.00 KiB · sha256 `b0c2485ec9ec9c17…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-cli-final/data/hiverouter.db-wal`](../../runtime-test/pkg-cli-final/data/hiverouter.db-wal) — 124.76 KiB · sha256 `779bae5fe7bf0a34…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-cli-final/hiverouter-cli.exe`](../../runtime-test/pkg-cli-final/hiverouter-cli.exe) — 5.12 MiB · sha256 `51e1aba6dc7349bf…` · nul-binary · INDEXED — Compiled Windows executable
+- [`runtime-test/pkg-cli-final/hiverouter.exe`](../../runtime-test/pkg-cli-final/hiverouter.exe) — 8.90 MiB · sha256 `184d51a7c3cca7b9…` · nul-binary · INDEXED — Compiled Windows executable
+- [`runtime-test/pkg-cli-final/README.md`](../../runtime-test/pkg-cli-final/README.md) — 1.25 KiB · sha256 `cfa567329edc9e6c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/pkg-cli-final/RUNBOOK.md`](../../runtime-test/pkg-cli-final/RUNBOOK.md) — 4.29 KiB · sha256 `e7fba10f3332ca65…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/pkg-final/CHECKSUMS.txt`](../../runtime-test/pkg-final/CHECKSUMS.txt) — 477 B · sha256 `9193a5b4f365b294…` · utf-8-bom · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-final/data/hiverouter.db`](../../runtime-test/pkg-final/data/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/data/hiverouter.db-shm`](../../runtime-test/pkg-final/data/hiverouter.db-shm) — 32.00 KiB · sha256 `400ebfd736d79859…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/data/hiverouter.db-wal`](../../runtime-test/pkg-final/data/hiverouter.db-wal) — 124.76 KiB · sha256 `3622e5bbf27033fd…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/err.txt`](../../runtime-test/pkg-final/err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-final/hiverouter.exe`](../../runtime-test/pkg-final/hiverouter.exe) — 8.90 MiB · sha256 `184d51a7c3cca7b9…` · nul-binary · INDEXED — Compiled Windows executable
+- [`runtime-test/pkg-final/out.txt`](../../runtime-test/pkg-final/out.txt) — 571 B · sha256 `8bf54e0f7b765da4…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-final/README.md`](../../runtime-test/pkg-final/README.md) — 1.25 KiB · sha256 `cfa567329edc9e6c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/pkg-final/RUNBOOK.md`](../../runtime-test/pkg-final/RUNBOOK.md) — 4.29 KiB · sha256 `e7fba10f3332ca65…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/pkg-final/smoke-data/hiverouter.db`](../../runtime-test/pkg-final/smoke-data/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/smoke-data/hiverouter.db-shm`](../../runtime-test/pkg-final/smoke-data/hiverouter.db-shm) — 32.00 KiB · sha256 `114c6549e7e78b0b…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/smoke-data/hiverouter.db-wal`](../../runtime-test/pkg-final/smoke-data/hiverouter.db-wal) — 124.76 KiB · sha256 `4c9089758f4f0f34…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-final/smoke.err`](../../runtime-test/pkg-final/smoke.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/pkg-final/smoke.out`](../../runtime-test/pkg-final/smoke.out) — 583 B · sha256 `6208165e1bb6bfd6…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/pkg-smoke/CHECKSUMS.txt`](../../runtime-test/pkg-smoke/CHECKSUMS.txt) — 451 B · sha256 `c95ef561bf047dbd…` · utf-8-bom · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-smoke/data/hiverouter.db`](../../runtime-test/pkg-smoke/data/hiverouter.db) — 4.00 KiB · sha256 `89a2318c76452be8…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-smoke/data/hiverouter.db-shm`](../../runtime-test/pkg-smoke/data/hiverouter.db-shm) — 32.00 KiB · sha256 `b58903d1bfc4664f…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-smoke/data/hiverouter.db-wal`](../../runtime-test/pkg-smoke/data/hiverouter.db-wal) — 92.57 KiB · sha256 `277c9b5895ebbb6c…` · nul-binary · INDEXED — SQLite runtime data/WAL/SHM
+- [`runtime-test/pkg-smoke/err.txt`](../../runtime-test/pkg-smoke/err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-smoke/hiverouter.exe`](../../runtime-test/pkg-smoke/hiverouter.exe) — 8.68 MiB · sha256 `71b229b587a909a6…` · nul-binary · INDEXED — Compiled Windows executable
+- [`runtime-test/pkg-smoke/out.txt`](../../runtime-test/pkg-smoke/out.txt) — 571 B · sha256 `3ef24fc0c9f6d7df…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/pkg-smoke/README.md`](../../runtime-test/pkg-smoke/README.md) — 1.25 KiB · sha256 `cfa567329edc9e6c…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/pkg-smoke/RUNBOOK.md`](../../runtime-test/pkg-smoke/RUNBOOK.md) — 4.29 KiB · sha256 `e7fba10f3332ca65…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`runtime-test/root.html`](../../runtime-test/root.html) — 46 B · sha256 `71bc055475bee0be…` · utf-8 · INDEXED — Web/static asset
+- [`runtime-test/s5.err`](../../runtime-test/s5.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s5.out`](../../runtime-test/s5.out) — 553 B · sha256 `cb540a4a3a9cd322…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s6.err`](../../runtime-test/s6.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s6.out`](../../runtime-test/s6.out) — 4.72 KiB · sha256 `efaa576cc176079c…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s7.err`](../../runtime-test/s7.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s7.out`](../../runtime-test/s7.out) — 553 B · sha256 `f5fa99b678b606c6…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s8.err`](../../runtime-test/s8.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s8.out`](../../runtime-test/s8.out) — 553 B · sha256 `40442aafd3ea9e42…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s9.err`](../../runtime-test/s9.err) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/s9.out`](../../runtime-test/s9.out) — 553 B · sha256 `7f7fa6e1c65c12b9…` · utf-8 · INDEXED — Generated command evidence/stream log
+- [`runtime-test/server.err.txt`](../../runtime-test/server.err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server.out.txt`](../../runtime-test/server.out.txt) — 551 B · sha256 `11b42121dd424b01…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server2.err.txt`](../../runtime-test/server2.err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server2.out.txt`](../../runtime-test/server2.out.txt) — 553 B · sha256 `838f1917d697f9eb…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server3.err.txt`](../../runtime-test/server3.err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server3.out.txt`](../../runtime-test/server3.out.txt) — 553 B · sha256 `6b953d16d09bc692…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server4.err.txt`](../../runtime-test/server4.err.txt) — 0 B · sha256 `e3b0c44298fc1c14…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/server4.out.txt`](../../runtime-test/server4.out.txt) — 1.20 KiB · sha256 `8c42f12e13bd62c2…` · utf-8 · INDEXED — Plain-text data/evidence
+- [`runtime-test/workspace/note.txt`](../../runtime-test/workspace/note.txt) — 20 B · sha256 `987f6fd43c751a63…` · utf-8-bom · INDEXED — Plain-text data/evidence
+- [`runtime-test/workspace/README.md`](../../runtime-test/workspace/README.md) — 44 B · sha256 `b0bd9d5596577ef6…` · utf-8-bom · INDEXED — Markdown documentation/evidence
+
+## tools
+
+- [`tools/bin/hiverouter-cli.exe`](../../tools/bin/hiverouter-cli.exe) — 5.12 MiB · sha256 `51e1aba6dc7349bf…` · nul-binary · INDEXED — Compiled Windows executable
+- [`tools/bin/hiverouter.exe`](../../tools/bin/hiverouter.exe) — 8.90 MiB · sha256 `184d51a7c3cca7b9…` · nul-binary · INDEXED — Compiled Windows executable
+- [`tools/build-release.ps1`](../../tools/build-release.ps1) — 44.22 KiB · sha256 `0d7914e479746ef4…` · utf-8 · INDEXED — Sealed release build, hashes, source/seal topology flags.
+- [`tools/build_assets_index.py`](../../tools/build_assets_index.py) — 3.26 KiB · sha256 `6efd980b32933706…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`tools/cc-test/r.exe`](../../tools/cc-test/r.exe) — 4.85 MiB · sha256 `db801a07b6fd5194…` · nul-binary · INDEXED — Compiled Windows executable
+- [`tools/cc-test/r.rs`](../../tools/cc-test/r.rs) — 47 B · sha256 `0d2caae627fd973c…` · utf-8-bom · INDEXED — Rust source module
+- [`tools/cc-test/t.c`](../../tools/cc-test/t.c) — 70 B · sha256 `29838a3aab694b42…` · utf-8 · INDEXED — C fixture/tool source
+- [`tools/cc-test/t.exe`](../../tools/cc-test/t.exe) — 48.71 KiB · sha256 `2840568e7b7d4c22…` · nul-binary · INDEXED — Compiled Windows executable
+- [`tools/qa/apply-live-trace.mjs`](../../tools/qa/apply-live-trace.mjs) — 7.49 KiB · sha256 `60ee84d3cefc15af…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/apply_wp01.py`](../../tools/qa/apply_wp01.py) — 3.21 KiB · sha256 `66c7a1bafa65e6d1…` · utf-8 · INDEXED — Python tooling/analysis script
+- [`tools/qa/build-trace-seeds.mjs`](../../tools/qa/build-trace-seeds.mjs) — 3.52 KiB · sha256 `e1c67d22ad002ca2…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/check-docs-truth.mjs`](../../tools/qa/check-docs-truth.mjs) — 19.18 KiB · sha256 `76c9365cc5a84523…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/check-env.ps1`](../../tools/qa/check-env.ps1) — 3.63 KiB · sha256 `dbe1857f7179e4c3…` · utf-8 · INDEXED — PowerShell build/QA script
+- [`tools/qa/check-seal-topology.mjs`](../../tools/qa/check-seal-topology.mjs) — 14.32 KiB · sha256 `b6de7232c78e6afb…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/figcraft-assets.mjs`](../../tools/qa/figcraft-assets.mjs) — 3.47 KiB · sha256 `48ffa47248259da4…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/README.md`](../../tools/qa/README.md) — 4.96 KiB · sha256 `6a0a6db0a26a44b8…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`tools/qa/run-gates.ps1`](../../tools/qa/run-gates.ps1) — 42.24 KiB · sha256 `fb81750538a1b0b2…` · utf-8 · INDEXED — Release/pre-release gate orchestration.
+- [`tools/qa/tests/seal-topology.test.mjs`](../../tools/qa/tests/seal-topology.test.mjs) — 3.21 KiB · sha256 `53c30bea775ffb8d…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/tests/trace-tools.test.mjs`](../../tools/qa/tests/trace-tools.test.mjs) — 5.09 KiB · sha256 `e7d38c6f245327ae…` · utf-8 · INDEXED — Node ESM script
+- [`tools/qa/verify-harness.mjs`](../../tools/qa/verify-harness.mjs) — 10.80 KiB · sha256 `a983bc47e1977c35…` · utf-8 · INDEXED — Structural QA checks for contract/harness evidence pointers.
+- [`tools/release-manifest.json`](../../tools/release-manifest.json) — 7.73 KiB · sha256 `528741662885e9c4…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`tools/runbook.md`](../../tools/runbook.md) — 5.26 KiB · sha256 `40cb431c57b59ea9…` · utf-8 · INDEXED — Markdown documentation/evidence
+- [`tools/test.ps1`](../../tools/test.ps1) — 2.47 KiB · sha256 `210ad6393afd7432…` · utf-8 · INDEXED — PowerShell build/QA script
+
+## web
+
+- [`web/index.html`](../../web/index.html) — 676 B · sha256 `bc8e7e4d9afefac2…` · utf-8 · INDEXED — Web/static asset
+- [`web/package-lock.json`](../../web/package-lock.json) — 76.51 KiB · sha256 `5c84fde4de742895…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`web/package.json`](../../web/package.json) — 948 B · sha256 `434960f0e97847f1…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`web/src/a11y/keyboard.ts`](../../web/src/a11y/keyboard.ts) — 2.91 KiB · sha256 `72bae334d9d7a4aa…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/a11y/reducedMotion.ts`](../../web/src/a11y/reducedMotion.ts) — 1.03 KiB · sha256 `45231d4feb659362…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/client.ts`](../../web/src/api/client.ts) — 18.58 KiB · sha256 `745fc57a06eba0ab…` · utf-8 · INDEXED — WebSocket/HTTP client, streaming, ACK/refusal handling, pending-approval pull.
+- [`web/src/api/contract.ts`](../../web/src/api/contract.ts) — 35.94 KiB · sha256 `c72c8142384ede06…` · utf-8 · INDEXED — Typed client mirror of commands/events/refusals, decoders, limits.
+- [`web/src/api/health.ts`](../../web/src/api/health.ts) — 2.63 KiB · sha256 `746f2c239eadd66b…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/http.ts`](../../web/src/api/http.ts) — 3.53 KiB · sha256 `8f9f62e831146b15…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/ids.ts`](../../web/src/api/ids.ts) — 1.57 KiB · sha256 `9d7d8d755a5eb863…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/index.ts`](../../web/src/api/index.ts) — 5.72 KiB · sha256 `608976b90b0a0300…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/mock.ts`](../../web/src/api/mock.ts) — 12.46 KiB · sha256 `9c8c2e22e1b331bf…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/api/refusals.ts`](../../web/src/api/refusals.ts) — 1.54 KiB · sha256 `dc715b3ae2480144…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/App.tsx`](../../web/src/App.tsx) — 3.87 KiB · sha256 `bc93c009d101c040…` · utf-8 · INDEXED — React component
+- [`web/src/assets/manifest.ts`](../../web/src/assets/manifest.ts) — 4.77 KiB · sha256 `c0da46d37948d5c6…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/chat/ChatCore.tsx`](../../web/src/chat/ChatCore.tsx) — 9.93 KiB · sha256 `83e515fa91503210…` · utf-8 · INDEXED — Composer, optimistic prompt, ACK/refusal rollback, chat transcript.
+- [`web/src/flow/BeeEdge.tsx`](../../web/src/flow/BeeEdge.tsx) — 1.65 KiB · sha256 `96c4e65a6bb24120…` · utf-8 · INDEXED — React component
+- [`web/src/flow/Canvas.tsx`](../../web/src/flow/Canvas.tsx) — 9.04 KiB · sha256 `e1dd15073b066873…` · utf-8 · INDEXED — React component
+- [`web/src/flow/graph.ts`](../../web/src/flow/graph.ts) — 4.92 KiB · sha256 `c2c572f8f6f50ba6…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/flow/nodes.tsx`](../../web/src/flow/nodes.tsx) — 6.30 KiB · sha256 `5de1969ae23615bc…` · utf-8 · INDEXED — React component
+- [`web/src/main.tsx`](../../web/src/main.tsx) — 404 B · sha256 `2bc1aa6aaf5a25fd…` · utf-8 · INDEXED — React component
+- [`web/src/panels/AgentsPanel.tsx`](../../web/src/panels/AgentsPanel.tsx) — 3.00 KiB · sha256 `33fed17b2fa0e923…` · utf-8 · INDEXED — React component
+- [`web/src/panels/ApprovalOverlay.tsx`](../../web/src/panels/ApprovalOverlay.tsx) — 14.20 KiB · sha256 `1595c7becdffae89…` · utf-8 · INDEXED — Approval dialog: evidence, expiry, approve/deny, retry/dismiss, stale banner.
+- [`web/src/panels/ControlBar.tsx`](../../web/src/panels/ControlBar.tsx) — 4.91 KiB · sha256 `a22b87b6d259c2fb…` · utf-8 · INDEXED — React component
+- [`web/src/panels/DataPanel.tsx`](../../web/src/panels/DataPanel.tsx) — 5.13 KiB · sha256 `8a47c5c88177b029…` · utf-8 · INDEXED — Workspace tree/preview, file/directory distinction, retry state.
+- [`web/src/panels/DevGallery.tsx`](../../web/src/panels/DevGallery.tsx) — 1.02 KiB · sha256 `5d6645467e54865f…` · utf-8 · INDEXED — React component
+- [`web/src/panels/DiffDecisionModal.tsx`](../../web/src/panels/DiffDecisionModal.tsx) — 1.24 KiB · sha256 `6c2ddd6bfd6f800c…` · utf-8 · INDEXED — React component
+- [`web/src/panels/Header.tsx`](../../web/src/panels/Header.tsx) — 3.19 KiB · sha256 `8285642357b7b8f6…` · utf-8 · INDEXED — React component
+- [`web/src/panels/LibraryPanel.tsx`](../../web/src/panels/LibraryPanel.tsx) — 2.92 KiB · sha256 `85b059387ac942ad…` · utf-8 · INDEXED — React component
+- [`web/src/panels/ModelsPanel.tsx`](../../web/src/panels/ModelsPanel.tsx) — 1.17 KiB · sha256 `231a22a7228e632c…` · utf-8 · INDEXED — React component
+- [`web/src/panels/NavRail.tsx`](../../web/src/panels/NavRail.tsx) — 2.20 KiB · sha256 `dc54427f99fc0097…` · utf-8 · INDEXED — React component
+- [`web/src/panels/RoutingPanel.tsx`](../../web/src/panels/RoutingPanel.tsx) — 1.84 KiB · sha256 `f0269705a18a93b5…` · utf-8 · INDEXED — React component
+- [`web/src/panels/Scrubber.tsx`](../../web/src/panels/Scrubber.tsx) — 2.95 KiB · sha256 `3329167dd0a8cf92…` · utf-8 · INDEXED — History revision scrubber and live-exit control.
+- [`web/src/panels/SettingsPanel.tsx`](../../web/src/panels/SettingsPanel.tsx) — 5.48 KiB · sha256 `eb270a7c3df66e25…` · utf-8 · INDEXED — React component
+- [`web/src/panels/StatePack.tsx`](../../web/src/panels/StatePack.tsx) — 1.77 KiB · sha256 `ed3fbdc6ebe78c27…` · utf-8 · INDEXED — React component
+- [`web/src/panels/ToastRegion.tsx`](../../web/src/panels/ToastRegion.tsx) — 2.02 KiB · sha256 `403d24c553bf9f07…` · utf-8 · INDEXED — React component
+- [`web/src/panels/ToolActivityPanel.tsx`](../../web/src/panels/ToolActivityPanel.tsx) — 7.05 KiB · sha256 `11489e87e25ce7c9…` · utf-8 · INDEXED — React component
+- [`web/src/state/agentState.ts`](../../web/src/state/agentState.ts) — 4.59 KiB · sha256 `4cfc0735a6e03f34…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/state/approval.ts`](../../web/src/state/approval.ts) — 14.70 KiB · sha256 `94311064dd1a8df7…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/state/context.ts`](../../web/src/state/context.ts) — 811 B · sha256 `2ce91b7243f15660…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/state/metrics.ts`](../../web/src/state/metrics.ts) — 1.67 KiB · sha256 `15fc2eb1729032a8…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/state/store.ts`](../../web/src/state/store.ts) — 74.80 KiB · sha256 `4df560ad388058fc…` · utf-8 · INDEXED — Zustand store: run/task/message state, approvals, replay/resync, hydration, commands.
+- [`web/src/state/strings.ts`](../../web/src/state/strings.ts) — 14.26 KiB · sha256 `71a21f6f6f78ff8b…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/state/useAppReducedMotion.ts`](../../web/src/state/useAppReducedMotion.ts) — 388 B · sha256 `cb9a8f53f90d2ba1…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/styles/index.css`](../../web/src/styles/index.css) — 3.52 KiB · sha256 `e3925c3e6bfea2a5…` · utf-8 · INDEXED — Web/static asset
+- [`web/src/styles/tokens.css`](../../web/src/styles/tokens.css) — 2.79 KiB · sha256 `43a0b8e4c07e5db7…` · utf-8 · INDEXED — Web/static asset
+- [`web/src/tokens/contrast.ts`](../../web/src/tokens/contrast.ts) — 1.64 KiB · sha256 `c3193db4403cc32a…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/src/tokens/tokens.ts`](../../web/src/tokens/tokens.ts) — 6.90 KiB · sha256 `078354a37d8ac754…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/agentState.test.ts`](../../web/tests/agentState.test.ts) — 1.78 KiB · sha256 `d2b3849b5f282d83…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/agentsToolActivityMount.test.ts`](../../web/tests/agentsToolActivityMount.test.ts) — 13.31 KiB · sha256 `26272c44ff3fa79b…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/apiBoundary.test.ts`](../../web/tests/apiBoundary.test.ts) — 2.74 KiB · sha256 `a1d917263f862d10…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/apiClient.test.ts`](../../web/tests/apiClient.test.ts) — 6.70 KiB · sha256 `0382621a610c3f9c…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/apiLifecycle.test.ts`](../../web/tests/apiLifecycle.test.ts) — 8.96 KiB · sha256 `84406c4a3c4c5b34…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/approval.integration.test.ts`](../../web/tests/approval.integration.test.ts) — 11.25 KiB · sha256 `9bb64086047ceaf4…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/approval.state.test.ts`](../../web/tests/approval.state.test.ts) — 24.09 KiB · sha256 `3cc3a136ad12ec55…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/contract.test.ts`](../../web/tests/contract.test.ts) — 7.90 KiB · sha256 `c137471af49b4814…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/graph.replay.test.ts`](../../web/tests/graph.replay.test.ts) — 5.52 KiB · sha256 `00a4377e83fb7a83…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/health.test.ts`](../../web/tests/health.test.ts) — 2.91 KiB · sha256 `5415758aa1e20736…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/keyboard.test.ts`](../../web/tests/keyboard.test.ts) — 2.35 KiB · sha256 `fc05f6443800bf2c…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/metrics.test.ts`](../../web/tests/metrics.test.ts) — 1.45 KiB · sha256 `16aaac10ca47ee6a…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/noHardcoded.test.ts`](../../web/tests/noHardcoded.test.ts) — 2.18 KiB · sha256 `45d5b407fba4108f…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/refusalParity.test.ts`](../../web/tests/refusalParity.test.ts) — 835 B · sha256 `08e8d248ebce467d…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/state.parity.test.ts`](../../web/tests/state.parity.test.ts) — 2.75 KiB · sha256 `2d2e55320a44f713…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/store.test.ts`](../../web/tests/store.test.ts) — 7.16 KiB · sha256 `8945ef17b632edb3…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/streamingRender.test.ts`](../../web/tests/streamingRender.test.ts) — 7.66 KiB · sha256 `6d6aeb83e21e87d2…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/tokens.test.ts`](../../web/tests/tokens.test.ts) — 2.12 KiB · sha256 `80b68a13ea77f61a…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/toolActivity.integration.test.ts`](../../web/tests/toolActivity.integration.test.ts) — 8.89 KiB · sha256 `c8839faf99953419…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/toolActivity.store.test.ts`](../../web/tests/toolActivity.store.test.ts) — 15.48 KiB · sha256 `8640138bc9cdac30…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tests/toolActivityPanels.test.ts`](../../web/tests/toolActivityPanels.test.ts) — 5.64 KiB · sha256 `418e4e9400720902…` · utf-8 · INDEXED — TypeScript source/test module
+- [`web/tsconfig.json`](../../web/tsconfig.json) — 618 B · sha256 `a50ac07820f94752…` · utf-8 · INDEXED — JSON config/data/evidence
+- [`web/vite.config.ts`](../../web/vite.config.ts) — 798 B · sha256 `4c0bf654d4c48b24…` · utf-8 · INDEXED — TypeScript source/test module

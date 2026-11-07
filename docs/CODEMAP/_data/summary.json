@@ -1,0 +1,1706 @@
+{
+  "head": "e021b12e5bb7e5334c71012bcf7a8810d91b9e58",
+  "status_porcelain": "?? docs/CODEMAP/",
+  "working_tree_files": 36480,
+  "tracked_files": 805,
+  "ignored_files": 35675,
+  "working_tree_bytes": 20061574683,
+  "tracked_bytes": 89771311,
+  "ignored_bytes": 19971803372,
+  "areas": {
+    "target": {
+      "files": 17244,
+      "tracked": 0,
+      "ignored": 17244,
+      "bytes": 16549150661,
+      "tracked_bytes": 0
+    },
+    "tools": {
+      "files": 9475,
+      "tracked": 23,
+      "ignored": 9452,
+      "bytes": 771527800,
+      "tracked_bytes": 20020010
+    },
+    "backend": {
+      "files": 4754,
+      "tracked": 112,
+      "ignored": 4642,
+      "bytes": 2465564884,
+      "tracked_bytes": 1584564
+    },
+    "web": {
+      "files": 4141,
+      "tracked": 71,
+      "ignored": 4070,
+      "bytes": 123393645,
+      "tracked_bytes": 546866
+    },
+    "docs": {
+      "files": 314,
+      "tracked": 260,
+      "ignored": 54,
+      "bytes": 34625672,
+      "tracked_bytes": 10871798
+    },
+    "e2e": {
+      "files": 237,
+      "tracked": 39,
+      "ignored": 198,
+      "bytes": 20553975,
+      "tracked_bytes": 278719
+    },
+    "plans": {
+      "files": 114,
+      "tracked": 114,
+      "ignored": 0,
+      "bytes": 1673232,
+      "tracked_bytes": 1673232
+    },
+    "audit": {
+      "files": 93,
+      "tracked": 93,
+      "ignored": 0,
+      "bytes": 2480688,
+      "tracked_bytes": 2480688
+    },
+    "runtime-test": {
+      "files": 82,
+      "tracked": 82,
+      "ignored": 0,
+      "bytes": 35235871,
+      "tracked_bytes": 35235871
+    },
+    "dist": {
+      "files": 19,
+      "tracked": 4,
+      "ignored": 15,
+      "bytes": 57345966,
+      "tracked_bytes": 17057274
+    },
+    "(root)": {
+      "files": 4,
+      "tracked": 4,
+      "ignored": 0,
+      "bytes": 7090,
+      "tracked_bytes": 7090
+    },
+    "ledgers": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 14970,
+      "tracked_bytes": 14970
+    },
+    ".cargo": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 229,
+      "tracked_bytes": 229
+    }
+  },
+  "extensions": {
+    "(none)": {
+      "files": 7051,
+      "tracked": 2,
+      "ignored": 7049,
+      "bytes": 13650548,
+      "tracked_bytes": 383
+    },
+    ".json": {
+      "files": 3361,
+      "tracked": 109,
+      "ignored": 3252,
+      "bytes": 6649747,
+      "tracked_bytes": 2257580
+    },
+    ".timestamp": {
+      "files": 3088,
+      "tracked": 0,
+      "ignored": 3088,
+      "bytes": 148224,
+      "tracked_bytes": 0
+    },
+    ".d": {
+      "files": 2946,
+      "tracked": 0,
+      "ignored": 2946,
+      "bytes": 16512211,
+      "tracked_bytes": 0
+    },
+    ".h": {
+      "files": 2515,
+      "tracked": 0,
+      "ignored": 2515,
+      "bytes": 103580483,
+      "tracked_bytes": 0
+    },
+    ".rmeta": {
+      "files": 2366,
+      "tracked": 0,
+      "ignored": 2366,
+      "bytes": 3172743442,
+      "tracked_bytes": 0
+    },
+    ".cmake": {
+      "files": 1525,
+      "tracked": 0,
+      "ignored": 1525,
+      "bytes": 5111227,
+      "tracked_bytes": 0
+    },
+    ".a": {
+      "files": 1519,
+      "tracked": 0,
+      "ignored": 1519,
+      "bytes": 332436258,
+      "tracked_bytes": 0
+    },
+    ".vim": {
+      "files": 1516,
+      "tracked": 0,
+      "ignored": 1516,
+      "bytes": 11279344,
+      "tracked_bytes": 0
+    },
+    ".rlib": {
+      "files": 1493,
+      "tracked": 0,
+      "ignored": 1493,
+      "bytes": 2962636278,
+      "tracked_bytes": 0
+    },
+    ".map": {
+      "files": 1118,
+      "tracked": 0,
+      "ignored": 1118,
+      "bytes": 10583106,
+      "tracked_bytes": 0
+    },
+    ".ts": {
+      "files": 1078,
+      "tracked": 68,
+      "ignored": 1010,
+      "bytes": 11589960,
+      "tracked_bytes": 603620
+    },
+    ".o": {
+      "files": 1021,
+      "tracked": 0,
+      "ignored": 1021,
+      "bytes": 35007179,
+      "tracked_bytes": 0
+    },
+    ".exe": {
+      "files": 960,
+      "tracked": 10,
+      "ignored": 950,
+      "bytes": 12800185777,
+      "tracked_bytes": 58091780
+    },
+    ".js": {
+      "files": 745,
+      "tracked": 0,
+      "ignored": 745,
+      "bytes": 40575689,
+      "tracked_bytes": 0
+    },
+    ".mjs": {
+      "files": 604,
+      "tracked": 17,
+      "ignored": 587,
+      "bytes": 3734379,
+      "tracked_bytes": 94246
+    },
+    ".md": {
+      "files": 358,
+      "tracked": 219,
+      "ignored": 139,
+      "bytes": 3776627,
+      "tracked_bytes": 2897300
+    },
+    ".idl": {
+      "files": 339,
+      "tracked": 0,
+      "ignored": 339,
+      "bytes": 11196728,
+      "tracked_bytes": 0
+    },
+    ".1": {
+      "files": 299,
+      "tracked": 0,
+      "ignored": 299,
+      "bytes": 4742390,
+      "tracked_bytes": 0
+    },
+    ".hpp": {
+      "files": 243,
+      "tracked": 0,
+      "ignored": 243,
+      "bytes": 1109344,
+      "tracked_bytes": 0
+    },
+    ".txt": {
+      "files": 228,
+      "tracked": 19,
+      "ignored": 209,
+      "bytes": 10036233,
+      "tracked_bytes": 31773
+    },
+    ".rs": {
+      "files": 145,
+      "tracked": 104,
+      "ignored": 41,
+      "bytes": 4500695,
+      "tracked_bytes": 1417028
+    },
+    ".in": {
+      "files": 122,
+      "tracked": 0,
+      "ignored": 122,
+      "bytes": 404339,
+      "tracked_bytes": 0
+    },
+    ".dll": {
+      "files": 115,
+      "tracked": 0,
+      "ignored": 115,
+      "bytes": 377771800,
+      "tracked_bytes": 0
+    },
+    ".nsh": {
+      "files": 112,
+      "tracked": 0,
+      "ignored": 112,
+      "bytes": 1181790,
+      "tracked_bytes": 0
+    },
+    ".mts": {
+      "files": 96,
+      "tracked": 0,
+      "ignored": 96,
+      "bytes": 553097,
+      "tracked_bytes": 0
+    },
+    ".def": {
+      "files": 90,
+      "tracked": 0,
+      "ignored": 90,
+      "bytes": 121848,
+      "tracked_bytes": 0
+    },
+    ".lib": {
+      "files": 90,
+      "tracked": 0,
+      "ignored": 90,
+      "bytes": 4797816,
+      "tracked_bytes": 0
+    },
+    ".obj": {
+      "files": 78,
+      "tracked": 0,
+      "ignored": 78,
+      "bytes": 1066179,
+      "tracked_bytes": 0
+    },
+    ".nlf": {
+      "files": 67,
+      "tracked": 0,
+      "ignored": 67,
+      "bytes": 412624,
+      "tracked_bytes": 0
+    },
+    ".7": {
+      "files": 65,
+      "tracked": 0,
+      "ignored": 65,
+      "bytes": 4660761,
+      "tracked_bytes": 0
+    },
+    ".patch": {
+      "files": 64,
+      "tracked": 0,
+      "ignored": 64,
+      "bytes": 196395,
+      "tracked_bytes": 0
+    },
+    ".diff": {
+      "files": 58,
+      "tracked": 0,
+      "ignored": 58,
+      "bytes": 451369,
+      "tracked_bytes": 0
+    },
+    ".aap": {
+      "files": 55,
+      "tracked": 0,
+      "ignored": 55,
+      "bytes": 145044,
+      "tracked_bytes": 0
+    },
+    ".c": {
+      "files": 54,
+      "tracked": 2,
+      "ignored": 52,
+      "bytes": 836696,
+      "tracked_bytes": 145
+    },
+    ".py": {
+      "files": 46,
+      "tracked": 43,
+      "ignored": 3,
+      "bytes": 461517,
+      "tracked_bytes": 452251
+    },
+    ".log": {
+      "files": 46,
+      "tracked": 1,
+      "ignored": 45,
+      "bytes": 1802196,
+      "tracked_bytes": 1586
+    },
+    ".bmp": {
+      "files": 44,
+      "tracked": 0,
+      "ignored": 44,
+      "bytes": 1043470,
+      "tracked_bytes": 0
+    },
+    ".tcc": {
+      "files": 43,
+      "tracked": 0,
+      "ignored": 43,
+      "bytes": 954856,
+      "tracked_bytes": 0
+    },
+    ".png": {
+      "files": 42,
+      "tracked": 20,
+      "ignored": 22,
+      "bytes": 10359470,
+      "tracked_bytes": 1564369
+    },
+    ".cts": {
+      "files": 37,
+      "tracked": 0,
+      "ignored": 37,
+      "bytes": 51682,
+      "tracked_bytes": 0
+    },
+    ".ico": {
+      "files": 36,
+      "tracked": 0,
+      "ignored": 36,
+      "bytes": 469174,
+      "tracked_bytes": 0
+    },
+    ".ps": {
+      "files": 33,
+      "tracked": 0,
+      "ignored": 33,
+      "bytes": 64070,
+      "tracked_bytes": 0
+    },
+    ".la": {
+      "files": 31,
+      "tracked": 0,
+      "ignored": 31,
+      "bytes": 29781,
+      "tracked_bytes": 0
+    },
+    ".cjs": {
+      "files": 31,
+      "tracked": 0,
+      "ignored": 31,
+      "bytes": 1974927,
+      "tracked_bytes": 0
+    },
+    ".svg": {
+      "files": 26,
+      "tracked": 11,
+      "ignored": 15,
+      "bytes": 13530267,
+      "tracked_bytes": 575396
+    },
+    ".out": {
+      "files": 24,
+      "tracked": 24,
+      "ignored": 0,
+      "bytes": 41479,
+      "tracked_bytes": 41479
+    },
+    ".info": {
+      "files": 24,
+      "tracked": 0,
+      "ignored": 24,
+      "bytes": 23641,
+      "tracked_bytes": 0
+    },
+    ".err": {
+      "files": 23,
+      "tracked": 23,
+      "ignored": 0,
+      "bytes": 726,
+      "tracked_bytes": 726
+    },
+    ".tsx": {
+      "files": 22,
+      "tracked": 22,
+      "ignored": 0,
+      "bytes": 93479,
+      "tracked_bytes": 93479
+    },
+    ".figcraft": {
+      "files": 20,
+      "tracked": 18,
+      "ignored": 2,
+      "bytes": 2147829,
+      "tracked_bytes": 1793904
+    },
+    ".ps1": {
+      "files": 20,
+      "tracked": 4,
+      "ignored": 16,
+      "bytes": 108156,
+      "tracked_bytes": 94778
+    },
+    ".css": {
+      "files": 19,
+      "tracked": 2,
+      "ignored": 17,
+      "bytes": 643253,
+      "tracked_bytes": 6459
+    },
+    ".sh": {
+      "files": 16,
+      "tracked": 0,
+      "ignored": 16,
+      "bytes": 14027,
+      "tracked_bytes": 0
+    },
+    ".html": {
+      "files": 14,
+      "tracked": 2,
+      "ignored": 12,
+      "bytes": 724856,
+      "tracked_bytes": 722
+    },
+    ".mod": {
+      "files": 14,
+      "tracked": 0,
+      "ignored": 14,
+      "bytes": 72548,
+      "tracked_bytes": 0
+    },
+    ".csv": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 356246,
+      "tracked_bytes": 356246
+    },
+    ".db": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 53248,
+      "tracked_bytes": 53248
+    },
+    ".db-shm": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 425984,
+      "tracked_bytes": 425984
+    },
+    ".db-wal": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 1603096,
+      "tracked_bytes": 1603096
+    },
+    ".mmd": {
+      "files": 12,
+      "tracked": 12,
+      "ignored": 0,
+      "bytes": 16795,
+      "tracked_bytes": 16795
+    },
+    ".cmd": {
+      "files": 10,
+      "tracked": 0,
+      "ignored": 10,
+      "bytes": 3727,
+      "tracked_bytes": 0
+    },
+    ".f": {
+      "files": 9,
+      "tracked": 0,
+      "ignored": 9,
+      "bytes": 5960,
+      "tracked_bytes": 0
+    },
+    ".dlg": {
+      "files": 8,
+      "tracked": 0,
+      "ignored": 8,
+      "bytes": 45727,
+      "tracked_bytes": 0
+    },
+    ".com": {
+      "files": 8,
+      "tracked": 0,
+      "ignored": 8,
+      "bytes": 28672,
+      "tracked_bytes": 0
+    },
+    ".f90": {
+      "files": 8,
+      "tracked": 0,
+      "ignored": 8,
+      "bytes": 218848,
+      "tracked_bytes": 0
+    },
+    ".ok": {
+      "files": 8,
+      "tracked": 0,
+      "ignored": 8,
+      "bytes": 7544,
+      "tracked_bytes": 0
+    },
+    ".toml": {
+      "files": 7,
+      "tracked": 7,
+      "ignored": 0,
+      "bytes": 5699,
+      "tracked_bytes": 5699
+    },
+    ".bat": {
+      "files": 7,
+      "tracked": 0,
+      "ignored": 7,
+      "bytes": 1386,
+      "tracked_bytes": 0
+    },
+    ".pyc": {
+      "files": 6,
+      "tracked": 6,
+      "ignored": 0,
+      "bytes": 117728,
+      "tracked_bytes": 117728
+    },
+    ".license": {
+      "files": 6,
+      "tracked": 0,
+      "ignored": 6,
+      "bytes": 296681,
+      "tracked_bytes": 0
+    },
+    ".cxx": {
+      "files": 6,
+      "tracked": 0,
+      "ignored": 6,
+      "bytes": 460,
+      "tracked_bytes": 0
+    },
+    ".man": {
+      "files": 5,
+      "tracked": 0,
+      "ignored": 5,
+      "bytes": 35976,
+      "tracked_bytes": 0
+    },
+    ".pl": {
+      "files": 5,
+      "tracked": 0,
+      "ignored": 5,
+      "bytes": 21003,
+      "tracked_bytes": 0
+    },
+    ".tag": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 710,
+      "tracked_bytes": 0
+    },
+    ".zip": {
+      "files": 4,
+      "tracked": 3,
+      "ignored": 1,
+      "bytes": 23640275,
+      "tracked_bytes": 17068347
+    },
+    ".rh": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 49710,
+      "tracked_bytes": 0
+    },
+    ".spec": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 950,
+      "tracked_bytes": 0
+    },
+    ".cpp": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 428189,
+      "tracked_bytes": 0
+    },
+    ".gif": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 2059,
+      "tracked_bytes": 0
+    },
+    ".xpm": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 12484,
+      "tracked_bytes": 0
+    },
+    ".flow": {
+      "files": 4,
+      "tracked": 0,
+      "ignored": 4,
+      "bytes": 584486,
+      "tracked_bytes": 0
+    },
+    ".inc": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 1846662,
+      "tracked_bytes": 0
+    },
+    ".ttf": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 241020,
+      "tracked_bytes": 0
+    },
+    ".s": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 3686,
+      "tracked_bytes": 0
+    },
+    ".inl": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 35737,
+      "tracked_bytes": 0
+    },
+    ".5": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 33312,
+      "tracked_bytes": 0
+    },
+    ".awk": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 19128,
+      "tracked_bytes": 0
+    },
+    ".spl": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 1861839,
+      "tracked_bytes": 0
+    },
+    ".sug": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 1793152,
+      "tracked_bytes": 0
+    },
+    ".node": {
+      "files": 3,
+      "tracked": 0,
+      "ignored": 3,
+      "bytes": 35863040,
+      "tracked_bytes": 0
+    },
+    ".sha256": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 131,
+      "tracked_bytes": 131
+    },
+    ".wasm": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 2313176,
+      "tracked_bytes": 0
+    },
+    ".yml": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 1340,
+      "tracked_bytes": 0
+    },
+    ".ver": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 7974,
+      "tracked_bytes": 0
+    },
+    ".hxx": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 5592,
+      "tracked_bytes": 0
+    },
+    ".tlb": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23924,
+      "tracked_bytes": 0
+    },
+    ".cc": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 2,
+      "tracked_bytes": 0
+    },
+    ".x": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23134,
+      "tracked_bytes": 0
+    },
+    ".xa": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23106,
+      "tracked_bytes": 0
+    },
+    ".xbn": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23070,
+      "tracked_bytes": 0
+    },
+    ".xe": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23098,
+      "tracked_bytes": 0
+    },
+    ".xer": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23122,
+      "tracked_bytes": 0
+    },
+    ".xn": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 23070,
+      "tracked_bytes": 0
+    },
+    ".xr": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 10030,
+      "tracked_bytes": 0
+    },
+    ".xu": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 13063,
+      "tracked_bytes": 0
+    },
+    ".vsmacros": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 151552,
+      "tracked_bytes": 0
+    },
+    ".targets": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 6194,
+      "tracked_bytes": 0
+    },
+    ".ini": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 1347,
+      "tracked_bytes": 0
+    },
+    ".desktop": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 11227,
+      "tracked_bytes": 0
+    },
+    ".me": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 485,
+      "tracked_bytes": 0
+    },
+    ".aff": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 1578,
+      "tracked_bytes": 0
+    },
+    ".dic": {
+      "files": 2,
+      "tracked": 0,
+      "ignored": 2,
+      "bytes": 367,
+      "tracked_bytes": 0
+    },
+    ".lock": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 100177,
+      "tracked_bytes": 100177
+    },
+    ".prompty": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 462,
+      "tracked_bytes": 462
+    },
+    ".jsonl": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 4394,
+      "tracked_bytes": 4394
+    },
+    ".webmanifest": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 429,
+      "tracked_bytes": 0
+    },
+    ".rmeta-link": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 6125,
+      "tracked_bytes": 0
+    },
+    ".quiltrc": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 3777,
+      "tracked_bytes": 0
+    },
+    ".h16": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 51161,
+      "tracked_bytes": 0
+    },
+    ".conf": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 116,
+      "tracked_bytes": 0
+    },
+    ".cu": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 697,
+      "tracked_bytes": 0
+    },
+    ".hip": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 708,
+      "tracked_bytes": 0
+    },
+    ".ispc": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 545,
+      "tracked_bytes": 0
+    },
+    ".m": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 622,
+      "tracked_bytes": 0
+    },
+    ".mm": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 623,
+      "tracked_bytes": 0
+    },
+    ".pas": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 2687,
+      "tracked_bytes": 0
+    },
+    ".plist": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 1164,
+      "tracked_bytes": 0
+    },
+    ".xml": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 9209,
+      "tracked_bytes": 0
+    },
+    ".pfx": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 2560,
+      "tracked_bytes": 0
+    },
+    ".bin": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 6144,
+      "tracked_bytes": 0
+    },
+    ".dict": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 3096,
+      "tracked_bytes": 0
+    },
+    ".78": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 626,
+      "tracked_bytes": 0
+    },
+    ".cdr": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 15494,
+      "tracked_bytes": 0
+    },
+    ".eps": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 12027,
+      "tracked_bytes": 0
+    },
+    ".pdf": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 2254,
+      "tracked_bytes": 0
+    },
+    ".mak": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 3872,
+      "tracked_bytes": 0
+    },
+    ".config": {
+      "files": 1,
+      "tracked": 0,
+      "ignored": 1,
+      "bytes": 882,
+      "tracked_bytes": 0
+    }
+  },
+  "biggest": [
+    {
+      "path": "target\\release\\deps\\libwindows-f5aa2ce57b50dcc4.rlib",
+      "area": "target",
+      "tracked": false,
+      "bytes": 130326680,
+      "extension": ".rlib",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\release\\deps\\rustcDaT8qo\\lib.rmeta",
+      "area": "target",
+      "tracked": false,
+      "bytes": 121869903,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\release\\deps\\libwindows-bbd8c36c9970abac.rmeta",
+      "area": "target",
+      "tracked": false,
+      "bytes": 121869821,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\release\\deps\\libwindows-f5aa2ce57b50dcc4.rmeta",
+      "area": "target",
+      "tracked": false,
+      "bytes": 121711079,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\libwindows-e73ba2882c19977b.rlib",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 118642158,
+      "extension": ".rlib",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\libwindows-e73ba2882c19977b.rlib",
+      "area": "target",
+      "tracked": false,
+      "bytes": 118590774,
+      "extension": ".rlib",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\libwindows-e73ba2882c19977b.rmeta",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 109295438,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\libwindows-e73ba2882c19977b.rmeta",
+      "area": "target",
+      "tracked": false,
+      "bytes": 109295438,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\libwindows-5d53e323556248be.rmeta",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 84937557,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\libwindows-5d53e323556248be.rmeta",
+      "area": "target",
+      "tracked": false,
+      "bytes": 84937557,
+      "extension": ".rmeta",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\tool_loop_matrix-1365363346e2c33c.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 47139810,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\tool_loop_matrix-6a5554c67ee5ddc6.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 47138195,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\tool_loop_matrix-6a5554c67ee5ddc6.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 47130537,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\provider_streaming-39026aa1c2fed08c.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 47064189,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\provider_streaming-38103349d86ea22d.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 47059502,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\provider_streaming-38103349d86ea22d.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 47052936,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\provider_adapter-7e7bc9e041272be2.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46997870,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\provider_adapter-7c2072a6badc104f.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46994553,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\provider_adapter-7c2072a6badc104f.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 46987919,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\ws_transport-73ff99a05ffb5a93.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46963420,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\ws_transport-85e6529add42bae7.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46957949,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\ws_transport-85e6529add42bae7.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 46951315,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\approval_ledger-e4d25dea2a0cf0b7.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46941555,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\approval_ledger-448e5014c44068ef.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46938040,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\approval_ledger-448e5014c44068ef.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 46931406,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\snapshot_history-c6df3a46e027bb2b.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46865183,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\snapshot_history-bae62714752b9bd9.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46862625,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\http_boot-5298d9887379947a.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46858225,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "backend\\target\\debug\\deps\\snapshot_history-bae62714752b9bd9.exe",
+      "area": "backend",
+      "tracked": false,
+      "bytes": 46855991,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    },
+    {
+      "path": "target\\debug\\deps\\http_boot-a98a5a83196e191d.exe",
+      "area": "target",
+      "tracked": false,
+      "bytes": 46854670,
+      "extension": ".exe",
+      "sha256": "",
+      "encoding": ""
+    }
+  ],
+  "encoding": {
+    "(ignored)": {
+      "files": 35675,
+      "tracked": 0,
+      "ignored": 35675,
+      "bytes": 19971803372,
+      "tracked_bytes": 0
+    },
+    "utf-8": {
+      "files": 655,
+      "tracked": 655,
+      "ignored": 0,
+      "bytes": 8751138,
+      "tracked_bytes": 8751138
+    },
+    "nul-binary": {
+      "files": 96,
+      "tracked": 96,
+      "ignored": 0,
+      "bytes": 80718456,
+      "tracked_bytes": 80718456
+    },
+    "utf-8-bom": {
+      "files": 32,
+      "tracked": 32,
+      "ignored": 0,
+      "bytes": 236091,
+      "tracked_bytes": 236091
+    },
+    "utf-16le-bom": {
+      "files": 22,
+      "tracked": 22,
+      "ignored": 0,
+      "bytes": 65626,
+      "tracked_bytes": 65626
+    }
+  },
+  "tracked_areas": {
+    "(ignored)": {
+      "files": 35675,
+      "tracked": 0,
+      "ignored": 35675,
+      "bytes": 19971803372,
+      "tracked_bytes": 0
+    },
+    "docs": {
+      "files": 260,
+      "tracked": 260,
+      "ignored": 0,
+      "bytes": 10871798,
+      "tracked_bytes": 10871798
+    },
+    "plans": {
+      "files": 114,
+      "tracked": 114,
+      "ignored": 0,
+      "bytes": 1673232,
+      "tracked_bytes": 1673232
+    },
+    "backend": {
+      "files": 112,
+      "tracked": 112,
+      "ignored": 0,
+      "bytes": 1584564,
+      "tracked_bytes": 1584564
+    },
+    "audit": {
+      "files": 93,
+      "tracked": 93,
+      "ignored": 0,
+      "bytes": 2480688,
+      "tracked_bytes": 2480688
+    },
+    "runtime-test": {
+      "files": 82,
+      "tracked": 82,
+      "ignored": 0,
+      "bytes": 35235871,
+      "tracked_bytes": 35235871
+    },
+    "web": {
+      "files": 71,
+      "tracked": 71,
+      "ignored": 0,
+      "bytes": 546866,
+      "tracked_bytes": 546866
+    },
+    "e2e": {
+      "files": 39,
+      "tracked": 39,
+      "ignored": 0,
+      "bytes": 278719,
+      "tracked_bytes": 278719
+    },
+    "tools": {
+      "files": 23,
+      "tracked": 23,
+      "ignored": 0,
+      "bytes": 20020010,
+      "tracked_bytes": 20020010
+    },
+    "(root)": {
+      "files": 4,
+      "tracked": 4,
+      "ignored": 0,
+      "bytes": 7090,
+      "tracked_bytes": 7090
+    },
+    "dist": {
+      "files": 4,
+      "tracked": 4,
+      "ignored": 0,
+      "bytes": 17057274,
+      "tracked_bytes": 17057274
+    },
+    "ledgers": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 14970,
+      "tracked_bytes": 14970
+    },
+    ".cargo": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 229,
+      "tracked_bytes": 229
+    }
+  },
+  "tracked_extension_census": {
+    "(ignored)": {
+      "files": 35675,
+      "tracked": 0,
+      "ignored": 35675,
+      "bytes": 19971803372,
+      "tracked_bytes": 0
+    },
+    ".md": {
+      "files": 219,
+      "tracked": 219,
+      "ignored": 0,
+      "bytes": 2897300,
+      "tracked_bytes": 2897300
+    },
+    ".json": {
+      "files": 109,
+      "tracked": 109,
+      "ignored": 0,
+      "bytes": 2257580,
+      "tracked_bytes": 2257580
+    },
+    ".rs": {
+      "files": 104,
+      "tracked": 104,
+      "ignored": 0,
+      "bytes": 1417028,
+      "tracked_bytes": 1417028
+    },
+    ".ts": {
+      "files": 68,
+      "tracked": 68,
+      "ignored": 0,
+      "bytes": 603620,
+      "tracked_bytes": 603620
+    },
+    ".py": {
+      "files": 43,
+      "tracked": 43,
+      "ignored": 0,
+      "bytes": 452251,
+      "tracked_bytes": 452251
+    },
+    ".out": {
+      "files": 24,
+      "tracked": 24,
+      "ignored": 0,
+      "bytes": 41479,
+      "tracked_bytes": 41479
+    },
+    ".err": {
+      "files": 23,
+      "tracked": 23,
+      "ignored": 0,
+      "bytes": 726,
+      "tracked_bytes": 726
+    },
+    ".tsx": {
+      "files": 22,
+      "tracked": 22,
+      "ignored": 0,
+      "bytes": 93479,
+      "tracked_bytes": 93479
+    },
+    ".png": {
+      "files": 20,
+      "tracked": 20,
+      "ignored": 0,
+      "bytes": 1564369,
+      "tracked_bytes": 1564369
+    },
+    ".txt": {
+      "files": 19,
+      "tracked": 19,
+      "ignored": 0,
+      "bytes": 31773,
+      "tracked_bytes": 31773
+    },
+    ".figcraft": {
+      "files": 18,
+      "tracked": 18,
+      "ignored": 0,
+      "bytes": 1793904,
+      "tracked_bytes": 1793904
+    },
+    ".mjs": {
+      "files": 17,
+      "tracked": 17,
+      "ignored": 0,
+      "bytes": 94246,
+      "tracked_bytes": 94246
+    },
+    ".csv": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 356246,
+      "tracked_bytes": 356246
+    },
+    ".db": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 53248,
+      "tracked_bytes": 53248
+    },
+    ".db-shm": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 425984,
+      "tracked_bytes": 425984
+    },
+    ".db-wal": {
+      "files": 13,
+      "tracked": 13,
+      "ignored": 0,
+      "bytes": 1603096,
+      "tracked_bytes": 1603096
+    },
+    ".mmd": {
+      "files": 12,
+      "tracked": 12,
+      "ignored": 0,
+      "bytes": 16795,
+      "tracked_bytes": 16795
+    },
+    ".svg": {
+      "files": 11,
+      "tracked": 11,
+      "ignored": 0,
+      "bytes": 575396,
+      "tracked_bytes": 575396
+    },
+    ".exe": {
+      "files": 10,
+      "tracked": 10,
+      "ignored": 0,
+      "bytes": 58091780,
+      "tracked_bytes": 58091780
+    },
+    ".toml": {
+      "files": 7,
+      "tracked": 7,
+      "ignored": 0,
+      "bytes": 5699,
+      "tracked_bytes": 5699
+    },
+    ".pyc": {
+      "files": 6,
+      "tracked": 6,
+      "ignored": 0,
+      "bytes": 117728,
+      "tracked_bytes": 117728
+    },
+    ".ps1": {
+      "files": 4,
+      "tracked": 4,
+      "ignored": 0,
+      "bytes": 94778,
+      "tracked_bytes": 94778
+    },
+    ".zip": {
+      "files": 3,
+      "tracked": 3,
+      "ignored": 0,
+      "bytes": 17068347,
+      "tracked_bytes": 17068347
+    },
+    "(none)": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 383,
+      "tracked_bytes": 383
+    },
+    ".sha256": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 131,
+      "tracked_bytes": 131
+    },
+    ".c": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 145,
+      "tracked_bytes": 145
+    },
+    ".html": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 722,
+      "tracked_bytes": 722
+    },
+    ".css": {
+      "files": 2,
+      "tracked": 2,
+      "ignored": 0,
+      "bytes": 6459,
+      "tracked_bytes": 6459
+    },
+    ".lock": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 100177,
+      "tracked_bytes": 100177
+    },
+    ".prompty": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 462,
+      "tracked_bytes": 462
+    },
+    ".log": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 1586,
+      "tracked_bytes": 1586
+    },
+    ".jsonl": {
+      "files": 1,
+      "tracked": 1,
+      "ignored": 0,
+      "bytes": 4394,
+      "tracked_bytes": 4394
+    }
+  }
+}
