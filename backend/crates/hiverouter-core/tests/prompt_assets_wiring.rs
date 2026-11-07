@@ -60,7 +60,16 @@ fn embedded_assets_contain_the_shipped_planner_template() {
 #[test]
 fn embedded_registry_loads_a_renderable_planner_template() {
     let registry = TemplateRegistry::load_embedded().expect("embedded planner loads");
-    assert_eq!(registry.template_ids(), vec!["planner".to_owned()]);
+    assert_eq!(
+        registry.template_ids(),
+        vec![
+            "chatbot".to_owned(),
+            "code-reviewer".to_owned(),
+            "content-writer".to_owned(),
+            "data-analyst".to_owned(),
+            "planner".to_owned(),
+        ]
+    );
     let template = registry.get("planner").expect("planner template");
     assert_eq!(template.name, "planner");
     assert!(template.manifest.spdx == "MIT");
@@ -92,7 +101,13 @@ fn production_constructor_loads_the_planner_template() {
     assert!(state.prompt_assets_error.is_none());
     assert_eq!(
         state.engine.templates.template_ids(),
-        vec!["planner".to_owned()],
+        vec![
+            "chatbot".to_owned(),
+            "code-reviewer".to_owned(),
+            "content-writer".to_owned(),
+            "data-analyst".to_owned(),
+            "planner".to_owned(),
+        ],
         "engine got the loaded planner registry (not an empty default)"
     );
     assert!(
@@ -112,7 +127,13 @@ fn boot_constructor_loads_the_planner_template() {
     assert!(state.prompt_assets_loaded());
     assert_eq!(
         state.engine.templates.template_ids(),
-        vec!["planner".to_owned()],
+        vec![
+            "chatbot".to_owned(),
+            "code-reviewer".to_owned(),
+            "content-writer".to_owned(),
+            "data-analyst".to_owned(),
+            "planner".to_owned(),
+        ],
         "binary boot path (with_graph) loads the planner template"
     );
 }

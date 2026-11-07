@@ -27,7 +27,16 @@ fn temp_manifest(dir: &Path, spdx: &str, file_body: &str) -> PathBuf {
 #[test]
 fn template_schema_roundtrip() {
     let registry = TemplateRegistry::load(&assets()).expect("load template manifest");
-    assert_eq!(registry.template_ids(), vec!["planner".to_owned()]);
+    assert_eq!(
+        registry.template_ids(),
+        vec![
+            "chatbot".to_owned(),
+            "code-reviewer".to_owned(),
+            "content-writer".to_owned(),
+            "data-analyst".to_owned(),
+            "planner".to_owned(),
+        ]
+    );
     let template = registry.get("planner").expect("planner template");
     assert_eq!(template.name, "planner");
     assert!(template.manifest.spdx == "MIT");

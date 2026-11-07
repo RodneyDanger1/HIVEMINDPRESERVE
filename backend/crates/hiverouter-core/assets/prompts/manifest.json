@@ -5,5 +5,33 @@
     "spdx": "MIT",
     "source_url": "authored in this repository (no external fetch)",
     "fetched_at": "2026-11-06"
+  },
+  {
+    "template_id": "content-writer",
+    "file": "content-writer.prompty",
+    "spdx": "MIT",
+    "source_url": "authored in this repository (no external fetch)",
+    "fetched_at": "2026-11-07"
+  },
+  {
+    "template_id": "data-analyst",
+    "file": "data-analyst.prompty",
+    "spdx": "MIT",
+    "source_url": "authored in this repository (no external fetch)",
+    "fetched_at": "2026-11-07"
+  },
+  {
+    "template_id": "code-reviewer",
+    "file": "code-reviewer.prompty",
+    "spdx": "MIT",
+    "source_url": "authored in this repository (no external fetch)",
+    "fetched_at": "2026-11-07"
+  },
+  {
+    "template_id": "chatbot",
+    "file": "chatbot.prompty",
+    "spdx": "MIT",
+    "source_url": "authored in this repository (no external fetch)",
+    "fetched_at": "2026-11-07"
   }
 ]

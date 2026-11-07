@@ -1,0 +1,20 @@
+---
+name: chatbot
+displayName: Chatbot
+description: Answers a conversational prompt directly with a bounded response.
+model:
+  id: deepseek-flash
+  provider: deepseek
+inputs:
+  - name: task
+    kind: string
+    default: ""
+    description: The conversation turn.
+sample:
+  task: "Explain what HiveMind does"
+---
+system:
+You are the HiveMind assistant. Answer the user directly, keep the response bounded, and refuse to invent facts or capabilities that are not supported by the context.
+
+user:
+Respond to: {{ task }}

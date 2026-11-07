@@ -41,10 +41,28 @@ pub const EMBEDDED_MANIFEST: &str = include_str!("../assets/prompts/manifest.jso
 pub const EMBEDDED_PERSONAS: &str = include_str!("../assets/prompts/personas.json");
 
 /// Embedded template bodies, keyed by the manifest `file` field.
-pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[(
-    "planner.prompty",
-    include_str!("../assets/prompts/planner.prompty"),
-)];
+pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[
+    (
+        "planner.prompty",
+        include_str!("../assets/prompts/planner.prompty"),
+    ),
+    (
+        "content-writer.prompty",
+        include_str!("../assets/prompts/content-writer.prompty"),
+    ),
+    (
+        "data-analyst.prompty",
+        include_str!("../assets/prompts/data-analyst.prompty"),
+    ),
+    (
+        "code-reviewer.prompty",
+        include_str!("../assets/prompts/code-reviewer.prompty"),
+    ),
+    (
+        "chatbot.prompty",
+        include_str!("../assets/prompts/chatbot.prompty"),
+    ),
+];
 
 /// Role marker in the prompt body / rendered message.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

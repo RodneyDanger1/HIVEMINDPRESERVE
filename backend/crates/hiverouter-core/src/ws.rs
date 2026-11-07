@@ -807,6 +807,15 @@ async fn handle_client_text(
                 &payload,
             ) {
                 Ok(tasks) => {
+                    if let Err(refusal) = state.engine.seed_template_contexts(&tasks) {
+                        publish_error(state, refusal, Some(correlation));
+                        return Ok(());
+                    }
+                    let ids: Vec<TaskId> = tasks.iter().map(|task| task.id).collect();
+                    if let Err(refusal) = state.engine.enqueue_spawned_tasks(&ids) {
+                        publish_error(state, refusal, Some(correlation));
+                        return Ok(());
+                    }
                     publish_ack(state, CommandName::TemplateInsert, correlation);
                     for task in &tasks {
                         publish_node_spawn(state.bus.as_ref(), &state.graph, task);
@@ -1139,7 +1148,7 @@ mod tests {
     }
 
     #[test]
-    fn template_insert_refuses_the_library_ids_after_a_real_lookup() {
+    fn template_insert_resolves_the_library_ids_after_a_real_lookup() {
         let fixture = insert_fixture(AgentState::Running);
         let templates = embedded_registry();
         for template_id in ["content-writer", "data-analyst", "code-reviewer", "chatbot"] {
@@ -1147,28 +1156,28 @@ mod tests {
                 template_id: template_id.to_owned(),
                 project_id: "project-1".to_owned(),
             };
-            assert_eq!(
-                insert_template_dag(
-                    &templates,
-                    &fixture.store,
-                    &fixture.graph,
-                    Caps::default(),
-                    Some(fixture.run_id),
-                    &payload,
-                ),
-                Err(Refusal::TemplateUnknown),
-                "{template_id} has no prompt asset and must be refused by name"
-            );
+            let tasks = insert_template_dag(
+                &templates,
+                &fixture.store,
+                &fixture.graph,
+                Caps::default(),
+                Some(fixture.run_id),
+                &payload,
+            )
+            .expect("the embedded Library template must resolve");
+            assert_eq!(tasks.len(), 1);
+            assert_eq!(tasks[0].role, template_id);
         }
         assert_eq!(
             fixture.store.task_count(fixture.run_id).expect("count"),
-            1,
-            "a refused insert writes nothing"
+            5,
+            "root + four inserted template tasks"
         );
         let catalog = TemplateDagCatalog::from_registry(&templates);
         assert_eq!(catalog.template_ids(), templates.template_ids());
-        assert!(catalog.get("planner").is_some());
-        assert!(catalog.get("content-writer").is_none());
+        for template_id in ["planner", "content-writer", "data-analyst", "code-reviewer", "chatbot"] {
+            assert!(catalog.get(template_id).is_some(), "{template_id} missing");
+        }
         assert!(!catalog.is_empty());
     }
 

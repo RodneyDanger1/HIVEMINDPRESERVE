@@ -634,6 +634,31 @@ impl RunEngine {
         Ok(())
     }
 
+    /// Enqueues template-inserted tasks after their rows and graph nodes exist.
+    ///
+    /// The run-scoped dispatcher drains this queue before the run can become
+    /// terminal; without this call a template node stays `Queued` forever.
+    ///
+    /// # Errors
+    /// `E_INTERNAL_ERROR` when the queue lock is poisoned.
+    pub fn enqueue_spawned_tasks(&self, task_ids: &[TaskId]) -> Result<(), Refusal> {
+        for task_id in task_ids {
+            self.enqueue_spawned_task(*task_id)?;
+        }
+        Ok(())
+    }
+
+    /// Seeds scoped context for freshly inserted template tasks.
+    ///
+    /// # Errors
+    /// Propagates the context-store refusal.
+    pub fn seed_template_contexts(&self, tasks: &[TaskRecord]) -> Result<(), Refusal> {
+        for task in tasks {
+            self.seed_task_context(task, task.parent_task_id)?;
+        }
+        Ok(())
+    }
+
     /// Seeds a task's scoped context from its authoritative parent at creation.
     ///
     /// Facts are inherited as a snapshot; the parent link is explicit so a later
