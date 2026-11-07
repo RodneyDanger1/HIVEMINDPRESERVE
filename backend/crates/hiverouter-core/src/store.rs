@@ -15,6 +15,23 @@ fn map(error: DbError) -> Refusal {
     error.refusal()
 }
 
+/// One durable agent-to-agent message row.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AgentMessageRecord {
+    /// Message id.
+    pub id: String,
+    /// Sender task id.
+    pub from_task_id: String,
+    /// Recipient task id.
+    pub to_task_id: String,
+    /// Message kind (`ask_parent` / `send_to_sibling`).
+    pub kind: String,
+    /// Bounded text.
+    pub text: String,
+    /// RFC3339 creation time.
+    pub created_at: String,
+}
+
 /// SQL list of terminal task states, derived from the single state-machine set.
 ///
 /// The guard must never drift from [`TASK_TERMINAL_STATES`]: a state added to the
@@ -527,6 +544,39 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(u64::try_from(count).unwrap_or(0))
+    }
+
+    /// Lists a run's durable agent messages in insertion order.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_messages_for_run(
+        &self,
+        run_id: RunId,
+    ) -> Result<Vec<AgentMessageRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, from_task_id, to_task_id, kind, text, created_at
+                     FROM agent_messages WHERE run_id = ?1 ORDER BY created_at ASC, rowid ASC",
+                )?;
+                let rows = statement.query_map(params![run_id.to_string()], |row| {
+                    Ok(AgentMessageRecord {
+                        id: row.get(0)?,
+                        from_task_id: row.get(1)?,
+                        to_task_id: row.get(2)?,
+                        kind: row.get(3)?,
+                        text: row.get(4)?,
+                        created_at: row.get(5)?,
+                    })
+                })?;
+                let mut messages = Vec::new();
+                for row in rows {
+                    messages.push(row?);
+                }
+                Ok(messages)
+            })
+            .map_err(map)
     }
 
 

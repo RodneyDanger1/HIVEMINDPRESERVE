@@ -410,6 +410,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
         .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
+        .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -543,6 +544,36 @@ async fn history_messages(
             )
                 .into_response()
         }
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn agent_messages(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    if let Err(refusal) = state.engine.store.get_run(run_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    match state.engine.store.agent_messages_for_run(run_id) {
+        Ok(messages) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "messages": messages.into_iter().map(|message| serde_json::json!({
+                    "id": message.id,
+                    "from_task_id": message.from_task_id,
+                    "to_task_id": message.to_task_id,
+                    "kind": message.kind,
+                    "text": message.text,
+                    "created_at": message.created_at,
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }

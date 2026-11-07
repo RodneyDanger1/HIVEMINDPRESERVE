@@ -221,6 +221,38 @@ async fn binary_help_and_version_are_successful() {
 }
 
 #[tokio::test]
+async fn agent_messages_route_returns_durable_mailbox() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "messages", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let from = hiverouter_contract::TaskId::new();
+    let to = hiverouter_contract::TaskId::new();
+    server
+        .state
+        .engine
+        .store
+        .record_agent_message(run.id, from, to, "ask_parent", "need input")
+        .expect("message");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/agents/runs/{}/messages", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "agent messages route: {body}");
+    let value: Value = serde_json::from_str(&body).expect("messages JSON");
+    let messages = value["messages"].as_array().expect("messages array");
+    assert_eq!(messages.len(), 1);
+    assert_eq!(messages[0]["from_task_id"], from.to_string());
+    assert_eq!(messages[0]["to_task_id"], to.to_string());
+    assert_eq!(messages[0]["text"], "need input");
+}
+
+#[tokio::test]
 async fn history_messages_route_returns_persisted_transcript() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

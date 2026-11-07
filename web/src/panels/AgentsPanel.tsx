@@ -13,6 +13,7 @@ import { STRINGS, formatPercent } from '../state/strings';
 import { StateGlyph } from '../flow/nodes';
 import { PanelTitle, EmptyState } from './StatePack';
 import { ToolActivityPanel, type ToolActivityEntry } from './ToolActivityPanel';
+import { AgentMessagesPanel } from './AgentMessagesPanel';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -63,6 +64,7 @@ export function AgentsPanel() {
       >
         <ToolActivityPanel entries={toolActivity} />
       </div>
+      <AgentMessagesPanel />
     </div>
   );
 }
