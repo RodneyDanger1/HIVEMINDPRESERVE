@@ -279,8 +279,17 @@
     "FILE_TREE_LIST": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "FileTreeList",
-      "description": "`FILE_TREE_LIST` payload (no fields).",
-      "type": "object"
+      "description": "`FILE_TREE_LIST` payload.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Optional workspace-relative directory to list; absent means the root.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "FILE_READ": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -1739,12 +1748,26 @@
             "is_dir": {
               "description": "Whether the entry is a directory.",
               "type": "boolean"
+            },
+            "kind": {
+              "description": "`\"file\"` or `\"dir\"` for the UI contract.",
+              "type": "string"
+            },
+            "size_bytes": {
+              "description": "File size in bytes; `None` for directories or an unmeasured file.",
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0
             }
           },
           "required": [
             "path",
             "name",
-            "is_dir"
+            "is_dir",
+            "kind"
           ]
         }
       }

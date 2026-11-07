@@ -272,9 +272,13 @@ impl ToolsBridge {
     ///
     /// # Errors
     /// `E_FILE_TREE_UNAVAILABLE`, `E_PATH_OUTSIDE_JAIL`, `E_PATH_NOT_FOUND`.
-    pub fn file_tree_list(&self) -> Result<event::FileTreeResult, Refusal> {
+    pub fn file_tree_list(
+        &self,
+        payload: &hiverouter_contract::command::FileTreeList,
+    ) -> Result<event::FileTreeResult, Refusal> {
         let jail = self.require_jail()?;
-        hiverouter_tools::commands::file_tree_list(jail).map_err(Self::map_tool_error)
+        hiverouter_tools::commands::file_tree_list(jail, payload.path.as_deref())
+            .map_err(Self::map_tool_error)
     }
 
     /// `FILE_READ` -> `FILE_CONTENT` through the jail.

@@ -389,7 +389,7 @@ async fn file_tree_and_file_read_commands_use_the_jail() {
     recv_until(&mut client, |value| frame_name(value) == "SERVER_HELLO").await;
 
     // FILE_TREE_LIST -> ACK + FILE_TREE_RESULT with the real jail root.
-    let correlation = send_command(&mut client, &Command::FileTreeList(FileTreeList {})).await;
+    let correlation = send_command(&mut client, &Command::FileTreeList(FileTreeList { path: None })).await;
     recv_until(&mut client, |value| {
         frame_name(value) == "ACK" && value["correlation_id"] == correlation.to_string()
     })
@@ -461,7 +461,7 @@ async fn file_commands_refuse_by_name_when_workspace_is_unavailable() {
     assert!(!server.state.tools.file_access_available());
 
     for command in [
-        Command::FileTreeList(FileTreeList {}),
+        Command::FileTreeList(FileTreeList { path: None }),
         Command::FileRead(FileRead {
             path: "anything.txt".to_owned(),
         }),

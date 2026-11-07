@@ -313,7 +313,7 @@ export interface UiState {
   setReducedMotionOverride(value: boolean): void;
   probeSettings(): Promise<void>;
   probeHealth(): Promise<void>;
-  requestFileTree(): Promise<void>;
+  requestFileTree(path?: string): Promise<void>;
   openFile(path: string): Promise<void>;
   formatSelectedRevision(): string;
 }
@@ -2190,9 +2190,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         }
       },
 
-      async requestFileTree(): Promise<void> {
+      async requestFileTree(path?: string): Promise<void> {
         set({ fileTree: { ...get().fileTree, status: 'loading', refusal: null } });
-        const ok = await run('FILE_TREE_LIST', {});
+        const ok = await run('FILE_TREE_LIST', path ? { path } : {});
         if (!ok) {
           set({ fileTree: { ...get().fileTree, status: 'error' } });
         }

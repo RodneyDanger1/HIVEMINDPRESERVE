@@ -850,8 +850,8 @@ async fn handle_client_text(
             }
             Ok(())
         }
-        Command::FileTreeList(_) => {
-            match state.tools.file_tree_list() {
+        Command::FileTreeList(payload) => {
+            match state.tools.file_tree_list(&payload) {
                 Ok(result) => {
                     publish_ack(state, CommandName::FileTreeList, correlation);
                     publish_with_correlation(state, Event::FileTreeResult(result), correlation);

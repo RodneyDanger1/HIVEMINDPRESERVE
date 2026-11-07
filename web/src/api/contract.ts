@@ -88,7 +88,10 @@ export interface ApprovalResolvePayload {
   readonly reason?: string;
 }
 export type SettingsStatusPayload = Record<string, never>;
-export type FileTreeListPayload = Record<string, never>;
+export interface FileTreeListPayload {
+  /** Optional workspace-relative directory; absent means the root. */
+  readonly path?: string;
+}
 export interface FileReadPayload {
   /** Workspace-relative path; the server canonicalises and jails it. */
   readonly path: string;

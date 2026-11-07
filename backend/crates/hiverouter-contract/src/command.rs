@@ -224,9 +224,13 @@ pub struct ApprovalResolve {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct SettingsStatus {}
 
-/// `FILE_TREE_LIST` payload (no fields).
+/// `FILE_TREE_LIST` payload.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct FileTreeList {}
+pub struct FileTreeList {
+    /// Optional workspace-relative directory to list; absent means the root.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
 
 /// `FILE_READ` payload.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

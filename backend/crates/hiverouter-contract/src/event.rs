@@ -636,6 +636,10 @@ pub struct FileTreeEntry {
     pub name: String,
     /// Whether the entry is a directory.
     pub is_dir: bool,
+    /// `"file"` or `"dir"` for the UI contract.
+    pub kind: String,
+    /// File size in bytes; `None` for directories or an unmeasured file.
+    pub size_bytes: Option<u64>,
 }
 
 /// `FILE_TREE_RESULT` payload.

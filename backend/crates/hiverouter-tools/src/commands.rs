@@ -1,4 +1,4 @@
-﻿//! Frozen command handlers for the patched contract surface (Phase 6/10 wiring).
+//! Frozen command handlers for the patched contract surface (Phase 6/10 wiring).
 //!
 //! These functions map the `hiverouter-contract` command payloads to the tool
 //! layer with the patched refusal identity:
@@ -31,14 +31,28 @@ pub fn settings_status_command() -> event::SettingsStatusResult {
 /// [`Refusal::PathNotFound`] when the root summary cannot be listed and
 /// [`Refusal::PathOutsideJail`] for any containment failure (the jail resolves
 /// the path; there is no ambient `std::fs` path here).
-pub fn file_tree_list(jail: &WorkspaceJail) -> Result<event::FileTreeResult, ToolError> {
+pub fn file_tree_list(
+    jail: &WorkspaceJail,
+    requested: Option<&str>,
+) -> Result<event::FileTreeResult, ToolError> {
+    let prefix = requested
+        .map(|path| path.trim_matches('/'))
+        .filter(|path| !path.is_empty());
     let entries = jail
-        .list(None)?
+        .list(prefix)?
         .into_iter()
-        .map(|entry| event::FileTreeEntry {
-            path: entry.name.clone(),
-            name: entry.name,
-            is_dir: entry.is_dir,
+        .map(|entry| {
+            let path = match prefix {
+                Some(prefix) => format!("{prefix}/{}", entry.name),
+                None => entry.name.clone(),
+            };
+            event::FileTreeEntry {
+                path,
+                name: entry.name,
+                is_dir: entry.is_dir,
+                kind: if entry.is_dir { "dir" } else { "file" }.to_owned(),
+                size_bytes: if entry.is_dir { None } else { Some(entry.size) },
+            }
         })
         .collect();
     Ok(event::FileTreeResult {
@@ -117,7 +131,7 @@ mod tests {
         assert_eq!(content.sha256.len(), 64);
         assert_eq!(content.path, "note.txt");
 
-        let tree = file_tree_list(&jail).expect("tree");
+        let tree = file_tree_list(&jail, None).expect("tree");
         assert_eq!(tree.entries.len(), 1);
         assert_eq!(tree.entries[0].name, "note.txt");
         assert!(!tree.entries[0].is_dir);
