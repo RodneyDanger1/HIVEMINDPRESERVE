@@ -27,6 +27,53 @@ import { STRINGS } from '../state/strings';
 
 const nodeTypes = NODE_RENDERERS as unknown as NodeTypes;
 const edgeTypes: EdgeTypes = { bee: BeeEdge };
+const POSITION_STORAGE_PREFIX = 'hivemind.canvas.positions.v1';
+
+type Position = { x: number; y: number };
+type PositionMap = Readonly<Record<string, Position>>;
+
+function loadPositions(runId: string | null): PositionMap {
+  if (runId === null) {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(`${POSITION_STORAGE_PREFIX}:${runId}`);
+    if (raw === null) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    const positions: Record<string, Position> = {};
+    for (const [taskId, point] of Object.entries(parsed)) {
+      if (typeof point !== 'object' || point === null) {
+        continue;
+      }
+      const candidate = point as { x?: unknown; y?: unknown };
+      if (typeof candidate.x === 'number' && typeof candidate.y === 'number') {
+        positions[taskId] = { x: candidate.x, y: candidate.y };
+      }
+    }
+    return positions;
+  } catch {
+    return {};
+  }
+}
+
+function savePositions(runId: string | null, positions: PositionMap): void {
+  if (runId === null) {
+    return;
+  }
+  try {
+    window.localStorage.setItem(
+      `${POSITION_STORAGE_PREFIX}:${runId}`,
+      JSON.stringify(positions),
+    );
+  } catch {
+    // Storage may be unavailable/quota-full; the canvas remains usable.
+  }
+}
 
 function zoomPercent(zoom: number): string {
   return `${Math.round(zoom * 100)}%`;
@@ -44,12 +91,10 @@ function CanvasInner() {
   const reduced = useAppReducedMotion();
   const { setCenter, getZoom, zoomIn, zoomOut, fitView, getIntersectingNodes } = useReactFlow();
   const [zoomLabel, setZoomLabel] = useState('100%');
-  const [positionOverrides, setPositionOverrides] = useState<
-    Readonly<Record<string, { x: number; y: number }>>
-  >({});
+  const [positionOverrides, setPositionOverrides] = useState<PositionMap>({});
 
   useEffect(() => {
-    setPositionOverrides({});
+    setPositionOverrides(loadPositions(runId));
   }, [runId]);
 
   const handleSelect = useCallback(
@@ -165,10 +210,14 @@ function CanvasInner() {
           if (history.replayGraph) {
             return;
           }
-          setPositionOverrides((previous) => ({
-            ...previous,
-            [node.id]: { x: node.position.x, y: node.position.y },
-          }));
+          setPositionOverrides((previous) => {
+            const next = {
+              ...previous,
+              [node.id]: { x: node.position.x, y: node.position.y },
+            };
+            savePositions(runId, next);
+            return next;
+          });
           const task = tasks[node.id];
           if (!task || task.kind !== 'worker') {
             return;
