@@ -15,6 +15,7 @@ import { PanelTitle, EmptyState } from './StatePack';
 import { ToolActivityPanel, type ToolActivityEntry } from './ToolActivityPanel';
 import { AgentMessagesPanel } from './AgentMessagesPanel';
 import { AgentProfilesPanel } from './AgentProfilesPanel';
+import { AgentMemoryPanel } from './AgentMemoryPanel';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -66,6 +67,7 @@ export function AgentsPanel() {
         <ToolActivityPanel entries={toolActivity} />
       </div>
       <AgentProfilesPanel />
+      <AgentMemoryPanel />
       <AgentMessagesPanel />
     </div>
   );

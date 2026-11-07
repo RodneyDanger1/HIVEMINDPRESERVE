@@ -8,7 +8,7 @@ use std::time::Instant;
 use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{delete, get};
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
 use hiverouter_tools::jail::WorkspaceJail;
@@ -429,6 +429,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/api/agents/profiles", get(agent_profiles))
+        .route("/api/agents/memory", get(agent_memory_list))
+        .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
@@ -623,6 +625,44 @@ async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
         })
         .collect();
     (StatusCode::OK, Json(serde_json::json!({ "profiles": profiles }))).into_response()
+}
+
+async fn agent_memory_list(State(state): State<Arc<AppState>>) -> Response {
+    let mut profiles: Vec<serde_json::Value> = Vec::new();
+    for persona in state.engine.personas() {
+        match state.engine.store.agent_memory(&persona.id, 8) {
+            Ok(memories) => profiles.push(serde_json::json!({
+                "id": persona.id,
+                "display_name": persona.display_name,
+                "memories": memories.into_iter().map(|(key, value)| serde_json::json!({
+                    "key": key,
+                    "value": value,
+                })).collect::<Vec<_>>(),
+            })),
+            Err(refusal) => {
+                return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+            }
+        }
+    }
+    (StatusCode::OK, Json(serde_json::json!({ "profiles": profiles }))).into_response()
+}
+
+async fn clear_agent_memory(
+    State(state): State<Arc<AppState>>,
+    Path(agent_key): Path<String>,
+) -> Response {
+    let key = agent_key.trim();
+    if key.is_empty() || key.chars().count() > 128 {
+        return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+    }
+    match state.engine.store.clear_agent_memory(key) {
+        Ok(removed) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "agent_key": key, "removed": removed })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
 }
 
 async fn run_usage(

@@ -239,6 +239,59 @@ async fn agent_profiles_route_returns_embedded_registry() {
 }
 
 #[tokio::test]
+async fn agent_memory_route_lists_and_clears_role_memory() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "memory", hiverouter_contract::AgentState::Completed)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory(
+            "content-writer",
+            "task:1",
+            "remembered",
+            run.id,
+            hiverouter_contract::TaskId::new(),
+        )
+        .expect("memory");
+    let (status, body) = http_get(server.addr, "/api/agents/memory").await;
+    assert_eq!(status, 200, "memory list: {body}");
+    let value: Value = serde_json::from_str(&body).expect("memory JSON");
+    let profiles = value["profiles"].as_array().expect("profiles array");
+    let writer = profiles
+        .iter()
+        .find(|profile| profile["id"] == "content-writer")
+        .expect("content-writer profile");
+    assert_eq!(writer["memories"][0]["key"], "task:1");
+
+    let mut stream = TcpStream::connect(server.addr).await.expect("connect");
+    let request = format!(
+        "DELETE /api/agents/memory/content-writer HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+        server.addr
+    );
+    stream.write_all(request.as_bytes()).await.expect("delete");
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).await.expect("read delete");
+    let text = String::from_utf8_lossy(&raw);
+    assert!(text.starts_with("HTTP/1.1 200"), "delete response: {text}");
+    assert!(
+        server
+            .state
+            .engine
+            .store
+            .agent_memory("content-writer", 8)
+            .expect("memory")
+            .is_empty()
+    );
+}
+
+#[tokio::test]
 async fn run_usage_route_returns_persisted_tokens() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

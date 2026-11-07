@@ -717,6 +717,23 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Clears one role's durable memories.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn clear_agent_memory(&self, agent_key: &str) -> Result<u64, Refusal> {
+        let removed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "DELETE FROM agent_memory WHERE agent_key = ?1",
+                    params![agent_key],
+                )
+            })
+            .map_err(map)?;
+        Ok(u64::try_from(removed).unwrap_or(0))
+    }
+
     pub fn record_receipt(&self, correlation_id: Uuid, run_id: RunId) -> Result<(), Refusal> {
         self.db
             .with_connection(|connection| {

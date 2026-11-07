@@ -21,7 +21,6 @@ import { AgentsPanel } from './panels/AgentsPanel';
 import { ModelsPanel } from './panels/ModelsPanel';
 import { RoutingPanel } from './panels/RoutingPanel';
 import { ApprovalOverlay } from './panels/ApprovalOverlay';
-import { DiffDecisionModal } from './panels/DiffDecisionModal';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
 
@@ -98,7 +97,6 @@ function AppFrame() {
       <LibraryPanel />
       <ToastRegion />
       <ApprovalOverlay />
-      <DiffDecisionModal />
     </div>
   );
 }
