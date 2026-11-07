@@ -190,3 +190,8 @@ Tracked encoding census:
 | `FAMILY` | Generated/vendor file: exact path + family row; not semantically re-explained |
 
 No file is omitted from `_data/inventory.csv`.
+
+
+## Post-publication delta (self-reference)
+
+The census above is frozen at `e021b12`, before this encyclopedia existed. After adding `docs/CODEMAP/`, the repository has **822** tracked files; the 805/36,480/35,675 partition remains the correct description of the frozen source corpus. Do not compare “current tracked files” with the 805 census without stating the commit/scope.
