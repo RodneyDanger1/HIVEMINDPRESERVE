@@ -1,7 +1,7 @@
 # 17 — Claim Register (post-wave 3)
 
 Status: `VERIFIED` (command/test/proof), `READ` (source read), `UNVERIFIED`, `CONTRADICTED`.
-This register is rebuilt from the current tree after commits up to `2197c30`; it is not the frozen census.
+This register is rebuilt from the current tree after commits up to `8350560`; it is not the frozen census.
 
 | ID | Claim | Status | Evidence |
 |---|---|---|---|
