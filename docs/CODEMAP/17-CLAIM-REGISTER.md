@@ -1,7 +1,7 @@
 # 17 — Claim Register (post-wave 3)
 
 Status: `VERIFIED` (command/test/proof), `READ` (source read), `UNVERIFIED`, `CONTRADICTED`.
-This register is rebuilt from the current tree after commits up to `eeeeb6a`; it is not the frozen census.
+This register is rebuilt from the current tree after commits up to `ce618cf`; it is not the frozen census.
 
 | ID | Claim | Status | Evidence |
 |---|---|---|---|
@@ -22,7 +22,7 @@ This register is rebuilt from the current tree after commits up to `eeeeb6a`; it
 | C-15 | File tree supports path scoping and measured size | VERIFIED | contract/command/tools tests; `DataPanel` expand |
 | C-16 | `RUN_METRICS` has a producer | VERIFIED | lifecycle test counts `RUN_METRICS` |
 | C-17 | `ask_parent` writes a durable message | VERIFIED | `ask_parent_writes_a_durable_message`; `agent_messages` migration v6 |
-| C-18 | `send_to_sibling` is same-parent/run only and emits `AGENT_MESSAGE` | VERIFIED (positive) / UNVERIFIED (negative) | `ask_parent` test asserts event + row; no foreign-parent test |
+| C-18 | `send_to_sibling` is same-parent by default; cross-branch requires approval and emits `AGENT_MESSAGE` | VERIFIED | `cross_branch_message_requires_approval_then_writes_once`; `AGENT_MESSAGE` row+event test |
 | C-19 | Side effects are Config-owned and visible in `/diagnose` | READ | `Config.side_effects_enabled`; `ToolsBridge` builder; diagnose field; no env-parsing test yet |
 | C-20 | HMAS/AWN is complete | **CONTRADICTED** | Profiles can be imported/deleted and persist, but there is no full editor/controller/cross-branch approval or complete HMAS UI |
 | C-21 | Worker/Agent→Subagent spawning exists | **PARTIAL** | Worker may spawn `subagent` and cannot escalate to Super; profiles may tighten `max_children`/`max_depth`; no per-run cap profile |

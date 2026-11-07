@@ -151,6 +151,8 @@ two of three; (4) no first-party LICENSE/NOTICE and an incomplete census (`09-RI
   boot merges persisted profiles over embedded ones; delete restores built-ins. No full visual editor yet.
 - Memory controls: `GET /api/agents/memory` + `DELETE /api/agents/memory/{role}` + AgentMemoryPanel.
 - Projects: migration v10 `projects`; `create_run` materializes its project once; `/api/projects` lists them.
+- Cross-branch messaging: `send_to_sibling` to another parent is a Mutate-class call; it suspends for
+  operator approval and writes once after approval (same-parent stays immediate).
 - UI: `AgentHierarchy` renders the real parent-link tree with depth indentation and selection; this is the
   first topology view, not a full org-chart/controller UI.
 - Still **not** done: full profile editor, cross-branch approval gate, semantic retrieval, HMAS controller,
