@@ -180,6 +180,27 @@ async fn rewire_ack_and_node_event_fan_out_to_both_clients() {
     server.state.graph.add_task(root_a, None).expect("root a");
     server.state.graph.add_task(root_b, None).expect("root b");
     server.state.graph.add_task(task, Some(root_a)).expect("task");
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "rewire", AgentState::Running)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .insert_task(&hiverouter_core::entities::TaskRecord {
+            id: task,
+            run_id: run.id,
+            parent_task_id: Some(root_a),
+            role: "worker".to_owned(),
+            depth: 1,
+            spawn_seq: 2,
+            state: AgentState::Running,
+            rev: 0,
+        })
+        .expect("task row");
 
     let mut sender = connect(&server, None).await;
     let mut watcher = connect(&server, None).await;
@@ -202,6 +223,10 @@ async fn rewire_ack_and_node_event_fan_out_to_both_clients() {
     assert_eq!(ack["payload"]["command"], "REWIRE_TASK");
     let node_event = recv_until(&mut watcher, |value| frame_name(value) == "NODE_REWIRE").await;
     assert_eq!(node_event["payload"]["task_id"], task.to_string());
+    assert_eq!(
+        node_event["payload"]["kind"], "worker",
+        "NODE_REWIRE must carry the authoritative task kind"
+    );
     assert_eq!(
         server.state.graph.parent_of(task).expect("parent"),
         Some(root_b)

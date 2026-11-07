@@ -31,6 +31,7 @@ use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
 use crate::context::{ContextStore, ContextSwitchOutcome, ScopedContext};
 use crate::entities::TaskRecord;
+use crate::execution::{node_kind, task_agent_tier};
 use crate::graph::{GraphAuthority, TaskNode};
 use crate::http::AppState;
 use crate::prompts::TemplateRegistry;
@@ -724,6 +725,8 @@ async fn handle_client_text(
                         &node,
                         task.as_ref().map(|task| task.run_id),
                         Some(correlation),
+                        task.as_ref()
+                            .map(|task| node_kind(task_agent_tier(task)).to_owned()),
                     );
                 }
                 Err(refusal) => publish_error(state, refusal, Some(correlation)),
@@ -941,29 +944,23 @@ fn publish_with_correlation(state: &Arc<AppState>, event: Event, correlation: Uu
     }
 }
 
-/// Publishes one frozen `NODE_*` frame for the authoritative graph node.
+/// Publish one frozen `NODE_*` frame for the authoritative graph node.
 ///
-/// The frozen payload is `{task_id, state}` plus the additive topology fields
-/// `rev`, `kind` and `parent_task_id` (`contract/src/event.rs`): `rev` is the
-/// same per-node revision `REWIRE_TASK.expected_rev` is compared against and
-/// `parent_task_id` lets a re-parent move the canvas edge in the frame that
-/// reports the state. Both are read under one graph lock, so the frame can never
-/// disagree with the graph. `kind` stays absent: it may only be populated from a
-/// task's authoritative tier, and that tier is not threaded through the task
-/// record yet (the free-form `role` string is never promoted to a kind). The
-/// `run_id` is set on the envelope when the task row is known.
+/// `kind` comes from the task's authoritative tier, never from the free-form
+/// role string. The publisher keeps it stable across spawn and rewire.
 fn publish_node_event(
     bus: &EventBus,
     name: EventName,
     node: &TaskNode,
     run_id: Option<RunId>,
     correlation: Option<Uuid>,
+    kind: Option<String>,
 ) {
     let payload = NodeEvent {
         task_id: node.task_id,
         state: node.state,
         rev: Some(node.rev),
-        kind: None,
+        kind,
         parent_task_id: node.parent_task_id,
     };
     let event = match name {
@@ -1000,7 +997,14 @@ fn publish_node_spawn(bus: &EventBus, graph: &GraphAuthority, task: &TaskRecord)
             return;
         }
     };
-    publish_node_event(bus, EventName::NodeSpawn, &node, Some(task.run_id), None);
+    publish_node_event(
+        bus,
+        EventName::NodeSpawn,
+        &node,
+        Some(task.run_id),
+        None,
+        Some(node_kind(task_agent_tier(task)).to_owned()),
+    );
 }
 
 async fn send_event_direct(socket: &mut WebSocket, event: Event) -> Result<(), ()> {

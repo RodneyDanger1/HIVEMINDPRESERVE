@@ -84,7 +84,7 @@ fn is_terminal_task_state(state: AgentState) -> bool {
 
 /// Contract node-kind label for an agent tier (`NODE_KIND_VOCABULARY` values).
 #[must_use]
-fn node_kind(tier: AgentTier) -> &'static str {
+pub(crate) fn node_kind(tier: AgentTier) -> &'static str {
     match tier {
         AgentTier::HyperAgent => "hyperagent",
         AgentTier::SuperAgent => "superagent",
