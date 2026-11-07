@@ -542,6 +542,55 @@ async fn durable_role_memory_is_recalled_into_worker_context() {
 }
 
 #[tokio::test]
+async fn worker_spawn_is_restricted_to_subagents_not_superagents() {
+    let harness = test_engine(MockExecutor::new(leaf_plan(1, 1)));
+    let run = harness
+        .store
+        .create_run("p", "spawn policy", AgentState::Running)
+        .expect("run");
+    let root = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: run.id,
+        parent_task_id: None,
+        role: "planner".to_owned(),
+        depth: 0,
+        spawn_seq: 1,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    let worker = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: run.id,
+        parent_task_id: Some(root.id),
+        role: "worker".to_owned(),
+        depth: 1,
+        spawn_seq: 2,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    harness.store.insert_task(&root).expect("root");
+    harness.store.insert_task(&worker).expect("worker");
+    harness.engine.graph.add_task(root.id, None).expect("root graph");
+    harness
+        .engine
+        .graph
+        .add_task(worker.id, Some(root.id))
+        .expect("worker graph");
+
+    assert_eq!(
+        harness.engine.spawn_sub_hive(worker.id, "super"),
+        Err(Refusal::ToolNotAllowed),
+        "a Worker must not escalate itself to SuperAgent"
+    );
+    let child = harness
+        .engine
+        .spawn_sub_hive(worker.id, "subagent")
+        .expect("worker may spawn a subagent");
+    assert_eq!(child.depth, 2);
+    assert_eq!(child.parent_task_id, Some(worker.id));
+}
+
+#[tokio::test]
 async fn streamed_deltas_are_published_before_done_and_not_duplicated() {
     let harness = test_engine(MockExecutor::new(leaf_plan(1, 1)));
     let mut receiver = harness.bus.subscribe();

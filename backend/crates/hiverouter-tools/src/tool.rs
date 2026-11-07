@@ -408,6 +408,7 @@ impl ToolRegistry {
         allowlists.insert(
             AgentTier::WorkerAgent,
             vec![
+                ToolId::SpawnAgent,
                 ToolId::AskParent,
                 ToolId::SendToSibling,
                 ToolId::ReportResult,

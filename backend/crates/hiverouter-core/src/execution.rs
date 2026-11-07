@@ -105,7 +105,43 @@ pub(crate) fn node_kind(tier: AgentTier) -> &'static str {
     }
 }
 
-/// Maps a task's recorded role to the contract agent tier (M-015).
+/// Enforces the hierarchical spawn policy before a child row is created.
+///
+/// Hyper may spawn Super/Agent/Subagent; Super may spawn Agent/Subagent; Agent
+/// (Worker) may spawn **Subagent only** — never a Super, so a child cannot
+/// escalate its own capability tier. Subagents and tool actors cannot spawn.
+fn validate_spawn_role(parent: AgentTier, requested_role: &str) -> Result<(), Refusal> {
+    let role = requested_role.trim().to_ascii_lowercase();
+    let allowed = match parent {
+        AgentTier::HyperAgent => matches!(
+            role.as_str(),
+            "super"
+                | "superagent"
+                | "super_agent"
+                | "sub_hive"
+                | "subhive"
+                | "worker"
+                | "workeragent"
+                | "worker_agent"
+                | "agent"
+                | "subagent"
+                | "sub_agent"
+        ),
+        AgentTier::SuperAgent => matches!(
+            role.as_str(),
+            "worker" | "workeragent" | "worker_agent" | "agent" | "subagent" | "sub_agent"
+        ),
+        AgentTier::WorkerAgent => matches!(role.as_str(), "subagent" | "sub_agent"),
+        AgentTier::ToolAgent => false,
+    };
+    if allowed {
+        Ok(())
+    } else {
+        Err(Refusal::ToolNotAllowed)
+    }
+}
+
+
 ///
 /// Known roles are mapped explicitly. An unrecognized role keeps the historic
 /// `WorkerAgent` capability set and is never promoted to a broader allowlist;
@@ -992,6 +1028,7 @@ impl RunEngine {
             if run.status.is_terminal() {
                 return Err(Refusal::RunTerminal);
             }
+            validate_spawn_role(task_agent_tier(&parent), role)?;
             let siblings = self
                 .store
                 .tasks_for_run(parent.run_id)?
