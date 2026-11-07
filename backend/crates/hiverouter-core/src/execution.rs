@@ -36,7 +36,7 @@ use crate::db::{Database, ToolTurnRecord};
 use crate::entities::{ChatRole, Run, TaskRecord};
 use crate::graph::GraphAuthority;
 use crate::planner::Plan;
-use crate::prompts::TemplateRegistry;
+use crate::prompts::{Persona, TemplateRegistry};
 use crate::store::RunStore;
 use crate::tool_loop::{self, ToolCallPlan, ToolExecution};
 use crate::tools_bridge::ToolsBridge;
@@ -352,6 +352,8 @@ pub struct RunEngine {
     pub executor: Arc<dyn ProviderExecutor>,
     /// Prompt template registry (planning prompt).
     pub templates: Arc<TemplateRegistry>,
+    /// Boot-loaded personas keyed by role/template id.
+    personas: HashMap<String, Persona>,
     /// Hard caps.
     pub caps: Caps,
     /// Durable snapshot store; when present a snapshot is written after every
@@ -415,6 +417,7 @@ impl RunEngine {
             tokens: Arc::new(RunRegistry::default()),
             executor,
             templates,
+            personas: HashMap::new(),
             caps: Caps::default(),
             snapshots: None,
             tool_workspace: None,
@@ -455,6 +458,16 @@ impl RunEngine {
     #[must_use]
     pub fn with_tools(mut self, tools: Arc<ToolsBridge>) -> Self {
         self.tools = Some(tools);
+        self
+    }
+
+    /// Attaches the boot-loaded persona registry.
+    #[must_use]
+    pub fn with_personas(mut self, personas: Vec<Persona>) -> Self {
+        self.personas = personas
+            .into_iter()
+            .map(|persona| (persona.id.clone(), persona))
+            .collect();
         self
     }
 
@@ -501,6 +514,7 @@ impl RunEngine {
             tokens,
             executor,
             templates,
+            personas: HashMap::new(),
             caps,
             snapshots: None,
             tool_workspace: None,
@@ -634,6 +648,10 @@ impl RunEngine {
             if let Some(parent) = self.contexts.get(parent_task_id)? {
                 context.facts = parent.facts;
             }
+        }
+        if let Some(persona) = self.personas.get(&task.role) {
+            context.allowed_tool_ids = persona.allowed_tool_ids.clone();
+            context.output_schema_id = persona.output_schema_id.clone();
         }
         self.contexts.set(task.id, context)
     }

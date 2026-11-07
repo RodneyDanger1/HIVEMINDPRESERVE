@@ -37,6 +37,9 @@ pub const ALLOWED_LICENCES: &[&str] = &[
 /// malformed file still refuses by name at load time.
 pub const EMBEDDED_MANIFEST: &str = include_str!("../assets/prompts/manifest.json");
 
+/// The shipped persona manifest, embedded at compile time.
+pub const EMBEDDED_PERSONAS: &str = include_str!("../assets/prompts/personas.json");
+
 /// Embedded template bodies, keyed by the manifest `file` field.
 pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[(
     "planner.prompty",
@@ -396,8 +399,21 @@ pub fn load_personas(
     templates: &TemplateRegistry,
 ) -> Result<Vec<Persona>, Refusal> {
     let text = std::fs::read_to_string(path).map_err(|_| Refusal::PersonaUnknown)?;
+    parse_personas(&text, templates)
+}
+
+/// Loads the embedded persona manifest; the single release binary has no
+/// `<data_dir>/assets/prompts/personas.json` to read.
+///
+/// # Errors
+/// `E_PERSONA_UNKNOWN` / `E_TEMPLATE_UNKNOWN` / `E_TEMPLATE_INVALID`.
+pub fn load_personas_embedded(templates: &TemplateRegistry) -> Result<Vec<Persona>, Refusal> {
+    parse_personas(EMBEDDED_PERSONAS, templates)
+}
+
+fn parse_personas(text: &str, templates: &TemplateRegistry) -> Result<Vec<Persona>, Refusal> {
     let personas: Vec<Persona> =
-        serde_json::from_str(&text).map_err(|_| Refusal::TemplateInvalid)?;
+        serde_json::from_str(text).map_err(|_| Refusal::TemplateInvalid)?;
     for persona in &personas {
         persona.validate(templates)?;
     }

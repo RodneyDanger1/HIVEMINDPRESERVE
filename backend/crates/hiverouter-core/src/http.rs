@@ -23,7 +23,7 @@ use crate::db::Database;
 use crate::execution::{ProviderExecutor, RunEngine, UnconfiguredExecutor};
 use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
-use crate::prompts::TemplateRegistry;
+use crate::prompts::{load_personas_embedded, Persona, TemplateRegistry};
 use crate::provider_executor::ProviderExecutorAdapter;
 use crate::snapshot::SnapshotStore;
 use crate::tools_bridge::ToolsBridge;
@@ -104,6 +104,34 @@ fn prompt_assets_for(checks: &mut Vec<Check>) -> (Arc<TemplateRegistry>, Option<
     }
 }
 
+fn persona_assets_for(
+    templates: &TemplateRegistry,
+    checks: &mut Vec<Check>,
+) -> Vec<Persona> {
+    match load_personas_embedded(templates) {
+        Ok(personas) => personas,
+        Err(refusal) => {
+            tracing::error!(
+                code = refusal.code(),
+                message = refusal.message(),
+                "embedded persona assets refused at boot; scoped allowlists stay empty"
+            );
+            checks.push(Check {
+                name: "persona_assets",
+                required: true,
+                ok: false,
+                detail: format!(
+                    "embedded persona assets refused: {} ({})",
+                    refusal.message(),
+                    refusal.code()
+                ),
+                code: Some(refusal.code()),
+            });
+            Vec::new()
+        }
+    }
+}
+
 fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
     if let Err(error) = ToolsBridge::migrate(db) {
         tracing::error!(
@@ -158,11 +186,13 @@ fn build_engine(
     graph: Arc<GraphAuthority>,
     config: &Config,
     templates: Arc<TemplateRegistry>,
+    personas: Vec<Persona>,
     snapshots: Arc<SnapshotStore>,
     tools: Arc<ToolsBridge>,
     wire_workspace_jail: bool,
 ) -> Arc<RunEngine> {
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config), templates)
+        .with_personas(personas)
         .with_snapshot_store(snapshots)
         .with_tools(tools);
     if wire_workspace_jail {
@@ -213,8 +243,9 @@ impl AppState {
         let graph = Arc::new(GraphAuthority::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
+        let personas = persona_assets_for(&templates, &mut checks);
         let tools = build_tools(&db, &config);
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), tools.clone(), true);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
@@ -251,8 +282,9 @@ impl AppState {
         let bus = Arc::new(EventBus::new());
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let (templates, prompt_assets_error) = prompt_assets_for(&mut checks);
+        let personas = persona_assets_for(&templates, &mut checks);
         let tools = build_tools(&db, &config);
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, snapshots.clone(), tools.clone(), true);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
@@ -287,7 +319,7 @@ impl AppState {
     ) -> Self {
         let snapshots = Arc::new(SnapshotStore::new(&config.data_dir, db.clone()));
         let tools = build_tools(&db, &config);
-        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), snapshots.clone(), tools.clone(), false);
+        let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), Vec::new(), snapshots.clone(), tools.clone(), false);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         Self {
             db,

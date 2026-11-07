@@ -14,7 +14,7 @@ use hiverouter_core::db::Database;
 use hiverouter_core::execution::{DeltaSink, ProviderExecutor, RunEngine, StreamedReply};
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
-use hiverouter_core::prompts::TemplateRegistry;
+use hiverouter_core::prompts::{Persona, PersonaTier, TemplateRegistry};
 use hiverouter_core::store::RunStore;
 use tokio::sync::broadcast::error::RecvError;
 use tokio_util::sync::CancellationToken;
@@ -160,17 +160,27 @@ struct TestEngine {
 }
 
 fn test_engine(executor: Arc<dyn ProviderExecutor>) -> TestEngine {
+    test_engine_with_personas(executor, Vec::new())
+}
+
+fn test_engine_with_personas(
+    executor: Arc<dyn ProviderExecutor>,
+    personas: Vec<Persona>,
+) -> TestEngine {
     let temp = tempfile::tempdir().expect("temp dir");
     let db = Arc::new(Database::open(&temp.path().join("hiverouter.db")).expect("db"));
     db.migrate().expect("migrate");
     let bus = Arc::new(EventBus::new());
-    let engine = Arc::new(RunEngine::new(
-        db.clone(),
-        bus.clone(),
-        Arc::new(GraphAuthority::new()),
-        executor,
-        Arc::new(TemplateRegistry::default()),
-    ));
+    let engine = Arc::new(
+        RunEngine::new(
+            db.clone(),
+            bus.clone(),
+            Arc::new(GraphAuthority::new()),
+            executor,
+            Arc::new(TemplateRegistry::default()),
+        )
+        .with_personas(personas),
+    );
     TestEngine {
         engine,
         bus,
@@ -433,6 +443,46 @@ async fn planned_parent_chain_is_persisted_not_flattened_to_root() {
         prompts.iter().any(|prompt| prompt.contains("Aggregate the completed child results")),
         "an aggregator must receive child results, not just the original prompt: {prompts:?}"
     );
+}
+
+#[tokio::test]
+async fn boot_persona_allowlist_is_seeded_on_worker_contexts() {
+    let worker = Persona {
+        id: "worker".to_owned(),
+        display_name: "Worker".to_owned(),
+        tier: PersonaTier::Worker,
+        template_id: "planner".to_owned(),
+        allowed_tool_ids: vec!["file_read".to_owned()],
+        output_schema_id: None,
+        refusal_policy: "strict".to_owned(),
+    };
+    let harness = test_engine_with_personas(MockExecutor::new(tree_plan()), vec![worker]);
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("persona check", "p", Uuid::now_v7())
+        .expect("submit");
+    loop {
+        let event = wait_for(&mut receiver, |_| true).await;
+        if event_name(&event) == "RUN_STATUS" {
+            let status = event.envelope.payload["status"].as_str().unwrap_or_default();
+            if status != "queued" && status != "planning" && status != "running" {
+                break;
+            }
+        }
+    }
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    let worker_tasks: Vec<_> = tasks.iter().filter(|task| task.role == "worker").collect();
+    assert!(!worker_tasks.is_empty());
+    for task in worker_tasks {
+        let context = harness
+            .engine
+            .contexts
+            .get(task.id)
+            .expect("context lookup")
+            .expect("context");
+        assert_eq!(context.allowed_tool_ids, vec!["file_read".to_owned()]);
+    }
 }
 
 #[tokio::test]

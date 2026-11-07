@@ -7,7 +7,8 @@ use std::path::{Path, PathBuf};
 
 use hiverouter_contract::Refusal;
 use hiverouter_core::prompts::{
-    load_personas, MessageRole, Persona, PersonaTier, TemplateManifestEntry, TemplateRegistry,
+    load_personas, load_personas_embedded, MessageRole, Persona, PersonaTier, TemplateManifestEntry,
+    TemplateRegistry,
 };
 
 fn assets() -> PathBuf {
@@ -110,4 +111,14 @@ fn prompt_schema_roundtrip() {
     };
     let row_json = serde_json::to_value(&manifest_row).expect("manifest row json");
     assert_eq!(row_json["template_id"], "planner");
+}
+
+#[test]
+fn embedded_personas_load_without_a_data_dir() {
+    let registry = TemplateRegistry::load_embedded().expect("embedded templates");
+    let personas = load_personas_embedded(&registry).expect("embedded personas");
+    assert_eq!(personas.len(), 1);
+    assert_eq!(personas[0].id, "planner");
+    assert_eq!(personas[0].template_id, "planner");
+    assert_eq!(personas[0].validate(&registry), Ok(()));
 }
