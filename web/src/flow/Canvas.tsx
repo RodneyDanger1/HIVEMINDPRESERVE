@@ -23,11 +23,22 @@ import { BeeEdge } from './BeeEdge';
 import { handleCanvasShortcut } from '../a11y/keyboard';
 import { useUiStore } from '../state/context';
 import { HudBadge } from '../panels/HudBadge';
+import { HiveField } from './HiveField';
 import { LAYOUT } from '../tokens/tokens';
 import { isTerminal } from '../state/agentState';
 import type { TaskRecord } from '../state/store';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { STRINGS } from '../state/strings';
+
+function BeeMark() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 18 18" aria-hidden="true">
+      <ellipse cx="9" cy="9" rx="5" ry="3.2" fill="currentColor" />
+      <path d="M3 9h12M5.5 6.5h7M5.5 11.5h7" stroke="var(--color-honey-300)" strokeWidth="1.1" />
+      <path d="M7 5.5C5.5 3.7 3.6 3.4 2.5 4.2c1.4.4 2.2 1 3.8 1.9ZM11 5.5c1.5-1.8 3.4-2.1 4.5-1.3-1.4.4-2.2 1-3.8 1.9Z" fill="var(--color-honey-100)" />
+    </svg>
+  );
+}
 
 const nodeTypes = NODE_RENDERERS as unknown as NodeTypes;
 const edgeTypes: EdgeTypes = { bee: BeeEdge };
@@ -98,6 +109,8 @@ function CanvasInner() {
   const [positionOverrides, setPositionOverrides] = useState<PositionMap>({});
   const [hideFinished, setHideFinished] = useState(false);
   const [focusBranch, setFocusBranch] = useState(false);
+  const chatVisible = useUiStore((state) => state.chat.visible);
+  const setChatVisible = useUiStore((state) => state.setChatVisible);
 
   useEffect(() => {
     setPositionOverrides(loadPositions(runId));
@@ -150,6 +163,7 @@ function CanvasInner() {
   }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, positionOverrides]);
 
   const hasTasks = Object.keys(visibleTasks).length > 0;
+  const taskCount = Object.keys(tasks).length;
   const liveNodes = useMemo<CanvasNode[]>(() => {
     if (history.replayGraph) {
       return [];
@@ -179,11 +193,22 @@ function CanvasInner() {
     if (history.replayGraph || !hasTasks) {
       return;
     }
+    let timer: number | null = null;
     const id = requestAnimationFrame(() => {
-      void fitView({ padding: 0.24, duration: 0, minZoom: 0.2, maxZoom: 1 });
+      // Debounce the fit until the initial burst of NODE_SPAWN events has
+      // settled; otherwise the first card fits the viewport and the rest are
+      // born outside it. A quiet 240ms window is well below human perception.
+      timer = window.setTimeout(() => {
+        void fitView({ padding: chatVisible ? 0.42 : 0.18, duration: 0, minZoom: 0.2, maxZoom: 1 });
+      }, 240);
     });
-    return () => cancelAnimationFrame(id);
-  }, [runId, hasTasks, history.replayGraph, fitView]);
+    return () => {
+      cancelAnimationFrame(id);
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [runId, taskCount, hasTasks, history.replayGraph, fitView, chatVisible]);
 
   const edges = useMemo<Edge[]>(() => buildEdges(visibleTasks), [visibleTasks]);
 
@@ -250,46 +275,42 @@ function CanvasInner() {
   const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
 
   return (
-    <div id="hive-canvas" className="relative h-full min-h-0 w-full" role="application" aria-label="HiveMind spatial canvas">
-      <svg className="hive-canvas-field" aria-hidden="true" width="100%" height="100%">
+    <div
+      id="hive-canvas"
+      className="relative h-full min-h-0 w-full"
+      role="application"
+      aria-label="HiveMind spatial canvas"
+      tabIndex={-1}
+    >
+      <svg aria-hidden="true" width="0" height="0" className="absolute">
         <defs>
-          <pattern id="honeycomb-field" width="48" height="42" patternUnits="userSpaceOnUse">
-            <path d="M12 0L36 0L48 21L36 42L12 42L0 21Z" fill="none" stroke="currentColor" strokeWidth="1" />
-          </pattern>
+          <marker id="bee-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0 0 7 3.5 0 7Z" fill="var(--color-honey-400)" />
+          </marker>
+          <marker id="bee-arrow-broken" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0 0 7 3.5 0 7Z" fill="var(--color-signal)" />
+          </marker>
         </defs>
-        <rect width="100%" height="100%" fill="url(#honeycomb-field)" />
       </svg>
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-40">
-        <div className="hive-ambient-glow" />
-      </div>
+      <HiveField />
+      <div className="hive-scan" aria-hidden="true" />
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[660px] w-[620px] -translate-x-1/2 -translate-y-1/2">
-        <div className="hive-ambient-glow" />
-        <svg aria-hidden="true" className="h-full w-full" width="620" height="660" viewBox="0 0 620 660">
-          <defs>
-            <radialGradient id="hive-lobe" cx="50%" cy="42%" r="62%">
-              <stop offset="0%" stopColor="var(--color-honey-200)" stopOpacity="0.95" />
-              <stop offset="52%" stopColor="var(--color-honey-400)" stopOpacity="0.88" />
-              <stop offset="100%" stopColor="var(--color-honey-700)" stopOpacity="0.9" />
-            </radialGradient>
-            <radialGradient id="hive-highlight" cx="50%" cy="35%" r="55%">
-              <stop offset="0%" stopColor="var(--color-honey-100)" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="var(--color-honey-300)" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          {[95, 215, 335, 455, 575].map((cy) => (
-            <ellipse key={cy} cx="310" cy={cy} rx="270" ry="108" fill="url(#hive-lobe)" />
-          ))}
-          {[95, 215, 335, 455, 575].map((cy) => (
-            <ellipse key={`h-${cy}`} cx="310" cy={cy - 18} rx="168" ry="42" fill="url(#hive-highlight)" />
-          ))}
-        </svg>
-        <div className="hive-sheen" />
+        <span className="ambient-bee ambient-bee-a" aria-hidden="true">
+          <BeeMark />
+        </span>
+        <span className="ambient-bee ambient-bee-b" aria-hidden="true">
+          <BeeMark />
+        </span>
+        <span className="ambient-bee ambient-bee-c" aria-hidden="true">
+          <BeeMark />
+        </span>
       </div>
       <HudBadge />
       <div className="absolute left-3 top-16 z-20 flex items-center gap-1">
         <button
           type="button"
           aria-pressed={hideFinished}
+          disabled={Object.keys(tasks).length === 0}
           className={
             'type-mono-meta rounded-[var(--radius-pill)] border px-2 py-1 ' +
             (hideFinished
@@ -318,6 +339,14 @@ function CanvasInner() {
         <span className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 py-1 text-meta">
           {Object.keys(visibleTasks).length}/{Object.keys(tasks).length}
         </span>
+        <button
+          type="button"
+          aria-pressed={!chatVisible}
+          className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 py-1 text-ink-500 hover:bg-honey-100"
+          onClick={() => setChatVisible(!chatVisible)}
+        >
+          {chatVisible ? 'Graph only' : 'Show chat'}
+        </button>
       </div>
       <ReactFlow
         nodes={history.replayGraph ? replayNodes : liveNodes}
@@ -398,7 +427,7 @@ function CanvasInner() {
           style={{
             width: LAYOUT.minimap.width,
             height: LAYOUT.minimap.height,
-            background: 'var(--color-panel)',
+            backgroundColor: 'var(--color-panel)',
             border: '1px solid var(--color-hairline)',
             borderRadius: 'var(--radius-md)',
           }}
@@ -458,9 +487,9 @@ function CanvasInner() {
         </button>
       </div>
 
-      {nodes.length === 0 && !history.replayGraph ? (
-        <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-40">
-          <p className="type-mono-meta text-meta">
+      {nodes.length === 0 && !history.replayGraph && !chatVisible ? (
+        <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center">
+          <p className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-3 py-1.5 text-meta">
             {Object.keys(tasks).length > 0 ? 'No agents match the current filters.' : STRINGS.panels.agentsEmpty}
           </p>
         </div>

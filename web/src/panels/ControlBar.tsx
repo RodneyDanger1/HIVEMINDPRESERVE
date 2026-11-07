@@ -38,10 +38,10 @@ export function ControlBar() {
     connected && runActive && !anyPending && !replaying && selected !== null && selected.kind === 'worker';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t border-hairline bg-panel px-3 py-2">
-      <span className="type-mono-meta text-meta">{STRINGS.node.role}:</span>
+    <div className="flex min-h-[52px] flex-wrap items-center gap-2 border-t border-hairline bg-panel px-3 py-1.5">
+      <span className="type-mono-meta text-meta">Target</span>
       <select
-        className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1 text-ink-800"
+        className="type-mono-meta h-9 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 text-ink-800"
         aria-label={`${STRINGS.node.workerLabel}: ${STRINGS.controls.reroute}`}
         value={selectedTaskId ?? ''}
         disabled={replaying}
@@ -57,7 +57,7 @@ export function ControlBar() {
 
       <button
         type="button"
-        className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
+        className="type-label h-10 rounded-[var(--radius-button)] border border-honey-500 bg-honey-300 px-4 font-semibold text-ink-900 hover:bg-honey-400 disabled:opacity-50"
         disabled={!canSpawn}
         title={runActive ? STRINGS.controls.spawn : STRINGS.controls.disabledNoRun}
         onClick={() => {
@@ -68,7 +68,7 @@ export function ControlBar() {
       </button>
 
       <select
-        className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1 text-ink-800"
+        className="type-mono-meta h-9 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 text-ink-800"
         aria-label={STRINGS.controls.reroute}
         value={target}
         onChange={(event) => setTarget(event.target.value)}
@@ -82,7 +82,7 @@ export function ControlBar() {
       </select>
       <button
         type="button"
-        className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
+        className="type-label h-10 rounded-[var(--radius-button)] border border-hairline px-4 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
         disabled={!canRewire}
         title={selected ? STRINGS.controls.reroute : STRINGS.controls.disabledNoSelection}
         onClick={() => {
@@ -96,7 +96,7 @@ export function ControlBar() {
 
       <button
         type="button"
-        className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
+        className="type-label h-10 rounded-[var(--radius-button)] border border-hairline px-4 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
         disabled={!canCancel}
         onClick={() => {
           void cancelRun();
@@ -106,7 +106,7 @@ export function ControlBar() {
       </button>
       <button
         type="button"
-        className="type-label rounded-[var(--radius-button)] border border-signal px-3 py-1.5 text-signal hover:bg-recessed disabled:opacity-50"
+        className="type-label h-10 rounded-[var(--radius-button)] border border-signal px-4 text-signal hover:bg-recessed disabled:opacity-50"
         disabled={!canKill}
         onClick={() => {
           void killWorker();

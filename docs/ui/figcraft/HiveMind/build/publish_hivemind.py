@@ -1,7 +1,7 @@
 """Publish the regenerated HiveMind FigCraft set.
 
 Reads the regenerated HiveMind-Style-System.figcraft + CLI info + exports, then:
-  1. exports one SVG per artboard (11) into docs/ui/figcraft/ASSETS/
+  1. exports one SVG per artboard (12) into docs/ui/figcraft/ASSETS/
   2. copies the CLI-generated 1x/2x PNG exports into ASSETS as hivemind-*.png
   3. writes HiveMind/HiveMind-ASSETS.json (design file, frames, exports, surfaces)
   4. writes HiveMind/HiveMind-SOURCE-EVIDENCE.json (hashes of preserved evidence)
@@ -46,6 +46,7 @@ FRAMES = [
     ("08", "08 · HMAS Hierarchy", "hmas-hierarchy", 1440, 900),
     ("09", "09 · HMAS Governance", "hmas-governance", 1440, 900),
     ("10", "10 · States & Refusals", "states-and-refusals", 1440, 900),
+    ("11", "11 · Motion & Live", "motion-and-live", 1440, 900),
 ]
 
 SURFACES = [
@@ -90,6 +91,15 @@ SURFACES = [
     ("STATE-KILL-CONFIRM", "Kill confirmation", "states-and-refusals", "PROPOSED-ADDITION (truth state)"),
     ("STATE-REPLAY", "Replay read-only", "states-and-refusals", "HiveRouter-Target-Spec §3"),
     ("STATE-DIFF-GATED", "DIFF surface explanation", "states-and-refusals", "DECISION-GATED / no frozen DIFF command"),
+    ("CHAT-VARIANT-400x480", "Chat core app variant 400x480", "motion-and-live", "PROPOSED-ADDITION (current app variant; board 07 stays 420x500)"),
+    ("MOTION-AMBIENT", "Honeycomb ambient glow sweep (18s linear, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-SHEEN", "5-lobe hive sheen (6s ease-in-out, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-BEE-FLOW", "Bee flow with arrowheads (2.4s cubic-bezier, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-PULSE", "Running state pulse (1.6s, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-SPINNER", "Working-bee spinner (1.2s linear, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-RISE-HOVER", "Node rise/hover (240ms / 120ms, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-FOCUS-RING", "Focus ring ink-700 2px (160ms, PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
+    ("MOTION-REDUCED", "Reduced-motion fallback (PROPOSED)", "motion-and-live", "PROPOSED-ADDITION (motion proposal)"),
 ]
 
 
@@ -266,6 +276,9 @@ def build_assets(info_json, evidence, episodes, phase1_commands, phase2_commands
             "preserved_evidence": "docs/ui/figcraft/HiveMind/source-evidence/",
             "renamed": "user-facing HiveRouter/HIVEROUTER -> HiveMind/HIVEMIND",
             "a_b_unchanged": True,
+            "motion_spec": "board 11 durations/easing are PROPOSED, not measured",
+            "card_anatomy": "board 05 refined to exact spatial-system card anatomy",
+            "chat_variants": "board 07 stays 420x500; board 11 shows app variant 400x480",
         },
         "tool": {
             "name": "figcraft-cli",
@@ -373,10 +386,11 @@ def write_readme():
         "python publish_hivemind.py",
         "python verify_hivemind.py",
         "```",
-        "`build_hive_style.py` is the source builder patched for HiveMind (rename + two new",
-        "boards: 08 HMAS, 09 States & Refusals). `HiveMind-Style-System.figcraft` is the",
-        "regenerated design file; exports live in `exports/` (generated) and the canonical",
-        "copies in `docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.",
+        "`build_hive_style.py` is the source builder patched for HiveMind (rename",
+        "+ HMAS/state boards 08-10 + motion board 11 + exact-anatomy refinement of",
+        "board 05). `HiveMind-Style-System.figcraft` is the regenerated design file;",
+        "exports live in `exports/` (generated) and the canonical copies in",
+        "`docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.",
         "",
         "## Artboards",
         "| # | frame | board size | export |",
@@ -398,6 +412,11 @@ def write_readme():
         "  (52px topbar, 72px rail, 240px library, canvas x=312, chat 420x500 at 620,196,",
         "  HUD 460x44, minimap 220x150, SuperAgent 420x150, WorkerAgent 320x96,",
         "  ToolAgent 420x240, crimson error card).",
+        "- Board 05 refines the exact card anatomy annotations (Super 420x150 header 40 +",
+        "  68x18 pill; Worker 320x96; Tool 420x240 with 132px dark result area; Error 320x110).",
+        "- Board 11 motion/live is a design proposal: durations/easing are PROPOSED, not",
+        "  measured; no component behaviour is frozen. It shows the current app chat variant",
+        "  400x480 while board 07 remains the authoritative 420x500.",
     ]
     with open(os.path.join(HM, "README.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
@@ -407,16 +426,12 @@ def main():
     if not os.path.isfile(DESIGN):
         raise SystemExit("missing %s; run the two FigCraft phases first" % DESIGN)
     info_json = info()
-    # remove stale ASSETS from a previous board split; generated exports are
-    # produced by phase 2 and must stay in HiveMind/exports/
-    keep = set()
-    for _code, _frame, slug, _w, _h in FRAMES:
-        keep.update({"hivemind-%s.svg" % slug, "hivemind-%s.png" % slug,
-                     "hivemind-%s@2x.png" % slug})
+    # remove only known stale exports from the earlier HMAS board split; never
+    # delete unrelated ASSETS files (e.g. shared contact sheets)
+    stale = {"hivemind-hmas.svg", "hivemind-hmas.png", "hivemind-hmas@2x.png"}
     if os.path.isdir(ASSETS):
-        for name in os.listdir(ASSETS):
-            if name.startswith("hivemind-") and name not in keep:
-                os.remove(os.path.join(ASSETS, name))
+        for name in stale & set(os.listdir(ASSETS)):
+            os.remove(os.path.join(ASSETS, name))
     svgs = export_svgs()
     pngs = copy_pngs()
     evidence = source_evidence()

@@ -1,6 +1,6 @@
 {
   "schema": "hiverouter.assets-index.v1",
-  "generated_at": "2026-11-07T15:03:16-06:00",
+  "generated_at": "2026-11-07T15:54:13-06:00",
   "generated_by": "Lead acceptance (canonical alias of A/B manifests; no pixels copied) + FigCraft-HiveMind set appended; A/B aliases retained byte-identical",
   "source_manifests": {
     "A": {
@@ -13,7 +13,7 @@
     },
     "HiveMind": {
       "path": "docs/ui/figcraft/HiveMind/HiveMind-ASSETS.json",
-      "sha256": "6FDA2D21F0CBBCD79268CDF0996E4FA7CFD5083C248F4C01B13EF88441B52C54"
+      "sha256": "9846909382B25CC9D4DDB89F15DDC29BB943D978405DD5900182776453BE85A6"
     }
   },
   "design_files": {
@@ -27,7 +27,7 @@
     },
     "HiveMind": {
       "path": "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
-      "sha256": "44F93CCCD67369128F84D037E37B92BC68F0CE62AB3194E4C3EBA8CDCD5F2672"
+      "sha256": "9671B9818ACAB0FF0264A4AC2A3412854B34398B3CF76BAAB4EC34137330F850"
     }
   },
   "watchdog": {
@@ -42,8 +42,8 @@
     ]
   },
   "counts": {
-    "assets": 95,
-    "surfaces": 41
+    "assets": 104,
+    "surfaces": 50
   },
   "assets": [
     {
@@ -1672,8 +1672,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -1701,8 +1701,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -1730,8 +1730,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -1759,8 +1759,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -1788,8 +1788,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -1904,8 +1904,8 @@
       "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
       "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
       "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
-      "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
-      "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+      "sha256_svg": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "sha256_png": "3a06880c0d5dcfd0c5c4f521e906f19dd73671beff35b02ba6d187faceddeb1e",
       "dimensions": {
         "board": [
           1440,
@@ -2415,6 +2415,267 @@
         ]
       },
       "provenance_pdf_lines": "DECISION-GATED / no frozen DIFF command",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "CHAT-VARIANT-400x480",
+      "owner": "figcraft-hivemind",
+      "name": "Chat core app variant 400x480",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (current app variant; board 07 stays 420x500)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-AMBIENT",
+      "owner": "figcraft-hivemind",
+      "name": "Honeycomb ambient glow sweep (18s linear, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-SHEEN",
+      "owner": "figcraft-hivemind",
+      "name": "5-lobe hive sheen (6s ease-in-out, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-BEE-FLOW",
+      "owner": "figcraft-hivemind",
+      "name": "Bee flow with arrowheads (2.4s cubic-bezier, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-PULSE",
+      "owner": "figcraft-hivemind",
+      "name": "Running state pulse (1.6s, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-SPINNER",
+      "owner": "figcraft-hivemind",
+      "name": "Working-bee spinner (1.2s linear, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-RISE-HOVER",
+      "owner": "figcraft-hivemind",
+      "name": "Node rise/hover (240ms / 120ms, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-FOCUS-RING",
+      "owner": "figcraft-hivemind",
+      "name": "Focus ring ink-700 2px (160ms, PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
+      "set": "HiveMind"
+    },
+    {
+      "surface_id": "MOTION-REDUCED",
+      "owner": "figcraft-hivemind",
+      "name": "Reduced-motion fallback (PROPOSED)",
+      "page": "11 · Motion & Live",
+      "node_id": null,
+      "export_svg": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "export_png": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.png",
+      "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live@2x.png",
+      "sha256_svg": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "sha256_png": "d80e40230154a76ba96d7fc1d2f44a4c5784e36a0763b0b7c4bb4019d20e472c",
+      "dimensions": {
+        "board": [
+          1440,
+          900
+        ],
+        "svg": "vector",
+        "png": [
+          1440,
+          900
+        ],
+        "png_2x": [
+          2880,
+          1800
+        ]
+      },
+      "provenance_pdf_lines": "PROPOSED-ADDITION (motion proposal)",
       "set": "HiveMind"
     }
   ]

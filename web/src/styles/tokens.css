@@ -29,6 +29,7 @@
   /* Chrome-only value from the authoritative spatial style system. Not a
      21st printed swatch; pinned by designParity.test.ts. */
   --color-border-gold: #e5c27a;
+  --color-error-surface: #fff7f5;
 
   /* Faces (PDF:95-127; Playfair/Inter bundled via @fontsource) */
   --font-display: "Playfair Display Variable", "Playfair Display", Georgia, serif;

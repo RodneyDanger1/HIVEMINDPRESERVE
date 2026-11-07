@@ -5,20 +5,20 @@
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  getBezierPath,
+  getStraightPath,
   type EdgeProps,
 } from '@xyflow/react';
 import { beeAngle } from '../a11y/keyboard';
 
 export function BeeEdge(props: EdgeProps) {
-  const [path, labelX, labelY] = getBezierPath({
+  const [path] = getStraightPath({
     sourceX: props.sourceX,
     sourceY: props.sourceY,
     targetX: props.targetX,
     targetY: props.targetY,
-    sourcePosition: props.sourcePosition,
-    targetPosition: props.targetPosition,
   });
+  const labelX = (props.sourceX + props.targetX) / 2;
+  const labelY = (props.sourceY + props.targetY) / 2;
   const angle = (beeAngle(
     { x: props.sourceX, y: props.sourceY },
     { x: props.targetX, y: props.targetY },
@@ -30,11 +30,12 @@ export function BeeEdge(props: EdgeProps) {
       <BaseEdge
         id={props.id}
         path={path}
+        markerEnd={broken ? 'url(#bee-arrow-broken)' : 'url(#bee-arrow)'}
         style={{
           stroke: broken ? 'var(--color-signal)' : 'var(--color-honey-400)',
           strokeWidth: 1.5,
           strokeDasharray: broken ? '6 6' : '10 10',
-          animation: 'bee-dash 1.2s linear infinite',
+          animation: 'bee-dash 2.4s linear infinite',
         }}
       />
       <EdgeLabelRenderer>
@@ -47,11 +48,13 @@ export function BeeEdge(props: EdgeProps) {
           }}
           aria-hidden="true"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14">
-            <ellipse cx="7" cy="7" rx="4.2" ry="2.7" fill="currentColor" />
-            <path d="M3 7H1M11 7h2" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M7 4.3c-1.2-1.6-3-1.9-4.2-1.4C4.2 4 5.4 4.4 7 4.6Z" fill="var(--color-honey-400)" />
-          </svg>
+          <div className="bee-bob">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <ellipse cx="9" cy="9" rx="5" ry="3.2" fill="currentColor" />
+              <path d="M3 9h12M5.5 6.5h7M5.5 11.5h7" stroke="var(--color-honey-300)" strokeWidth="1.1" />
+              <path d="M7 5.5C5.5 3.7 3.6 3.4 2.5 4.2c1.4.4 2.2 1 3.8 1.9ZM11 5.5c1.5-1.8 3.4-2.1 4.5-1.3-1.4.4-2.2 1-3.8 1.9Z" fill="var(--color-honey-100)" />
+            </svg>
+          </div>
         </div>
       </EdgeLabelRenderer>
     </>

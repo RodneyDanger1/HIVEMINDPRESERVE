@@ -45,7 +45,7 @@ EXPECTED_FRAMES = [
     ("04 · Brand Lockups", 1440, 1000), ("05 · Agent Cards", 1440, 1300),
     ("06 · Controls & HUD", 1440, 1040), ("07 · Spatial Canvas", 1440, 900),
     ("08 · HMAS Hierarchy", 1440, 900), ("09 · HMAS Governance", 1440, 900),
-    ("10 · States & Refusals", 1440, 900),
+    ("10 · States & Refusals", 1440, 900), ("11 · Motion & Live", 1440, 900),
 ]
 
 
@@ -119,7 +119,7 @@ def main():
             str(info.get("name", "")).startswith("HiveMind")
             and "HiveRouter" not in str(info.get("name", "")),
             repr(info.get("name")))
-    c.check("11 artboards with exact names/sizes", got == EXPECTED_FRAMES, str(got))
+    c.check("12 artboards with exact names/sizes", got == EXPECTED_FRAMES, str(got))
     c.check("no missing fonts", info.get("missingFonts") == [],
             repr(info.get("missingFonts")))
     report["values"]["info"] = {k: info.get(k) for k in
@@ -188,6 +188,9 @@ def main():
                 parts.append(str(child.get("characters", "")))
         return "\n".join(parts)
 
+    def children(frame):
+        return [nodes[str(cid)] for cid in nodes[str(frame)].get("children", [])]
+
     texts = [str(node.get("characters", "")) for node in nodes.values()
              if node.get("type") == "text"]
     joined = "\n".join(texts)
@@ -221,6 +224,46 @@ def main():
     missing = [l for l in state_labels if l not in states_text]
     c.check("states board present (refusal/reconnect/empty/loading/kill/replay/"
             "diff-gated)", not missing, "missing=%s" % missing)
+
+    # C2. board 05 exact-anatomy annotations
+    anatomy_labels = ["EXACT ANATOMY / SPATIAL SYSTEM", "420 × 500",
+                      "420 × 150", "320 × 96", "420 × 240", "320 × 110",
+                      "68 × 18", "132px dark result area + 3 dots",
+                      "#FFF7F5", "radius 18"]
+    anatomy_text = frame_text("05 · Agent Cards")
+    missing = [l for l in anatomy_labels if l not in anatomy_text]
+    c.check("board 05 refined to exact spatial-system card anatomy", not missing,
+            "missing=%s" % missing)
+
+    # C3. board 11 motion & live proposal
+    motion_labels = ["MOTION SPEC", "PROPOSED · not measured", "AMBIENT TRAVEL",
+                     "HIVE SHEEN", "BEE FLOW", "RUNNING PULSE",
+                     "WORKING-BEE SPINNER", "NODE RISE", "HOVER LIFT",
+                     "FOCUS RING", "REDUCED MOTION", "ink-700",
+                     "400 × 480", "Design proposal only"]
+    motion_text = frame_text("11 · Motion & Live")
+    missing = [l for l in motion_labels if l not in motion_text]
+    c.check("board 11 motion & live proposal present (ambient/sheen/bee flow/"
+            "pulse/spinner/rise/hover/focus/reduced-motion, PROPOSED)",
+            not missing, "missing=%s" % missing)
+    motion_frame = frame_ids["11 · Motion & Live"]
+    chat_variant = [cnode for cnode in children(motion_frame)
+                    if cnode.get("type") == "rectangle"
+                    and close(cnode.get("width"), 400) and close(cnode.get("height"), 480)]
+    c.check("motion board shows chat core 400x480 app variant", bool(chat_variant),
+            "matching rects=%d" % len(chat_variant))
+    focus_ring = []
+    for cnode in children(motion_frame):
+        if cnode.get("type") != "vector":
+            continue
+        for stroke in cnode.get("strokes", []) or []:
+            color = stroke.get("color")
+            if color and close(rgba(color)[0], 0.306, 0.01) \
+                    and close(rgba(color)[1], 0.227, 0.01) \
+                    and close(rgba(color)[2], 0.082, 0.01):
+                focus_ring.append(cnode.get("id"))
+    c.check("focus ring is ink-700 (not honey)", bool(focus_ring),
+            "ink-700 vector nodes=%s" % focus_ring[:4])
     report["values"]["text_nodes"] = len(texts)
 
     # D. authoritative composition on board 07 (+ crimson error card on 05)
@@ -301,6 +344,30 @@ def main():
             not problems, "%d exports; problems=%s" % (len(manifest["exports"]),
                                                         problems[:4]))
     report["values"]["exports"] = len(manifest["exports"])
+
+    # E1b. untouched existing boards should be byte-identical where possible
+    prev_path = os.path.join(HERE, "prev-assets.json")
+    if os.path.isfile(prev_path):
+        prev = json.load(open(prev_path, encoding="utf-8"))
+        unchanged_slugs = ["colour", "typography", "space-and-depth",
+                           "brand-lockups", "controls-and-hud", "spatial-canvas",
+                           "hmas-hierarchy", "hmas-governance",
+                           "states-and-refusals"]
+        changed = []
+        for slug in unchanged_slugs:
+            old = prev["exports"].get(slug)
+            new = manifest["exports"].get(slug)
+            if not old or not new:
+                changed.append("%s missing" % slug)
+                continue
+            for key in ("sha256_svg", "sha256_png", "sha256_png_2x"):
+                if old[key] != new[key]:
+                    changed.append("%s/%s" % (slug, key))
+        c.check("existing untouched artboards byte-identical (9 boards)",
+                not changed, "changed=%s" % changed[:6])
+    else:
+        c.check("existing untouched artboards byte-identical (9 boards)",
+                False, "prev-assets.json missing")
 
     # E2. episodes: manifest lists the copied phase scripts with matching hashes
     ep_manifest = json.load(open(EPISODES, encoding="utf-8"))

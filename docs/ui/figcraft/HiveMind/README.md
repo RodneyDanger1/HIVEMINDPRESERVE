@@ -14,10 +14,11 @@ figcraft-cli run commands_phase2.json --in base.figcraft
 python publish_hivemind.py
 python verify_hivemind.py
 ```
-`build_hive_style.py` is the source builder patched for HiveMind (rename + two new
-boards: 08 HMAS, 09 States & Refusals). `HiveMind-Style-System.figcraft` is the
-regenerated design file; exports live in `exports/` (generated) and the canonical
-copies in `docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.
+`build_hive_style.py` is the source builder patched for HiveMind (rename
++ HMAS/state boards 08-10 + motion board 11 + exact-anatomy refinement of
+board 05). `HiveMind-Style-System.figcraft` is the regenerated design file;
+exports live in `exports/` (generated) and the canonical copies in
+`docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.
 
 ## Artboards
 | # | frame | board size | export |
@@ -33,6 +34,7 @@ copies in `docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.
 | 08 | 08 · HMAS Hierarchy | 1440x900 | `hivemind-hmas-hierarchy.png` |
 | 09 | 09 · HMAS Governance | 1440x900 | `hivemind-hmas-governance.png` |
 | 10 | 10 · States & Refusals | 1440x900 | `hivemind-states-and-refusals.png` |
+| 11 | 11 · Motion & Live | 1440x900 | `hivemind-motion-and-live.png` |
 
 ## Provenance / claims
 - Source style kit + target spec + original exports are preserved byte-identically
@@ -46,3 +48,8 @@ copies in `docs/ui/figcraft/ASSETS/hivemind-*.{png,svg}`.
   (52px topbar, 72px rail, 240px library, canvas x=312, chat 420x500 at 620,196,
   HUD 460x44, minimap 220x150, SuperAgent 420x150, WorkerAgent 320x96,
   ToolAgent 420x240, crimson error card).
+- Board 05 refines the exact card anatomy annotations (Super 420x150 header 40 +
+  68x18 pill; Worker 320x96; Tool 420x240 with 132px dark result area; Error 320x110).
+- Board 11 motion/live is a design proposal: durations/easing are PROPOSED, not
+  measured; no component behaviour is frozen. It shows the current app chat variant
+  400x480 while board 07 remains the authoritative 420x500.

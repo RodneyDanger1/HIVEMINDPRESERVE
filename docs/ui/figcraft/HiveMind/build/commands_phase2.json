@@ -928,6 +928,28 @@
 "command": "file.export",
 "params": {
 "ids": [
+1288
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-motion-and-live.png",
+"scale": 1
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
+1288
+],
+"format": "png",
+"path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/HiveMind/exports/hivemind-motion-and-live@2x.png",
+"scale": 2
+}
+},
+{
+"command": "file.export",
+"params": {
+"ids": [
 6
 ],
 "format": "svg",

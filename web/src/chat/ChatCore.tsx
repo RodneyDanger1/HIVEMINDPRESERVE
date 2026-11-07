@@ -11,6 +11,7 @@ import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
 import { clientRefusal } from '../api/refusals';
 import type { ChatMessage, ToastRefusal } from '../state/store';
+import { MessageBody, TypingDots, WorkingBee } from './ChatMotion';
 
 /** Baselines captured immediately before SUBMIT_PROMPT is dispatched. */
 export interface PromptSubmissionBaseline {
@@ -67,6 +68,12 @@ export function draftAfterRefusal(current: string, submitted: string): string {
   return current.trim().length === 0 ? submitted : current;
 }
 
+const STARTERS = [
+  { label: 'Map this repository', prompt: 'Map the architecture of this repository and identify the highest-risk module.' },
+  { label: 'Review an API change', prompt: 'Review the current API change for regressions and missing tests.' },
+  { label: 'Explain a failure', prompt: 'Explain the last failure and propose the smallest safe fix.' },
+] as const;
+
 export function ChatCore() {
   const messages = useUiStore((state) => state.messages);
   const submitPrompt = useUiStore((state) => state.submitPrompt);
@@ -83,6 +90,7 @@ export function ChatCore() {
   const store = useUiStoreApi();
   const [draft, setDraft] = useState('');
   const listRef = useRef<HTMLDivElement | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   // Synchronous double-submit guard: the derived `submitting` updates on render,
   // so two fast Enter presses could otherwise both pass the disabled check.
   const inFlightRef = useRef(false);
@@ -168,29 +176,22 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] flex-col rounded-[18px] p-3"
-        style={{ boxShadow: 'var(--shadow-e3)', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
+        className="pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
+        style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
           className="-mx-3 -mt-3 mb-2 flex h-11 items-center justify-between gap-2 rounded-t-[18px] px-3 text-white"
           style={{ background: 'linear-gradient(135deg, var(--color-ink-800), var(--color-honey-800))' }}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <svg
-              className={
-                'h-4 w-4 shrink-0 ' +
-                (streamingRunId !== null || runStatus === 'running' || runStatus === 'thinking' || runStatus === 'planning'
-                  ? 'bee-work-icon'
-                  : '')
+            <WorkingBee
+              running={
+                streamingRunId !== null ||
+                runStatus === 'running' ||
+                runStatus === 'thinking' ||
+                runStatus === 'planning'
               }
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <ellipse cx="10" cy="11" rx="5" ry="3.4" fill="var(--color-honey-300)" />
-              <path d="M5.5 11h9M7 8.8h6M7 13.2h6" stroke="var(--color-ink-800)" strokeWidth="1.1" />
-              <path d="M8 7.6C6.7 5.8 4.8 5.4 3.6 6.1c1.5.5 2.3 1.2 4.1 2.2ZM12 7.6c1.3-1.8 3.2-2.2 4.4-1.5-1.5.5-2.3 1.2-4.1 2.2Z" fill="var(--color-honey-100)" opacity="0.9" />
-              <circle cx="10" cy="10" r="9" fill="none" stroke="var(--color-honey-300)" strokeWidth="0.8" strokeDasharray="2 5" opacity="0.8" />
-            </svg>
+            />
             <div className="truncate text-[14px] font-semibold leading-[18px]">{STRINGS.chat.title}</div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -224,7 +225,24 @@ export function ChatCore() {
           aria-label={STRINGS.chat.aria}
         >
           {messages.length === 0 ? (
-            <p className="text-[12.5px] leading-[18px] text-ink-500">{STRINGS.chat.empty}</p>
+            <div>
+              <p className="text-[12.5px] leading-[18px] text-ink-500">{STRINGS.chat.empty}</p>
+              <div className="mt-3 flex flex-col gap-1.5">
+                {STARTERS.map((starter) => (
+                  <button
+                    key={starter.label}
+                    type="button"
+                    className="type-label rounded-[8px] border border-hairline bg-panel px-2.5 py-1.5 text-left text-[10.5px] text-ink-800 hover:border-honey-400 hover:bg-honey-100"
+                    onClick={() => {
+                      setDraft(starter.prompt);
+                      composerRef.current?.focus();
+                    }}
+                  >
+                    {starter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : (
             messages.map((message) => (
               <article
@@ -238,24 +256,29 @@ export function ChatCore() {
                   {message.role === 'assistant' ? STRINGS.chat.assistantName : STRINGS.chat.userLabel}
                   {message.streaming ? ` · ${STRINGS.states.loading}` : ''}
                 </div>
-                <div className="whitespace-pre-wrap text-[12.5px] leading-[18px] text-ink-900">{message.text}</div>
+                <MessageBody text={message.text} />
+                {message.streaming ? <span className="ml-0.5 inline-block h-[12px] w-[2px] animate-pulse bg-honey-500 align-middle" aria-hidden="true" /> : null}
               </article>
             ))
           )}
           {streamingRunId ? (
-            <div className="type-mono-meta text-meta" role="status">
+            <div className="type-mono-meta flex items-center gap-2 text-meta" role="status">
+              {messages.some((message) => message.streaming && message.text.length > 0) ? null : (
+                <TypingDots />
+              )}
               {STRINGS.agentStates.streaming}
             </div>
           ) : null}
         </div>
 
-        <form className="mt-2 flex items-start gap-2" onSubmit={onSubmit}>
+        <form className="mt-2 flex h-14 items-center gap-2 rounded-[12px] border border-hairline bg-panel px-3" onSubmit={onSubmit}>
           <label className="sr-only" htmlFor="composer">
             {STRINGS.composer.placeholder}
           </label>
           <textarea
             id="composer"
-            className="type-mono-code min-h-[40px] min-w-0 flex-1 resize-none rounded-[var(--radius-md)] border border-hairline bg-panel-alt px-3 py-2 text-ink-900"
+            ref={composerRef}
+            className="h-full min-w-0 flex-1 resize-none border-0 bg-transparent py-4 text-[13px] leading-[18px] text-ink-900 outline-none placeholder:text-ink-500 disabled:opacity-60"
             placeholder={STRINGS.composer.placeholder}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -265,15 +288,18 @@ export function ChatCore() {
                 void submit();
               }
             }}
-            rows={2}
+            rows={1}
             disabled={connection !== 'open' || replaying}
           />
           <button
             type="submit"
-            className="type-label rounded-[var(--radius-button)] bg-honey-300 px-3 py-2 text-ink-900 hover:bg-honey-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-honey-300 text-ink-900 hover:bg-honey-400 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={STRINGS.composer.submit}
             disabled={connection !== 'open' || replaying || submitting || draft.trim().length === 0}
           >
-            {submitting ? STRINGS.states.loading : STRINGS.composer.submit}
+            <svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M3 10h13M11 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </form>
         <p className="type-mono-meta mt-1 text-meta">{STRINGS.composer.hint}</p>

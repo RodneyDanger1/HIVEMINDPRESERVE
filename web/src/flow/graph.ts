@@ -77,6 +77,66 @@ export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record
       positions[id] = { x: positions[id].x - dx, y: positions[id].y - dy };
     }
   }
+
+  // The chat core is a fixed screen overlay centred on the hive. Dagre's tree
+  // can otherwise place child cards directly underneath it. The reserve is in
+  // world units but deliberately larger than the chat's world footprint at a
+  // typical 0.6x fit zoom, so cards also clear it when the viewport zooms out.
+  const reserve = {
+    halfW: 360,
+    halfH: 400,
+  };
+  const pushed: Array<{
+    readonly id: string;
+    readonly side: -1 | 1;
+    readonly width: number;
+    readonly height: number;
+    readonly desiredY: number;
+  }> = [];
+  let sideIndex = 0;
+  for (const id of ids) {
+    const task = tasks[id];
+    if (task.kind === 'hyperagent') {
+      continue;
+    }
+    const size = NODE_SIZE[task.kind];
+    const position = positions[id];
+    if (position === undefined) {
+      continue;
+    }
+    const centerX = position.x + size.width / 2;
+    const centerY = position.y + size.height / 2;
+    const intersectsChat =
+      Math.abs(centerX) < reserve.halfW + size.width / 2 &&
+      Math.abs(centerY) < reserve.halfH + size.height / 2;
+    if (!intersectsChat) {
+      continue;
+    }
+    pushed.push({
+      id,
+      side: sideIndex % 2 === 0 ? -1 : 1,
+      width: size.width,
+      height: size.height,
+      desiredY: position.y,
+    });
+    sideIndex += 1;
+  }
+
+  for (const side of [-1, 1] as const) {
+    const column = pushed
+      .filter((entry) => entry.side === side)
+      .sort((a, b) => a.desiredY - b.desiredY || a.id.localeCompare(b.id));
+    let cursor = Number.NEGATIVE_INFINITY;
+    for (const entry of column) {
+      const y = Math.max(entry.desiredY, cursor);
+      positions[entry.id] = {
+        x: side * (reserve.halfW + entry.width / 2 + 42) - entry.width / 2,
+        y,
+      };
+      cursor = y + entry.height + 18;
+    }
+  }
+
   return positions;
 }
 

@@ -1,0 +1,445 @@
+/**
+ * HiveMind - "live feel" motion layer. DECORATIVE, NOT DATA.
+ *
+ * Reference boards:
+ *   docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png
+ *   docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png
+ *
+ * Visual language taken from the boards: warm paper field, honey-gold bees and
+ * edges, ink text, thin hairlines, one calm movement at a time. Not neon, not
+ * a light show.
+ *
+ * Nothing here encodes state. The HUD counts, the run status, the progress
+ * value, the refusal toast and the edge colour are authoritative elsewhere.
+ * Delete this file and every number on screen stays identical - only the
+ * movement stops.
+ *
+ * Cost contract:
+ *   - loops animate transform / opacity / background-position only: no width,
+ *     height, top, left or margin inside a keyframe, so no layout per frame;
+ *   - no filter chains, no backdrop-filter, no animated box-shadow;
+ *   - will-change is declared on exactly three continuously animated classes
+ *     (honeycomb glow, hive sheen, work bee) to keep the layer count small;
+ *   - every animation is switched off for prefers-reduced-motion and for the
+ *     in-app [data-reduced-motion="true"] switch (R-U10).
+ *
+ * Colours are token-referenced only (--color-*, --shadow-*, --radius-*,
+ * --font-*) with color-mix() for softness - no raw colour literals.
+ *
+ * Import this file from index.css, immediately after the tokens import:
+ *   @import "./motion.css";
+ *
+ * All names are `motion-` prefixed and cannot collide with the ambient
+ * `hive-*` / `bee-*` classes already defined in index.css.
+ */
+
+/* ------------------------------------------------------------------------- */
+/* 1. Honeycomb glow - a slow pool of honey light crossing the paper.         */
+/* Board: the warm bloom under the hive on the spatial canvas.                */
+/* background-position + opacity only, 16s (ceiling is 18s), low opacity.     */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-honeycomb-travel {
+  from {
+    background-position: 12% 38%;
+    opacity: 0.4;
+  }
+  to {
+    background-position: 88% 62%;
+    opacity: 0.6;
+  }
+}
+
+.motion-honeycomb-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    42% 38% at 50% 50%,
+    color-mix(in srgb, var(--color-honey-200) 40%, transparent) 0%,
+    color-mix(in srgb, var(--color-honey-100) 18%, transparent) 46%,
+    transparent 72%
+  );
+  background-repeat: no-repeat;
+  background-size: 170% 150%;
+  background-position: 18% 44%;
+  opacity: 0.55;
+  animation: motion-honeycomb-travel 16s ease-in-out infinite alternate;
+  will-change: background-position, opacity;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 2. Hive sheen - soft metallic band sweeping across the hive lobes.         */
+/* Board: the specular highlight along the top of each ellipsoid.             */
+/* background-position only, 12s (window is 9-14s).                          */
+/* soft-light keeps it a sheen on the honey, not a white stripe on top.       */
+/* ------------------------------------------------------------------------- */
+
+/* 200% background with a 130% -> -30% travel keeps the band on the hive for
+   most of the cycle instead of crossing it in a two-second window and leaving
+   the hive flat for the remaining ten. */
+@keyframes motion-hive-sheen-sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+.motion-hive-sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    104deg,
+    transparent 32%,
+    color-mix(in srgb, var(--color-honey-100) 42%, transparent) 45%,
+    color-mix(in srgb, var(--color-honey-200) 24%, transparent) 52%,
+    transparent 66%
+  );
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  background-position: 130% 0;
+  mix-blend-mode: soft-light;
+  animation: motion-hive-sheen-sweep 12s linear infinite;
+  will-change: background-position;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 3. Bee edges - dashed flow plus a 2px bob on the bee glyph.                */
+/* Board: dashed honey edges with arrow heads, a small bee riding the line.   */
+/* ------------------------------------------------------------------------- */
+
+/* The offset is two whole dash periods (2 x (8 + 6) = 28px), so the loop has
+   no seam. The class owns stroke-dasharray; if a caller overrides it inline,
+   keep the dash period a divisor of 28px. Stroke colour is NOT set here: on a
+   bee edge colour means healthy vs broken, and that is data, not decoration. */
+@keyframes motion-bee-flow-dash {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.motion-bee-flow {
+  stroke-dasharray: 8 6;
+  stroke-linecap: round;
+  stroke-dashoffset: 0;
+  animation: motion-bee-flow-dash 1.4s linear infinite;
+}
+
+/* 2px lift, 3.4s: reads as a bee hovering, not as a bouncing element.
+   No will-change: bees are many, and per-element layers would cost more than
+   the paint they save. Rotation stays on the parent (as in BeeEdge.tsx). */
+@keyframes motion-bee-bob-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.motion-bee-bob {
+  animation: motion-bee-bob-soft 3.4s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 4. Running state - dot pulse and expanding ring.                           */
+/* Board: the small live dot in the throughput HUD badge.                     */
+/* Apply to a dot that already has its size and colour; this only breathes.   */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-state-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+.motion-state-pulse {
+  animation: motion-state-pulse-soft 1.8s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+
+/* Halo only: the 1px ring rides the dot's own border box, so the dot keeps
+   owning its colour. position: relative creates the containing block for the
+   ring and nothing else. */
+@keyframes motion-running-ring-expand {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+.motion-running-ring {
+  position: relative;
+}
+
+.motion-running-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--color-honey-500) 65%, transparent);
+  border-radius: var(--radius-pill);
+  transform-origin: 50% 50%;
+  animation: motion-running-ring-expand 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 5. Entrances - short, one-shot, 150-240ms.                                 */
+/* These animate the individual translate/scale properties instead of the     */
+/* transform shorthand so they do not clobber a positioning transform (React  */
+/* Flow nodes carry their position in an inline transform). The class owns     */
+/* translate/scale while it runs; put it on the entering wrapper.             */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-card-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.985;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+.motion-card-enter {
+  animation: motion-card-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes motion-message-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.motion-message-enter {
+  animation: motion-message-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Matches the existing motion/react toast (y: -6, 160ms) so the CSS route and
+   the JS route feel identical. Board: refusal toast enters from the top. */
+@keyframes motion-toast-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.98;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+.motion-toast-enter {
+  animation: motion-toast-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 6. Progress sheen - soft highlight moving across an active bar.            */
+/* Board: the thin honey timeline with the ring knob.                         */
+/* Apply to the filled/active element (or a wrapper whose width IS the        */
+/* progress), not to an empty track. The class clips the band; the host's     */
+/* own radius is preserved (the pseudo-element inherits it).                  */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-progress-sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+.motion-progress-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.motion-progress-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    96deg,
+    transparent 34%,
+    color-mix(in srgb, var(--color-honey-100) 58%, transparent) 48%,
+    transparent 62%
+  );
+  background-repeat: no-repeat;
+  background-size: 240% 100%;
+  background-position: 130% 0;
+  animation: motion-progress-sweep 1.9s linear infinite;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 7. Focus glow - token focus ring plus a honey halo.                        */
+/* Board: "2px honey-300 ring + hairline" on the composer.                    */
+/* The ink ring keeps the mandated --focus-ring token; the 1px canvas ring     */
+/* is the hairline that separates it from the honey halo. Buttons and        */
+/* fields only: it replaces box-shadow while focused, so do not put it on a    */
+/* card that relies on --shadow-e* for elevation.                             */
+/* ------------------------------------------------------------------------- */
+
+.motion-focus-glow:focus-visible {
+  outline: 2px solid var(--focus-ring, var(--color-ink-700));
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 1px var(--color-canvas),
+    0 0 0 5px color-mix(in srgb, var(--color-honey-300) 30%, transparent);
+}
+
+/* ------------------------------------------------------------------------- */
+/* 8. Work bee - 2.2s spinner for the 16px bee glyph.                         */
+/* Matches the chat header glyph (h-4 w-4 = 16px). Linear, so it reads as      */
+/* working rather than frantic.                                               */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-work-bee-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.motion-work-bee {
+  display: inline-block;
+  inline-size: 16px;
+  block-size: 16px;
+  flex: none;
+  vertical-align: -2px;
+  transform-origin: 50% 50%;
+  animation: motion-work-bee-spin 2.2s linear infinite;
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 9. Connection live - very small status-dot pulse.                          */
+/* Board: the 6px dot in the HUD badge. No size and no colour here: on the    */
+/* badge the dot colour carries hud.source, so that stays with the caller.    */
+/* inline-block so the scale actually applies if the dot is not a flex child. */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-connection-live-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+.motion-connection-live {
+  display: inline-block;
+  transform-origin: 50% 50%;
+  animation: motion-connection-live-pulse 2.8s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 10. Button press - 110ms hover lift, 80ms press.                           */
+/* Board: "Spawn sub-hive" and the paper "Re-route" button.                   */
+/* Transform only; hover lift is gated to real pointers so touch does not     */
+/* keep a stuck lift after tap.                                              */
+/* ------------------------------------------------------------------------- */
+
+.motion-button-press {
+  transition:
+    transform 110ms ease,
+    box-shadow 110ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .motion-button-press:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.motion-button-press:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Reduced motion - every animation and transition in this file is off.      */
+/* Loops are removed rather than paused: both sweep bands rest at their       */
+/* declared background-position (off the box), so nothing freezes half-way    */
+/* through a sweep, and the glow rests as a still pool of light. index.css     */
+/* already hard-disables motion globally; this keeps motion.css correct when  */
+/* it is imported on its own.                                                 */
+/* ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-honeycomb-glow,
+  .motion-hive-sheen,
+  .motion-bee-flow,
+  .motion-bee-bob,
+  .motion-state-pulse,
+  .motion-running-ring::after,
+  .motion-card-enter,
+  .motion-message-enter,
+  .motion-toast-enter,
+  .motion-progress-sheen::after,
+  .motion-work-bee,
+  .motion-connection-live {
+    animation: none !important;
+    will-change: auto;
+  }
+
+  .motion-button-press,
+  .motion-button-press:hover,
+  .motion-button-press:active {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+[data-reduced-motion="true"] .motion-honeycomb-glow,
+[data-reduced-motion="true"] .motion-hive-sheen,
+[data-reduced-motion="true"] .motion-bee-flow,
+[data-reduced-motion="true"] .motion-bee-bob,
+[data-reduced-motion="true"] .motion-state-pulse,
+[data-reduced-motion="true"] .motion-running-ring::after,
+[data-reduced-motion="true"] .motion-card-enter,
+[data-reduced-motion="true"] .motion-message-enter,
+[data-reduced-motion="true"] .motion-toast-enter,
+[data-reduced-motion="true"] .motion-progress-sheen::after,
+[data-reduced-motion="true"] .motion-work-bee,
+[data-reduced-motion="true"] .motion-connection-live {
+  animation: none !important;
+  will-change: auto;
+}
+
+[data-reduced-motion="true"] .motion-button-press,
+[data-reduced-motion="true"] .motion-button-press:hover,
+[data-reduced-motion="true"] .motion-button-press:active {
+  transform: none !important;
+  transition: none !important;
+}

@@ -184,4 +184,5 @@ export const LAYOUT = {
  */
 export const CHROME_TOKENS = {
   borderGold: '#E5C27A',
+  errorSurface: '#FFF7F5',
 } as const;

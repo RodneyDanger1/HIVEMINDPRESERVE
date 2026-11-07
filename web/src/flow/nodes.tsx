@@ -95,7 +95,10 @@ function Frame(props: {
   };
   return (
     <div
-      className="hive-node relative flex h-full w-full flex-col overflow-hidden border-[1.5px] bg-panel text-left"
+      className={
+        'hive-node relative flex h-full w-full flex-col overflow-hidden border-[1.5px] text-left ' +
+        (props.error ? 'bg-[var(--color-error-surface)]' : 'bg-panel')
+      }
       style={style}
       data-node-kind={props.data.task.kind}
     >
@@ -106,15 +109,28 @@ function Frame(props: {
   );
 }
 
-function Progress({ value, height = 5 }: { value: number | null; height?: number }) {
+function Progress({
+  value,
+  height = 5,
+  tone = 'super',
+}: {
+  value: number | null;
+  height?: number;
+  tone?: 'super' | 'worker';
+}) {
   return (
     <div
-      className="w-full overflow-hidden rounded-[var(--radius-pill)] bg-recessed"
+      className="w-full overflow-hidden rounded-[var(--radius-pill)] bg-hairline"
       style={{ height }}
     >
       {value === null ? null : (
         <div
-          className="h-full rounded-[var(--radius-pill)] bg-honey-500"
+          className={
+            'motion-progress-sheen h-full rounded-[var(--radius-pill)] ' +
+            (tone === 'worker'
+              ? 'bg-honey-400'
+              : 'bg-gradient-to-r from-honey-500 to-honey-300')
+          }
           style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
         />
       )}
@@ -125,7 +141,7 @@ function Progress({ value, height = 5 }: { value: number | null; height?: number
 export function SuperAgentNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} radius={14} gold>
-      <div className="flex h-10 items-center justify-between gap-2 bg-honey-100 px-4">
+      <div className="flex h-10 items-center justify-between gap-2 bg-honey-100 pl-[30px] pr-4">
         <button
           type="button"
           className="min-w-0 truncate text-left text-[14.5px] font-semibold leading-[18.5px] text-ink-900"
@@ -135,17 +151,17 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
         >
           {data.task.label}
         </button>
-        <span className="flex shrink-0 items-center rounded-[var(--radius-pill)] bg-honey-300 px-2 py-0.5">
+        <span className="flex h-[18px] w-[68px] shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-honey-300">
           <span className="type-mono-meta text-[8.5px] text-ink-800">{visualFor(data.task.state).label}</span>
         </span>
       </div>
       <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-2 text-left" onClick={() => data.onSelect(data.task.id)}>
-        <span className="type-mono-meta text-meta">{NODE_KIND_LABELS.superagent}</span>
+        <span className="type-mono-meta text-[9.5px] tracking-[0.12em] text-meta">{NODE_KIND_LABELS.superagent}</span>
         <span className="mt-0.5 line-clamp-1 text-[11.5px] leading-[16px] text-ink-700">
           {STRINGS.node.roleCaption}
         </span>
         <div className="mt-auto">
-          <Progress value={data.task.progress} />
+          <Progress value={data.task.progress} tone="super" />
           <div className="type-mono-meta mt-1 flex justify-between text-meta">
             <span>{STRINGS.node.workersMetric}</span>
             <span>{data.task.progress === null ? STRINGS.node.noMetrics : formatPercent(data.task.progress, 0)}</span>
@@ -169,7 +185,7 @@ export function WorkerAgentNode({ data }: HiveNodeProps) {
         </div>
         <span className="type-mono-meta mt-1 text-meta">{STRINGS.node.workerLabel}</span>
         <div className="mt-auto">
-          <Progress value={data.task.progress} height={3} />
+          <Progress value={data.task.progress} height={3} tone="worker" />
           <span className="type-mono-meta mt-1 block text-meta">{formatCtx(null)}</span>
         </div>
       </button>
@@ -187,8 +203,13 @@ export function ToolAgentNode({ data }: HiveNodeProps) {
             {NODE_KIND_LABELS.tool}
           </span>
         </div>
-        <div className="mt-2 flex min-h-0 flex-1 items-center rounded-[8px] bg-ink-800 px-3 py-2">
-          <span className="type-mono-meta text-honey-100/80">{STRINGS.node.noToolOutput}</span>
+        <div className="mt-2 h-[132px] shrink-0 rounded-[8px] bg-ink-800 px-3 py-2">
+          <div className="flex gap-1.5" aria-hidden="true">
+            <span className="h-[6px] w-[6px] rounded-full bg-signal" />
+            <span className="h-[6px] w-[6px] rounded-full bg-honey-400" />
+            <span className="h-[6px] w-[6px] rounded-full bg-verify" />
+          </div>
+          <span className="type-mono-meta mt-3 block text-honey-100/80">{STRINGS.node.noToolOutput}</span>
         </div>
         <div className="mt-2">
           <Progress value={data.task.progress} height={6} />

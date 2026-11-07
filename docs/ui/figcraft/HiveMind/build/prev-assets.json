@@ -1,0 +1,1796 @@
+{
+ "schema": "hivemind.figcraft-assets.v1",
+ "producer": "FigCraft-HiveMind",
+ "generated_at": "2026-11-07T15:03:16-06:00",
+ "source": {
+  "authoritative_set": "HiveRouter/design/hive-style (external; read-only)",
+  "preserved_evidence": "docs/ui/figcraft/HiveMind/source-evidence/",
+  "renamed": "user-facing HiveRouter/HIVEROUTER -> HiveMind/HIVEMIND",
+  "a_b_unchanged": true
+ },
+ "tool": {
+  "name": "figcraft-cli",
+  "commands": 597,
+  "info": {
+   "name": "HiveMind Style System",
+   "nodes": 1262,
+   "styles": 36,
+   "variables": 21,
+   "missingFonts": []
+  }
+ },
+ "design_file": {
+  "path": "docs/ui/figcraft/HiveMind/HiveMind-Style-System.figcraft",
+  "sha256": "44f93cccd67369128f84d037e37b92bc68f0ce62ab3194e4c3eba8cdcd5f2672",
+  "bytes": 223680,
+  "frames": 11,
+  "nodes": 1262,
+  "pages": [
+   {
+    "frames": [
+     {
+      "height": 900.0,
+      "id": 2,
+      "name": "00 · Cover",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1240.0,
+      "id": 3,
+      "name": "01 · Colour",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1340.0,
+      "id": 4,
+      "name": "02 · Typography",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1000.0,
+      "id": 5,
+      "name": "03 · Space & Depth",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1000.0,
+      "id": 6,
+      "name": "04 · Brand Lockups",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1300.0,
+      "id": 7,
+      "name": "05 · Agent Cards",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 1040.0,
+      "id": 8,
+      "name": "06 · Controls & HUD",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 900.0,
+      "id": 9,
+      "name": "07 · Spatial Canvas",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 900.0,
+      "id": 10,
+      "name": "08 · HMAS Hierarchy",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 900.0,
+      "id": 11,
+      "name": "09 · HMAS Governance",
+      "type": "FRAME",
+      "width": 1440.0
+     },
+     {
+      "height": 900.0,
+      "id": 12,
+      "name": "10 · States & Refusals",
+      "type": "FRAME",
+      "width": 1440.0
+     }
+    ],
+    "id": 1,
+    "name": "Page 1",
+    "nodes": 1261,
+    "topLevel": 11
+   }
+  ]
+ },
+ "boards": [
+  {
+   "code": "00",
+   "frame": "00 · Cover",
+   "slug": "cover",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-cover.png"
+  },
+  {
+   "code": "01",
+   "frame": "01 · Colour",
+   "slug": "colour",
+   "width": 1440,
+   "height": 1240,
+   "export": "hivemind-colour.png"
+  },
+  {
+   "code": "02",
+   "frame": "02 · Typography",
+   "slug": "typography",
+   "width": 1440,
+   "height": 1340,
+   "export": "hivemind-typography.png"
+  },
+  {
+   "code": "03",
+   "frame": "03 · Space & Depth",
+   "slug": "space-and-depth",
+   "width": 1440,
+   "height": 1000,
+   "export": "hivemind-space-and-depth.png"
+  },
+  {
+   "code": "04",
+   "frame": "04 · Brand Lockups",
+   "slug": "brand-lockups",
+   "width": 1440,
+   "height": 1000,
+   "export": "hivemind-brand-lockups.png"
+  },
+  {
+   "code": "05",
+   "frame": "05 · Agent Cards",
+   "slug": "agent-cards",
+   "width": 1440,
+   "height": 1300,
+   "export": "hivemind-agent-cards.png"
+  },
+  {
+   "code": "06",
+   "frame": "06 · Controls & HUD",
+   "slug": "controls-and-hud",
+   "width": 1440,
+   "height": 1040,
+   "export": "hivemind-controls-and-hud.png"
+  },
+  {
+   "code": "07",
+   "frame": "07 · Spatial Canvas",
+   "slug": "spatial-canvas",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-spatial-canvas.png"
+  },
+  {
+   "code": "08",
+   "frame": "08 · HMAS Hierarchy",
+   "slug": "hmas-hierarchy",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-hmas-hierarchy.png"
+  },
+  {
+   "code": "09",
+   "frame": "09 · HMAS Governance",
+   "slug": "hmas-governance",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-hmas-governance.png"
+  },
+  {
+   "code": "10",
+   "frame": "10 · States & Refusals",
+   "slug": "states-and-refusals",
+   "width": 1440,
+   "height": 900,
+   "export": "hivemind-states-and-refusals.png"
+  }
+ ],
+ "exports": {
+  "cover": {
+   "frame": "00 · Cover",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-cover.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-cover.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-cover@2x.png",
+   "sha256_svg": "c3ebefd6cef251bb636c88b85c59853849d3300f830482dd0a2632e42fbb0417",
+   "sha256_png": "a9b7259c5836c31a2da60cf13b15f1b0d88e5d0d5cf4d57997577cf2fb57d5c2",
+   "sha256_png_2x": "dd4cf28a9a43093eee7d4271d4f071226a30dfe50799d282c3d4ec604af55c68",
+   "svg_bytes": 304251,
+   "png_bytes": 645087,
+   "png_2x_bytes": 1776699,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "colour": {
+   "frame": "01 · Colour",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-colour.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-colour.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-colour@2x.png",
+   "sha256_svg": "8da62cceb2d46f5c76abd3a4ffed2baf2957ef72aa3f7bccf9cdf36077e35360",
+   "sha256_png": "1d616d76fd22652d1a9b7005ae946ac5b6dbb23d370ae89efc4149287b6ea9a8",
+   "sha256_png_2x": "e302bf6d1579bc93b4403c2bb8b8761c75c2da8823ee477e5ec222aacfe77cdb",
+   "svg_bytes": 473703,
+   "png_bytes": 175562,
+   "png_2x_bytes": 458273,
+   "dimensions": {
+    "board": [
+     1440,
+     1240
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1240
+    ],
+    "png_2x": [
+     2880,
+     2480
+    ]
+   }
+  },
+  "typography": {
+   "frame": "02 · Typography",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-typography.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-typography.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-typography@2x.png",
+   "sha256_svg": "0236956e8f29ace3ea587ef0675c00701a1b5997502a6744220b4b95a1c77594",
+   "sha256_png": "7a6cdd6ca2a38603a57294153cfc829fd539da4d1a35ffae2411f956efd65190",
+   "sha256_png_2x": "cf209dd8c15a827800f6b5b472aeaae0a6cd12962ce7d6557af68dec2f7ae32b",
+   "svg_bytes": 569756,
+   "png_bytes": 242983,
+   "png_2x_bytes": 590192,
+   "dimensions": {
+    "board": [
+     1440,
+     1340
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1340
+    ],
+    "png_2x": [
+     2880,
+     2680
+    ]
+   }
+  },
+  "space-and-depth": {
+   "frame": "03 · Space & Depth",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-space-and-depth.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-space-and-depth.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-space-and-depth@2x.png",
+   "sha256_svg": "005871e538619453dd453955d221359ac89e54850e9ee5a36af836f4c4302378",
+   "sha256_png": "5608de3f4f7bce7b57e21b2a990455238fdefc274f7743c6a2678d824c6d97eb",
+   "sha256_png_2x": "f18760218e814b6483ab82323d17cd687d763083c6208e13f62287a5e36cd7c9",
+   "svg_bytes": 217425,
+   "png_bytes": 170376,
+   "png_2x_bytes": 459665,
+   "dimensions": {
+    "board": [
+     1440,
+     1000
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1000
+    ],
+    "png_2x": [
+     2880,
+     2000
+    ]
+   }
+  },
+  "brand-lockups": {
+   "frame": "04 · Brand Lockups",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups@2x.png",
+   "sha256_svg": "b83c5ca38c981e47b25a49a2e523c276c34d506c62fa84944a3aa865a758d473",
+   "sha256_png": "bb303981a0ebd1c0afbfa9e74619f0ca19a91d9acf4f41a231c634fe9254249e",
+   "sha256_png_2x": "2da786e9e1dda72905b690ff94bfe5f4918cb59f483ace8fec3d357264b9626a",
+   "svg_bytes": 261958,
+   "png_bytes": 201594,
+   "png_2x_bytes": 500787,
+   "dimensions": {
+    "board": [
+     1440,
+     1000
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1000
+    ],
+    "png_2x": [
+     2880,
+     2000
+    ]
+   }
+  },
+  "agent-cards": {
+   "frame": "05 · Agent Cards",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "sha256_png_2x": "91d8cb29f1da5bc0df4126d43cedd1978e64e396338f89cd2d8f8a1c55fdc813",
+   "svg_bytes": 820978,
+   "png_bytes": 410772,
+   "png_2x_bytes": 1059595,
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   }
+  },
+  "controls-and-hud": {
+   "frame": "06 · Controls & HUD",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "sha256_png_2x": "7f04ac9059adc54fd60557e2517067d639fb5d09598017655f83d12db0c03c6b",
+   "svg_bytes": 483247,
+   "png_bytes": 257227,
+   "png_2x_bytes": 635173,
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   }
+  },
+  "spatial-canvas": {
+   "frame": "07 · Spatial Canvas",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "sha256_png_2x": "957f3b5a4d0d84857fca879b30499c3f5824060bf53a063872af6022292c6cad",
+   "svg_bytes": 346910,
+   "png_bytes": 498456,
+   "png_2x_bytes": 1356995,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "hmas-hierarchy": {
+   "frame": "08 · HMAS Hierarchy",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy@2x.png",
+   "sha256_svg": "eb1ce756e061066a77304ff5c89860cf962e443f8f3c61e2e588da84a73a877d",
+   "sha256_png": "4fd11e62704381eae3c09860f69468c442ec582360c57f299a5c5a53ccd4babe",
+   "sha256_png_2x": "4590eb552c963e23776a6132a7abb94f64972c30ecb37cfe7e3fe062261a54ed",
+   "svg_bytes": 587168,
+   "png_bytes": 277279,
+   "png_2x_bytes": 674358,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "hmas-governance": {
+   "frame": "09 · HMAS Governance",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "sha256_png_2x": "2fd585a0c5bf84c7efc144bb5d04558e69b33d5978d9c66ef4bbaf7e4b9833a2",
+   "svg_bytes": 544930,
+   "png_bytes": 196402,
+   "png_2x_bytes": 484135,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  },
+  "states-and-refusals": {
+   "frame": "10 · States & Refusals",
+   "svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "sha256_png_2x": "cc5a308cb76338450790ac67cda8a45cb75253a694e924e66cc5ae2b49245118",
+   "svg_bytes": 769672,
+   "png_bytes": 247558,
+   "png_2x_bytes": 600639,
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   }
+  }
+ },
+ "surfaces": [
+  {
+   "surface_id": "S01",
+   "owner": "figcraft-hivemind",
+   "name": "Infinite canvas + honeycomb background",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §canvas"
+  },
+  {
+   "surface_id": "S02",
+   "owner": "figcraft-hivemind",
+   "name": "HyperAgent hive chat core (pinned)",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S03",
+   "owner": "figcraft-hivemind",
+   "name": "Composer / HyperAgent input",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S04",
+   "owner": "figcraft-hivemind",
+   "name": "Button: Spawn sub-hive",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S05",
+   "owner": "figcraft-hivemind",
+   "name": "Button: Re-route",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S06",
+   "owner": "figcraft-hivemind",
+   "name": "Button: Cancel",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S07",
+   "owner": "figcraft-hivemind",
+   "name": "Button: Kill worker",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S08",
+   "owner": "figcraft-hivemind",
+   "name": "Tabs: Workspace / Swarm / Routing / History",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S09",
+   "owner": "figcraft-hivemind",
+   "name": "HUD throughput badge (460x44)",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §hud"
+  },
+  {
+   "surface_id": "S10",
+   "owner": "figcraft-hivemind",
+   "name": "Time-travel scrubber",
+   "board": "06 · Controls & HUD",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud@2x.png",
+   "sha256_svg": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+   "sha256_png": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "dimensions": {
+    "board": [
+     1440,
+     1040
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1040
+    ],
+    "png_2x": [
+     2880,
+     2080
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §scrubber"
+  },
+  {
+   "surface_id": "S11",
+   "owner": "figcraft-hivemind",
+   "name": "Nav rail (72px, 6 items)",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S12",
+   "owner": "figcraft-hivemind",
+   "name": "Library panel (240px authoritative)",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S13",
+   "owner": "figcraft-hivemind",
+   "name": "Mini-map (220x150 authoritative)",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S14",
+   "owner": "figcraft-hivemind",
+   "name": "Refusal card / named refusal",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §error"
+  },
+  {
+   "surface_id": "S15",
+   "owner": "figcraft-hivemind",
+   "name": "SuperAgent card (420x150)",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S16",
+   "owner": "figcraft-hivemind",
+   "name": "WorkerAgent card (320x96)",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S17",
+   "owner": "figcraft-hivemind",
+   "name": "ToolAgent card (420x240)",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S18",
+   "owner": "figcraft-hivemind",
+   "name": "Broken-route error card (crimson)",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §error"
+  },
+  {
+   "surface_id": "S19",
+   "owner": "figcraft-hivemind",
+   "name": "Agent chips / state dot",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §chips"
+  },
+  {
+   "surface_id": "S20",
+   "owner": "figcraft-hivemind",
+   "name": "Zoom controls + shortcut hint",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "board 07 composition"
+  },
+  {
+   "surface_id": "S22",
+   "owner": "figcraft-hivemind",
+   "name": "File/code hierarchy viewer",
+   "board": "08 · HMAS Hierarchy",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy@2x.png",
+   "sha256_svg": "eb1ce756e061066a77304ff5c89860cf962e443f8f3c61e2e588da84a73a877d",
+   "sha256_png": "4fd11e62704381eae3c09860f69468c442ec582360c57f299a5c5a53ccd4babe",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S23",
+   "owner": "figcraft-hivemind",
+   "name": "Brand lockups / bee glyph",
+   "board": "04 · Brand Lockups",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups@2x.png",
+   "sha256_svg": "b83c5ca38c981e47b25a49a2e523c276c34d506c62fa84944a3aa865a758d473",
+   "sha256_png": "bb303981a0ebd1c0afbfa9e74619f0ca19a91d9acf4f41a231c634fe9254249e",
+   "dimensions": {
+    "board": [
+     1440,
+     1000
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1000
+    ],
+    "png_2x": [
+     2880,
+     2000
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §brand"
+  },
+  {
+   "surface_id": "S24",
+   "owner": "figcraft-hivemind",
+   "name": "Elevation e1/e2/e3",
+   "board": "05 · Agent Cards",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-agent-cards@2x.png",
+   "sha256_svg": "4f484a5daca7f91d514ff4aca038e41f82d6a3811b48939cd33838447f4eab99",
+   "sha256_png": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "dimensions": {
+    "board": [
+     1440,
+     1300
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     1300
+    ],
+    "png_2x": [
+     2880,
+     2600
+    ]
+   },
+   "provenance": "HiveRouter-Style-Kit §depth"
+  },
+  {
+   "surface_id": "S25",
+   "owner": "figcraft-hivemind",
+   "name": "Code-diff review (DECISION-GATED)",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §3 / DECISION-GATED"
+  },
+  {
+   "surface_id": "S26",
+   "owner": "figcraft-hivemind",
+   "name": "First-run / empty / loading states",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §3"
+  },
+  {
+   "surface_id": "S27",
+   "owner": "figcraft-hivemind",
+   "name": "Streamed reply / chat cards",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §2"
+  },
+  {
+   "surface_id": "S28",
+   "owner": "figcraft-hivemind",
+   "name": "Project identity",
+   "board": "07 · Spatial Canvas",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas@2x.png",
+   "sha256_svg": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+   "sha256_png": "79fd8636c49eda6ae441453925d2558a518755369582a4de56d37042fdefbd9c",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "board 07 library panel"
+  },
+  {
+   "surface_id": "HMAS-HIERARCHY",
+   "owner": "figcraft-hivemind",
+   "name": "Hierarchy / workspace-jailed tree",
+   "board": "08 · HMAS Hierarchy",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy@2x.png",
+   "sha256_svg": "eb1ce756e061066a77304ff5c89860cf962e443f8f3c61e2e588da84a73a877d",
+   "sha256_png": "4fd11e62704381eae3c09860f69468c442ec582360c57f299a5c5a53ccd4babe",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS hierarchy board)"
+  },
+  {
+   "surface_id": "HMAS-TOPOLOGY",
+   "owner": "figcraft-hivemind",
+   "name": "Topology / live bee edges",
+   "board": "08 · HMAS Hierarchy",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy@2x.png",
+   "sha256_svg": "eb1ce756e061066a77304ff5c89860cf962e443f8f3c61e2e588da84a73a877d",
+   "sha256_png": "4fd11e62704381eae3c09860f69468c442ec582360c57f299a5c5a53ccd4babe",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS hierarchy board)"
+  },
+  {
+   "surface_id": "HMAS-PROFILES",
+   "owner": "figcraft-hivemind",
+   "name": "Profiles panel",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-IMPORT",
+   "owner": "figcraft-hivemind",
+   "name": "Import project",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-MEMORY",
+   "owner": "figcraft-hivemind",
+   "name": "Memory list + clear",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-MAILBOX",
+   "owner": "figcraft-hivemind",
+   "name": "Mailbox",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-PROJECTS",
+   "owner": "figcraft-hivemind",
+   "name": "Projects",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-USAGE",
+   "owner": "figcraft-hivemind",
+   "name": "Usage counters",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (HMAS governance board)"
+  },
+  {
+   "surface_id": "HMAS-MESSAGE-APPROVAL",
+   "owner": "figcraft-hivemind",
+   "name": "Cross-branch message approval",
+   "board": "09 · HMAS Governance",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance@2x.png",
+   "sha256_svg": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+   "sha256_png": "2721cd23125d7a4b98d66f6b384e03bc1306fd878d361bd45fa229adb7261553",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (APPROVAL_RESOLVE nonce)"
+  },
+  {
+   "surface_id": "STATE-RECONNECT",
+   "owner": "figcraft-hivemind",
+   "name": "Reconnect state",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (truth state)"
+  },
+  {
+   "surface_id": "STATE-KILL-CONFIRM",
+   "owner": "figcraft-hivemind",
+   "name": "Kill confirmation",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "PROPOSED-ADDITION (truth state)"
+  },
+  {
+   "surface_id": "STATE-REPLAY",
+   "owner": "figcraft-hivemind",
+   "name": "Replay read-only",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "HiveRouter-Target-Spec §3"
+  },
+  {
+   "surface_id": "STATE-DIFF-GATED",
+   "owner": "figcraft-hivemind",
+   "name": "DIFF surface explanation",
+   "board": "10 · States & Refusals",
+   "export_svg": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+   "export_png": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.png",
+   "export_png_2x": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals@2x.png",
+   "sha256_svg": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+   "sha256_png": "bd7d1af417731ec60d1bb5305e82e85dbee5d0ee10c08ac69d0e0c2c24f12ffd",
+   "dimensions": {
+    "board": [
+     1440,
+     900
+    ],
+    "svg": "vector",
+    "png": [
+     1440,
+     900
+    ],
+    "png_2x": [
+     2880,
+     1800
+    ]
+   },
+   "provenance": "DECISION-GATED / no frozen DIFF command"
+  }
+ ],
+ "episodes": {
+  "manifest": "docs/ui/figcraft/HiveMind/HiveMind-EPISODES.json",
+  "items": [
+   {
+    "episode": "01_phase1_nodes.json",
+    "path": "docs/ui/figcraft/HiveMind/episodes/01_phase1_nodes.json",
+    "sha256": "a04a8cebc9be49d4c148406583ae2138290c41d497438f5b4b4d164644465ba3",
+    "commands": 1262,
+    "command_ids": [
+     "file.new",
+     "frame.create",
+     "node.create",
+     "text.create"
+    ]
+   },
+   {
+    "episode": "02_phase2_tokens_exports.json",
+    "path": "docs/ui/figcraft/HiveMind/episodes/02_phase2_tokens_exports.json",
+    "sha256": "945ff5f53f4d745e70bc136290e894f03ed178996641e2a16b8628e72477ac20",
+    "commands": 82,
+    "command_ids": [
+     "file.export",
+     "file.saveAs",
+     "style.create",
+     "variable.create",
+     "variable.createCollection"
+    ]
+   }
+  ],
+  "command_id_count": 9
+ },
+ "source_evidence": [
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/build_hive_style.py",
+   "sha256": "881d776f102144661dd5b99f475c357dbf5b1fb4096d8771bee7fbd2af02406a",
+   "source_path": "HiveRouter/design/hive-style/build_hive_style.py",
+   "source_sha256": "881d776f102144661dd5b99f475c357dbf5b1fb4096d8771bee7fbd2af02406a",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/HiveRouter-Style-System.figcraft",
+   "sha256": "3a35a4d406f9dd7949bd52e5523d6ceeacafc692dd4392aa1fda07252a058c1c",
+   "source_path": "HiveRouter/design/hive-style/HiveRouter-Style-System.figcraft",
+   "source_sha256": "3a35a4d406f9dd7949bd52e5523d6ceeacafc692dd4392aa1fda07252a058c1c",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/base.figcraft",
+   "sha256": "62216f720fe8f52e57c52cb6aecedd849e2ee157d09227132ea8a148c81fa7a9",
+   "source_path": "HiveRouter/design/hive-style/base.figcraft",
+   "source_sha256": "62216f720fe8f52e57c52cb6aecedd849e2ee157d09227132ea8a148c81fa7a9",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/HiveRouter-Style-Kit.md",
+   "sha256": "62ad05f05d93f76be94205ebf325723aa2f6c34896e583788cd2303baaa6c115",
+   "source_path": "HiveRouter/design/hive-style/HiveRouter-Style-Kit.md",
+   "source_sha256": "62ad05f05d93f76be94205ebf325723aa2f6c34896e583788cd2303baaa6c115",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/FIGCRAFT-COMMAND-ANALYSIS.md",
+   "sha256": "fb4a9ceb762f2fefd1764fef7b13dc8424c4cff2816d8a3b115816f82d5a845f",
+   "source_path": "HiveRouter/design/hive-style/FIGCRAFT-COMMAND-ANALYSIS.md",
+   "source_sha256": "fb4a9ceb762f2fefd1764fef7b13dc8424c4cff2816d8a3b115816f82d5a845f",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/SPEC/HIVEROUTER-TARGET-SPEC.md",
+   "sha256": "4d042d4edfff086f8ac6cb34ba95b9a8147571627e089ae5523892653018b796",
+   "source_path": "HiveRouter/design/hive-style/SPEC/HIVEROUTER-TARGET-SPEC.md",
+   "source_sha256": "4d042d4edfff086f8ac6cb34ba95b9a8147571627e089ae5523892653018b796",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-agent-cards.png",
+   "sha256": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-agent-cards.png",
+   "source_sha256": "1bbc81a472ee9eea4da84cf2b9a533b87642553f7b40641b38c337d0b0ca5c31",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-agent-cards@2x.png",
+   "sha256": "91d8cb29f1da5bc0df4126d43cedd1978e64e396338f89cd2d8f8a1c55fdc813",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-agent-cards@2x.png",
+   "source_sha256": "91d8cb29f1da5bc0df4126d43cedd1978e64e396338f89cd2d8f8a1c55fdc813",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups.png",
+   "sha256": "e9cc244bea5dc8af6bb84a5aa38191bf80ab5128747cc45116ad2e297a25d8e1",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups.png",
+   "source_sha256": "e9cc244bea5dc8af6bb84a5aa38191bf80ab5128747cc45116ad2e297a25d8e1",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups.svg",
+   "sha256": "b261a9f1f8efe5b650cd3b41aeed5dfde042d98cc8bd4cbd241613ff37afdf04",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups.svg",
+   "source_sha256": "b261a9f1f8efe5b650cd3b41aeed5dfde042d98cc8bd4cbd241613ff37afdf04",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-brand-lockups@2x.png",
+   "sha256": "ca8cfa1daa9f14f328299f3959dada305f8d1f7bc9f3060ae55bebde5f39852e",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-brand-lockups@2x.png",
+   "source_sha256": "ca8cfa1daa9f14f328299f3959dada305f8d1f7bc9f3060ae55bebde5f39852e",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-colour.png",
+   "sha256": "1d616d76fd22652d1a9b7005ae946ac5b6dbb23d370ae89efc4149287b6ea9a8",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-colour.png",
+   "source_sha256": "1d616d76fd22652d1a9b7005ae946ac5b6dbb23d370ae89efc4149287b6ea9a8",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-colour@2x.png",
+   "sha256": "e302bf6d1579bc93b4403c2bb8b8761c75c2da8823ee477e5ec222aacfe77cdb",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-colour@2x.png",
+   "source_sha256": "e302bf6d1579bc93b4403c2bb8b8761c75c2da8823ee477e5ec222aacfe77cdb",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-controls-and-hud.png",
+   "sha256": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-controls-and-hud.png",
+   "source_sha256": "a219f180e01a2d2f7b115d7d98e2129f0de03949281f6e1d6a434a76b7ac3078",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-controls-and-hud@2x.png",
+   "sha256": "7f04ac9059adc54fd60557e2517067d639fb5d09598017655f83d12db0c03c6b",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-controls-and-hud@2x.png",
+   "source_sha256": "7f04ac9059adc54fd60557e2517067d639fb5d09598017655f83d12db0c03c6b",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-cover.png",
+   "sha256": "7396d2587229c15646fa2a35df6d7c3abc7033c3d3fed39327fa3797ea14f373",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-cover.png",
+   "source_sha256": "7396d2587229c15646fa2a35df6d7c3abc7033c3d3fed39327fa3797ea14f373",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-cover@2x.png",
+   "sha256": "cd2dcb98642e53b7c80ce9de1306fa454bbf4610a371fc32088bc85c0b0d824d",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-cover@2x.png",
+   "source_sha256": "cd2dcb98642e53b7c80ce9de1306fa454bbf4610a371fc32088bc85c0b0d824d",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-space-and-depth.png",
+   "sha256": "5608de3f4f7bce7b57e21b2a990455238fdefc274f7743c6a2678d824c6d97eb",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-space-and-depth.png",
+   "source_sha256": "5608de3f4f7bce7b57e21b2a990455238fdefc274f7743c6a2678d824c6d97eb",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-space-and-depth@2x.png",
+   "sha256": "f18760218e814b6483ab82323d17cd687d763083c6208e13f62287a5e36cd7c9",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-space-and-depth@2x.png",
+   "source_sha256": "f18760218e814b6483ab82323d17cd687d763083c6208e13f62287a5e36cd7c9",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-spatial-canvas.png",
+   "sha256": "126a1b9cd0ee42990fc0578e7222ce7e8adda83a5bd2f0bff6bed68355a10e12",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-spatial-canvas.png",
+   "source_sha256": "126a1b9cd0ee42990fc0578e7222ce7e8adda83a5bd2f0bff6bed68355a10e12",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-spatial-canvas@2x.png",
+   "sha256": "31e3d5f5ef92df5c3aa3c01d80067408f26dad34f26157be1afe085c7d6e7b60",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-spatial-canvas@2x.png",
+   "source_sha256": "31e3d5f5ef92df5c3aa3c01d80067408f26dad34f26157be1afe085c7d6e7b60",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-typography.png",
+   "sha256": "37c189b1bb0319bc99c40dc9291d80d90b4926c847fea14d49ce9199c1591f9b",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-typography.png",
+   "source_sha256": "37c189b1bb0319bc99c40dc9291d80d90b4926c847fea14d49ce9199c1591f9b",
+   "preserved": true
+  },
+  {
+   "path": "docs/ui/figcraft/HiveMind/source-evidence/exports/hiverouter-typography@2x.png",
+   "sha256": "fd8962edd85539eba9df24300812f9c94a388684a03723359f07a11dfc1ad977",
+   "source_path": "HiveRouter/design/hive-style/exports/hiverouter-typography@2x.png",
+   "source_sha256": "fd8962edd85539eba9df24300812f9c94a388684a03723359f07a11dfc1ad977",
+   "preserved": true
+  }
+ ],
+ "build": {
+  "phase1_commands": 1262,
+  "phase2_commands": 82,
+  "run_logs": [
+   "docs/ui/figcraft/HiveMind/build/run_phase1.log",
+   "docs/ui/figcraft/HiveMind/build/run_phase2.log"
+  ],
+  "commands": [
+   "python build_hive_style.py 1",
+   "figcraft-cli run commands_phase1.json --out base.figcraft",
+   "python build_hive_style.py 2",
+   "figcraft-cli run commands_phase2.json --in base.figcraft",
+   "python publish_hivemind.py"
+  ]
+ }
+}

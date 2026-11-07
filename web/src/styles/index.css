@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./motion.css";
 
 @layer base {
   * {
@@ -129,9 +130,15 @@
 /* Spatial reference: minimap is inset 100px from the right and 50px from the
    bottom, and the viewport mask is not a grey veil. */
 .react-flow__minimap {
-  margin: 0 100px 120px 0;
+  margin: 0 40px 120px 0;
   background-image: radial-gradient(circle, var(--color-hairline) 1px, transparent 1px);
   background-size: 8px 8px;
+}
+@media (max-width: 1279px) {
+  /* The canvas is narrow and the chat core already owns the centre. */
+  .react-flow__minimap {
+    display: none;
+  }
 }
 .hive-minimap-empty::after {
   content: 'no nodes yet';
@@ -172,7 +179,6 @@
 @keyframes bee-dash {
   to { stroke-dashoffset: -40; }
 }
-
 @keyframes bee-bob {
   0%, 100% { transform: translateY(0) rotate(var(--bee-rotation, 0deg)); }
   50% { transform: translateY(-1.5px) rotate(var(--bee-rotation, 0deg)); }
@@ -197,6 +203,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
+.motion-typing-dot {
+  animation: typing-dot 1.1s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
 .hive-ambient-glow {
   position: absolute;
   inset: 0;
@@ -207,8 +223,30 @@
     color-mix(in srgb, var(--color-honey-200) 16%, transparent) 30%,
     transparent 62%
   );
-  animation: hive-breathe 11s ease-in-out infinite;
+  animation: hive-breathe 18s ease-in-out infinite;
   will-change: opacity, transform;
+}
+
+.hive-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    color-mix(in srgb, var(--color-honey-200) 30%, transparent) 50%,
+    transparent 60%
+  );
+  background-size: 260% 100%;
+  animation: hive-scan 16s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes hive-scan {
+  from { background-position: 240% 0; }
+  to { background-position: -140% 0; }
 }
 
 .hive-sheen {
@@ -224,8 +262,40 @@
   );
   background-size: 240% 100%;
   mix-blend-mode: soft-light;
-  animation: hive-sheen 10s linear infinite;
+  animation: hive-sheen 8s ease-in-out infinite;
   will-change: background-position;
+}
+
+.ambient-bee {
+  position: absolute;
+  color: var(--color-ink-700);
+  opacity: 0.62;
+  pointer-events: none;
+  animation: ambient-flight 13s ease-in-out infinite;
+  will-change: transform;
+}
+.ambient-bee-a {
+  left: 7%;
+  top: 30%;
+  animation-delay: -2s;
+}
+.ambient-bee-b {
+  right: 9%;
+  top: 46%;
+  animation-delay: -6s;
+  animation-duration: 16s;
+}
+.ambient-bee-c {
+  left: 18%;
+  bottom: 17%;
+  animation-delay: -9s;
+  animation-duration: 18s;
+}
+
+@keyframes ambient-flight {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-9deg); }
+  35% { transform: translate3d(12px, -9px, 0) rotate(7deg); }
+  70% { transform: translate3d(4px, 7px, 0) rotate(-3deg); }
 }
 
 .hive-node {
@@ -243,8 +313,14 @@
 }
 
 .bee-work-icon {
-  animation: bee-work 2.4s linear infinite;
+  animation: bee-work 1.2s linear infinite;
   transform-origin: center;
+}
+
+.motion-work-bee {
+  /* Board 11 specifies a 1.2s working spinner; this intentionally overrides
+     the shared 2.2s utility for the chat header/small glyph. */
+  animation-duration: 1.2s;
 }
 
 .chat-message {
@@ -253,13 +329,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hive-ambient-glow,
+  .hive-scan,
   .hive-sheen,
   .hive-node,
   .state-pulse,
   .bee-work-icon,
   .chat-message,
   .bee-dash,
-  .bee-bob {
+  .bee-bob,
+  .ambient-bee {
+    animation: none !important;
+  }
+  .motion-typing-dot {
     animation: none !important;
   }
 }
