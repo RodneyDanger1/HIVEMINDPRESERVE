@@ -48,3 +48,13 @@ git ls-tree -r --name-only FETCH_HEAD | Measure-Object
 ## Self-reference note
 
 The frozen census describes the repository **before** `docs/CODEMAP/` existed: 805 tracked / 36,480 working-tree / 35,675 ignored. Publishing the encyclopedia adds tracked documentation files, so the current repository has **822** tracked files. Both numbers are true at their stated commit; they must not be mixed.
+
+
+## Follow-up: historical inputs integrated
+
+The supplied Git-ingest dump, duplicate dump, and GitDiagram export were integrated into:
+`13-HISTORICAL-AUDIT.md`, `14-GITDIAGRAM-ARCHITECTURE.md`, `15-INPUT-PROVENANCE.md`, and
+`_incoming/{DUMP-ANALYSIS,DUMP-DELTA,DIAGRAM-ANALYSIS}.md`.
+
+That follow-up adds 6 tracked files, taking the repository from 823 to **829** tracked files.
+The frozen 805-file census is unchanged; it describes `e021b12` before CODEMAP existed.

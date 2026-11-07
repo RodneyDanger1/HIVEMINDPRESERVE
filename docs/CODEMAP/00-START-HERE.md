@@ -28,7 +28,11 @@ This is the map of **every path in the working tree**, not a marketing overview.
 8. [`08-FILE-CATALOG.md`](08-FILE-CATALOG.md) — every tracked file with hash/encoding/role; deep entries flagged.
 9. [`09-RISKS-GAPS.md`](09-RISKS-GAPS.md) — verified gaps and unverified claims.
 10. [`10-VERIFICATION.md`](10-VERIFICATION.md) — commands, acceptance gates, coverage proof.
-11. [`11-AUDITOR-FINDINGS.md`](11-AUDITOR-FINDINGS.md) — the three independent audits and the corrections they forced.
+11. [`11-AUDITOR-FINDINGS.md`](11-AUDITOR-FINDINGS.md) — the independent plan audits and the corrections they forced.
+12. [`12-GITHUB-PUSH.md`](12-GITHUB-PUSH.md) — publication receipt and self-reference note.
+13. [`13-HISTORICAL-AUDIT.md`](13-HISTORICAL-AUDIT.md) — the historical 30-finding audit register and its current disposition.
+14. [`14-GITDIAGRAM-ARCHITECTURE.md`](14-GITDIAGRAM-ARCHITECTURE.md) — the external 25-component/30-connection diagram, mapped and corrected.
+15. [`15-INPUT-PROVENANCE.md`](15-INPUT-PROVENANCE.md) — provenance of the two dumps and the HTML diagram; duplicate proof.
 
 Machine data:
 - [`_data/inventory.csv`](_data/inventory.csv) — **36,480 rows**, every path (tracked and ignored), size, area, extension, tracked flag, and SHA-256 for tracked files.
