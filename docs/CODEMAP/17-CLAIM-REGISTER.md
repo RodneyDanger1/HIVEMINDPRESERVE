@@ -1,7 +1,7 @@
 # 17 — Claim Register (post-wave 3)
 
 Status: `VERIFIED` (command/test/proof), `READ` (source read), `UNVERIFIED`, `CONTRADICTED`.
-This register is rebuilt from the current tree after commits up to `415c23c`; it is not the frozen census.
+This register is rebuilt from the current tree after commits up to `2197c30`; it is not the frozen census.
 
 | ID | Claim | Status | Evidence |
 |---|---|---|---|
@@ -22,14 +22,14 @@ This register is rebuilt from the current tree after commits up to `415c23c`; it
 | C-15 | File tree supports path scoping and measured size | VERIFIED | contract/command/tools tests; `DataPanel` expand |
 | C-16 | `RUN_METRICS` has a producer | VERIFIED | lifecycle test counts `RUN_METRICS` |
 | C-17 | `ask_parent` writes a durable message | VERIFIED | `ask_parent_writes_a_durable_message`; `agent_messages` migration v6 |
-| C-18 | `send_to_sibling` is same-parent/run only | READ | `execute_send_to_sibling`; no negative test yet |
-| C-19 | Side effects are Config-owned | READ | `Config.side_effects_enabled`; `ToolsBridge` builder; no config test yet |
-| C-20 | HMAS/AWN is complete | **CONTRADICTED** | No agent profile registry/import, durable memory, HMAS UI, controller, cross-branch approval |
+| C-18 | `send_to_sibling` is same-parent/run only | READ (positive path) / UNVERIFIED (negative) | `execute_send_to_sibling`; no foreign-parent test yet |
+| C-19 | Side effects are Config-owned and visible in `/diagnose` | READ | `Config.side_effects_enabled`; `ToolsBridge` builder; diagnose field; no env-parsing test yet |
+| C-20 | HMAS/AWN is complete | **CONTRADICTED** | Profiles are read-only (5 boot personas); no import/editor, controller, cross-branch approval, or full HMAS UI |
 | C-21 | Four-level Agent→Subagent spawning exists | **CONTRADICTED** | Current spawn remains Hyper/Super and 3-tier; profiles/H2 pending |
-| C-22 | Memory lasts forever across runs | **CONTRADICTED** | No `agent_memory` table; only `ScopedContext` in memory |
-| C-23 | Usage/cost persists across restart | **CONTRADICTED** | No usage table; `RunBudget` per process |
+| C-22 | Memory lasts forever across runs | **PARTIAL** | `agent_memory` migration v7 + role-scoped recall into context; no editor/clear/consent UI and no semantic retrieval |
+| C-23 | Usage/cost persists across restart | **PARTIAL** | `run_usage` migration v8 persists measured tokens; cost is not persisted/settled |
 | C-24 | Approval replay >20 is complete | **UNVERIFIED** | Cap remains 20; no paging |
-| C-25 | Two schema authorities are fixed | **UNVERIFIED** | `ToolsBridge::migrate` still called from `build_tools` |
+| C-25 | Two schema authorities are fixed | **PARTIAL** | `ToolsBridge::migrate` still separate, but a failure now fails `/health` as a required check |
 | C-26 | The contract command count is 17 | **CONTRADICTED** | `QA-HARNESS`/contract list says 14; derive from enum |
 | C-27 | R1–R3 have no contract change | VERIFIED | Parent/context/aggregation are internal; golden schema unchanged by R1–R3 |
 
@@ -40,4 +40,6 @@ This register is rebuilt from the current tree after commits up to `415c23c`; it
 - A negative `send_to_sibling` test (foreign parent/run) (C-18).
 - A binary boot test that writes an audit file (C-13).
 - A web reload/e2e proof of chat hydration (C-12).
+- A negative `send_to_sibling` cross-parent test (C-18).
+- Cost settlement/persistence, memory clear/consent, profile import/editor, cross-branch approval, HMAS UI.
 - Agent profile/import, memory, cross-branch messaging, HMAS UI (C-20–C-23).
