@@ -142,6 +142,25 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
     assert_eq!(profiles.len(), 6, "five embedded + one imported");
     assert!(profiles.iter().any(|profile| profile["id"] == "custom-writer"));
 
+    // The imported profile is persisted, not just installed in this AppState.
+    let boot_config = Config::resolve(
+        "127.0.0.1:0",
+        temp.path().to_str().expect("utf8 path"),
+        None,
+    )
+    .expect("boot config");
+    let boot_db = Database::open(boot_config.db_file()).expect("boot database");
+    boot_db.migrate().expect("boot migrations");
+    let boot_state = AppState::new(Arc::new(boot_db), run_checks(), Arc::new(boot_config));
+    assert!(
+        boot_state
+            .engine
+            .personas()
+            .iter()
+            .any(|persona| persona.id == "custom-writer"),
+        "imported profile must survive a fresh boot"
+    );
+
     let (status, body) = http_json(
         server.addr,
         "DELETE",
