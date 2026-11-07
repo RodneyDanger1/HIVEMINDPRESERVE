@@ -1145,9 +1145,9 @@ mod tests {
             "a fresh graph node starts at revision 0"
         );
         assert_eq!(frame["parent_task_id"], fixture.root.id.to_string());
-        assert!(
-            !frame.contains_key("kind"),
-            "kind stays absent until the task tier is threaded: {frame:?}"
+        assert_eq!(
+            frame["kind"], "hyperagent",
+            "NODE_SPAWN carries the task's authoritative tier"
         );
     }
 
