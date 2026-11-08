@@ -118,7 +118,7 @@ maximally-capable tier (`execution.rs:183`), but every production insert validat
 **Is:** a narrowed profile-only class on the `WorkerAgent` tier: 6 tools, no spawn/write/exec at
 call time, no children, depth-design 2-3. **Is not:** a fifth tier, a Worker with a different prompt,
 depth 1, a dead card pretending to be a wire kind, or an alias that escapes narrowing.
-**Current gaps:** no depth floor (`validate_spawn_role` accepts it under Hyper at depth 1, and the
+**Current gaps:** depth floor is enforced in the plan/spawn/template paths since `e8e67a4`; the remaining gap is that `validate_spawn_role` itself takes no depth and there is no negative test. No persisted class, wire kind, card, or bank (`validate_spawn_role` accepts it under Hyper at depth 1, and the
 S4 template mapping still routes a `"subagent"` template to that same depth-1 check); no wire
 kind (contract vocabulary is 4 values); no class field; the narrowing depends on the persona
 lookup, which S3/S4 canonicalizes (committed in `45914dc`). **Implementable version:** profile +
@@ -157,7 +157,7 @@ differs.
 | E7 | Call-time gate intersects tier and persona; empty matched grant = no tools. | `execution.rs:1091-1105`; `personas.json:7` | Verified | `:1060-1074`/`:1057-1061` stale |
 | E8 | Model is advertised the tier set, not the effective grant (Subagent sees 9). | `provider_executor.rs:335-351`; `tool_loop.rs:206-219` | Verified | `:333-349` (off by 2) |
 | E9 | Spawn matrix: Hyper -> Super/Agent/Subagent; Super -> Agent/Subagent; Worker -> Subagent only; Tool -> none. | `execution.rs:135-164` | Verified (exact strings; the draft's `super*`/`worker*` wildcards are imprecise) | `:113-142` stale |
-| E10 | No depth floor for Subagent; Hyper accepts `subagent` at depth 1. | `execution.rs:138-151`, `:1497-1538` | Verified | correct |
+| E10 | Depth floor for Subagent landed in `e8e67a4` (`execution.rs` spawn/plan, `ws.rs` template); no negative test; `validate_spawn_role` still takes no depth. | `execution.rs:1205`, `:1521`, `ws.rs:260` | Verified at HEAD | stale "no depth floor" |
 | E11 | Plan loop validates the role against the parent tier (since `aa15ec9`). | `execution.rs:1509` | Verified | F6 wrongly said "only caps" at the same line |
 | E12 | `TEMPLATE_INSERT` maps the template id to a spawn class, validates it, and sets metadata (S4). | `ws.rs:248-261`, `:305-311` | Verified | Draft said bypass; S3 fixed Hyper but broke Library ids; S4 fixes both |
 | E13 | Template node role = template id; `planner`/`hyper` refused; Library ids -> worker; `subagent` -> Subagent at depth 1. | `ws.rs:146-149`, `:252-260`; `execution.rs:138-151`; `personas.json` | Verified | New finding: template path has no depth parameter |

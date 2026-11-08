@@ -295,6 +295,10 @@ impl ProviderExecutorAdapter {
 
 #[async_trait]
 impl ProviderExecutor for ProviderExecutorAdapter {
+    fn key_available(&self) -> Option<bool> {
+        Some(true)
+    }
+
     async fn plan(
         &self,
         run_id: RunId,

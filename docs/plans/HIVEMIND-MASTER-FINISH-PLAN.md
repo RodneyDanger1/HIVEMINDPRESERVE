@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: commit `7ce2716`; prior wave commits `fa4c373`, `679bd6b`, `bb95a44`, `aa15ec9`, `66aff50`, `6e3294c`, `5d8b611`. Offline only; no server/UI/provider run.
+Baseline: HEAD `8a19d0b` (clean tree after local exclude decision). Offline gate at this SHA: `cargo test --workspace --locked` 516 passed / 0 failed / 2 ignored, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-8a19d0b5-offline.json`. Prior commits include `7ce2716`, `f482143`, `e8e67a4`. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -14,7 +14,7 @@ HiveMind is a credible **single-run hierarchical HMAS**: typed planner DAG, spaw
 | HyperAgent root final synthesis turn for hierarchical plans | `execution.rs` dispatch Phase 3; `execute_root_task_with_prompt`; synthesis system prompt in `provider_executor.rs`; no tools; bounded prompt; no late spawn |
 | Snapshot carries `kind`/`role`/`label` | `graph.rs TaskNode` + `set_metadata`; execution/recovery populate; web replay already read them |
 | Memory write/read isolation | each task writes its own bank id; children read parent bank; root prompt aggregates run memory; A2A/roster/memory prompt values sanitized |
-| FigCraft representation surface | `web/src/figcraft/`, `FigCraftPanel.tsx`, `web/public/figcraft/` (21 accepted SVG boards, 13 HiveMind); mounted in Settings; Vite build copies `/figcraft/*` |
+| FigCraft representation surface | `web/src/figcraft/`, `FigCraftPanel.tsx`, `web/public/figcraft/` (21 SVG boards: 13 HiveMind are PROPOSED-ADDITION, 20 A/B artifacts watchdog-passed); mounted in Settings; Vite copies `/figcraft/*`; no built-artifact serving proof |
 | UI graph/UX corrections | HiveField in viewport portal; replay fit; broken-parent edges; bee direction/dash/reduced motion; active-unknown capacity; skip target; hash routes; no duplicate owner spokes |
 | Audits | memory/A2A findings + remote/daemon design + UI graph audit + goal gap plan + FigCraft coverage |
 
@@ -22,21 +22,21 @@ HiveMind is a credible **single-run hierarchical HMAS**: typed planner DAG, spaw
 
 | Area | Status | Blocker |
 |---|---|---|
-| HyperAgent execution | PARTIAL | Root turn only when plan has aggregators; no flat-plan final turn; cap not reserved |
+| HyperAgent execution | PARTIAL | Root answer runs for multi-node hierarchical and flat plans (`has_aggregators \|\| nodes > 1`); single-node still skips. No root orchestration tools; one call is not reserved. |
 | SuperAgent sub-orchestration | PARTIAL | Tier/persona/spawn exists; no owned branch sub-DAG or ownership switch |
-| Worker/Subagent | PARTIAL | Spawn policy exists; no distinct Subagent tier/bank; role/allowlist gaps |
+| Worker/Subagent | PARTIAL | Subagent is a 6-tool profile on Worker authority; depth floor landed in `e8e67a4` (untested); no persisted class or wire kind/card/bank. |
 | Memory banks | PARTIAL | Run+task scopes, parent recall, root aggregate; no bank tree/trust/retention/promotion |
-| A2A | PARTIAL | Durable ask/send, roster, inbox; no answer/wake/deadline/status, no continuation refresh |
+| A2A | PARTIAL | Durable ask/send, roster, inbox; terminal recipients refused in `8a19d0b` (untested). No answer/wake/deadline/status, no continuation refresh, check-then-insert budget. |
 | Remote/daemon | MISSING | Design only under `docs/research/remote-agents/`; no code/schema/API/UI |
 | UI/FigCraft | PARTIAL | Gallery mounted; run detail/answer/remote/daemon/authority surfaces missing; pixel fidelity unverified |
 | Provider | PARTIAL | Chat/stream/tools/models/balance; no context preflight, 402 identity gap, no Files/Search/etc |
 | Recovery/logs | PARTIAL | Snapshots/recovery/audit; no durable event journal/resume/daemon watchdogs |
 | Authority/security | PARTIAL | Host guard + approvals; no `/api/*` token auth, spawn approval, autonomy settings |
-| Scale | PARTIAL | One active run, serial leaves, caps 64/40, in-flight 8; no scheduler/admission |
+| Scale | MISSING | No measured scale, scheduler, admission, DB writer, or event coalescing; one active run with serial leaves and caps 64/40. |
 
 ## Top gaps, ordered
 
-1. **A2A answer/wake.** Ask has no answer, wake, deadline, status, or continuation inbox refresh; terminal recipients are not rejected.
+1. **A2A answer/wake.** Ask has no answer, wake, deadline, status, or continuation inbox refresh. Terminal-recipient refusal exists in `8a19d0b` (ask and send), but has no regression test; do not re-implement it.
 2. **Bank-tree memory.** Current rows are parent-scoped; need explicit project/run/hive/branch/role banks, trust/retention, gated promotion, HyperAgent summary reads.
 3. **Remote/daemon runtime.** Contract-first: tree-free principal, private+global memory, device ACL, supervisor/watchdog/log/crash map.
 4. **Role truth.** Define Subagent tier, correct Super/Worker allowlists, ownership model, and UI labels; remove any overclaim.
@@ -67,8 +67,8 @@ HiveMind is a credible **single-run hierarchical HMAS**: typed planner DAG, spaw
 - M-02 sibling-share is fixed by own-task write + parent read; ancestor/role/hive read-set and trust labels remain open.
 - M-03 `take(32)` is gone; root uses a 24k budget/omission marker and run-memory reads. It currently injects up to 32 raw rows labelled shared memory without trust labels.
 - M-12 rowid tie-break claim is stale: rowid ordering is present in current store queries.
-- A2A M-04/M-07/M-09 remain live: no answer/status/wake, no continuation inbox refresh, terminal recipients accepted, check-then-insert budget, approved cross-branch send skips args/grant binding.
-- Flat planner DAGs still complete without a root provider answer because root synthesis is gated on `has_aggregators`. This is an open product decision, not a bug.
+- A2A M-04/M-07/M-09 remain live in part: no answer/status/wake, no continuation inbox refresh, check-then-insert budget, approved cross-branch send skips args/grant binding. M-07 terminal-recipient half is fixed in `8a19d0b`; keep M-07 open until an atomic-budget and terminal regression test land.
+- Flat multi-node planner DAGs DO get the root answer (gate is `has_aggregators || nodes > 1`); only single-node plans skip. Single-node policy remains an explicit decision (D4).
 
 ## Independent distance assessment
 
@@ -110,17 +110,17 @@ Fixed: dry-run no-side-effect for lifecycle, `--y` alias conflict for viewport, 
 ### Target architecture
 Five planes: control (commands/orchestrator/scheduler/policy/budget), agent-host (actor loop/supervisor/mailbox), state (event log/projections/memory/audit), interop (A2A/MCP/remote transport/devices), experience (UI projections/controls). Existing contract, run state machine, graph, provider gateway, tool/approval/jail, snapshots, and UI are reusable primitives. The run engine becomes one component; it is not the runtime.
 
-## Offline gate evidence (2026-11-08)
+## Offline gate evidence (HEAD `8a19d0b`, 2026-11-08)
 
-- `cargo test --workspace` with bundled `tools/w64devkit/bin` on PATH: **exit 0**; core suite green including 12 lifecycle, 15 suspension, 12 tool-loop, 13 WebSocket, 5 snapshot/history, 114 tools tests.
+- `cargo test --workspace --locked` with bundled `tools/w64devkit/bin` on PATH: **516 passed, 0 failed, 2 ignored, exit 0** across 42 suites.
 - `npm.cmd run typecheck`: clean. `npm.cmd test`: **189/189 passed**. `npm.cmd run build`: exit 0. FigCraft public assets copied to `web/dist/figcraft`.
-- CLI `node --check`: exit 0.
+- CLI `node --check`: exit 0. No e2e/live run; guarded e2e remains unexecuted. JSON receipt: `docs/evidence/gate-8a19d0b5-offline.json`.
 - No server/browser/provider call; key absent; no live run.
 
 These are offline unit/build gates, not e2e/live/UI/scale evidence.
 
 ## Baseline note
-Current tested baseline: `7ce2716` on top of the root/readiness/memory/CLI/FigCraft wave. The next P0 gate is guarded e2e + one authorized keyless refuse-path run + release packaging/database upgrade drill.
+Current tested baseline: `8a19d0b`, clean worktree, full offline gate green as recorded above. Guarded e2e and one authorized keyless refuse-path run remain outstanding; then release packaging/database upgrade/rollback drill.
 
 
 
@@ -205,3 +205,47 @@ P0 is the only next executable gate. No HMARS/remote/universal-memory/300-600 cl
 ## Open decisions
 
 Root final turn policy for flat plans; A2A answer deadline/authority; memory bank trust/retention; remote capability classes and operator approval; migration numbers (v11 committed, v12+ reserved); scale stage target; whether FigCraft assets remain 20MB public bundle or narrower HiveMind-only set.
+
+## Authoritative ordering and migration ledger
+
+**P0-P9 is the only executable ordering.** R1-R6 are workstream labels: R1→P0/P3, R2→P2, R3→P3 (roles/authority only; remote split to P6), R4→P4, R5→P5/P8/P9, R6→P0/P9. P0 precedes every feature.
+
+| Version | Owner | Contents |
+|---|---|---|
+| v11 | shipped | `agent_memory_scoped` flat rows |
+| v12 | A2A | additive `a2a_messages` + answer attempts/status; dual-write with legacy `agent_messages` |
+| v13 | identity | task class/rank/profile/hive/ownership; `settings` + `settings_audit` |
+| v14 | memory | banks/entries/journal/context snapshots; backfill flat rows as unverified |
+| v15 | durability | append-only event journal/resume checkpoints |
+| v16 | remote | tree-free principals/devices/grants/actions/audit |
+| v17 | daemons | daemon records/leases/reports; supervisor state |
+
+No lane may claim another's version. A2A status columns must land in v12, never a silent second v12.
+Each migration needs: newer-schema refusal, pre-migration backup + integrity check, up/down fixture, and upgrade/rollback drill.
+
+## Audit coverage M-01..M-12
+
+| Finding | Current status |
+|---|---|
+| M-01 prompt header | render fixed; write/store guard and raw seed path remain open |
+| M-02 sibling leak | own-task write/parent read fixed; ancestor/hive/role read set and trust remain open |
+| M-03 raw `take(32)` | task results bounded/omitted marker; up to 32 raw memory rows remain without trust |
+| M-04 inbox refresh | open: only seed/start refresh, never before continuation |
+| M-05 scoped clear | open: only global role delete, unauthenticated, no receipt |
+| M-06 legacy rows | open: `legacy` rows unreachable by recall |
+| M-07 message budget | terminal-recipient half fixed in `8a19d0b`; check-then-insert TOCTOU and tests open |
+| M-08 trust/promotion | open: every completed task's model text auto-written behind a blocklist |
+| M-09 approval binding | open: approved cross-branch send bypasses args/grant verification |
+| M-10 read errors | open: memory/inbox read errors swallowed; no omitted/truncation counts |
+| M-11 clear parity | open: API/CLI/UI clear semantics diverge; sensitive reads lack `no-store` |
+| M-12 rowid ordering | fixed: current store orders by `created_at, rowid`; audit stale |
+
+## Claim corrections that must stay visible
+
+- Terminal-recipient refusal: code-present at `8a19d0b`, no regression test yet; answer/status/wake remains absent.
+- Subagent depth floor: code-present at `e8e67a4`, no negative test; verified docs still say absent.
+- Subagent allowlist: 6-tool persona grant exists; missing pieces are persisted class, wire kind, card, bank.
+- Root: multi-node flat plans are answered; single-node is the only skip; no root tools yet.
+- FigCraft: 13 HiveMind boards are proposed additions; 20 A/B artifacts are watchdog-passed; no built-binary serving proof.
+- Scale: no measurement; do not claim 50-150 active or 300-600.
+- Evidence: only `docs/evidence/gate-8a19d0b5-offline.json` is SHA-bound; no e2e/live evidence at this SHA.

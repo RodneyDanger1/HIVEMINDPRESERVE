@@ -116,6 +116,11 @@ fn is_terminal_task_state(state: AgentState) -> bool {
     run_state::is_task_terminal(state)
 }
 
+/// Named refusal for a message whose recipient has already reached a terminal state.
+fn terminal_recipient_refusal(state: AgentState) -> Option<Refusal> {
+    is_terminal_task_state(state).then_some(Refusal::TaskTerminal)
+}
+
 /// Contract node-kind label for an agent tier (`NODE_KIND_VOCABULARY` values).
 #[must_use]
 pub(crate) fn node_kind(tier: AgentTier) -> &'static str {
@@ -209,6 +214,12 @@ pub type DeltaSink = Arc<dyn Fn(&str) + Send + Sync>;
 /// Provider seam: the Phase 5 client implements this; tests use a mock.
 #[async_trait]
 pub trait ProviderExecutor: Send + Sync {
+    /// Whether this executor has a usable provider key. `None` means the seam
+    /// cannot answer (test doubles); only `Some(false)` refuses at admission.
+    fn key_available(&self) -> Option<bool> {
+        None
+    }
+
     /// Produces the plan DAG for one prompt (exactly one call per plan).
     async fn plan(
         &self,
@@ -335,6 +346,10 @@ pub struct UnconfiguredExecutor;
 
 #[async_trait]
 impl ProviderExecutor for UnconfiguredExecutor {
+    fn key_available(&self) -> Option<bool> {
+        Some(false)
+    }
+
     async fn plan(
         &self,
         _run_id: RunId,
@@ -1142,6 +1157,10 @@ impl RunEngine {
         }
         if let Some(existing) = self.store.receipt_run(correlation)? {
             return self.store.get_run(existing);
+        }
+        if self.executor.key_available() == Some(false) {
+            // Refuse at admission: no run row, no user message, no RUN_CREATED.
+            return Err(Refusal::KeyMissing);
         }
         if self.store.latest_active_run()?.is_some() || self.active_run().is_some() {
             return Err(Refusal::RunActive);
@@ -2731,14 +2750,15 @@ impl RunEngine {
             );
         }
         match self.store.get_task(parent) {
-            Ok(target) if is_terminal_task_state(target.state) => {
-                return ToolExecution::refused(
-                    plan.tool_call_id.clone(),
-                    Refusal::TaskTerminal.code(),
-                    "ask_parent refused: the parent task is already terminal".to_owned(),
-                );
+            Ok(target) => {
+                if let Some(refusal) = terminal_recipient_refusal(target.state) {
+                    return ToolExecution::refused(
+                        plan.tool_call_id.clone(),
+                        refusal.code(),
+                        "ask_parent refused: the parent task is already terminal".to_owned(),
+                    );
+                }
             }
-            Ok(_) => {}
             Err(refusal) => {
                 return ToolExecution::refused(
                     plan.tool_call_id.clone(),
@@ -2860,10 +2880,10 @@ impl RunEngine {
                     .to_owned(),
             );
         }
-        if is_terminal_task_state(target.state) {
+        if let Some(refusal) = terminal_recipient_refusal(target.state) {
             return ToolExecution::refused(
                 plan.tool_call_id.clone(),
-                Refusal::TaskTerminal.code(),
+                refusal.code(),
                 "send_to_sibling refused: the target task is already terminal".to_owned(),
             );
         }
@@ -3464,5 +3484,19 @@ mod prompt_context_tests {
             prompt_with_context("plain", Some(&ScopedContext::new(None))),
             "plain"
         );
+    }
+
+    #[test]
+    fn terminal_recipient_refusal_is_named_and_nonterminal_is_open() {
+        assert_eq!(
+            terminal_recipient_refusal(AgentState::Completed),
+            Some(Refusal::TaskTerminal)
+        );
+        assert_eq!(
+            terminal_recipient_refusal(AgentState::Failed),
+            Some(Refusal::TaskTerminal)
+        );
+        assert_eq!(terminal_recipient_refusal(AgentState::Running), None);
+        assert_eq!(terminal_recipient_refusal(AgentState::Queued), None);
     }
 }

@@ -11,7 +11,9 @@ use hiverouter_contract::event::EventName;
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Usage};
 use hiverouter_core::bus::{EventBus, SequencedEvent};
 use hiverouter_core::db::Database;
-use hiverouter_core::execution::{DeltaSink, ProviderExecutor, RunEngine, StreamedReply};
+use hiverouter_core::execution::{
+    DeltaSink, ProviderExecutor, RunEngine, StreamedReply, UnconfiguredExecutor,
+};
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
 use hiverouter_core::prompts::{Persona, PersonaTier, TemplateRegistry};
@@ -211,6 +213,18 @@ async fn wait_for(
 
 fn event_name(event: &SequencedEvent) -> &str {
     event.envelope.name.as_str()
+}
+
+#[tokio::test]
+async fn keyless_submit_is_refused_before_any_run_row() {
+    let harness = test_engine(Arc::new(UnconfiguredExecutor));
+    let refused = harness
+        .engine
+        .submit_prompt("must not create a run", "project", Uuid::now_v7());
+    assert_eq!(refused, Err(Refusal::KeyMissing));
+    let runs = harness.store.list_runs(10).expect("runs");
+    assert!(runs.is_empty(), "a keyless refusal must not create a run row");
+    assert!(harness.store.latest_active_run().expect("active").is_none());
 }
 
 #[tokio::test]

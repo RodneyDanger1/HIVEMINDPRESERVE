@@ -1,6 +1,6 @@
 # HiveMind Agent-Wave Report Index
 
-Baseline: `f96397d`; no server/UI/provider run; provider key disabled.
+Baseline: HEAD `8a19d0b`; offline evidence at `8a19d0b5` (`cargo test --workspace` 516 passed/2 ignored, web 189/189, build 0); no e2e/live run; provider key disabled.
 This file compiles the read-only seats and points to the detailed reports. Findings are source-read unless a test/build is quoted.
 
 ## Detailed reports
@@ -24,7 +24,7 @@ This file compiles the read-only seats and points to the detailed reports. Findi
 - **HyperAgent**: single root task, depth 0, no parent, tier HyperAgent; answer-only synthesis for multi-node plans; narrowest tool list; not a continuous conversation loop.
 - **SuperAgent**: depth-1 branch lead; 7-tool allowlist, max children/depth from profile; no owned sub-DAG/bank/ownership switch yet.
 - **Agent (worker)**: leaf with 9-tool allowlist behind approval/jail; may spawn Subagent only; **no built-in `agent` profile**, unknown role falls back here (critical).
-- **Subagent**: profile-only role on Worker tier with 6-tool allowlist; no tier/kind/bank/depth floor; alias fix is source-level.
+- **Subagent**: profile-only role on Worker tier with a 6-tool allowlist; depth floor enforced in plan/spawn/template paths (`e8e67a4`) but untested; no persisted class, wire kind, card, or bank.
 - **Remote tiny agent**: no code. Intended tree-free capability principal, not a task/tier/NODE kind; needs its own tables, grants, supervisor and global bank.
 - **Non-classes**: ToolAgent tier has no producer; cards/kinds/profiles are projections/policy, not authority.
 
@@ -48,7 +48,7 @@ This file compiles the read-only seats and points to the detailed reports. Findi
 4. Upgrade/rollback/backup/restore + newer-schema boot refusal.
 5. One write-side agent-text trust boundary; seed/refresh sanitization is partial.
 6. Token-authenticated `/api/*` mutations and `/api/session`; scoped memory clear with confirmation.
-7. A2A answer/status/wake and atomic budget; continuation inbox refresh; terminal-recipient refusal.
+7. A2A answer/status/wake and atomic budget; continuation inbox refresh; terminal-recipient refusal is code-present in `8a19d0b` and needs regression tests.
 8. Memory bank tree/trust/retention/summaries; root summaries not raw rows; scoped clear.
 9. Role truth: persisted class/rank/profile, closed role enum, `agent` profile, Subagent depth floor, Template insert context.
 10. Run detail/failure ledger/roster/mailbox status; FigCraft board-to-surface map or narrowed claim.
