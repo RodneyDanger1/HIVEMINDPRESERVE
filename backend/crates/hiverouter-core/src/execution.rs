@@ -1613,6 +1613,24 @@ impl RunEngine {
                 .get(&parent_id)
                 .map_or(AgentTier::HyperAgent, task_agent_tier);
             validate_spawn_role(parent_tier, &node.role)?;
+            let parent_class = self
+                .store
+                .task_identity(parent_id)
+                .ok()
+                .flatten()
+                .map(|identity| identity.class)
+                .or_else(|| {
+                    tasks
+                        .get(&parent_id)
+                        .and_then(|task| role_class(&task.role).map(str::to_owned))
+                });
+            if let (Some(parent_class), Some(child_class)) =
+                (parent_class.as_deref(), role_class(&node.role))
+            {
+                if !class_may_spawn(parent_class, child_class) {
+                    return Err(Refusal::ToolNotAllowed);
+                }
+            }
             if is_subagent_role(&node.role) && node.depth < 2 {
                 return Err(Refusal::SpawnDepth);
             }

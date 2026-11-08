@@ -31,7 +31,7 @@ use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
 use crate::context::{ContextStore, ContextSwitchOutcome, ScopedContext};
 use crate::entities::TaskRecord;
-use crate::execution::{task_agent_tier, task_node_kind, validate_spawn_role};
+use crate::execution::{class_may_spawn, role_class, task_agent_tier, task_node_kind, validate_spawn_role};
 use crate::graph::{GraphAuthority, TaskNode};
 use crate::http::AppState;
 use crate::prompts::TemplateRegistry;
@@ -245,6 +245,12 @@ fn insert_template_dag(
         .ok_or(Refusal::TaskNotFound)?;
     let depth = root.depth.saturating_add(1);
     let parent_tier = task_agent_tier(&root);
+    let parent_class = store
+        .task_identity(root.id)
+        .ok()
+        .flatten()
+        .map(|identity| identity.class)
+        .or_else(|| role_class(&root.role).map(str::to_owned));
     for node in &dag.nodes {
         // A template id is a persona/profile name, not necessarily a spawn
         // class. Library templates are worker profiles; authority-looking ids
@@ -259,6 +265,13 @@ fn insert_template_dag(
         };
         if requested_class == "subagent" && depth < 2 {
             return Err(Refusal::SpawnDepth);
+        }
+        if let (Some(parent_class), Some(child_class)) =
+            (parent_class.as_deref(), role_class(requested_class))
+        {
+            if !class_may_spawn(parent_class, child_class) {
+                return Err(Refusal::ToolNotAllowed);
+            }
         }
         validate_spawn_role(parent_tier, requested_class)?;
     }
