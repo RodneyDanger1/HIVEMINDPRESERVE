@@ -40,7 +40,69 @@ export function nodeSize(kind: NodeKindLabel): { readonly width: number; readonl
   return NODE_SIZE[kind];
 }
 
+function radialHiveLayout(
+  tasks: Readonly<Record<string, TaskRecord>>,
+  rootId: string,
+): Record<string, Point2> {
+  const positions: Record<string, Point2> = {};
+  const childrenByParent: Record<string, string[]> = {};
+  for (const task of Object.values(tasks)) {
+    if (task.parentId === null) {
+      continue;
+    }
+    const bucket = childrenByParent[task.parentId] ?? [];
+    bucket.push(task.id);
+    childrenByParent[task.parentId] = bucket;
+  }
+  for (const bucket of Object.values(childrenByParent)) {
+    bucket.sort();
+  }
+
+  const place = (id: string, angle: number, sector: number, radius: number): void => {
+    if (positions[id] !== undefined) {
+      return;
+    }
+    const task = tasks[id];
+    if (task === undefined) {
+      return;
+    }
+    const size = NODE_SIZE[task.kind];
+    positions[id] = {
+      x: Math.cos(angle) * radius - size.width / 2,
+      y: Math.sin(angle) * radius - size.height / 2,
+    };
+    const children = childrenByParent[id] ?? [];
+    if (children.length === 0) {
+      return;
+    }
+    const slice = Math.max(0.52, Math.min(1.45, sector * 0.72));
+    children.forEach((childId, index) => {
+      const childAngle =
+        children.length === 1
+          ? angle
+          : angle - slice / 2 + (slice * (index + 0.5)) / children.length;
+      place(childId, childAngle, slice / children.length, radius + 170);
+    });
+  };
+
+  const direct = childrenByParent[rootId] ?? [];
+  const offset = direct.length === 2 ? 0 : -Math.PI / 2;
+  direct.forEach((id, index) => {
+    const angle = offset + (Math.PI * 2 * index) / Math.max(direct.length, 1);
+    place(id, angle, (Math.PI * 2) / Math.max(direct.length, 1), 620);
+  });
+  // The root is represented by the fixed ChatCore overlay at world origin.
+  positions[rootId] = { x: -NODE_SIZE.hyperagent.width / 2, y: -NODE_SIZE.hyperagent.height / 2 };
+  return positions;
+}
+
 export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record<string, Point2> {
+  const hiveRoot = Object.values(tasks).find(
+    (task) => task.kind === 'hyperagent' && task.parentId === null,
+  );
+  if (hiveRoot !== undefined) {
+    return radialHiveLayout(tasks, hiveRoot.id);
+  }
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 90, marginx: 40, marginy: 40 });
   graph.setDefaultEdgeLabel(() => ({}));

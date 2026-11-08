@@ -362,7 +362,7 @@ function CanvasInner() {
       // settled; otherwise the first card fits the viewport and the rest are
       // born outside it. A quiet 240ms window is well below human perception.
       timer = window.setTimeout(() => {
-        void fitView({ padding: chatVisible ? 0.42 : 0.18, duration: 0, minZoom: 0.2, maxZoom: 1 });
+        void fitView({ padding: chatVisible ? 0.42 : 0.18, duration: 0, minZoom: 0.5, maxZoom: 1 });
       }, 240);
     });
     return () => {
@@ -627,7 +627,7 @@ function CanvasInner() {
           setViewport(viewport);
         }}
         fitView={history.replayGraph !== null}
-        fitViewOptions={{ padding: 0.2, minZoom: 0.2, maxZoom: 1.4 }}
+        fitViewOptions={{ padding: 0.2, minZoom: 0.5, maxZoom: 1.4 }}
         className="h-full w-full bg-transparent"
       >
         <MiniMap
