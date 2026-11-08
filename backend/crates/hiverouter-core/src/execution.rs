@@ -2730,6 +2730,23 @@ impl RunEngine {
                 "ask_parent text must be non-empty and bounded".to_owned(),
             );
         }
+        match self.store.get_task(parent) {
+            Ok(target) if is_terminal_task_state(target.state) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::TaskTerminal.code(),
+                    "ask_parent refused: the parent task is already terminal".to_owned(),
+                );
+            }
+            Ok(_) => {}
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    refusal.message().to_owned(),
+                );
+            }
+        }
         match self.store.agent_message_count(run.id) {
             Ok(count) if count >= MAX_AGENT_MESSAGES_PER_RUN => {
                 return ToolExecution::refused(
@@ -2841,6 +2858,13 @@ impl RunEngine {
                 "send_to_sibling is limited to the same run and the same parent unless an \
                  operator approval grants this cross-branch message"
                     .to_owned(),
+            );
+        }
+        if is_terminal_task_state(target.state) {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::TaskTerminal.code(),
+                "send_to_sibling refused: the target task is already terminal".to_owned(),
             );
         }
         let text = args.text.trim();
