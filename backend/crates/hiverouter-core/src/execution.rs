@@ -1263,6 +1263,7 @@ impl RunEngine {
             if run.status.is_terminal() {
                 return Err(Refusal::RunTerminal);
             }
+            let child_class = role_class(role).ok_or(Refusal::PersonaUnknown)?;
             validate_spawn_role(task_agent_tier(&parent), role)?;
             let parent_class = self
                 .store
@@ -1271,9 +1272,7 @@ impl RunEngine {
                 .flatten()
                 .map(|identity| identity.class)
                 .or_else(|| role_class(&parent.role).map(str::to_owned));
-            if let (Some(parent_class), Some(child_class)) =
-                (parent_class.as_deref(), role_class(role))
-            {
+            if let Some(parent_class) = parent_class.as_deref() {
                 if !class_may_spawn(parent_class, child_class) {
                     return Err(Refusal::ToolNotAllowed);
                 }
@@ -1609,6 +1608,7 @@ impl RunEngine {
             let parent_tier = tasks
                 .get(&parent_id)
                 .map_or(AgentTier::HyperAgent, task_agent_tier);
+            let child_class = role_class(&node.role).ok_or(Refusal::PersonaUnknown)?;
             validate_spawn_role(parent_tier, &node.role)?;
             let parent_class = self
                 .store
@@ -1621,9 +1621,7 @@ impl RunEngine {
                         .get(&parent_id)
                         .and_then(|task| role_class(&task.role).map(str::to_owned))
                 });
-            if let (Some(parent_class), Some(child_class)) =
-                (parent_class.as_deref(), role_class(&node.role))
-            {
+            if let Some(parent_class) = parent_class.as_deref() {
                 if !class_may_spawn(parent_class, child_class) {
                     return Err(Refusal::ToolNotAllowed);
                 }

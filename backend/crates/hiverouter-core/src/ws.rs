@@ -266,9 +266,10 @@ fn insert_template_dag(
         if requested_class == "subagent" && depth < 2 {
             return Err(Refusal::SpawnDepth);
         }
-        if let (Some(parent_class), Some(child_class)) =
-            (parent_class.as_deref(), role_class(requested_class))
-        {
+        let child_class = role_class(&node.role)
+            .or_else(|| role_class(requested_class))
+            .ok_or(Refusal::PersonaUnknown)?;
+        if let Some(parent_class) = parent_class.as_deref() {
             if !class_may_spawn(parent_class, child_class) {
                 return Err(Refusal::ToolNotAllowed);
             }

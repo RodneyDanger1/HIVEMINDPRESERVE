@@ -11,6 +11,7 @@ use hiverouter_contract::event::EventName;
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Usage};
 use hiverouter_core::bus::{EventBus, SequencedEvent};
 use hiverouter_core::db::Database;
+use hiverouter_core::entities::TaskRecord;
 use hiverouter_core::execution::{
     DeltaSink, ProviderExecutor, RunEngine, StreamedReply, UnconfiguredExecutor,
 };
@@ -213,6 +214,29 @@ async fn wait_for(
 
 fn event_name(event: &SequencedEvent) -> &str {
     event.envelope.name.as_str()
+}
+
+#[tokio::test]
+async fn unknown_spawn_role_is_refused_by_name() {
+    let harness = test_engine(MockExecutor::new(leaf_plan(2, 1)));
+    let run = harness
+        .engine
+        .store
+        .create_run("p", "unknown role", AgentState::Running)
+        .expect("run");
+    let root = TaskRecord {
+        id: TaskId::new(),
+        run_id: run.id,
+        parent_task_id: None,
+        role: "planner".to_owned(),
+        depth: 0,
+        spawn_seq: 0,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    harness.store.insert_task(&root).expect("root");
+    let refused = harness.engine.spawn_sub_hive(root.id, "researcher");
+    assert_eq!(refused, Err(Refusal::PersonaUnknown));
 }
 
 #[tokio::test]

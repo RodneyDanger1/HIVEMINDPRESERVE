@@ -333,3 +333,8 @@ Not delivered and must not be claimed:
 - Boot recovery now expires open questions of interrupted runs; a late answer is refused with `E_TASK_TERMINAL`, so a crashed child cannot hang open forever.
 - Store tests cover pending listing, crash expiry, and late-answer refusal; HTTP test covers the pending route.
 - Still missing: reconnect replay, parent-model answer, continuation inbox refresh, answer-attempt cap, separate answer table.
+### P3 strict unknown-role admission
+
+- `spawn_sub_hive`, plan insertion, and TEMPLATE_INSERT now resolve `role_class` before tier fallback and refuse unknown roles with `E_PERSONA_UNKNOWN`; no unknown role becomes a 9-tool Worker.
+- New lifecycle test proves `researcher` is refused before any child row; existing aliases and class-matrix tests remain green.
+- Legacy/unresolved parent rows still fall back for reading class but cannot launder an unknown child.
