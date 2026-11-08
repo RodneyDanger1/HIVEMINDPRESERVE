@@ -1023,23 +1023,20 @@ impl RunEngine {
             context.persona_tool_scope = true;
             context.output_schema_id = persona.output_schema_id.clone();
         }
-        if let Some(parent_task_id) = parent_task_id {
-            if let Ok(memories) = self.store.agent_memory_for_scope_any_role(
-                task.run_id,
-                &parent_task_id.to_string(),
-                8,
-            ) {
-                for (key, value) in memories {
-                    context.facts.insert(format!("memory:{key}"), value);
-                }
-            }
-        }
-        if let Ok(memories) = self
-            .store
-            .agent_memory_for_scope_any_role(task.run_id, "run", 8)
-        {
-            for (key, value) in memories {
-                context.facts.insert(format!("memory:run:{key}"), value);
+        if let Ok(entries) = self.store.memory_read_set(
+            task.run_id,
+            task.id,
+            parent_task_id,
+            8,
+        ) {
+            let run_bank = format!("bank:run:{}", task.run_id);
+            for entry in entries {
+                let prefix = if entry.bank_id == run_bank {
+                    "memory:run:"
+                } else {
+                    "memory:"
+                };
+                context.facts.insert(format!("{prefix}{}", entry.key), entry.value);
             }
         }
         // A2A discovery: expose bounded peer ids/roles so send_to_sibling and
@@ -3226,21 +3223,21 @@ impl RunEngine {
             return Ok(None);
         };
         context.facts.retain(|key, _| !key.starts_with("memory:"));
-        let mut read = |scope: &str, prefix: &str| {
-            if let Ok(memories) = self
-                .store
-                .agent_memory_for_scope_any_role(task.run_id, scope, 8)
-            {
-                for (key, value) in memories {
-                    context
-                        .facts
-                        .insert(format!("{prefix}{key}"), value);
-                }
+        if let Ok(entries) =
+            self.store
+                .memory_read_set(task.run_id, task.id, task.parent_task_id, 16)
+        {
+            let run_bank = format!("bank:run:{}", task.run_id);
+            for entry in entries {
+                let prefix = if entry.bank_id == run_bank {
+                    "memory:run:"
+                } else {
+                    "memory:"
+                };
+                context
+                    .facts
+                    .insert(format!("{prefix}{}", entry.key), entry.value);
             }
-        };
-        read("run", "memory:run:");
-        if let Some(parent) = task.parent_task_id {
-            read(&parent.to_string(), "memory:");
         }
         self.contexts.set(task.id, context.clone())?;
         Ok(Some(context))

@@ -34,6 +34,17 @@ pub struct AgentMemoryRecord {
     pub created_at: String,
 }
 
+/// One entry returned to an agent's bank read-set.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemoryReadEntry {
+    /// Bank source.
+    pub bank_id: String,
+    /// Stable key.
+    pub key: String,
+    /// Stored value.
+    pub value: String,
+}
+
 /// One persisted memory entry row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemoryEntryRecord {
@@ -1185,6 +1196,57 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Reads the bounded bank set for one task: own branch, parent branch, and
+    /// the run bank. Sibling/foreign-run banks are not addressable.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_read_set(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        parent_task_id: Option<TaskId>,
+        limit: usize,
+    ) -> Result<Vec<MemoryReadEntry>, Refusal> {
+        let parent_bank = parent_task_id
+            .map(|parent| format!("bank:branch:{parent}"))
+            .unwrap_or_else(|| "bank:branch:none".to_owned());
+        let task_bank = format!("bank:branch:{task_id}");
+        let run_bank = format!("bank:run:{run_id}");
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT bank_id, entry_key, value FROM memory_entries
+                     WHERE status = 'active'
+                       AND (trust IN ('unverified','verified','authoritative')
+                            OR (trust IS NULL AND kind = 'note'))
+                       AND bank_id IN (?1, ?2, ?3)
+                     ORDER BY created_at DESC, id DESC LIMIT ?4",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        run_bank,
+                        parent_bank,
+                        task_bank,
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
+                    |row| {
+                        Ok(MemoryReadEntry {
+                            bank_id: row.get(0)?,
+                            key: row.get(1)?,
+                            value: row.get(2)?,
+                        })
+                    },
+                )?;
+                let mut entries = Vec::new();
+                for row in rows {
+                    entries.push(row?);
+                }
+                Ok(entries)
+            })
+            .map_err(map)
+    }
+
     /// Lists active entries in one bank, newest first and bounded.
     ///
     /// # Errors
@@ -1865,6 +1927,32 @@ mod tests {
         assert_eq!(identity.rank, 4);
         assert_eq!(identity.profile_id, "subagent");
         assert!(store.task_identity(unknown.id).expect("unknown").is_none());
+    }
+
+    #[test]
+    fn memory_read_set_excludes_sibling_branch() {
+        let store = store();
+        let run = store
+            .create_run("p", "read-set", AgentState::Running)
+            .expect("run");
+        let parent = TaskId::new();
+        let child = TaskId::new();
+        let sibling = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "parent", "visible", run.id, parent, &parent.to_string())
+            .expect("parent memory");
+        store
+            .record_agent_memory_scoped("worker", "sibling", "hidden", run.id, sibling, &sibling.to_string())
+            .expect("sibling memory");
+        store
+            .record_agent_memory_scoped("engine", "run", "run-visible", run.id, parent, "run")
+            .expect("run memory");
+        let entries = store
+            .memory_read_set(run.id, child, Some(parent), 16)
+            .expect("read set");
+        assert!(entries.iter().any(|entry| entry.key == "parent"));
+        assert!(entries.iter().any(|entry| entry.key == "run"));
+        assert!(!entries.iter().any(|entry| entry.key == "sibling"));
     }
 
     #[test]

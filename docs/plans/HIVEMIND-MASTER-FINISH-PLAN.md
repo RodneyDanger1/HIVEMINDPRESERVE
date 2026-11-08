@@ -309,3 +309,9 @@ Not delivered and must not be claimed:
 - UI: `MemoryBanksPanel` in Agents shows bank kind/rev/provenance and active entries with trust/source; no trust promotion or clear yet.
 - Test: route returns a real branch bank and its dual-written entry.
 - Not delivered: engine read-set/digest, journal, retention, scoped clear.
+### P4 bank read-set
+
+- `memory_read_set` returns only own branch, immediate-parent branch, and the run bank; active entries require unverified/verified/authoritative trust, while migration notes (`trust NULL`, `kind note`) remain readable.
+- `seed_task_context` and `refresh_memory_bank` now source `memory:` facts from the bank read-set instead of the flat sibling-addressable table.
+- New test proves a sibling branch canary is absent while parent and run entries are present.
+- Still missing: ancestor hive hops, root digest, quarantine promotion, retention, journal, scoped clear.
