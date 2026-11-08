@@ -315,3 +315,9 @@ Not delivered and must not be claimed:
 - `seed_task_context` and `refresh_memory_bank` now source `memory:` facts from the bank read-set instead of the flat sibling-addressable table.
 - New test proves a sibling branch canary is absent while parent and run entries are present.
 - Still missing: ancestor hive hops, root digest, quarantine promotion, retention, journal, scoped clear.
+### P4 root digest
+
+- The root prompt no longer appends raw flat memory rows; before the root turn the engine writes a bounded `run-digest` summary (`summary`, `engine_summary`, `unverified`) into the run bank, and the root bank read-set exposes it as `memory:run:run-digest`.
+- The digest is built from completed task results with omission markers; task results remain a separate untrusted data plane.
+- New test proves the digest lands in the run bank and is returned by the read-set.
+- Still missing: hive/ancestor summaries, trust promotion, scoped clear, journal/snapshots.

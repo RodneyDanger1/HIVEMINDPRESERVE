@@ -1196,6 +1196,46 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Writes the engine-owned run digest as a summary entry in the run bank.
+    /// The digest is data, not a model-authored fact.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn write_run_digest(&self, run_id: RunId, digest: &str) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let bank_id = format!("bank:run:{run_id}");
+                connection.execute(
+                    "INSERT OR IGNORE INTO memory_banks
+                     (id, kind, scope_id, run_id, parent_bank_id, display_name,
+                      rev, created_at, closed_at)
+                     VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
+                    params![bank_id, run_id.to_string(), format!("Run {run_id}"), Timestamp::now().as_str()],
+                )?;
+                connection.execute(
+                    "DELETE FROM memory_entries
+                     WHERE bank_id = ?1 AND entry_key = 'run-digest' AND status = 'active'",
+                    params![bank_id],
+                )?;
+                connection.execute(
+                    "INSERT INTO memory_entries
+                     (id, bank_id, entry_key, kind, value, source_kind, source_run_id,
+                      trust, status, created_at, updated_at)
+                     VALUES (?1, ?2, 'run-digest', 'summary', ?3, 'engine_summary',
+                             ?4, 'unverified', 'active', ?5, ?5)",
+                    params![
+                        format!("entry:{}", Uuid::now_v7()),
+                        bank_id,
+                        digest,
+                        run_id.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)
+    }
+
     /// Reads the bounded bank set for one task: own branch, parent branch, and
     /// the run bank. Sibling/foreign-run banks are not addressable.
     ///
@@ -1927,6 +1967,26 @@ mod tests {
         assert_eq!(identity.rank, 4);
         assert_eq!(identity.profile_id, "subagent");
         assert!(store.task_identity(unknown.id).expect("unknown").is_none());
+    }
+
+    #[test]
+    fn run_digest_is_an_engine_summary_in_the_run_bank() {
+        let store = store();
+        let run = store
+            .create_run("p", "digest", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .write_run_digest(run.id, "Run digest: 1 task.")
+            .expect("digest");
+        let entries = store
+            .memory_read_set(run.id, task, None, 16)
+            .expect("read set");
+        let digest = entries
+            .iter()
+            .find(|entry| entry.key == "run-digest")
+            .expect("digest");
+        assert_eq!(digest.value, "Run digest: 1 task.");
     }
 
     #[test]
