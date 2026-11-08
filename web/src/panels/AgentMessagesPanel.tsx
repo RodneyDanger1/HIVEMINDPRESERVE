@@ -23,6 +23,9 @@ export function AgentMessagesPanel() {
   const messageVersion = useUiStore((state) => state.agentMessageVersion);
   const [status, setStatus] = useState<Status>('idle');
   const [messages, setMessages] = useState<readonly AgentMessageEntry[]>([]);
+  const [kindFilter, setKindFilter] = useState('all');
+  const visibleMessages =
+    kindFilter === 'all' ? messages : messages.filter((message) => message.kind === kindFilter);
 
   useEffect(() => {
     if (runId === null) {
@@ -86,6 +89,20 @@ export function AgentMessagesPanel() {
   return (
     <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[14px] p-3">
       <h3 className="type-label text-ink-900">Agent messages</h3>
+      {status === 'ok' && messages.length > 0 ? (
+        <label className="mt-2 block">
+          <span className="type-mono-meta block text-meta">Kind</span>
+          <select
+            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+            value={kindFilter}
+            onChange={(event) => setKindFilter(event.target.value)}
+          >
+            <option value="all">All messages</option>
+            <option value="ask_parent">ask_parent</option>
+            <option value="send_to_sibling">send_to_sibling</option>
+          </select>
+        </label>
+      ) : null}
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading persisted mailbox…</p>
       ) : null}
@@ -95,8 +112,11 @@ export function AgentMessagesPanel() {
       {status === 'ok' && messages.length === 0 ? (
         <EmptyState message="No agent-to-agent messages in this run." />
       ) : null}
+      {status === 'ok' && messages.length > 0 && visibleMessages.length === 0 ? (
+        <EmptyState message="No messages of this kind in this run." />
+      ) : null}
       <ul className="mt-2 space-y-1">
-        {messages.map((message) => (
+        {visibleMessages.map((message) => (
           <li key={message.id} className="surface-panel rounded-[var(--radius-sm)] p-2">
             <div className="type-mono-meta text-meta">
               {message.kind} · {message.from_task_id.slice(0, 8)} → {message.to_task_id.slice(0, 8)}
