@@ -303,3 +303,9 @@ Not delivered and must not be claimed:
 - v14 adds `memory_banks` and `memory_entries`, backs up/backfills the flat `agent_memory` rows into global/run/role/branch banks as `note` rows with `trust NULL` and `source_kind=migration`.
 - `record_agent_memory_scoped` now dual-writes a branch/run bank entry (`observation`, `unverified`) alongside the legacy flat row; `memory_banks_for_run` reads banks.
 - Not delivered: journal/context snapshots, trust promotion, read-set isolation, root digest, scoped clear, engine reads from banks.
+### P4 bank inspector (read-only)
+
+- HTTP: `GET /api/memory/banks?run_id=...` and `GET /api/memory/banks/{bank_id}/entries?limit=...`; both `Cache-Control: no-store`.
+- UI: `MemoryBanksPanel` in Agents shows bank kind/rev/provenance and active entries with trust/source; no trust promotion or clear yet.
+- Test: route returns a real branch bank and its dual-written entry.
+- Not delivered: engine read-set/digest, journal, retention, scoped clear.

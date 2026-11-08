@@ -120,6 +120,61 @@ async fn http_json(
 }
 
 #[tokio::test]
+async fn memory_bank_routes_return_real_banks_and_entries() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "banks", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let task = hiverouter_contract::TaskId::new();
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped(
+            "worker",
+            "note",
+            "banked value",
+            run.id,
+            task,
+            &task.to_string(),
+        )
+        .expect("memory");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/memory/banks?run_id={}", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "banks: {body}");
+    let value: Value = serde_json::from_str(&body).expect("banks JSON");
+    let banks = value["banks"].as_array().expect("banks");
+    assert!(banks.iter().any(|bank| bank["kind"] == "branch"));
+    let branch = banks
+        .iter()
+        .find(|bank| bank["kind"] == "branch")
+        .and_then(|bank| bank["id"].as_str())
+        .expect("branch id");
+    let (status, body) = http_get(
+        server.addr,
+        &format!(
+            "/api/memory/banks/{}/entries?limit=10",
+            urlencoding(branch)
+        ),
+    )
+    .await;
+    assert_eq!(status, 200, "entries: {body}");
+    let value: Value = serde_json::from_str(&body).expect("entries JSON");
+    assert_eq!(value["entries"][0]["value"], "banked value");
+}
+
+fn urlencoding(value: &str) -> String {
+    value.replace(':', "%3A")
+}
+
+#[tokio::test]
 async fn a2a_answer_route_is_authenticated_and_cas_guarded() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

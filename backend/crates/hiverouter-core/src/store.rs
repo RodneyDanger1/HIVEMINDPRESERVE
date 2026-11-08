@@ -34,6 +34,29 @@ pub struct AgentMemoryRecord {
     pub created_at: String,
 }
 
+/// One persisted memory entry row.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemoryEntryRecord {
+    /// Entry id.
+    pub id: String,
+    /// Bank owner.
+    pub bank_id: String,
+    /// Stable key.
+    pub key: String,
+    /// observation/summary/fact/decision/constraint/preference/artifact_ref/note.
+    pub kind: String,
+    /// Stored text.
+    pub value: String,
+    /// Provenance class.
+    pub source_kind: String,
+    /// Trust label, absent for migration notes.
+    pub trust: Option<String>,
+    /// active/superseded/retracted.
+    pub status: String,
+    /// Creation time.
+    pub created_at: String,
+}
+
 /// One persisted memory bank row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemoryBankRecord {
@@ -1158,6 +1181,49 @@ impl RunStore {
                     memories.push(row?);
                 }
                 Ok(memories)
+            })
+            .map_err(map)
+    }
+
+    /// Lists active entries in one bank, newest first and bounded.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_entries_for_bank(
+        &self,
+        bank_id: &str,
+        limit: usize,
+    ) -> Result<Vec<MemoryEntryRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, bank_id, entry_key, kind, value, source_kind,
+                            trust, status, created_at
+                     FROM memory_entries
+                     WHERE bank_id = ?1 AND status = 'active'
+                     ORDER BY created_at DESC, id DESC LIMIT ?2",
+                )?;
+                let rows = statement.query_map(
+                    params![bank_id, i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| {
+                        Ok(MemoryEntryRecord {
+                            id: row.get(0)?,
+                            bank_id: row.get(1)?,
+                            key: row.get(2)?,
+                            kind: row.get(3)?,
+                            value: row.get(4)?,
+                            source_kind: row.get(5)?,
+                            trust: row.get(6)?,
+                            status: row.get(7)?,
+                            created_at: row.get(8)?,
+                        })
+                    },
+                )?;
+                let mut entries = Vec::new();
+                for row in rows {
+                    entries.push(row?);
+                }
+                Ok(entries)
             })
             .map_err(map)
     }

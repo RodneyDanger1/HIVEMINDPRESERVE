@@ -542,6 +542,11 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         )
         .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
         .route("/api/agents/runs/{run_id}/memory", get(agent_memory_for_run))
+        .route("/api/memory/banks", get(memory_banks))
+        .route(
+            "/api/memory/banks/{bank_id}/entries",
+            get(memory_bank_entries),
+        )
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
         .route("/api/workspace", get(workspace))
@@ -1273,6 +1278,78 @@ async fn active_run(State(state): State<Arc<AppState>>) -> Response {
             Json(serde_json::json!({
                 "active_run_id": live,
                 "latest_active_run": null,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `GET /api/memory/banks?run_id=` — durable bank list for one run.
+async fn memory_banks(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Some(raw) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    match state.engine.store.memory_banks_for_run(run_id) {
+        Ok(banks) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "banks": banks.into_iter().map(|bank| serde_json::json!({
+                    "id": bank.id,
+                    "kind": bank.kind,
+                    "scope_id": bank.scope_id,
+                    "run_id": bank.run_id,
+                    "owner_task_id": bank.owner_task_id,
+                    "parent_bank_id": bank.parent_bank_id,
+                    "display_name": bank.display_name,
+                    "rev": bank.rev,
+                    "created_at": bank.created_at,
+                    "closed_at": bank.closed_at,
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `GET /api/memory/banks/{bank_id}/entries?limit=` — active bank entries.
+async fn memory_bank_entries(
+    State(state): State<Arc<AppState>>,
+    Path(bank_id): Path<String>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let limit = query
+        .get("limit")
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(50)
+        .clamp(1, 200);
+    match state.engine.store.memory_entries_for_bank(&bank_id, limit) {
+        Ok(entries) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "bank_id": bank_id,
+                "entries": entries.into_iter().map(|entry| serde_json::json!({
+                    "id": entry.id,
+                    "bank_id": entry.bank_id,
+                    "key": entry.key,
+                    "kind": entry.kind,
+                    "value": entry.value,
+                    "source_kind": entry.source_kind,
+                    "trust": entry.trust,
+                    "status": entry.status,
+                    "created_at": entry.created_at,
+                })).collect::<Vec<_>>(),
             })),
         )
             .into_response(),

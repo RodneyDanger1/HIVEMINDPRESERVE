@@ -16,6 +16,7 @@ import { ToolActivityPanel, type ToolActivityEntry } from './ToolActivityPanel';
 import { AgentMessagesPanel } from './AgentMessagesPanel';
 import { AgentProfilesPanel } from './AgentProfilesPanel';
 import { AgentMemoryPanel } from './AgentMemoryPanel';
+import { MemoryBanksPanel } from './MemoryBanksPanel';
 import { AgentHierarchy } from './AgentHierarchy';
 
 export function AgentsPanel() {
@@ -72,6 +73,7 @@ export function AgentsPanel() {
       </div>
       <AgentProfilesPanel />
       <AgentMemoryPanel />
+      <MemoryBanksPanel />
       <AgentMessagesPanel />
     </div>
   );
