@@ -2283,6 +2283,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             tasks: projection?.tasks ?? {},
             messages: transcript,
             selectedTaskId: null,
+            streamingRunId: null,
+            metrics: null,
+            toolActivity: [],
+            approvals: [],
             history: {
               ...get().history,
               latest: list.latest ?? -1,

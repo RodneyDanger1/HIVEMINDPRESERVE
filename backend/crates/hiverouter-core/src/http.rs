@@ -852,6 +852,15 @@ async fn agent_messages(
         },
         None => None,
     };
+    if let Some(task_id) = task_id {
+        match state.engine.store.get_task(task_id) {
+            Ok(task) if task.run_id == run_id => {}
+            Ok(_) => {
+                return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::TaskNotFound);
+            }
+            Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+        }
+    }
     let result = match task_id {
         Some(task_id) => state.engine.store.agent_messages_for_task(run_id, task_id, 1_000),
         None => state.engine.store.agent_messages_for_run(run_id),

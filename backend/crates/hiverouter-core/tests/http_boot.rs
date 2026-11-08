@@ -331,6 +331,16 @@ async fn run_scoped_memory_route_exposes_branch_rows() {
         .collect::<Vec<_>>();
     assert!(scopes.contains(&"hive-a"));
     assert!(scopes.contains(&"hive-b"));
+
+    let (status, _) = http_get(
+        server.addr,
+        &format!(
+            "/api/agents/runs/{}/messages?task_id=00000000-0000-0000-0000-000000000001",
+            run.id
+        ),
+    )
+    .await;
+    assert_eq!(status, 404, "unknown recipient task must not look like an empty inbox");
 }
 
 #[tokio::test]
