@@ -503,7 +503,7 @@ async fn boot_persona_allowlist_is_seeded_on_worker_contexts() {
 }
 
 #[tokio::test]
-async fn durable_role_memory_is_recalled_into_worker_context() {
+async fn durable_role_memory_is_not_recalled_across_runs() {
     let harness = test_engine(MockExecutor::new(tree_plan()));
     harness
         .store
@@ -539,7 +539,12 @@ async fn durable_role_memory_is_recalled_into_worker_context() {
         .expect("context");
     assert_eq!(
         context.facts.get("memory:task:old"),
-        Some(&"remembered fact".to_owned())
+        None,
+        "a foreign run's memory must never be injected into this hive"
+    );
+    assert!(
+        context.facts.keys().any(|key| key.starts_with("roster:")),
+        "a running task must receive the bounded peer roster"
     );
 }
 

@@ -225,7 +225,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
-    assert_eq!(health["database"]["schema_version"], 10);
+    assert_eq!(health["database"]["schema_version"], 11);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -543,5 +543,41 @@ async fn history_messages_route_returns_persisted_transcript() {
     )
     .await;
     assert_eq!(missing_status, 404);
+}
+
+#[tokio::test]
+async fn history_messages_keeps_the_newest_window() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "long", hiverouter_contract::AgentState::Queued)
+        .expect("run");
+    for index in 0..=1_000 {
+        server
+            .state
+            .engine
+            .store
+            .append_message(
+                run.id,
+                hiverouter_core::entities::ChatRole::User,
+                &format!("message-{index}"),
+            )
+            .expect("message");
+    }
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/history/runs/{}/messages", run.id),
+    )
+    .await;
+    assert_eq!(status, 200);
+    let value: Value = serde_json::from_str(&body).expect("messages body is JSON");
+    assert_eq!(value["truncated"], true);
+    let messages = value["messages"].as_array().expect("messages array");
+    assert_eq!(messages.len(), 1_000);
+    assert_eq!(messages[0]["text"], "message-1", "oldest message was dropped");
+    assert_eq!(messages[999]["text"], "message-1000", "newest message survived");
 }
 

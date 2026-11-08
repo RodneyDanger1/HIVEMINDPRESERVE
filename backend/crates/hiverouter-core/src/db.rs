@@ -246,6 +246,32 @@ Migration {
         DROP TABLE IF EXISTS projects;
     "#,
 },
+Migration {
+    version: 11,
+    name: "agent_memory_scoped",
+    up: r#"
+        CREATE TABLE agent_memory_scoped (
+            run_id      TEXT NOT NULL,
+            scope_id    TEXT NOT NULL,
+            agent_key   TEXT NOT NULL,
+            key         TEXT NOT NULL,
+            value       TEXT NOT NULL,
+            task_id     TEXT NOT NULL,
+            created_at  TEXT NOT NULL,
+            PRIMARY KEY (run_id, scope_id, agent_key, key)
+        );
+        INSERT OR REPLACE INTO agent_memory_scoped(run_id, scope_id, agent_key, key, value, task_id, created_at)
+        SELECT run_id, 'legacy', agent_key, key, value, task_id, created_at FROM agent_memory;
+        DROP TABLE agent_memory;
+        ALTER TABLE agent_memory_scoped RENAME TO agent_memory;
+        CREATE INDEX IF NOT EXISTS idx_agent_memory_agent ON agent_memory(agent_key);
+        CREATE INDEX IF NOT EXISTS idx_agent_memory_run ON agent_memory(run_id);
+        CREATE INDEX IF NOT EXISTS idx_agent_memory_scope ON agent_memory(run_id, scope_id, agent_key);
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS agent_memory;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -772,10 +798,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 10);
-        assert_eq!(database.migrate().expect("second migrate"), 10);
+        assert_eq!(database.migrate().expect("first migrate"), 11);
+        assert_eq!(database.migrate().expect("second migrate"), 11);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 10);
+        assert_eq!(applied.len(), 11);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -796,6 +822,8 @@ mod tests {
         assert_eq!(applied[8].1, "agent_profiles");
         assert_eq!(applied[9].0, 10);
         assert_eq!(applied[9].1, "projects");
+        assert_eq!(applied[10].0, 11);
+        assert_eq!(applied[10].1, "agent_memory_scoped");
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -810,7 +838,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 10);
+        assert_eq!(database.migrate().expect("re-migrate"), 11);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -826,7 +854,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 10);
+        assert_eq!(reopened.schema_version().expect("version"), 11);
         assert_eq!(reopened.path(), path);
     }
 
@@ -956,7 +984,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 10);
+        assert_eq!(database.migrate().expect("migrate"), 11);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -991,7 +1019,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 10);
+        assert_eq!(database.migrate().expect("re-migrate"), 11);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),

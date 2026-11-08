@@ -650,21 +650,38 @@ impl RunStore {
         run_id: RunId,
         task_id: TaskId,
     ) -> Result<(), Refusal> {
+        self.record_agent_memory_scoped(agent_key, key, value, run_id, task_id, "run")
+    }
+
+    /// Writes one memory entry inside a run **and branch scope**. `scope_id` is
+    /// the owning hive/branch key (the parent task id, or `root`).
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_agent_memory_scoped(
+        &self,
+        agent_key: &str,
+        key: &str,
+        value: &str,
+        run_id: RunId,
+        task_id: TaskId,
+        scope_id: &str,
+    ) -> Result<(), Refusal> {
         self.db
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO agent_memory(agent_key, key, value, run_id, task_id, created_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                     ON CONFLICT(agent_key, key) DO UPDATE SET
+                    "INSERT INTO agent_memory(run_id, scope_id, agent_key, key, value, task_id, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                     ON CONFLICT(run_id, scope_id, agent_key, key) DO UPDATE SET
                         value = excluded.value,
-                        run_id = excluded.run_id,
                         task_id = excluded.task_id,
                         created_at = excluded.created_at",
                     params![
+                        run_id.to_string(),
+                        scope_id,
                         agent_key,
                         key,
                         value,
-                        run_id.to_string(),
                         task_id.to_string(),
                         Timestamp::now().as_str()
                     ],
@@ -673,6 +690,78 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(())
+    }
+
+    /// Returns the latest durable memories for a role **inside one run**,
+    /// newest first. This is the recall path used by a running task: facts from
+    /// another run or another hive must not be injected.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory_for_run(
+        &self,
+        run_id: RunId,
+        agent_key: &str,
+        limit: usize,
+    ) -> Result<Vec<(String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT key, value FROM agent_memory WHERE run_id = ?1 AND agent_key = ?2
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?3",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        run_id.to_string(),
+                        agent_key,
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                let mut memories = Vec::new();
+                for row in rows {
+                    memories.push(row?);
+                }
+                Ok(memories)
+            })
+            .map_err(map)
+    }
+
+    /// Returns the latest durable memories for a role inside one run and one
+    /// hive/branch scope, newest first.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory_for_scope(
+        &self,
+        run_id: RunId,
+        scope_id: &str,
+        agent_key: &str,
+        limit: usize,
+    ) -> Result<Vec<(String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT key, value FROM agent_memory
+                     WHERE run_id = ?1 AND scope_id = ?2 AND agent_key = ?3
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?4",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        run_id.to_string(),
+                        scope_id,
+                        agent_key,
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                let mut memories = Vec::new();
+                for row in rows {
+                    memories.push(row?);
+                }
+                Ok(memories)
+            })
+            .map_err(map)
     }
 
     /// Returns the latest durable memories for a role, newest first.
@@ -1143,6 +1232,61 @@ mod tests {
         let memories = store.agent_memory("worker", 8).expect("recall");
         assert_eq!(memories, vec![("task:1".to_owned(), "updated".to_owned())]);
         assert!(store.agent_memory("other", 8).expect("other").is_empty());
+    }
+
+    #[test]
+    fn agent_memory_is_run_scoped() {
+        let store = store();
+        let first = store
+            .create_run("p", "first", AgentState::Running)
+            .expect("first run");
+        let second = store
+            .create_run("p", "second", AgentState::Running)
+            .expect("second run");
+        store
+            .record_agent_memory("worker", "task:1", "from-first", first.id, TaskId::new())
+            .expect("first memory");
+        store
+            .record_agent_memory("worker", "task:1", "from-second", second.id, TaskId::new())
+            .expect("second memory");
+        assert_eq!(
+            store
+                .agent_memory_for_run(first.id, "worker", 8)
+                .expect("first recall"),
+            vec![("task:1".to_owned(), "from-first".to_owned())]
+        );
+        assert_eq!(
+            store
+                .agent_memory_for_run(second.id, "worker", 8)
+                .expect("second recall"),
+            vec![("task:1".to_owned(), "from-second".to_owned())]
+        );
+    }
+
+    #[test]
+    fn agent_memory_is_branch_scoped() {
+        let store = store();
+        let run = store
+            .create_run("p", "branch", AgentState::Running)
+            .expect("run");
+        store
+            .record_agent_memory_scoped("worker", "task:1", "hive-a", run.id, TaskId::new(), "hive-a")
+            .expect("hive a");
+        store
+            .record_agent_memory_scoped("worker", "task:1", "hive-b", run.id, TaskId::new(), "hive-b")
+            .expect("hive b");
+        assert_eq!(
+            store
+                .agent_memory_for_scope(run.id, "hive-a", "worker", 8)
+                .expect("hive a recall"),
+            vec![("task:1".to_owned(), "hive-a".to_owned())]
+        );
+        assert_eq!(
+            store
+                .agent_memory_for_scope(run.id, "hive-b", "worker", 8)
+                .expect("hive b recall"),
+            vec![("task:1".to_owned(), "hive-b".to_owned())]
+        );
     }
 
     #[test]

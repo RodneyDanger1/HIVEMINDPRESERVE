@@ -877,9 +877,29 @@ impl RunEngine {
             context.allowed_tool_ids = persona.allowed_tool_ids.clone();
             context.output_schema_id = persona.output_schema_id.clone();
         }
-        if let Ok(memories) = self.store.agent_memory(&task.role, 8) {
+        if let Ok(memories) = self.store.agent_memory_for_scope(
+            task.run_id,
+            &parent_task_id.map_or_else(|| "root".to_owned(), |id| id.to_string()),
+            &task.role,
+            8,
+        ) {
             for (key, value) in memories {
                 context.facts.insert(format!("memory:{key}"), value);
+            }
+        }
+        // A2A discovery: expose bounded peer ids/roles so send_to_sibling and
+        // ask_parent can use a real TaskId instead of inventing one. The roster
+        // is data, never an instruction.
+        if let Ok(roster) = self.store.tasks_for_run(task.run_id) {
+            for peer in roster.iter().filter(|peer| peer.id != task.id).take(16) {
+                context
+                    .facts
+                    .insert(format!("roster:{}:role", peer.id), peer.role.clone());
+                context.facts.insert(
+                    format!("roster:{}:parent", peer.id),
+                    peer.parent_task_id
+                        .map_or_else(|| "root".to_owned(), |id| id.to_string()),
+                );
             }
         }
         self.contexts.set(task.id, context)
@@ -3026,12 +3046,15 @@ impl RunEngine {
         self.add_run_usage(run.id, reply.usage);
         if !text.trim().is_empty() && memory_text_is_safe(&text) {
             let bounded: String = text.chars().take(2_000).collect();
-            self.store.record_agent_memory(
+            self.store.record_agent_memory_scoped(
                 &task.role,
                 &format!("task:{}", task.id),
                 &bounded,
                 run.id,
                 task.id,
+                &task
+                    .parent_task_id
+                    .map_or_else(|| "root".to_owned(), |id| id.to_string()),
             )?;
         }
         let _ = self.graph.set_state(task.id, AgentState::Completed);

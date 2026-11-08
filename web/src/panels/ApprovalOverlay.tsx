@@ -12,7 +12,7 @@
  * a pending lock pruned only when the approval disappears (i.e. on APPROVAL_RESOLVED).
  * Missing fields render the honest unknown placeholder, never invented values.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { approvalActionsEnabled } from '../state/approval';
@@ -172,6 +172,8 @@ export function ApprovalOverlay() {
   const retryApproval = useUiStore((state) => state.retryApproval);
   const dismissApproval = useUiStore((state) => state.dismissApproval);
   const [now, setNow] = useState<number>(() => Date.now());
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const previousFocusRef = useRef<Element | null>(null);
 
   const hasExpiry = approvals.some((approval) => Boolean(asApprovalView(approval).expiresAt));
   useEffect(() => {
@@ -183,6 +185,21 @@ export function ApprovalOverlay() {
     }, 1_000);
     return () => clearInterval(timer);
   }, [hasExpiry]);
+
+  const activeApprovalId = approvals[0]?.approvalId ?? null;
+  useEffect(() => {
+    if (activeApprovalId === null || typeof document === 'undefined') {
+      return undefined;
+    }
+    previousFocusRef.current = document.activeElement;
+    const first = dialogRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])');
+    first?.focus();
+    return () => {
+      if (previousFocusRef.current instanceof HTMLElement) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [activeApprovalId]);
 
   if (approvals.length === 0) {
     return null;
@@ -218,7 +235,7 @@ export function ApprovalOverlay() {
           {STRINGS.approval.staleBanner}
         </div>
       ) : null}
-      {approvals.map((record) => {
+      {approvals.slice(0, 1).map((record) => {
         const view = asApprovalView(record);
         const resolveState = approveResolveStates[view.approvalId];
         const actions = approvalActionsEnabled({
@@ -243,13 +260,48 @@ export function ApprovalOverlay() {
         return (
           <div key={view.approvalId} className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/20 p-4">
             <section
+              ref={dialogRef}
               role="dialog"
               aria-modal="true"
               aria-label={approvalAriaLabel(view.tool)}
               className="surface-panel w-[min(560px,94%)] rounded-[var(--radius-card)] p-4"
               style={{ boxShadow: 'var(--shadow-e3)' }}
+              tabIndex={-1}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && actions.dismiss) {
+                  event.preventDefault();
+                  dismissApproval(view.approvalId);
+                  return;
+                }
+                if (event.key !== 'Tab') {
+                  return;
+                }
+                const focusable = Array.from(
+                  event.currentTarget.querySelectorAll<HTMLElement>(
+                    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                  ),
+                );
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (first === undefined || last === undefined) {
+                  event.preventDefault();
+                  return;
+                }
+                if (event.shiftKey && document.activeElement === first) {
+                  event.preventDefault();
+                  last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  event.preventDefault();
+                  first.focus();
+                }
+              }}
             >
               <h2 className="type-heading-h3 text-ink-900">{STRINGS.approval.title}</h2>
+              {approvals.length > 1 ? (
+                <p className="type-mono-meta mt-1 text-meta">
+                  {approvals.length - 1} more approval{approvals.length - 1 === 1 ? '' : 's'} pending
+                </p>
+              ) : null}
               <dl className="mt-2 grid grid-cols-[120px_1fr] gap-y-1">
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.toolLabel}</dt>
                 <dd className="type-mono-code text-ink-900">{view.tool}</dd>

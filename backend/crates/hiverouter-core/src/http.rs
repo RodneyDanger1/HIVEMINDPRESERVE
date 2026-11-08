@@ -782,8 +782,13 @@ async fn history_messages(
     const MAX_MESSAGES: usize = 1_000;
     match state.engine.store.messages(run_id) {
         Ok(messages) => {
-            let truncated = messages.len() > MAX_MESSAGES;
-            let visible = messages.into_iter().take(MAX_MESSAGES);
+            let total = messages.len();
+            let truncated = total > MAX_MESSAGES;
+            // Keep the newest window. Dropping the oldest is the only behavior
+            // that preserves the current conversation and its just-streamed tail.
+            let visible = messages
+                .into_iter()
+                .skip(total.saturating_sub(MAX_MESSAGES));
             let rows: Vec<serde_json::Value> = visible
                 .map(|message| {
                     serde_json::json!({
