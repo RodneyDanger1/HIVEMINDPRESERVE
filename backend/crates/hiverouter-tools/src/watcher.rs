@@ -189,11 +189,15 @@ mod tests {
         // Warm-up: establish that the OS watcher is delivering events.
         fs::write(temp.path().join("warmup.txt"), b"warm").expect("warmup");
         let _ = wait_for_first_event(&watcher);
+        // Drain any residual warm-up/registration event so the burst starts from
+        // an empty debounce window (Windows can deliver more than one raw event).
+        while watcher.recv_timeout(Duration::from_millis(250)).is_some() {}
 
-        // Burst: five writes inside 50 ms.
+        // Burst: five writes well inside one 150 ms window. No inter-write
+        // sleeps: Windows can otherwise deliver a late raw event after the
+        // window and split one burst into two batches.
         for index in 0..5 {
             fs::write(temp.path().join(format!("burst-{index}.txt")), b"x").expect("write");
-            std::thread::sleep(Duration::from_millis(10));
         }
 
         let mut batches = 0;
