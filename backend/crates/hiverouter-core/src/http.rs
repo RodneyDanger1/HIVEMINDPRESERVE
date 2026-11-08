@@ -1035,6 +1035,7 @@ async fn pending_approvals(
     match result {
         Ok(events) => (
             StatusCode::OK,
+            [(header::CACHE_CONTROL, "no-store")],
             Json(serde_json::json!({
                 "run_id": run_id.map(|id| id.to_string()),
                 "count": events.len(),
@@ -1141,6 +1142,7 @@ async fn agent_memory_for_run(
                 .collect();
             (
                 StatusCode::OK,
+                [(header::CACHE_CONTROL, "no-store")],
                 Json(serde_json::json!({
                     "run_id": run_id.to_string(),
                     "count": rows.len(),

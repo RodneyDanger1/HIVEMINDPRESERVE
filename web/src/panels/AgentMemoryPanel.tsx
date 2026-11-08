@@ -126,6 +126,7 @@ export function AgentMemoryPanel() {
       return;
     }
     setScopeStatus('loading');
+    setScoped([]);
     fetch(`${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/memory`, {
       headers: { Accept: 'application/json' },
     })
@@ -160,6 +161,7 @@ export function AgentMemoryPanel() {
           throw new Error(`clear HTTP ${response.status}`);
         }
         refresh();
+        refreshScoped();
       })
       .catch(() => setStatus('error'));
   };
@@ -220,18 +222,20 @@ export function AgentMemoryPanel() {
           </p>
         ) : null}
         <ul className="mt-2 space-y-2">
-          {[...scopedByBranch.entries()].map(([scopeId, rows]) => (
-            <li key={scopeId} className="surface-panel rounded-[var(--radius-sm)] p-2">
-              <div className="type-mono-meta text-ink-700">scope {scopeId}</div>
-              <ul className="mt-1 space-y-1">
-                {rows.map((row, index) => (
-                  <li key={`${row.agentKey}:${row.key}:${index}`} className="type-mono-meta text-meta">
-                    {row.agentKey} · {row.key}: {row.value}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
+          {scopeStatus === 'ok'
+            ? [...scopedByBranch.entries()].map(([scopeId, rows]) => (
+                <li key={scopeId} className="surface-panel rounded-[var(--radius-sm)] p-2">
+                  <div className="type-mono-meta text-ink-700">scope {scopeId}</div>
+                  <ul className="mt-1 space-y-1">
+                    {rows.map((row, index) => (
+                      <li key={`${row.agentKey}:${row.key}:${index}`} className="type-mono-meta text-meta">
+                        {row.agentKey} · {row.key}: {row.value}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))
+            : null}
         </ul>
       </div>
     </section>
