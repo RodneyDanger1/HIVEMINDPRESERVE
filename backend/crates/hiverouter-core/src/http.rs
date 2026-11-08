@@ -547,6 +547,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/memory/banks/{bank_id}/entries",
             get(memory_bank_entries),
         )
+        .route("/api/memory/clear", post(clear_run_memory))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
         .route("/api/workspace", get(workspace))
@@ -1278,6 +1279,52 @@ async fn active_run(State(state): State<Arc<AppState>>) -> Response {
             Json(serde_json::json!({
                 "active_run_id": live,
                 "latest_active_run": null,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `POST /api/memory/clear` — run-scoped memory clear with a receipt.
+async fn clear_run_memory(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(run_raw) = body.get("run_id").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = run_raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let confirmed = body
+        .get("confirm")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+    let reason = body
+        .get("reason")
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .unwrap_or_default();
+    if !confirmed || reason.is_empty() || reason.chars().count() > 500 {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let run = match state.engine.store.get_run(run_id) {
+        Ok(run) => run,
+        Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+    };
+    if !run.status.is_terminal() {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::RunActive);
+    }
+    match state.engine.store.clear_run_memory(run_id) {
+        Ok(receipt) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "flat_rows": receipt.flat_rows,
+                "bank_entries": receipt.bank_entries,
+                "banks_closed": receipt.banks_closed,
+                "reason": reason,
             })),
         )
             .into_response(),

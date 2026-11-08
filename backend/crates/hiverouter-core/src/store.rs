@@ -34,6 +34,17 @@ pub struct AgentMemoryRecord {
     pub created_at: String,
 }
 
+/// Receipt for one run-scoped memory clear.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemoryClearReceipt {
+    /// Legacy flat rows removed.
+    pub flat_rows: u64,
+    /// Bank entries removed.
+    pub bank_entries: u64,
+    /// Banks closed.
+    pub banks_closed: u64,
+}
+
 /// One entry returned to an agent's bank read-set.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemoryReadEntry {
@@ -1232,6 +1243,40 @@ impl RunStore {
                     ],
                 )?;
                 Ok(())
+            })
+            .map_err(map)
+    }
+
+    /// Clears one terminal run's legacy rows and bank entries, closing its banks.
+    /// The caller must enforce terminal state; this method does not delete a
+    /// role-global or another run's memory.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn clear_run_memory(&self, run_id: RunId) -> Result<MemoryClearReceipt, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let transaction = connection.transaction()?;
+                let flat_rows = transaction.execute(
+                    "DELETE FROM agent_memory WHERE run_id = ?1",
+                    params![run_id.to_string()],
+                )?;
+                let bank_entries = transaction.execute(
+                    "DELETE FROM memory_entries
+                     WHERE bank_id IN (SELECT id FROM memory_banks WHERE run_id = ?1)",
+                    params![run_id.to_string()],
+                )?;
+                let banks_closed = transaction.execute(
+                    "UPDATE memory_banks SET closed_at = ?2, rev = rev + 1
+                     WHERE run_id = ?1 AND closed_at IS NULL",
+                    params![run_id.to_string(), Timestamp::now().as_str()],
+                )?;
+                transaction.commit()?;
+                Ok(MemoryClearReceipt {
+                    flat_rows: u64::try_from(flat_rows).unwrap_or(0),
+                    bank_entries: u64::try_from(bank_entries).unwrap_or(0),
+                    banks_closed: u64::try_from(banks_closed).unwrap_or(0),
+                })
             })
             .map_err(map)
     }

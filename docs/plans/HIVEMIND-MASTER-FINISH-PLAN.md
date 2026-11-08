@@ -321,3 +321,9 @@ Not delivered and must not be claimed:
 - The digest is built from completed task results with omission markers; task results remain a separate untrusted data plane.
 - New test proves the digest lands in the run bank and is returned by the read-set.
 - Still missing: hive/ancestor summaries, trust promotion, scoped clear, journal/snapshots.
+### P4 scoped memory clear
+
+- `POST /api/memory/clear` (token-gated) deletes exactly one terminal run\'s legacy flat rows and bank entries, closes its banks with a receipt, and refuses active runs with `E_RUN_ACTIVE`; no role-global or cross-run deletion.
+- UI bank inspector adds a `Clear run memory` confirmation flow for terminal runs.
+- New HTTP test proves receipts and active-run refusal; store transaction closes banks and removes entries.
+- Still missing: preview/CAS rev checks, journal receipts, role/global policies.

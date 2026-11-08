@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { useUiStore } from '../state/context';
+import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
 interface BankRow {
@@ -31,12 +31,15 @@ interface EntryRow {
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function MemoryBanksPanel() {
+  const storeApi = useUiStoreApi();
   const runId = useUiStore((state) => state.run?.id ?? null);
+  const runStatus = useUiStore((state) => state.run?.status ?? null);
   const [status, setStatus] = useState<Status>('idle');
   const [banks, setBanks] = useState<readonly BankRow[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [entries, setEntries] = useState<readonly EntryRow[]>([]);
   const [entryStatus, setEntryStatus] = useState<Status>('idle');
+  const [clearReceipt, setClearReceipt] = useState<string | null>(null);
 
   useEffect(() => {
     if (runId === null) {
@@ -154,9 +157,63 @@ export function MemoryBanksPanel() {
     };
   }, [selected]);
 
+  const clear = async (): Promise<void> => {
+    if (!runId || !runStatus || !['completed', 'failed', 'cancelled', 'killed', 'interrupted'].includes(runStatus)) {
+      setClearReceipt('Only a terminal run can be cleared.');
+      return;
+    }
+    if (!window.confirm('Clear this run’s memory banks and legacy rows? This cannot be undone.')) {
+      return;
+    }
+    const token = storeApi.getState().session?.token;
+    if (!token) {
+      setClearReceipt('Session token unavailable; nothing cleared.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBaseUrl()}/api/memory/clear`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'x-hivemind-token': token,
+        },
+        body: JSON.stringify({ run_id: runId, confirm: true, reason: 'operator clear from bank inspector' }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        throw new Error(body.code ?? `clear HTTP ${response.status}`);
+      }
+      const receipt = (await response.json()) as {
+        flat_rows?: number;
+        bank_entries?: number;
+        banks_closed?: number;
+      };
+      setClearReceipt(
+        `Cleared ${receipt.flat_rows ?? 0} flat rows, ${receipt.bank_entries ?? 0} bank entries, ${receipt.banks_closed ?? 0} banks.`,
+      );
+      setBanks([]);
+      setEntries([]);
+      setSelected(null);
+    } catch (error: unknown) {
+      setClearReceipt(error instanceof Error ? error.message : 'clear refused');
+    }
+  };
+
   return (
     <section aria-label="Memory banks" className="surface-panel mt-3 rounded-[14px] p-3">
-      <h3 className="type-label text-ink-900">Memory banks</h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="type-label text-ink-900">Memory banks</h3>
+        <button
+          type="button"
+          className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta text-signal"
+          disabled={runId === null}
+          onClick={() => void clear()}
+        >
+          Clear run memory
+        </button>
+      </div>
+      {clearReceipt ? <p className="type-mono-meta mt-1 text-meta">{clearReceipt}</p> : null}
       {runId === null ? <EmptyState message="No active run to inspect." /> : null}
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading memory banks…</p>

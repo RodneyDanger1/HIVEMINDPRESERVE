@@ -120,6 +120,73 @@ async fn http_json(
 }
 
 #[tokio::test]
+async fn memory_clear_is_run_scoped_and_requires_a_terminal_run() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "clear", hiverouter_contract::AgentState::Completed)
+        .expect("run");
+    let task = hiverouter_contract::TaskId::new();
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped("worker", "one", "value", run.id, task, &task.to_string())
+        .expect("memory");
+    let body = serde_json::json!({
+        "run_id": run.id.to_string(),
+        "confirm": true,
+        "reason": "test clear"
+    })
+    .to_string();
+    let (status, response) = http_json(
+        server.addr,
+        "POST",
+        "/api/memory/clear",
+        Some(&body),
+        Some(server.state.session.token()),
+    )
+    .await;
+    assert_eq!(status, 200, "clear: {response}");
+    assert!(response.contains("\"bank_entries\":1"), "{response}");
+    assert!(
+        server
+            .state
+            .engine
+            .store
+            .memory_entries_for_bank(&format!("bank:branch:{task}"), 10)
+            .expect("entries")
+            .is_empty()
+    );
+
+    let active = server
+        .state
+        .engine
+        .store
+        .create_run("p", "active", hiverouter_contract::AgentState::Running)
+        .expect("active run");
+    let body = serde_json::json!({
+        "run_id": active.id.to_string(),
+        "confirm": true,
+        "reason": "must refuse"
+    })
+    .to_string();
+    let (status, response) = http_json(
+        server.addr,
+        "POST",
+        "/api/memory/clear",
+        Some(&body),
+        Some(server.state.session.token()),
+    )
+    .await;
+    assert_eq!(status, 409, "active clear: {response}");
+    assert!(response.contains("E_RUN_ACTIVE"), "{response}");
+}
+
+#[tokio::test]
 async fn memory_bank_routes_return_real_banks_and_entries() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
