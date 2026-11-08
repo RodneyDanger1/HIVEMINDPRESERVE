@@ -533,6 +533,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
+        .route("/api/approvals", get(pending_approvals))
+        .route("/api/templates", get(templates))
+        .route("/api/workspace", get(workspace))
+        .route("/api/runs/active", get(active_run))
         .route("/api/agents/profiles", get(agent_profiles))
         .route("/api/agents/profiles/import", post(import_agent_profile))
         .route("/api/agents/profiles/{profile_id}", delete(delete_agent_profile))
@@ -999,6 +1003,106 @@ async fn agent_roster(
             )
                 .into_response()
         }
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// Read-only pending approvals. This is a query projection, never a resolve:
+/// nonces are not consumed and no execution is triggered.
+async fn pending_approvals(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let run_id = match query.get("run_id") {
+        Some(raw) => match raw.parse::<hiverouter_contract::RunId>() {
+            Ok(run_id) => Some(run_id),
+            Err(_) => {
+                return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+            }
+        },
+        None => None,
+    };
+    let result = match run_id {
+        Some(run_id) => state.tools.pending_approval_events(run_id),
+        None => state.tools.pending_approval_events_all(20),
+    };
+    match result {
+        Ok(events) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": run_id.map(|id| id.to_string()),
+                "count": events.len(),
+                "approvals": events,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// Read-only template catalog (ids, names, declared inputs, licence/source).
+async fn templates(State(state): State<Arc<AppState>>) -> Response {
+    let templates: Vec<serde_json::Value> = state
+        .engine
+        .templates
+        .template_ids()
+        .into_iter()
+        .filter_map(|id| state.engine.templates.get(&id).map(|template| (id, template)))
+        .map(|(id, template)| {
+            serde_json::json!({
+                "template_id": id,
+                "name": template.name,
+                "inputs": template.inputs,
+                "spdx": template.manifest.spdx,
+                "source_url": template.manifest.source_url,
+                "fetched_at": template.manifest.fetched_at,
+            })
+        })
+        .collect();
+    (StatusCode::OK, Json(serde_json::json!({ "templates": templates }))).into_response()
+}
+
+/// Read-only workspace identity for agents/operators. The path itself is not a
+/// secret; no file contents are exposed here.
+async fn workspace(State(state): State<Arc<AppState>>) -> Response {
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "data_dir": state.config.data_dir.display().to_string(),
+            "workspace_root": state.config.workspace_root.display().to_string(),
+            "db_path": state.config.db_file().display().to_string(),
+        })),
+    )
+        .into_response()
+}
+
+/// Read-only active-run projection: the live engine slot plus the latest
+/// non-terminal persisted run, with no fabricated run when both are empty.
+async fn active_run(State(state): State<Arc<AppState>>) -> Response {
+    let live = state.engine.active_run().map(|id| id.to_string());
+    match state.engine.store.latest_active_run() {
+        Ok(Some(run)) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "active_run_id": live,
+                "latest_active_run": {
+                    "run_id": run.id.to_string(),
+                    "project_id": run.project_id,
+                    "status": run.status.as_str(),
+                    "error_code": run.error_code,
+                    "created_at": run.created_at.as_str(),
+                },
+            })),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "active_run_id": live,
+                "latest_active_run": null,
+            })),
+        )
+            .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }

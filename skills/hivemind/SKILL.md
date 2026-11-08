@@ -42,6 +42,11 @@ tools\hivemind.cmd state --run <run-id> --json
 tools\hivemind.cmd messages --run <run-id> --json
 tools\hivemind.cmd agent-messages --run <run-id> --json
 tools\hivemind.cmd roster --run <run-id> --json
+tools\hivemind.cmd approvals --json
+tools\hivemind.cmd approvals --run <run-id> --json
+tools\hivemind.cmd templates --json
+tools\hivemind.cmd workspace --json
+tools\hivemind.cmd active-run --json
 tools\hivemind.cmd profiles --json
 tools\hivemind.cmd memory --json
 tools\hivemind.cmd projects --json

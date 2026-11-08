@@ -46,7 +46,7 @@ accepted. No environment variable is required for normal operation.
 This aligns with the shipped `hiverouter-cli` classes (0/2/3/4); semantic detail
 comes from `error.code`, not from extra process codes.
 
-## Full command list (45 commands)
+## Full command list (49 commands)
 
 ### Lifecycle and local
 
@@ -75,6 +75,10 @@ comes from `error.code`, not from extra process codes.
 | `messages` | HTTP | `GET /api/history/runs/{run}/messages`; newest window |
 | `agent-messages` | HTTP | `GET /api/agents/runs/{run}/messages` |
 | `roster` | HTTP | `GET /api/agents/runs/{run}/roster` |
+| `approvals` | HTTP | `GET /api/approvals`; optional `--run` |
+| `templates` | HTTP | `GET /api/templates` |
+| `workspace` | HTTP | `GET /api/workspace` |
+| `active-run` | HTTP | `GET /api/runs/active` |
 | `profiles` | HTTP | `GET /api/agents/profiles` |
 | `session` | HTTP | `GET /api/session`; token redacted in output |
 | `memory` | HTTP | `GET /api/agents/memory` |
@@ -131,6 +135,10 @@ Non-follow mode returns `{events, truncated, timed_out}`.
 | `GET /api/history/runs/{run}/messages` | `messages` |
 | `GET /api/agents/runs/{run}/messages` | `agent-messages` |
 | `GET /api/agents/runs/{run}/roster` | `roster` |
+| `GET /api/approvals` | `approvals` |
+| `GET /api/templates` | `templates` |
+| `GET /api/workspace` | `workspace` |
+| `GET /api/runs/active` | `active-run` |
 | `GET /api/agents/profiles` | `profiles` |
 | `POST /api/agents/profiles/import` | `profile-import` |
 | `DELETE /api/agents/profiles/{id}` | `profile-delete --yes` |

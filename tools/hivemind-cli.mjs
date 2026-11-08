@@ -180,6 +180,30 @@ const COMMANDS = {
     transport: 'http',
     args: [ARG('run', 'uuid', true, 'Run id.')],
   },
+  approvals: {
+    summary: 'Read pending approvals (optionally for one run); never consumes a nonce.',
+    safety: 'read',
+    transport: 'http',
+    args: [ARG('run', 'uuid', false, 'Optional run id.')],
+  },
+  templates: {
+    summary: 'Read the template catalog (ids, names, inputs, licence/source).',
+    safety: 'read',
+    transport: 'http',
+    args: [],
+  },
+  workspace: {
+    summary: 'Read the effective data dir, workspace root and database path.',
+    safety: 'read',
+    transport: 'http',
+    args: [],
+  },
+  'active-run': {
+    summary: 'Read the live engine slot and latest non-terminal persisted run.',
+    safety: 'read',
+    transport: 'http',
+    args: [],
+  },
   profiles: {
     summary: 'List agent profiles (built-in and imported).',
     safety: 'read',
@@ -1459,6 +1483,16 @@ async function executeRead(command, options, baseUrl) {
       return httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/messages`);
     case 'roster':
       return httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/roster`);
+    case 'approvals': {
+      const run = options.run ? assertUuid(options.run, '--run') : null;
+      return httpJson(baseUrl, run ? `/api/approvals?run_id=${encodeURIComponent(run)}` : '/api/approvals');
+    }
+    case 'templates':
+      return httpJson(baseUrl, '/api/templates');
+    case 'workspace':
+      return httpJson(baseUrl, '/api/workspace');
+    case 'active-run':
+      return httpJson(baseUrl, '/api/runs/active');
     case 'profiles':
       return httpJson(baseUrl, '/api/agents/profiles');
     case 'session': {

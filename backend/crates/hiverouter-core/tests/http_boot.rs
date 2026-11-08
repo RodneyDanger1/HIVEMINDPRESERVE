@@ -243,6 +243,34 @@ async fn health_endpoint_reports_boot_checks_and_database() {
 }
 
 #[tokio::test]
+async fn agent_read_surfaces_are_mounted_and_truthful() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+
+    let (status, body) = http_get(server.addr, "/api/approvals").await;
+    assert_eq!(status, 200, "approvals route: {body}");
+    let approvals: Value = serde_json::from_str(&body).expect("approvals JSON");
+    assert_eq!(approvals["count"], 0);
+    assert!(approvals["approvals"].as_array().expect("approvals array").is_empty());
+
+    let (status, body) = http_get(server.addr, "/api/templates").await;
+    assert_eq!(status, 200, "templates route: {body}");
+    let templates: Value = serde_json::from_str(&body).expect("templates JSON");
+    assert!(templates["templates"].is_array());
+
+    let (status, body) = http_get(server.addr, "/api/workspace").await;
+    assert_eq!(status, 200, "workspace route: {body}");
+    let workspace: Value = serde_json::from_str(&body).expect("workspace JSON");
+    assert!(workspace["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
+
+    let (status, body) = http_get(server.addr, "/api/runs/active").await;
+    assert_eq!(status, 200, "active-run route: {body}");
+    let active: Value = serde_json::from_str(&body).expect("active-run JSON");
+    assert!(active["active_run_id"].is_null());
+    assert!(active["latest_active_run"].is_null());
+}
+
+#[tokio::test]
 async fn static_ui_serves_index_assets_and_spa_fallback() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
