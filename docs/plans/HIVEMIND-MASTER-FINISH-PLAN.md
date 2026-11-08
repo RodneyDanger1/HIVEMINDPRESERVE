@@ -293,3 +293,8 @@ Not delivered and must not be claimed:
 - `NODE_KIND_VOCABULARY` now includes `subagent` (server + web mirror already had it). `task_node_kind` derives `subagent` from the role for graph, roster, history, NODE_STATE/NODE_SPAWN, and recovery.
 - Authority remains the existing four tiers; Subagent is still Worker authority. `TaskRecord` does not yet carry class/profile fields.
 - New test proves a `sub-agent` task emits `subagent`, while a `worker` still emits `worker`.
+### P3 class authority on spawn
+
+- `role_class` and `class_may_spawn` now enforce the persisted class matrix in `spawn_sub_hive`: a Subagent parent cannot spawn a Subagent, Agent can spawn only Subagent, Super can spawn Agent/Subagent, Hyper can spawn Super/Agent/Subagent.
+- The check reads `tasks.class` first and falls back to the role only for pre-v13/unresolved rows; unknown roles are not laundered into Agent.
+- New unit test covers the matrix and unknown-role rejection. Template/plan paths still use tier validation until they are migrated.

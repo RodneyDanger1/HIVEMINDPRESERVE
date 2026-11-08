@@ -142,6 +142,37 @@ pub(crate) fn is_subagent_role(role: &str) -> bool {
         == "subagent"
 }
 
+/// Canonical class for a known role string. Unknown roles return `None`; they
+/// are never silently treated as a maximally capable Agent.
+#[must_use]
+pub(crate) fn role_class(role: &str) -> Option<&'static str> {
+    let normalized = role.trim().to_ascii_lowercase();
+    if is_subagent_role(&normalized) {
+        return Some("subagent");
+    }
+    match normalized.as_str() {
+        "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator"
+        | "hyper-agent" => Some("hyper"),
+        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" | "super-agent" => {
+            Some("super")
+        }
+        "worker" | "workeragent" | "worker_agent" | "worker-agent" | "agent"
+        | "content-writer" | "data-analyst" | "code-reviewer" | "chatbot" => Some("agent"),
+        _ => None,
+    }
+}
+
+/// Class-to-class spawn matrix (the authority check once identity is known).
+#[must_use]
+pub(crate) fn class_may_spawn(parent: &str, child: &str) -> bool {
+    match parent {
+        "hyper" => matches!(child, "super" | "agent" | "subagent"),
+        "super" => matches!(child, "agent" | "subagent"),
+        "agent" => child == "subagent",
+        _ => false,
+    }
+}
+
 /// Contract node kind for one task: Subagents are visible as `subagent` while
 /// their authority tier remains `WorkerAgent`.
 #[must_use]
@@ -1236,6 +1267,20 @@ impl RunEngine {
                 return Err(Refusal::RunTerminal);
             }
             validate_spawn_role(task_agent_tier(&parent), role)?;
+            let parent_class = self
+                .store
+                .task_identity(parent.id)
+                .ok()
+                .flatten()
+                .map(|identity| identity.class)
+                .or_else(|| role_class(&parent.role).map(str::to_owned));
+            if let (Some(parent_class), Some(child_class)) =
+                (parent_class.as_deref(), role_class(role))
+            {
+                if !class_may_spawn(parent_class, child_class) {
+                    return Err(Refusal::ToolNotAllowed);
+                }
+            }
             let siblings = self
                 .store
                 .tasks_for_run(parent.run_id)?
@@ -3627,5 +3672,16 @@ mod prompt_context_tests {
             ..task
         };
         assert_eq!(task_node_kind(&worker), "worker");
+    }
+
+    #[test]
+    fn persisted_class_matrix_prevents_subagent_escalation() {
+        assert_eq!(role_class("sub-agent"), Some("subagent"));
+        assert_eq!(role_class("content-writer"), Some("agent"));
+        assert_eq!(role_class("researcher"), None);
+        assert!(class_may_spawn("agent", "subagent"));
+        assert!(!class_may_spawn("subagent", "subagent"));
+        assert!(!class_may_spawn("agent", "super"));
+        assert!(class_may_spawn("super", "agent"));
     }
 }
