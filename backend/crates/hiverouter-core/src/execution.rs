@@ -865,7 +865,14 @@ impl RunEngine {
         let mut context = ScopedContext::new(parent_task_id);
         if let Some(parent_task_id) = parent_task_id {
             if let Some(parent) = self.contexts.get(parent_task_id)? {
-                context.facts = parent.facts;
+                // Facts are inherited for branch memory, but an A2A inbox is
+                // recipient-specific and a peer roster is task-specific: neither
+                // may leak into a child's prompt.
+                context.facts = parent
+                    .facts
+                    .into_iter()
+                    .filter(|(key, _)| !key.starts_with("a2a:") && !key.starts_with("roster:"))
+                    .collect();
             }
         }
         if let Some(persona) = self

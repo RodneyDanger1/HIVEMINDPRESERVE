@@ -63,6 +63,7 @@ function decodeScopedMemory(body: unknown): readonly ScopedMemoryRow[] {
 
 export function AgentMemoryPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
+  const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const [status, setStatus] = useState<Status>('loading');
   const [profiles, setProfiles] = useState<readonly MemoryProfile[]>([]);
   const [scopeStatus, setScopeStatus] = useState<Status>('idle');
@@ -120,7 +121,7 @@ export function AgentMemoryPanel() {
   }, [refresh]);
 
   const refreshScoped = useCallback(() => {
-    if (runId === null) {
+    if (runId === null || replaying) {
       setScoped([]);
       setScopeStatus('idle');
       return;
@@ -141,7 +142,7 @@ export function AgentMemoryPanel() {
         setScoped([]);
         setScopeStatus('error');
       });
-  }, [runId]);
+  }, [runId, replaying]);
 
   useEffect(() => {
     refreshScoped();
@@ -205,7 +206,12 @@ export function AgentMemoryPanel() {
       </ul>
       <div className="mt-3 border-t border-hairline pt-2">
         <h4 className="type-label text-ink-900">Run memory · branch scoped</h4>
-        {runId === null ? (
+        {replaying ? (
+          <p className="type-mono-meta mt-1 text-meta">
+            Replay view; live run memory hidden.
+          </p>
+        ) : null}
+        {runId === null && !replaying ? (
           <p className="type-mono-meta mt-1 text-meta">No active run; no branch memory shown.</p>
         ) : null}
         {scopeStatus === 'loading' ? (
@@ -216,13 +222,13 @@ export function AgentMemoryPanel() {
             Run memory unavailable; no rows invented.
           </p>
         ) : null}
-        {scopeStatus === 'ok' && scoped.length === 0 ? (
+        {scopeStatus === 'ok' && !replaying && scoped.length === 0 ? (
           <p className="type-mono-meta mt-1 text-meta">
             No branch-scoped memory for this run.
           </p>
         ) : null}
         <ul className="mt-2 space-y-2">
-          {scopeStatus === 'ok'
+          {scopeStatus === 'ok' && !replaying
             ? [...scopedByBranch.entries()].map(([scopeId, rows]) => (
                 <li key={scopeId} className="surface-panel rounded-[var(--radius-sm)] p-2">
                   <div className="type-mono-meta text-ink-700">scope {scopeId}</div>
