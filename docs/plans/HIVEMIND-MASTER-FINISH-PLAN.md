@@ -254,7 +254,7 @@ Each migration needs: newer-schema refusal, pre-migration backup + integrity che
 - DB: newer-schema boot refusal (`E_DB_SCHEMA_NEWER`) and verified pre-migration `VACUUM INTO` backup are implemented with tests; backup/restore CLI and full v10→v11 drill remain.
 - Admission: a keyless submit is refused in `RunEngine::submit_prompt` before any run/user-message/RUN_CREATED row; `ProviderExecutor::key_available` is `Some(false)` only for the unconfigured executor.
 - HTTP: every non-GET `/api/*` route requires `Authorization: Bearer <session token>` or `x-hivemind-token`; UI profile import/delete and memory clear attach it. Reads and `/api/session` hardening remain.
-- Evidence at `43f2c4f`: cargo workspace 519 passed / 2 ignored, 42 suites; web typecheck 0; web 189/189; build 0; receipt `docs/evidence/gate-43f2c4f9-offline.json`. P0 receipt at `8a19d0b5` remains historical.
+- Evidence at `f53087a`: cargo workspace 521 passed / 2 ignored, 42 suites; web typecheck 0; web 189/189; build 0; receipt `docs/evidence/gate-f53087ae-offline.json`. P0 receipt at `8a19d0b5` remains historical.
 ### P1 correctness additions
 
 - A2A message budget is now one atomic `INSERT ... SELECT ... WHERE count < 32`; the tool returns `E_CALL_LIMIT` with a message-budget detail and never inserts a 33rd row. Store test: `agent_message_budget_is_atomic_and_named`.
