@@ -18,7 +18,7 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 | Surface | State | Scope | Score |
 |---|---|---|---|
 | `hiverouter-cli` (`backend/crates/hiverouter-tools/src/cli.rs`, artifact `hiverouter-cli.exe`) | shipped in 1.0/1.1 release lineage; 9 commands; no mutating command by design (`cli.rs:16–18`) | read-only diagnostics (`version`, `preflight`, `schema`, `tools.*`, `capabilities.census`, `provider.cost`, `health`, `diagnose`) | **19/28** — partially agent-native for the narrow surface |
-| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd\|ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **15/28** — broad; latest snapshot aligns the envelope basics; contract gaps remain |
+| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd` / `tools/hivemind.ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **15/28** — broad; latest snapshot aligns the envelope basics; contract gaps remain |
 | **target production CLI** | this document | one contract, one owner, full control plane | **28/28** |
 
 ---
@@ -28,7 +28,7 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 **Current verdict: partially agent-native.** The repo does not lack a CLI. It lacks **one production CLI contract**. The shipped Rust CLI is a credible agent-native *diagnostic* surface, and the in-flight Node CLI is a credible *field prototype*, but neither is a production HiveMind control plane:
 
 - The Rust CLI cannot start/stop the server, cannot submit/cancel/approve, cannot stream events, has no typed argument schema, no lifecycle identity, and no idempotency beyond one server-side receipt.
-- The Node prototype covers most operations and its latest snapshot now emits a top-level `schema`, human data output on stderr, and the shipped `0/2/3/4` exit classes. It still writes human help to stdout, collapses transport/timeout/safety into 2/3, has no lock/instance identity, no idempotency, no resync, no tests, and is not in the release.
+- The Node prototype covers most operations and its latest snapshot now emits a top-level `schema`, human data output on stderr, and the shipped `0/2/3/4` exit classes. It still writes human help to stdout, collapses transport/timeout/safety into 2/3, has no lock and only URL/DB identity (no PID-creation/boot identity), no idempotency, no resync, no tests, and is not in the release.
 - The server side is missing the read routes and instance identity a lifecycle CLI needs: `/api/approvals`, `/api/templates`, `/api/workspace`, `/api/runs/active`; `/health` has no `pid`/`boot_id`/`data_dir`; `/api/*` is not token-authenticated; only `SUBMIT_PROMPT` is receipt-idempotent; no route shuts down the server.
 - The two surfaces now **partly share** the `0/2/3/4` classes, but the Node aliases collapse distinct failures (`NOT_RUNNING`/`AUTH`/`TIMEOUT` → 3, `UNSAFE` → 2), and there is still no single owner. The production table in §6 adds semantic 5/6/7/8/9/130; agents keyed on the old Node `1/3/4/5/6` snapshot still break.
 
@@ -140,7 +140,7 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 | Principle | Status | Evidence | Issue | Recommendation |
 |---|---|---|---|---|
 | P0 One CLI, three audiences | partial | Rust is human/agent/system for reads; Node is broad but help is stdout | two surfaces, one owner unresolved | one `hivemind` binary; Node prototype not shipped; one table |
-| P1 Structured output is the interface | partial | Rust `hiverouter.cli.v1` with `schema`; latest Node snapshot added `schema` | two envelope shapes; human help still on stdout; no `page`/`next` | keep `schema`, `ok`, `command`, `data\|error`, `meta`; add `page`/`next`; never prose on stdout |
+| P1 Structured output is the interface | partial | Rust `hiverouter.cli.v1` with `schema`; latest Node snapshot added `schema` | two envelope shapes; human help still on stdout; no `page`/`next` | keep `schema`, `ok`, `command`, `data` / `error`, `meta`; add `page`/`next`; never prose on stdout |
 | P2 Trust is directional | partial | loopback URL guard, no key args; Node `--exe`/`--browser` | agent can choose arbitrary executable/browser | operator-only `--exe`; require `--yes`/hash; `--browser` human-only |
 | P3 CLI describes itself | partial | `commands`/`schema`; Rust top/resource help | no action-level typed help; Node flat prose help | progressive `help` → resource → action → `schema`; top help < 500 tokens |
 | P4 Safety through graduated visibility | partial | tiers/`--yes`; Node exposes UI-only commands and `restart` bypass | destructive actions not consistently gated | tier table + dispatch enforcement; `restart`/`stop` confirm; UI-only hidden |
@@ -883,6 +883,19 @@ ArgSpec {
 
 If an MCP host requires it later, add `hivemind mcp serve --read-only` as a thin adapter over the same `CommandSpec`: 8–10 read tools (`health`, `runs.list`, `runs.show`, `runs.state`, `agents.roster`, `workspace.tree`, `workspace.read`, `settings.show`), no secrets, no mutations, no separate backend. Do not expose 30 tools or a second schema. This is P2, not a release blocker.
 
+### 9.6 Agent-experience acceptance (Fixer 3 duties)
+
+Applied as the TestDrive Fixer 3 definition — flow, discoverability, error context, UX — because no standalone `/agent-experience` skill is installed:
+
+- **First run succeeds without a README:** `hivemind doctor` or `hivemind start` gives a usable next step; `commands` and `schema` are discoverable from `--help`.
+- **No dead ends:** every error carries `code` + `how_to_fix` + `next`; a missing key points to the server environment/restart, not to a generic failure.
+- **No surprise side effects:** no browser, no prompt, no data deletion, no state write on `--dry-run`; `--yes` is explicit.
+- **No blind waits:** every long operation has a timeout and progress/liveness; `watch` reports events/sequence/resync; `start` aborts on child exit.
+- **No context tax:** top help is small; `commands` is compact; `schema` is on demand; list defaults are compact with `--full`/`--fields`.
+- **Copy-pasteable recovery:** `next` suggestions use the exact IDs from the response and the same shell shape; no placeholder angles.
+- **Human/agent parity:** the same authority paths, the same refusal codes, and the same state vocabulary as the UI; no second backend.
+- **Windows-first:** PowerShell/cmd examples, `--text-file`/stdin, no `pause`, no browser, `--no-color`.
+
 ---
 
 ## 10. Windows, headless, and app-open parity
@@ -920,7 +933,7 @@ The CLI's agent-native claim is falsifiable. These tests are cheap and belong in
 
 | Gate | What it proves | Harness |
 |---|---|---|
-| Envelope shape | every command success/failure/partial is one valid JSON object with `schema`, `ok`, `command`, `data\|error`, `meta`; no prose on stdout | `assert_cmd` + JSON Schema snapshot; iterate `commands` |
+| Envelope shape | every command success/failure/partial is one valid JSON object with `schema`, `ok`, `command`, `data` / `error`, `meta`; no prose on stdout | `assert_cmd` + JSON Schema snapshot; iterate `commands` |
 | Stdout/stderr split | stdout parses as one JSON doc in `json`/`jsonl`; stderr never contains the envelope; human mode stdout empty | capture both streams; `serde_json::from_str`; assert stderr no `"schema"` |
 | TTY behavior | non-TTY defaults to JSON; TTY defaults to human-on-stderr; `--format` overrides; no pager; no prompt | `portable-pty`/ConPTY on Windows; fallback explicit `--format` tests; `PAGER=false` |
 | Exit matrix | each class 0/2/3/4/5/6/7/8/9/130 | synthesize each failure (bad flag, keyless submit, unreachable, stale lock, timeout, omitted `--yes`, partial, schema mismatch, SIGINT) |
@@ -1023,7 +1036,7 @@ From the lifecycle snapshot (`lifecycle-map §11`) and this review; line numbers
 - **UTF-16 prompt length** — `text.length` differs from server `chars().count()` for non-BMP characters.
 - **Unknown flags ignored** — parse accepts any `--name` into options; boundary validation must reject unknown flags per command.
 - **Executable search still includes `backend/target` fallbacks** — `target/release` is first now, but a missing target can fall through to a stale `backend/target/debug` build (lifecycle-map D2); prefer the installed binary and record its hash.
-- **No instance identity** — "already running" = 200 + same URL + PID alive; a foreign HiveMind can be adopted (D3).
+- **No PID/boot identity** — the latest snapshot compares URL + `database.path` (good), but still has no PID creation time or `boot_id`; a reused PID or a same-path clone can be mis-adopted (D3).
 - **Node runtime dependency** — the prototype requires Node >= 22.12; the release/runbook says Node is only for web build, not server runtime. Decide before shipping.
 
 ### 12.4 What the design does **not** change
@@ -1031,6 +1044,29 @@ From the lifecycle snapshot (`lifecycle-map §11`) and this review; line numbers
 - The frozen wire contract (`hiverouter.v1`), 17 command names (including 3 decision-gated `DIFF_*`), 24 events, 16 agent states, and 64 refusal codes stay as published. This design consumes them; it does not add a command or refusal without a `CHANGE-LEDGER` row and the contract-matrix re-run.
 - The server remains the sole authority; the CLI does not read the DB directly, does not write run state, and does not duplicate the engine.
 - The embedded UI is unchanged; `open` is a convenience, not a second client.
+
+### 12.5 Extra-surface checklist (the "likely missed" list)
+
+| Item | Decision | Where |
+|---|---|---|
+| MCP wrapper | Deferred; optional read-only adapter P2. CLI is primary for local single-user. | §9.5 |
+| JSONL/event stream | `watch --format jsonl`, final summary, seq/resync, SIGINT flush. | §5.8, §8.5 |
+| `--wait-for` predicates | `run.created`, `run.terminal`, `health.ok`, `approval.pending`, `seq>=N`, `event=NAME`, `status=`; `--wait-timeout`. | §8.6 |
+| `doctor --fix` | Safe local repairs only; `--dry-run`, `--yes`, partial; never DB/key/runs. | §9.3 |
+| Shell completions | Generated from `CommandSpec` for PowerShell/bash/zsh/fish. | §9.4 |
+| Agent skill file | Generated `skills/hivemind/SKILL.md`, drift-gated; no auth/key recipe. | §9.4 |
+| Open in UI | `server open`, `start --open`; human-only; `--print-url` for agents; no verified run deep link. | §10.3 |
+| Test harness | Rust `cli_contract` suite + fake HTTP/WS + optional real smoke; no paid key. | §11 |
+| Signal handling | SIGINT flush/130; server Ctrl+Break/SIGTERM P1; no false graceful claim. | §8.4 |
+| Lockfile | `hivemind.lock` + `server.json`, atomic, PID creation time/exe hash/boot_id. | §8.1 |
+| Windows quoting | `--text-file`/`--text -`, `--`, Unicode scalar count, no shell interpolation. | §10.1 |
+| Headless vs app-open parity | Headless default; `--open`/`open` explicit; same port/data/workspace; no browser from agent. | §10.3 |
+| Provider-key absence | Named `E_KEY_MISSING` before run creation; presence-only reporting; no key args. | §7.4 |
+| Approval authority | Nonce + `--yes` + explicit ID; no `--all`; replay mapped, not faked. | §7.3 |
+| No secret output | Redaction layer; `session`/`settings`/`doctor`; fake-key scan. | §1.4, §7.5 |
+| Bounded outputs | `--limit`/`--cursor`/`--max-bytes`/`--fields`/`--full`; `page`/`truncated`. | §5.6 |
+| Correlation IDs | UUIDv7 per invocation; `--correlation-id`; `--idempotency-key` → UUIDv5; WS/HTTP. | §5.9 |
+| Command timeouts | `--timeout`, `--wait-timeout`; mutating timeout = `outcome_unknown`. | §5.10 |
 
 ---
 
