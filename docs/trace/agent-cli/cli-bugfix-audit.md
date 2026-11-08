@@ -34,6 +34,8 @@ UNVERIFIED by explicit instruction.
 | boot-id check was skipped for legacy state without db_path | WEAK (fixed) | identity checks run when either db_path or boot_id exists |
 | human help went to stdout | WEAK (fixed) | help is stderr; JSON-only stdout |
 | new approvals/templates/workspace/active-run reads return honest empties | OK | routes implemented; no nonce consumption |
+| `/api/approvals?run_id=` returned empty for an unknown run | WEAK (fixed) | 404 `E_RUN_NOT_FOUND` before querying |
+| run/branch memory surface absent from CLI | MISSING (fixed) | `GET /api/agents/runs/{run}/memory`, `memory --run` |
 | exe search missed repo-root `target/release` | MISSING (fixed) | search order widened |
 | CLI envelope lacked top-level `schema` | MISSING (fixed) | `schema: hivemind.cli.v1` on success/failure |
 | `--workspace-root` absent from server help | MISSING (fixed) | help text and `.cmd` launch path corrected |

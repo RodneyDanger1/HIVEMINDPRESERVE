@@ -253,6 +253,15 @@ async fn agent_read_surfaces_are_mounted_and_truthful() {
     assert_eq!(approvals["count"], 0);
     assert!(approvals["approvals"].as_array().expect("approvals array").is_empty());
 
+    let (status, unknown) = http_get(
+        server.addr,
+        "/api/approvals?run_id=00000000-0000-0000-0000-000000000000",
+    )
+    .await;
+    assert_eq!(status, 404);
+    let unknown: Value = serde_json::from_str(&unknown).expect("unknown approval JSON");
+    assert_eq!(unknown["code"], "E_RUN_NOT_FOUND");
+
     let (status, body) = http_get(server.addr, "/api/templates").await;
     assert_eq!(status, 200, "templates route: {body}");
     let templates: Value = serde_json::from_str(&body).expect("templates JSON");

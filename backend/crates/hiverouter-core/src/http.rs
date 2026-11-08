@@ -1023,6 +1023,11 @@ async fn pending_approvals(
         },
         None => None,
     };
+    if let Some(run_id) = run_id {
+        if let Err(refusal) = state.engine.store.get_run(run_id) {
+            return refusal_response(StatusCode::NOT_FOUND, &refusal);
+        }
+    }
     let result = match run_id {
         Some(run_id) => state.tools.pending_approval_events(run_id),
         None => state.tools.pending_approval_events_all(20),
