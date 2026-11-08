@@ -149,26 +149,31 @@ pub(crate) fn is_subagent_role(role: &str) -> bool {
 /// escalate its own capability tier. Subagents and tool actors cannot spawn.
 pub(crate) fn validate_spawn_role(parent: AgentTier, requested_role: &str) -> Result<(), Refusal> {
     let role = requested_role.trim().to_ascii_lowercase();
+    let subagent = is_subagent_role(&role);
     let allowed = match parent {
-        AgentTier::HyperAgent => matches!(
-            role.as_str(),
-            "super"
-                | "superagent"
-                | "super_agent"
-                | "sub_hive"
-                | "subhive"
-                | "worker"
-                | "workeragent"
-                | "worker_agent"
-                | "agent"
-                | "subagent"
-                | "sub_agent"
-        ),
-        AgentTier::SuperAgent => matches!(
-            role.as_str(),
-            "worker" | "workeragent" | "worker_agent" | "agent" | "subagent" | "sub_agent"
-        ),
-        AgentTier::WorkerAgent => matches!(role.as_str(), "subagent" | "sub_agent"),
+        AgentTier::HyperAgent => {
+            subagent
+                || matches!(
+                    role.as_str(),
+                    "super"
+                        | "superagent"
+                        | "super_agent"
+                        | "sub_hive"
+                        | "subhive"
+                        | "worker"
+                        | "workeragent"
+                        | "worker_agent"
+                        | "agent"
+                )
+        }
+        AgentTier::SuperAgent => {
+            subagent
+                || matches!(
+                    role.as_str(),
+                    "worker" | "workeragent" | "worker_agent" | "agent"
+                )
+        }
+        AgentTier::WorkerAgent => subagent,
         AgentTier::ToolAgent => false,
     };
     if allowed {
@@ -1237,7 +1242,7 @@ impl RunEngine {
                 return Err(Refusal::SpawnDepth);
             }
             if is_subagent_role(role) && depth < 2 {
-                return Err(Refusal::ToolNotAllowed);
+                return Err(Refusal::SpawnDepth);
             }
             self.caps.check_spawn(depth, siblings, agents)?;
             let task = TaskRecord {
@@ -1553,7 +1558,7 @@ impl RunEngine {
                 .map_or(AgentTier::HyperAgent, task_agent_tier);
             validate_spawn_role(parent_tier, &node.role)?;
             if is_subagent_role(&node.role) && node.depth < 2 {
-                return Err(Refusal::ToolNotAllowed);
+                return Err(Refusal::SpawnDepth);
             }
             // Fan-out is per parent, not the global plan index. Passing the plan
             // index here made the 9th planned node fail even with a fresh parent.
@@ -3576,5 +3581,20 @@ mod prompt_context_tests {
         );
         assert_eq!(terminal_recipient_refusal(AgentState::Running), None);
         assert_eq!(terminal_recipient_refusal(AgentState::Queued), None);
+    }
+
+    #[test]
+    fn subagent_aliases_follow_one_policy() {
+        for alias in ["subagent", "sub_agent", "sub-agent", "SubAgent"] {
+            assert!(is_subagent_role(alias), "{alias} must be a subagent");
+            assert!(
+                validate_spawn_role(AgentTier::WorkerAgent, alias).is_ok(),
+                "{alias} must be spawnable by a worker"
+            );
+        }
+        assert_eq!(
+            validate_spawn_role(AgentTier::WorkerAgent, "worker"),
+            Err(Refusal::ToolNotAllowed)
+        );
     }
 }

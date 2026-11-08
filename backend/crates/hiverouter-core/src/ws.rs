@@ -258,7 +258,7 @@ fn insert_template_dag(
             _ => "worker",
         };
         if requested_class == "subagent" && depth < 2 {
-            return Err(Refusal::ToolNotAllowed);
+            return Err(Refusal::SpawnDepth);
         }
         validate_spawn_role(parent_tier, requested_class)?;
     }

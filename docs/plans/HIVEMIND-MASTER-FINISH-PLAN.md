@@ -277,3 +277,8 @@ Delivered:
 Not delivered and must not be claimed:
 - no `A2A_ANSWER` command/event, no parent-model answer, no continuation inbox refresh, no answer-attempt cap, no separate answer row/table; answer authority is operator-only. The blocking/wake/deadline path is in-process only and a crash loses the waiter (the open row remains).
 - The v12 columns deviate from the ledger's preferred `a2a_messages` dual-write table; reconcile this in the next P2 slice or amend the ledger explicitly.
+### P3 preparation
+
+- Subagent aliases (`subagent`, `sub_agent`, `sub-agent`, case variants) now share one admission policy; a worker can spawn any alias and cannot spawn a worker.
+- A too-shallow Subagent now returns `E_SPAWN_DEPTH` instead of the misleading `E_TOOL_NOT_ALLOWED` in plan, command, and model/template paths.
+- Persisted class/rank/profile and the `agent` profile remain unimplemented; this is only resolver/code-grounding.
