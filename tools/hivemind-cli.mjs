@@ -724,13 +724,12 @@ async function startServer(options) {
   if (
     existingState?.pid &&
     processAlive(Number(existingState.pid)) &&
-    existingState.url !== baseUrl.href.replace(/\/$/, '') &&
-    !options.force
+    existingState.url !== baseUrl.href.replace(/\/$/, '')
   ) {
     throw cliError(
       'E_INSTANCE_CONFLICT',
       `This data directory already has a live server at ${existingState.url}.`,
-      'Stop it first, use its URL, or pass --force only after verifying the target.',
+      'Stop it first, use its URL, or use a different --data-dir.',
       EXIT_NOT_RUNNING,
     );
   }
@@ -969,10 +968,12 @@ async function fetchWithTimeout(url, { timeoutMs = 15_000, ...init } = {}) {
 
 async function httpJson(baseUrl, route, { method = 'GET', body, timeoutMs } = {}) {
   const url = new URL(route, baseUrl);
+  const headers = { accept: 'application/json', origin: baseUrl.origin };
+  if (body !== undefined) headers['content-type'] = 'application/json';
   const response = await fetchWithTimeout(url, {
     method,
     timeoutMs,
-    headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
+    headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
@@ -1973,7 +1974,14 @@ async function main() {
         data = await executeLocal(command, options, baseUrl);
       }
       if ((command === 'start' || command === 'restart') && options.open && options['dry-run'] !== true) {
-        data = { ...data, ui: openUi(baseUrl, options) };
+        try {
+          data = { ...data, ui: openUi(baseUrl, options) };
+        } catch (error) {
+          data = {
+            ...data,
+            ui_error: { code: error.code || 'E_BROWSER_NOT_FOUND', message: error.message },
+          };
+        }
       }
       emitSuccess(command, data, options, startedAt);
       if (command === 'doctor' && data.ready === false) {
