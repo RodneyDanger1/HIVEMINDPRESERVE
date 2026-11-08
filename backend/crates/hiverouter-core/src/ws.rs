@@ -1135,7 +1135,7 @@ mod tests {
             "the shipped manifest carries the planner prompt asset"
         );
         let payload = TemplateInsert {
-            template_id: "planner".to_owned(),
+            template_id: "content-writer".to_owned(),
             project_id: "project-1".to_owned(),
         };
         let inserted = insert_template_dag(
@@ -1147,13 +1147,31 @@ mod tests {
             &payload,
         )
         .expect("insert the manifest-backed DAG");
-        assert_eq!(inserted.len(), 1, "the planner DAG is one node");
+        assert_eq!(inserted.len(), 1, "the content-writer DAG is one node");
         let task = &inserted[0];
-        assert_eq!(task.role, "planner");
+        assert_eq!(task.role, "content-writer");
         assert_eq!(task.run_id, fixture.run_id);
         assert_eq!(task.parent_task_id, Some(fixture.root.id));
         assert_eq!(task.state, AgentState::Queued);
         assert_eq!(task.depth, fixture.root.depth + 1);
+
+        // A template id that resolves to HyperAgent authority is refused even
+        // though its prompt asset exists.
+        let planner = TemplateInsert {
+            template_id: "planner".to_owned(),
+            project_id: "project-1".to_owned(),
+        };
+        assert_eq!(
+            insert_template_dag(
+                &templates,
+                &fixture.store,
+                &fixture.graph,
+                Caps::default(),
+                Some(fixture.run_id),
+                &planner,
+            ),
+            Err(Refusal::ToolNotAllowed)
+        );
 
         // The node is durable in the store and authoritatively in the graph.
         let stored = fixture.store.get_task(task.id).expect("task row");
@@ -1193,7 +1211,7 @@ mod tests {
         );
         assert_eq!(frame["parent_task_id"], fixture.root.id.to_string());
         assert_eq!(
-            frame["kind"], "hyperagent",
+            frame["kind"], "worker",
             "NODE_SPAWN carries the task's authoritative tier"
         );
     }

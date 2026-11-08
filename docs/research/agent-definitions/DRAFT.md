@@ -2,31 +2,31 @@
 
 ## VERIFIER-PATCHES
 
-Independent verification pass, 2026-11-08. Snapshot verified: **HEAD `66aff50` plus the worktree
-dirty in `execution.rs` and `ws.rs`** (call this **S3**; the tree was still moving during the pass).
-`execution.rs` is now **3,430 lines**. The draft's S2 facts were re-checked and mostly hold; the S3
-worktree changes are not reflected in the body and are patched below. No runtime, build, test,
-server, UI, or provider call was executed. Evidence: `VERIFIED.md`.
+Independent verification pass, 2026-11-08. Snapshot verified: **HEAD `de0f4e6`** ("fix: admit
+template personas through spawn classes") with a clean backend worktree (**S4**; the tree was still
+moving during the pass: `bb95a44` -> `aa15ec9` -> `66aff50` -> `45914dc` -> `de0f4e6`).
+`execution.rs` is **3,430 lines**, `ws.rs` **1,417 lines**. No runtime, build, test, server, UI, or
+provider call was executed. Evidence: `VERIFIED.md`.
 
-- **P1 - S3 snapshot added.** S3 = S2 + two uncommitted changes: `execution.rs` makes
-  `validate_spawn_role` `pub(crate)` and adds a **compact persona-id match** (`execution.rs:600-609`,
-  +7 lines after line 600); `ws.rs` calls `validate_spawn_role` for template nodes (`:247-250`) and
-  writes graph metadata (`:294-299`). **Add +7 to every `execution.rs` line after 609 in the S2
-  anchor table**; `persona_for_role` now ends at 609.
-- **P2 - F4/C4 ("sub_agent alias escapes narrowing") is REFUTED in S3.** The compact match maps
+- **P1 - Snapshot added.** S3 was the dirty worktree (now committed as `45914dc`): `validate_spawn_role`
+  `pub(crate)`, the compact persona match (`execution.rs:600-609`), and a first template validation
+  call in `ws.rs`. **S4 (`de0f4e6`)** adds the template-id-to-spawn-class mapping
+  (`ws.rs:248-261`). The S2 anchor table still applies; the compact-match block adds **+7** to every
+  `execution.rs` line after 609.
+- **P2 - F4/C4 ("sub_agent alias escapes narrowing") is REFUTED in S3/S4.** The compact match maps
   `"sub_agent"`, `"sub-agent"`, `"Subagent"` and any `-`/`_`/space variant to the `subagent` profile,
   so the alias no longer receives the 9-tool Worker grant. Patched §3.2, §5.4, §6, §7/F4, §14/C4.
   The remaining critical defect is the **unknown-role fallback** (F3), not the alias. This is
-  uncommitted source-read, not a runtime test.
-- **P3 - F8/C7 ("TEMPLATE_INSERT can create a depth-1 HyperAgent") is REFUTED in S3.** Template
-  inserts now call `validate_spawn_role(root_tier, role)` (`ws.rs:247-250`) and set metadata
-  (`:294-299`), so a depth-1 `"planner"` insert is refused. Patched §3.5, §5.1, §7/F8, §14/C7.
-  **New defect found:** the template node role is still the **raw template id**, so the four shipped
-  Library templates (`content-writer`, `data-analyst`, `code-reviewer`, `chatbot`) now fail
-  `validate_spawn_role(HyperAgent, ...)` with `E_TOOL_NOT_ALLOWED`; the in-file tests
-  `template_insert_spawns_manifest_backed_dag` and
-  `template_insert_resolves_the_library_ids_after_a_real_lookup` would fail by construction. M7 now
-  says to map template id -> spawn role/profile before admission, not to validate the raw id.
+  source-read, not a runtime test.
+- **P3 - F8/C7 ("TEMPLATE_INSERT can create a depth-1 HyperAgent") is REFUTED in S3/S4.** The first
+  S3 fix validated the **raw template id**, which fixed Hyper but refused the shipped Library
+  templates. **S4 maps the template id to a spawn class** (`ws.rs:248-261`): `planner`/`hyper` are
+  refused; `superagent` maps to the Super class; `subagent` to the Subagent class; every other
+  template id to `worker`. So the Hyper path is closed, the Library templates are admitted again,
+  and the residual template gaps are (a) `"subagent"` is still admitted at depth 1 and (b) the
+  in-file test `template_insert_spawns_manifest_backed_dag` still expects `"planner"` to insert and
+  must be changed to expect `E_TOOL_NOT_ALLOWED`. Patched §3.5, §5.1, §5.4, §7/F8, §14/C7; M7 is
+  updated to "landed with residual depth floor + test expectation".
 - **P4 - F6 self-contradiction.** F6 said "the plan loop calls only `caps.check_spawn`" and cited
   `execution.rs:1509`; that line is exactly the `validate_spawn_role(parent_tier, &node.role)?` call.
   The plan loop validates the role (since `aa15ec9`); the depth-floor gap remains. Patched F6.
@@ -57,7 +57,7 @@ server, UI, or provider call was executed. Evidence: `VERIFIED.md`.
 
 **Status:** DRAFT research note. Not a specification, not an implementation plan approved by the
 Lead, and not evidence that anything works.
-**Repository:** `C:\Users\Riley\Desktop\hiverouter-v1`. The pass began at HEAD `bb95a44`; the tree advanced to HEAD `66aff50` ("fix: readiness DAG, run memory recall, CLI truth, kill confirm") while the pass ran, and the verifier read a third snapshot (S3) with the worktree dirty. All three snapshots are recorded below.
+**Repository:** `C:\Users\Riley\Desktop\hiverouter-v1`. The pass began at HEAD `bb95a44`; the tree advanced to `66aff50` ("fix: readiness DAG, run memory recall, CLI truth, kill confirm") while the pass ran, then to `45914dc`/`de0f4e6` while the verifier patched. The verified snapshot is S4 = `de0f4e6` with a clean backend worktree. All four snapshots are recorded below.
 **Scope of this pass:** read-only inspection of source and docs, plus external reading. **No**
 runtime, server, UI, provider call, build, migration, or test was executed. The only writes are this
 file and `VERIFIED.md`.
@@ -71,7 +71,7 @@ file and `VERIFIED.md`.
 | **[DR]** | **Doc-read.** The claim exists in a repository document. It may be stale, self-contradictory, or unsupported by code. |
 | **[WR]** | **Web-read.** An official page was fetched in this pass; the fact is quoted/paraphrased from it. |
 | **VERIFIED** | **Reserved and not used in this file for product behavior.** Nothing was executed. There is no runtime verification here, and the task forbids obtaining one. |
-| **[SR S1] / [SR S2] / [SR S3]** | A source-read qualified by snapshot (section 0.1): S1 = HEAD `bb95a44` plus the initial dirty set; S2 = HEAD `66aff50`; S3 = S2 plus the uncommitted `execution.rs`/`ws.rs` changes. |
+| **[SR S1] / [SR S2] / [SR S3] / [SR S4]** | A source-read qualified by snapshot (section 0.1): S1 = HEAD `bb95a44` plus the initial dirty set; S2 = HEAD `66aff50`; S3 = HEAD `45914dc`; S4 = HEAD `de0f4e6`. |
 
 **Moving-tree caveat (important).** `execution.rs`, `http.rs`, `provider_executor.rs`, and web files
 were being edited by another writer while this pass ran. Three snapshots matter:
@@ -80,10 +80,12 @@ were being edited by another writer while this pass ran. Three snapshots matter:
 |---|---|
 | **S1** | HEAD `bb95a44` plus the small initial dirty set. This is what most repo docs (2026-11-07/08) describe. |
 | **S2** | HEAD `66aff50` (committed mid-pass): `execution.rs` 3,423 lines, a `persona_for_role` normalizer, a tier-based `node_kind` in `http.rs`, a **readiness-based dispatcher**, and a wider root-turn gate (`has_aggregators || plan.nodes.len() > 1`). **Unbuilt and untested in this pass.** |
-| **S3** | S2 plus the **uncommitted worktree** in `execution.rs` and `ws.rs`: `validate_spawn_role` is `pub(crate)`, `persona_for_role` gains a compact id match, and `insert_template_dag` validates the spawn role and sets graph metadata. `execution.rs` is 3,430 lines. **Also unbuilt and untested.** |
+| **S3** | HEAD `45914dc`: `validate_spawn_role` is `pub(crate)`, `persona_for_role` gains a compact id match, and `insert_template_dag` validates the spawn role and sets graph metadata. `execution.rs` 3,430 lines. **Unbuilt and untested.** |
+| **S4** | HEAD `de0f4e6`: `insert_template_dag` maps the template id to a spawn class (`ws.rs:248-261`), so `planner` is refused and Library templates are admitted as workers. This is the **verified snapshot**. `execution.rs` 3,430 lines, `ws.rs` 1,417 lines. **Unbuilt and untested.** |
 
-In S3, add **+7** to every `execution.rs` line after 609 (the `persona_for_role` compact-match block);
-`persona_for_role` itself starts at 588 and ends at 609.
+In S3/S4, add **+7** to every `execution.rs` line after 609 (the `persona_for_role` compact-match
+block); `persona_for_role` itself starts at 588 and ends at 609. `ws.rs` shifted +12 after the
+template block; current anchors are in P3 and §3.5.
 
 Inline line numbers below are from the read that produced the adjacent sentence; they drift by up
 to ~60 lines between S1 and S2. **Where an inline number and the table below disagree, the table
@@ -256,7 +258,7 @@ Read carefully:
 | Planning (`dispatch_inner`) | `plan.validate()` + parent tier resolution + `validate_spawn_role` + caps per node **[SR]** `execution.rs:1487-1529` | Roles are model-authored; no profile resolution; a planned `"subagent"` at depth 1 is accepted; no dedupe. |
 | Operator `SPAWN_SUB_HIVE` | `validate_spawn_role` + per-profile `max_children`/`max_depth` + caps under one lock **[SR]** `execution.rs:1167-1224` | Depth floor absent; UI sends Title-Case roles **[SR]** `web/src/state/store.ts:1976-1982`; the S3 persona lookup now resolves them, but the row stores the role verbatim. |
 | Model `spawn_agent` tool | Reuses `spawn_sub_hive`; parent claim checked; child executed inline and its bounded result returned **[SR]** `execution.rs:2889-3000` | Same depth/profile gaps; child runs inside the parent's turn (blocking). |
-| `TEMPLATE_INSERT` | Template lookup + `validate_spawn_role(root_tier, node.role)` + caps; graph metadata written **[SR]** `ws.rs:240-301` (S3, uncommitted) | **S1/S2 bypassed `validate_spawn_role` and could create a depth-1 `"planner"` HyperAgent; S3 closes that** and sets metadata. Remaining: the template id is still used as the role, so the four shipped Library templates (`content-writer`, `data-analyst`, `code-reviewer`, `chatbot`) are now refused by the Hyper root's spawn allowlist (`E_TOOL_NOT_ALLOWED`), and a `"subagent"` template still inserts at depth 1. No profile resolution. |
+| `TEMPLATE_INSERT` | Template lookup + template-id-to-spawn-class mapping + `validate_spawn_role` + caps; graph metadata written **[SR]** `ws.rs:240-311` (S4) | **S1/S2 bypassed the gate and could create a depth-1 `"planner"` HyperAgent; S3/S4 close that.** S4 maps `planner`/`hyper` to a refusal, `superagent` to the Super class, `subagent` to the Subagent class, and every other template id to `worker` (`ws.rs:248-261`), so the four shipped Library templates are admitted again. Residual: a `"subagent"` template is still admitted at depth 1 (no depth floor); no profile resolution; the in-file test `template_insert_spawns_manifest_backed_dag` still expects `"planner"` to insert and must be changed to expect `E_TOOL_NOT_ALLOWED`. |
 
 ### 3.6 Context and memory: scopes, not banks
 
@@ -460,11 +462,10 @@ prompt text, not as messages.
 - Hyper may *accept* planned roles Super/Agent/Subagent and the operator's `SPAWN_SUB_HIVE` for the
   same set **[SR]** `execution.rs:138-151`, `:1139`.
 - Hyper may **not** spawn in the target model a ToolActor, another Hyper, or a daemon; the plan gate
-  rejects `"tool"` and `"planner"` at depth 1 **[SR]** `execution.rs:138-151`, and in S3 the
-  `TEMPLATE_INSERT` path also calls `validate_spawn_role` **[SR]** `ws.rs:247-250`, so the S1/S2
-  depth-1 `"planner"` template escape is closed. The template id is still the role, so the shipped
-  Library templates now fail that gate (see §3.5 and M7); a `"subagent"` template still inserts at
-  depth 1.
+  rejects `"tool"` and `"planner"` at depth 1 **[SR]** `execution.rs:138-151`, and in S3/S4 the
+  `TEMPLATE_INSERT` path maps the template id to a spawn class and calls `validate_spawn_role`
+  **[SR]** `ws.rs:248-261`, so the S1/S2 depth-1 `"planner"` template escape is closed. The Library
+  templates are admitted as `worker`; a `"subagent"` template is still admitted at depth 1.
 
 **Tools / allowlist.** Tier: `spawn_agent`, `report_result`, `finish` **[SR]** `tool.rs:392-395`.
 Effective model-visible set on the root turn: **none** **[SR]** `provider_executor.rs:364-389`. The
@@ -658,10 +659,10 @@ delegation, no side effects. **[DR]** `12-role-capability-model.md:299-313`;
 
 **Lifecycle / lifetime.** Task row at depth 2-3 in the design **[DR]**
 `12-role-capability-model.md:170-172`; **no depth floor exists in code**, and the root may create a
-Subagent at depth 1 **[SR]** `execution.rs:138-151`, `:1497-1538`. The S3 template gate (§3.5) does
-not add one either: a `"subagent"` template insert at depth 1 is still accepted. Terminal states as
-any task. No children in the design; in code a canonical `subagent` is blocked at call time only by
-its persona grant, not by rank.
+Subagent at depth 1 **[SR]** `execution.rs:138-151`, `:1497-1538`. The S3/S4 template gate maps
+`subagent` to the Subagent class but has no depth parameter, so a `"subagent"` template insert at
+depth 1 is still accepted. Terminal states as any task. No children in the design; in code a
+canonical `subagent` is blocked at call time only by its persona grant, not by rank.
 
 **Memory.**
 - Read: parent facts + parent-scope memory + run memory (8+8) **[SR]** `execution.rs:943-969`;
@@ -873,7 +874,7 @@ judgment, not the project's.
 | F5 | "A profile has a tier." | `Persona.tier` **[SR]** `prompts.rs:389`; API field **[SR]** `http.rs:950`, `:1009` | `persona.tier` is **never read for authorization**; grep shows only serialization **[GV]**. Tier comes from the role string. A profile declaring `tier:"super"` and a task role `"worker"` silently gets the Worker tier. | High |
 | F6 | "Subagent is legal only at depth >= 2." | **[DR]** `12-role-capability-model.md:170-172`; `21-roles-daemons-implementation.md:557-560` | No depth floor. Hyper's spawn list accepts `subagent` at depth 1 **[SR]** `execution.rs:138-151`. The draft's old evidence ("the plan loop calls only `caps.check_spawn`") was wrong: `execution.rs:1509` **is** `validate_spawn_role(parent_tier, &node.role)?`, and the plan loop has validated the role since `aa15ec9`. The gap is the missing **depth** floor, not a missing role check. | High |
 | F7 | "HyperAgent orchestrates and produces the run answer." | **[DR]** `docs/provider/AGENT-ARCHITECTURE-TRUTH.md:17`; `provider_executor.rs:35-38` | S1: the root turn runs **only when the plan has an aggregator** **[SR S1]** `execution.rs:1554-1555`, `:1631`. S2 widens the gate to `has_aggregators or plan.nodes.len() > 1` **[SR S2]** `execution.rs:1668-1679`, so a 2+ node flat plan now gets a root turn, but a **single-node plan still does not**. On any plan it is answer-only and cannot use tools **[SR]** `:3171-3176`. | High |
-| F8 | "HyperAgent is one per run and cannot be spawned." | **[DR]** `12-role-capability-model.md:233` (one per run); `21-roles-daemons-implementation.md:565-566` | S1/S2: `TEMPLATE_INSERT` bypassed `validate_spawn_role` and used the template id as the role **[SR]** `ws.rs:200-293`, so a depth-1 `"planner"` Hyper was one command away. **S3 closes it**: template inserts call `validate_spawn_role` (`ws.rs:247-250`) and set metadata (`:294-299`), so `"planner"` is refused. **New regression in the same fix:** the four shipped Library templates are now refused because their ids are not on the Hyper spawn allowlist; see M7. | Medium (was Critical; Hyper path resolved, template-library regression open) |
+| F8 | "HyperAgent is one per run and cannot be spawned." | **[DR]** `12-role-capability-model.md:233` (one per run); `21-roles-daemons-implementation.md:565-566` | S1/S2: `TEMPLATE_INSERT` bypassed `validate_spawn_role` and used the template id as the role **[SR]** `ws.rs:200-293`, so a depth-1 `"planner"` Hyper was one command away. **S3/S4 close it**: S3 validated the role, S4 maps the template id to a spawn class (`ws.rs:248-261`) - `planner`/`hyper` are refused, Library templates go to `worker`. Residual: a `"subagent"` template is still admitted at depth 1, and the `template_insert_spawns_manifest_backed_dag` test still expects the old `"planner"` insert. | Low (Hyper path resolved; subagent depth + test expectation open) |
 | F9 | "40 provider calls / run is a hard cap." | `/api/runtime` exposes `max_calls:40` **[SR]** `http.rs:1412`; caps doc comment **[SR]** `caps.rs:14-15` | Both `check_calls` call sites pass the literal `1` **[SR]** `execution.rs:1435`, `:3129`, so the check cannot fail. Real bounds are the tool-loop budget **[SR]** `tool_loop.rs:16`, `execution.rs:1911` and the provider `RunBudget`. The number is advertised but not enforced by this path. | Medium |
 | F10 | "Remote agent exists / universal memory exists." | UI/roadmap language; **[DR]** remote-agents folder; operator decisions | Zero remote/device/daemon symbols **[GV]**; memory scopes are run + task only **[SR]** `db.rs:251-272`. There is no global bank and no remote bank. | High |
 | F11 | "Remote is a daemon." | **[DR]** `12-role-capability-model.md:315-333`, `:451` | Contradicts the remote-agents design (tree-free principal, private bank) **[DR]** `01-remote-agent-model.md:9-43`. No code for either. The naming conflict itself is the defect. | High |
@@ -1091,18 +1092,16 @@ root-only, and template ids must map to non-Hyper spawn roles.
 **Why minimal:** without this, the name "HyperAgent" promises a run owner that, on a one-node plan,
 never speaks.
 
-### M7 - Close the template side door (0.25 day) - **partially landed in S3, regression open**
+### M7 - Close the template side door (0.25 day) - **landed in S4; residual depth/test work**
 
-S3 already calls `validate_spawn_role(root_tier, role)` in `insert_template_dag` (`ws.rs:247-250`)
-and writes graph metadata (`ws.rs:294-299`), which closes the depth-1 `"planner"` Hyper path.
-**But the role passed is still the raw template id**, so the shipped Library templates
-(`content-writer`, `data-analyst`, `code-reviewer`, `chatbot`) are refused by the Hyper root's spawn
-allowlist, and the in-file tests `template_insert_spawns_manifest_backed_dag` (`"planner"`) and
-`template_insert_resolves_the_library_ids_after_a_real_lookup` would fail by construction. The
-remaining change is to resolve the template id to a spawn role/persona (e.g. `agent`/worker for the
-Library templates) and then run the same admission; refuse `planner`/Hyper and Subagent-at-depth-1.
-Keep the metadata write. This is the smallest change that removes the invisible second-root class
-without breaking the shipped template catalog.
+S4 maps the template id to a spawn class (`ws.rs:248-261`): `planner`/`hyper` are refused,
+`superagent` maps to Super, `subagent` to Subagent, every other id to `worker`; the role is then
+validated and metadata is written (`ws.rs:305-311`). This closes the depth-1 Hyper path and keeps the
+four shipped Library templates insertable. **Residual:** (a) a `"subagent"` template is still
+admitted at depth 1 because the template path has no depth parameter, and it must be refused with
+the same depth floor as M4; (b) the in-file test `template_insert_spawns_manifest_backed_dag` still
+expects `"planner"` to insert and must be changed to expect `E_TOOL_NOT_ALLOWED`; add
+`template_insert_keeps_library_templates` as the regression guard.
 
 ### M8 - Memory identity and scope (1-1.5 days)
 
@@ -1146,10 +1145,12 @@ The remote-agents design is already detailed enough to build **[DR]**
 ## 11. Acceptance evidence to demand (static/unit first; runtime later)
 
 Names are proposed. Each must fail before the fix and pass after; none were run in this pass.
-**S3 note:** `sub_agent_alias_is_canonical` and `template_insert_cannot_create_hyper` are now
-satisfied by construction in the worktree (uncommitted, unbuilt), but the template fix needs a
-companion regression test `template_insert_keeps_library_templates` - the current raw-id validation
-would make the four shipped Library templates fail. All other rows still describe open gaps.
+**S3/S4 note:** `sub_agent_alias_is_canonical` and `template_insert_cannot_create_hyper` are now
+satisfied by construction (S4 changed the template path so `planner` is refused and Library
+templates are admitted as workers). Two test adjustments are still needed: change
+`template_insert_spawns_manifest_backed_dag` to expect `E_TOOL_NOT_ALLOWED` for `"planner"` (it still
+expects success), and add a `subagent`-template-at-depth-1 refusal case to `subagent_depth_floor`
+(S4 admits it today). All other rows still describe open gaps.
 
 | Test | Asserts | Kills |
 |---|---|---|
@@ -1244,7 +1245,7 @@ Not used by rule: forums, social posts, SEO summaries, AI-generated pages. No pa
 | C4 | **Historical (S1/S2):** the `sub_agent` alias bypassed the Subagent persona and got the full Worker grant. **S3 refutes this:** the compact persona match canonicalizes alias/case/separator variants. Unknown roles still escape (C2/F3). | SR | `execution.rs:588-609`; `:149-156`; `personas.json:32` |
 | C5 | No depth floor exists for Subagent. | SR | `execution.rs:138-151`, `:1509` |
 | C6 | S1: the root turn ran only for aggregating plans. S2/S3: for plans with 2+ nodes; a single-node plan still has no root turn. | SR | S1 `execution.rs:1554-1555`, `:1631`; S2/S3 `:1675-1686` |
-| C7 | **Historical (S1/S2):** `TEMPLATE_INSERT` bypassed the spawn gate and could create a depth-1 Hyper. **S3 refuses it** via `validate_spawn_role` (`ws.rs:247-250`) but over-restricts the shipped Library templates; see M7. | SR | `ws.rs:247-250`, `:294-299` |
+| C7 | **Historical (S1/S2):** `TEMPLATE_INSERT` bypassed the spawn gate and could create a depth-1 Hyper. **S3/S4 refuse it**: S4 maps the template id to a spawn class (`ws.rs:248-261`) - `planner`/`hyper` refused, Library templates admitted as workers, `subagent` still admitted at depth 1. | SR | `ws.rs:248-261`, `:305-311` |
 | C8 | No server path emits `subagent`; the web card has no producer. | SR | `execution.rs:121-128`; `event.rs:240`; `http.rs:740-743` |
 | C9 | Remote/device/daemon code is absent. | GV | zero symbols under `backend/crates/*/src` |
 | C10 | Memory scopes are run + task-id only; no global/remote bank. | SR | `db.rs:251-272`; `execution.rs:3388-3399` |

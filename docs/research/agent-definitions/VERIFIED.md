@@ -1,11 +1,10 @@
 # VERIFIED - independent verification of the agent-class taxonomy
 
 **Status:** verifier report. Not a specification, not an implementation plan.
-**Verifier snapshot:** HEAD `66aff50` ("fix: readiness DAG, run memory recall, CLI truth, kill
-confirm") **plus the uncommitted worktree** in `execution.rs` and `ws.rs` (the **S3** snapshot used
-throughout). `execution.rs` is 3,430 lines at that snapshot. The tree moved twice during the pass
-(`bb95a44` -> `aa15ec9` -> `66aff50`, then a dirty `ws.rs`/`execution.rs`); every line number below
-is from the S3 read and will drift again.
+**Verifier snapshot:** HEAD `de0f4e6` ("fix: admit template personas through spawn classes") with a
+clean backend worktree (**S4**). `execution.rs` is 3,430 lines, `ws.rs` 1,417. The tree moved three
+times during the pass (`bb95a44` -> `aa15ec9` -> `66aff50` -> `45914dc` -> `de0f4e6`); every line
+number below is from the S4 read and will drift again.
 **Method:** read-only source and document inspection. **No** runtime, build, test, server, UI,
 provider call, migration, or device was executed. Tags: **[SR]** source-read, **[GV]** grep-verified
 presence/absence, **[DR]** repo document statement, **[WR]** official external page. There is **no
@@ -14,9 +13,10 @@ presence/absence, **[DR]** repo document statement, **[WR]** official external p
 reproduced: one free-form `tasks.role` string is doing four jobs (label, rank selector, capability
 selector, memory key), no persisted field records agent class, Subagent is a profile-only rank on the
 Worker tier, and Remote has zero code. But the draft is **not safe as an evidence base without the
-corrections below**: two of its three Critical findings (F4, F8) are already fixed in the worktree,
-one (F7) is half-fixed, the one remaining Critical (F3) is the real defect, and the S3 template fix
-introduces a new regression that would break two in-file tests and the shipped Library templates.
+corrections below**: two of its three Critical findings (F4, F8) are already fixed (F4 by the compact
+persona match, F8 by S4's template-id-to-spawn-class mapping), one (F7) is half-fixed, and the one
+remaining Critical (F3) is the real defect. F8's residual is narrower: a `"subagent"` template is
+still admitted at depth 1, and one in-file test still expects the old `"planner"` insert to succeed.
 The five-class taxonomy is implementable, but two definitions need amendment: Subagent cannot be an
 *enforced rank* without a persisted class (a profile + depth rule is the honest minimum), and the
 Remote memory clause cannot be implemented before a global/system bank exists.
@@ -25,10 +25,10 @@ Remote memory clause cannot be implemented before a global/system bank exists.
 
 ## 1. What changed since the draft (the short version)
 
-| # | Draft claim | Current S3 truth | Effect |
+| # | Draft claim | Current S4 truth | Effect |
 |---|---|---|---|
-| 1 | F4/C4: `"sub_agent"` bypasses the Subagent persona and gets the 9-tool Worker grant. **Critical.** | `persona_for_role` adds a compact id match (`execution.rs:600-609`): `sub_agent`/`sub-agent`/case variants resolve to `subagent`, which has the 6-tool grant. | **Refuted.** F4 drops Critical -> Medium; the residual is the unknown-role fallback (F3). |
-| 2 | F8/C7: `TEMPLATE_INSERT` bypasses `validate_spawn_role`; a depth-1 Hyper is one command away. **Critical.** | `insert_template_dag` calls `validate_spawn_role(task_agent_tier(&root), role)` (`ws.rs:247-250`) and sets metadata (`ws.rs:294-299`); `"planner"` is refused. | **Refuted for Hyper.** New regression: the raw template id is validated as a role, so `content-writer`/`data-analyst`/`code-reviewer`/`chatbot` are now refused under the Hyper root. |
+| 1 | F4/C4: `"sub_agent"` bypasses the Subagent persona and gets the 9-tool Worker grant. **Critical.** | `persona_for_role` adds a compact id match (`execution.rs:600-609`, committed in `45914dc`): `sub_agent`/`sub-agent`/case variants resolve to `subagent`, which has the 6-tool grant. | **Refuted.** F4 drops Critical -> Medium; the residual is the unknown-role fallback (F3). |
+| 2 | F8/C7: `TEMPLATE_INSERT` bypasses `validate_spawn_role`; a depth-1 Hyper is one command away. **Critical.** | S3 validated the role; **S4 maps the template id to a spawn class** (`ws.rs:248-261`): `planner`/`hyper` refused, `superagent` -> Super, `subagent` -> Subagent, every other id -> `worker`. Library templates are admitted again; metadata is written (`ws.rs:305-311`). | **Refuted for Hyper.** Residual: a `"subagent"` template is still admitted at depth 1 (no depth parameter), and the `template_insert_spawns_manifest_backed_dag` test still expects `"planner"` to insert. |
 | 3 | F7/C6: root turn runs only for aggregating plans; a flat plan gets no HyperAgent answer. | `execution.rs:1686` runs the root for `has_aggregators || plan.nodes.len() > 1`. A flat **multi-node** plan does get a root turn; only a **single-node** plan does not. | **Half-refuted.** F7 remains a real but narrower gap. |
 | 4 | §3.8: execution order is leaf topological, then aggregators deepest-first. | Readiness loop: a node runs when its deps and all direct children are complete, then the spawn queue, then the root (`execution.rs:1559-1758`). | Draft S2 already noted this; the body now says both S1 and S2. Content correct. |
 | 5 | §5.1: `RUN_METRICS` counts hyperagents. | `RunMetrics` has only `superagents`/`workers` (`event.rs:274-284`; `execution.rs:708-747`). Hyperagent count is web-local (`SwarmPanel.tsx:84`). | Draft error, patched. |
@@ -37,9 +37,9 @@ Remote memory clause cannot be implemented before a global/system bank exists.
 | 8 | F14: ownership claim at `21:840-985`. | `21` is a design proposal there and says ownership is absent at `21:347`; the operator requirement is real (`OPERATOR-DECISIONS.md:41-42`). | Misattribution, patched; finding stands. |
 
 The draft's S1/S2 snapshot distinction is legitimate, and its S2 anchor table is approximately
-correct for `66aff50`. For S3, add +7 to every `execution.rs` line after 609 (the compact-match
-block). The body's §5 anchors are mostly S1 and are wrong by +22 to +138 lines; the table in §4
-below is authoritative.
+correct for `66aff50`. For S3/S4, add +7 to every `execution.rs` line after 609 (the compact-match
+block) and +12 to `ws.rs` lines after 248 (the template mapping); the table in §4 below is
+authoritative.
 
 ---
 
@@ -48,7 +48,7 @@ below is authoritative.
 Five words, sorted by the properties that actually separate them (accountability, lifetime, unit of
 work), plus the non-class ToolActor.
 
-| Class | What it actually is in S3 | Enforced by | Implementable now? | Target statement |
+| Class | What it actually is in S4 | Enforced by | Implementable now? | Target statement |
 |---|---|---|---|---|
 | **HyperAgent** | The single root task: `role="planner"`, depth 0, no parent, tier `HyperAgent`, 3-tool allowlist never advertised to the model. It produces the run answer in an answer-only root turn for multi-node plans. | Tier inferred from the role string; plan gate `validate_spawn_role(Hyper, …)`; root row inserted before children; root turn only via `finalize_root`. | **Yes**, if a class field and one root-turn policy are added. One-instance and no-parent already hold; "always answers" does not (single-node plans). | Run owner: plan acceptance, branch-result adjudication, one final answer. Answer-only, narrowest tools, root-only, not a chat persona, not a long-lived process. |
 | **SuperAgent** | A depth-1 task with tier `SuperAgent` (7 tools: spawn/ask/sibling/report/finish/read/list) and the `superagent` profile (max 8 children, max depth 3). It can spawn Agent and Subagent only; no write/exec; one branch result. | Role string -> tier; `validate_spawn_role`; persona max_children/max_depth applied to its own children; no Super->Super. | **Yes** as a branch lead. The four ownership modes/offices are **not** implementable without new columns/tables; do not claim them. | Branch/hive lead with an assigned scope, exclusive ownership, one branch result, no writer/shell, no second root, no Super peer in the same scope. |
@@ -114,10 +114,12 @@ or the default for arbitrary role strings.
 **Is:** a narrowed profile-only class on the `WorkerAgent` tier: 6 tools, no spawn/write/exec at
 call time, no children, depth-design 2-3. **Is not:** a fifth tier, a Worker with a different prompt,
 depth 1, a dead card pretending to be a wire kind, or an alias that escapes narrowing.
-**Current gaps:** no depth floor (`validate_spawn_role` accepts it under Hyper at depth 1); no wire
-kind (contract vocabulary is 4 values); no class field; the narrowing depends on the persona lookup,
-which S3 now canonicalizes (uncommitted). **Implementable version:** profile + admission depth rule
-+ per-instance advertised grant + a contract-delta kind; do not add a fourth `AgentTier`.
+**Current gaps:** no depth floor (`validate_spawn_role` accepts it under Hyper at depth 1, and the
+S4 template mapping still routes a `"subagent"` template to that same depth-1 check); no wire
+kind (contract vocabulary is 4 values); no class field; the narrowing depends on the persona
+lookup, which S3/S4 canonicalizes (committed in `45914dc`). **Implementable version:** profile +
+admission depth rule + per-instance advertised grant + a contract-delta kind; do not add a fourth
+`AgentTier`.
 
 ### 3.5 Remote tiny agent
 
