@@ -120,6 +120,35 @@ async fn http_json(
 }
 
 #[tokio::test]
+async fn memory_journal_route_returns_actions_without_values() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "journal", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let task = hiverouter_contract::TaskId::new();
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped("worker", "key", "secret-value", run.id, task, &task.to_string())
+        .expect("memory");
+    let path = format!("/api/memory/journal?run_id={}", run.id);
+    let (status, body) = http_get(server.addr, &path).await;
+    assert_eq!(status, 200, "journal: {body}");
+    let value: Value = serde_json::from_str(&body).expect("journal JSON");
+    assert!(value["actions"]
+        .as_array()
+        .expect("actions")
+        .iter()
+        .any(|action| action["action"] == "entry_written"));
+    assert!(!body.contains("secret-value"), "journal must not leak values");
+}
+
+#[tokio::test]
 async fn a2a_pending_route_lists_open_questions() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

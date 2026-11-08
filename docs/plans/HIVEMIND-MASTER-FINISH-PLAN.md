@@ -349,3 +349,8 @@ Not delivered and must not be claimed:
 - After `SERVER_HELLO`, the server republishes up to 20 open A2A questions as ordinary `AGENT_MESSAGE` frames so a reconnecting mailbox observes pending work; durable rows remain authoritative.
 - No new command/event vocabulary; replay is bounded and best-effort.
 - Still missing: answer-attempt cap, parent-model answer, continuation inbox refresh, separate answer table.
+### P4 journal/trust UI
+
+- `GET /api/memory/journal?run_id=` returns recent content-free actions; test asserts no entry value is present.
+- Bank inspector shows recent actions and a `Promote to verified` control on unverified/quarantined entries; server remains the only trust authority.
+- Not delivered: hash chain, retention, context snapshots, rich journal filtering.

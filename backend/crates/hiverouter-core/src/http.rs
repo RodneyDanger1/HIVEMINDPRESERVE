@@ -549,6 +549,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         )
         .route("/api/memory/clear", post(clear_run_memory))
         .route("/api/memory/trust", post(promote_memory))
+        .route("/api/memory/journal", get(memory_journal))
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
@@ -1363,6 +1364,42 @@ async fn promote_memory(
             .into_response(),
         Ok(false) => refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound),
         Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
+    }
+}
+
+/// `GET /api/memory/journal?run_id=` — recent content-free memory actions.
+async fn memory_journal(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Some(raw) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let limit = query
+        .get("limit")
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(50)
+        .clamp(1, 200);
+    match state.engine.store.memory_journal_for_run(run_id, limit) {
+        Ok(rows) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "actions": rows.into_iter().map(|(action, bank_id, entry_id, created_at)| {
+                    serde_json::json!({
+                        "action": action,
+                        "bank_id": bank_id,
+                        "entry_id": entry_id,
+                        "created_at": created_at,
+                    })
+                }).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }
 

@@ -28,6 +28,12 @@ interface EntryRow {
   readonly created_at: string;
 }
 
+interface JournalRow {
+  readonly action: string;
+  readonly bank_id: string | null;
+  readonly created_at: string;
+}
+
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function MemoryBanksPanel() {
@@ -40,6 +46,52 @@ export function MemoryBanksPanel() {
   const [entries, setEntries] = useState<readonly EntryRow[]>([]);
   const [entryStatus, setEntryStatus] = useState<Status>('idle');
   const [clearReceipt, setClearReceipt] = useState<string | null>(null);
+  const [journal, setJournal] = useState<readonly JournalRow[]>([]);
+  const [journalVersion, setJournalVersion] = useState(0);
+
+  useEffect(() => {
+    if (runId === null) {
+      setJournal([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${apiBaseUrl()}/api/memory/journal?run_id=${encodeURIComponent(runId)}&limit=20`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`memory journal HTTP ${response.status}`);
+        }
+        const body = (await response.json()) as { actions?: unknown };
+        if (!Array.isArray(body.actions) || cancelled) {
+          return;
+        }
+        const decoded: JournalRow[] = [];
+        for (const raw of body.actions) {
+          if (typeof raw !== 'object' || raw === null) {
+            continue;
+          }
+          const item = raw as Record<string, unknown>;
+          if (typeof item.action !== 'string') {
+            continue;
+          }
+          decoded.push({
+            action: item.action,
+            bank_id: typeof item.bank_id === 'string' ? item.bank_id : null,
+            created_at: typeof item.created_at === 'string' ? item.created_at : '',
+          });
+        }
+        setJournal(decoded);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setJournal([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId, journalVersion]);
 
   useEffect(() => {
     if (runId === null) {
@@ -200,6 +252,43 @@ export function MemoryBanksPanel() {
     }
   };
 
+  const promote = async (entry: EntryRow): Promise<void> => {
+    if (!runId || !selected || !entry.trust || entry.trust === 'verified' || entry.trust === 'authoritative') {
+      return;
+    }
+    const token = storeApi.getState().session?.token;
+    if (!token) {
+      setClearReceipt('Session token unavailable; trust unchanged.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiBaseUrl()}/api/memory/trust`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'x-hivemind-token': token,
+        },
+        body: JSON.stringify({
+          run_id: runId,
+          bank_id: selected,
+          entry_id: entry.id,
+          trust: 'verified',
+        }),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        throw new Error(body.code ?? `trust HTTP ${response.status}`);
+      }
+      setEntries((current) =>
+        current.map((row) => (row.id === entry.id ? { ...row, trust: 'verified' } : row)),
+      );
+      setJournalVersion((version) => version + 1);
+    } catch (error: unknown) {
+      setClearReceipt(error instanceof Error ? error.message : 'trust refused');
+    }
+  };
+
   return (
     <section aria-label="Memory banks" className="surface-panel mt-3 rounded-[14px] p-3">
       <div className="flex items-center justify-between gap-2">
@@ -265,10 +354,31 @@ export function MemoryBanksPanel() {
                   </div>
                   <div className="type-mono-code break-words text-ink-900">{entry.key}</div>
                   <div className="type-mono-meta break-words text-meta">{entry.value}</div>
+                  {entry.trust === 'unverified' || entry.trust === 'quarantined' ? (
+                    <button
+                      type="button"
+                      className="mt-1 h-7 rounded-[6px] border border-hairline px-2 type-mono-meta"
+                      onClick={() => void promote(entry)}
+                    >
+                      Promote to verified
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
           </div>
+        </div>
+      ) : null}
+      {journal.length > 0 ? (
+        <div className="mt-2 border-t border-hairline pt-2">
+          <div className="type-mono-meta text-meta">Recent journal</div>
+          <ul className="mt-1 space-y-0.5">
+            {journal.map((row, index) => (
+              <li key={`${row.action}-${row.created_at}-${index}`} className="type-mono-meta text-meta">
+                {row.action} Â· {row.bank_id?.slice(0, 24) ?? 'run'} Â· {row.created_at}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </section>
