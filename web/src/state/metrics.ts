@@ -38,9 +38,7 @@ export function deriveHud(
   if (list.length === 0) {
     return { superagents: null, workers: null, greenPct: null, delta: null, source: 'none' };
   }
-  const superagents = list.filter(
-    (task) => task.kind === 'superagent' || task.kind === 'hyperagent',
-  ).length;
+  const superagents = list.filter((task) => task.kind === 'superagent').length;
   const workers = list.filter((task) => task.kind === 'worker' || task.kind === 'tool').length;
   const green = list.filter((task) => GREEN_STATES.includes(task.state)).length;
   const greenPct = list.length > 0 ? (green / list.length) * 100 : null;

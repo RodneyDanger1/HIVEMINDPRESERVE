@@ -266,10 +266,19 @@ export function HyperAgentNode({ data }: HiveNodeProps) {
   );
 }
 
+export function HiveAnchorNode() {
+  return (
+    <div className="relative h-px w-px" aria-hidden="true">
+      <Handle type="source" position={Position.Bottom} className="!h-px !w-px !border-0 !bg-transparent" />
+    </div>
+  );
+}
+
 export const NODE_RENDERERS = {
   hyperagent: HyperAgentNode,
   superagent: SuperAgentNode,
   worker: WorkerAgentNode,
   tool: ToolAgentNode,
   error: BrokenRouteNode,
+  hiveanchor: HiveAnchorNode,
 } as const;

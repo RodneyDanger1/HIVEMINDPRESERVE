@@ -5,12 +5,13 @@
  * Replay mode renders the read-only HISTORY_SNAPSHOT graph via the same
  * components but never mutates live state.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   type Edge,
   type Node,
   type NodeTypes,
@@ -104,11 +105,20 @@ function CanvasInner() {
   const connection = useUiStore((state) => state.connection);
   const history = useUiStore((state) => state.history);
   const reduced = useAppReducedMotion();
-  const { setCenter, getZoom, zoomIn, zoomOut, fitView, getIntersectingNodes } = useReactFlow();
+  const { setCenter, getZoom, zoomIn, zoomOut, fitView, getIntersectingNodes, getNode } = useReactFlow();
+  const viewport = useViewport();
   const [zoomLabel, setZoomLabel] = useState('100%');
   const [positionOverrides, setPositionOverrides] = useState<PositionMap>({});
   const [hideFinished, setHideFinished] = useState(false);
   const [focusBranch, setFocusBranch] = useState(false);
+  const [dragSourceId, setDragSourceId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [pendingReparent, setPendingReparent] = useState<{
+    readonly taskId: string;
+    readonly targetId: string;
+  } | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const chatVisible = useUiStore((state) => state.chat.visible);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
 
@@ -116,11 +126,47 @@ function CanvasInner() {
     setPositionOverrides(loadPositions(runId));
   }, [runId]);
 
+  useEffect(() => {
+    const element = canvasRef.current;
+    if (element === null) {
+      return;
+    }
+    const update = (): void => {
+      setCanvasSize({ width: element.clientWidth, height: element.clientHeight });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
   const handleSelect = useCallback(
     (taskId: string) => {
       selectTask(taskId);
     },
     [selectTask],
+  );
+
+  const findDropTarget = useCallback(
+    (node: Node): TaskRecord | null => {
+      const source = tasks[node.id];
+      if (source === undefined) {
+        return null;
+      }
+      const target = getIntersectingNodes(node).find((candidate) => {
+        const candidateTask = tasks[candidate.id];
+        return (
+          candidate.id !== node.id &&
+          candidateTask !== undefined &&
+          (candidateTask.kind === 'superagent' ||
+            candidateTask.kind === 'hyperagent' ||
+            candidateTask.kind === 'worker') &&
+          candidate.id !== source.parentId
+        );
+      });
+      return target === undefined ? null : tasks[target.id] ?? null;
+    },
+    [getIntersectingNodes, tasks],
   );
 
   const visibleTasks = useMemo<Readonly<Record<string, TaskRecord>>>(() => {
@@ -158,9 +204,19 @@ function CanvasInner() {
     const laidOut = buildNodes(visibleTasks, selectedTaskId, handleSelect);
     return laidOut.map((node) => {
       const override = positionOverrides[node.id];
-      return override ? { ...node, position: override } : node;
+      const highlighted =
+        node.id === dropTargetId
+          ? {
+              ...node,
+              style: {
+                ...node.style,
+                boxShadow: '0 0 0 2px var(--color-verify), 0 0 28px rgba(24, 156, 112, 0.45)',
+              },
+            }
+          : node;
+      return override ? { ...highlighted, position: override } : highlighted;
     });
-  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, positionOverrides]);
+  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, positionOverrides, dropTargetId]);
 
   const hasTasks = Object.keys(visibleTasks).length > 0;
   const taskCount = Object.keys(tasks).length;
@@ -176,7 +232,7 @@ function CanvasInner() {
       ...nodes,
       {
         id: HIVE_ANCHOR_ID,
-        type: 'default',
+        type: 'hiveanchor',
         position: { x: -0.5, y: -0.5 },
         style: { width: 1, height: 1, opacity: 0, pointerEvents: 'none' },
         data: {},
@@ -187,6 +243,113 @@ function CanvasInner() {
       } as CanvasNode,
     ];
   }, [nodes, visibleTasks, history.replayGraph]);
+
+  const handleNodeDrag = useCallback(
+    (_: unknown, node: Node) => {
+      if (history.replayGraph) {
+        return;
+      }
+      const source = tasks[node.id];
+      if (source === undefined || source.kind === 'hyperagent') {
+        return;
+      }
+      const target = findDropTarget(node);
+      setDragSourceId(node.id);
+      setDropTargetId(target?.id ?? null);
+    },
+    [findDropTarget, history.replayGraph, tasks],
+  );
+
+  const handleNodeDragStop = useCallback(
+    (_: unknown, node: Node) => {
+      setDragSourceId(null);
+      setDropTargetId(null);
+      if (history.replayGraph) {
+        return;
+      }
+      const source = tasks[node.id];
+      if (source === undefined || source.kind === 'hyperagent') {
+        return;
+      }
+      const target = findDropTarget(node);
+      if (target !== null) {
+        setPendingReparent({ taskId: node.id, targetId: target.id });
+      }
+    },
+    [findDropTarget, history.replayGraph, tasks],
+  );
+
+  const confirmReparent = useCallback(async (): Promise<void> => {
+    const pending = pendingReparent;
+    if (pending === null) {
+      return;
+    }
+    setPendingReparent(null);
+    selectTask(pending.taskId);
+    await rewireSelected(pending.targetId);
+  }, [pendingReparent, rewireSelected, selectTask]);
+
+  const dragLine = useMemo(() => {
+    if (dragSourceId === null || dropTargetId === null) {
+      return null;
+    }
+    const source = getNode(dragSourceId);
+    const target = getNode(dropTargetId);
+    if (source === undefined || target === undefined) {
+      return null;
+    }
+    const sourceWidth = source.measured?.width ?? 1;
+    const sourceHeight = source.measured?.height ?? 1;
+    const targetWidth = target.measured?.width ?? 1;
+    const targetHeight = target.measured?.height ?? 1;
+    const sx = (source.position.x + sourceWidth / 2) * viewport.zoom + viewport.x;
+    const sy = (source.position.y + sourceHeight / 2) * viewport.zoom + viewport.y;
+    const tx = (target.position.x + targetWidth / 2) * viewport.zoom + viewport.x;
+    const ty = (target.position.y + targetHeight / 2) * viewport.zoom + viewport.y;
+    return { sx, sy, tx, ty };
+  }, [dragSourceId, dropTargetId, getNode, viewport]);
+
+  const ownerLinks = useMemo(() => {
+    if (history.replayGraph || canvasSize.width === 0 || canvasSize.height === 0) {
+      return [];
+    }
+    const root = Object.values(visibleTasks).find((task) => task.kind === 'hyperagent');
+    if (root === undefined) {
+      return [];
+    }
+    const cx = canvasSize.width / 2;
+    const cy = canvasSize.height / 2 - 32;
+    const links: Array<{ id: string; sx: number; sy: number; tx: number; ty: number }> = [];
+    for (const task of Object.values(visibleTasks)) {
+      if (task.parentId !== root.id || task.kind === 'hyperagent') {
+        continue;
+      }
+      const node = getNode(task.id);
+      if (node === undefined) {
+        continue;
+      }
+      const width = node.measured?.width ?? 1;
+      const height = node.measured?.height ?? 1;
+      const tx = (node.position.x + width / 2) * viewport.zoom + viewport.x;
+      const ty = (node.position.y + height / 2) * viewport.zoom + viewport.y;
+      const dx = tx - cx;
+      const dy = ty - cy;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 1) {
+        continue;
+      }
+      const startRadius = 215;
+      links.push({
+        id: task.id,
+        sx: cx + (dx / distance) * startRadius,
+        sy: cy + (dy / distance) * startRadius,
+        tx,
+        ty,
+      });
+    }
+    return links;
+  }, [canvasSize, getNode, history.replayGraph, viewport, visibleTasks]);
+
   useEffect(() => {
     // First graph: fit the whole swarm so child cards are never born outside
     // the viewport. Ctrl+0 still returns to the hive origin.
@@ -277,6 +440,7 @@ function CanvasInner() {
   return (
     <div
       id="hive-canvas"
+      ref={canvasRef}
       className="relative h-full min-h-0 w-full"
       role="application"
       aria-label="HiveMind spatial canvas"
@@ -294,6 +458,34 @@ function CanvasInner() {
       </svg>
       <HiveField />
       <div className="hive-scan" aria-hidden="true" />
+      {ownerLinks.length === 0 ? null : (
+        <svg
+          data-testid="owner-links"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
+        >
+          {ownerLinks.map((link) => (
+            <g key={link.id}>
+              <line
+                x1={link.sx}
+                y1={link.sy}
+                x2={link.tx}
+                y2={link.ty}
+                stroke="var(--color-honey-500)"
+                strokeWidth="1.5"
+                strokeDasharray="7 6"
+                opacity="0.85"
+              />
+              <circle
+                cx={(link.sx + link.tx) / 2}
+                cy={(link.sy + link.ty) / 2}
+                r="3.5"
+                fill="var(--color-honey-500)"
+              />
+            </g>
+          ))}
+        </svg>
+      )}
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[660px] w-[620px] -translate-x-1/2 -translate-y-1/2">
         <span className="ambient-bee ambient-bee-a" aria-hidden="true">
           <BeeMark />
@@ -306,6 +498,54 @@ function CanvasInner() {
         </span>
       </div>
       <HudBadge />
+      {dragLine === null ? null : (
+        <svg
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-20 h-full w-full"
+        >
+          <line
+            x1={dragLine.sx}
+            y1={dragLine.sy}
+            x2={dragLine.tx}
+            y2={dragLine.ty}
+            stroke="var(--color-verify)"
+            strokeWidth="2"
+            strokeDasharray="5 4"
+            strokeLinecap="round"
+          />
+          <circle cx={dragLine.tx} cy={dragLine.ty} r="5" fill="var(--color-verify)" />
+        </svg>
+      )}
+      {pendingReparent === null ? null : (
+        <div className="absolute bottom-24 left-1/2 z-30 w-[min(430px,92%)] -translate-x-1/2 rounded-[var(--radius-card)] border border-verify bg-panel p-3 shadow-[var(--shadow-e2)]">
+          <p className="type-label text-ink-900">
+            Connect {tasks[pendingReparent.taskId]?.label ?? 'agent'} under{' '}
+            {tasks[pendingReparent.targetId]?.label ?? 'target'}?
+          </p>
+          <p className="type-mono-meta mt-1 text-meta">
+            The card moves with this connection. Memory, tool and message scope changes are not
+            applied yet; the server rewire is the first step.
+          </p>
+          <div className="mt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1 text-ink-700"
+              onClick={() => setPendingReparent(null)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="type-label rounded-[var(--radius-button)] bg-honey-300 px-3 py-1 text-ink-900"
+              onClick={() => {
+                void confirmReparent();
+              }}
+            >
+              Connect
+            </button>
+          </div>
+        </div>
+      )}
       <div className="absolute left-3 top-16 z-20 flex items-center gap-1">
         <button
           type="button"
@@ -365,8 +605,10 @@ function CanvasInner() {
             handleSelect(node.id);
           }
         }}
+        onNodeDrag={handleNodeDrag}
         onNodeDragStop={(_, node: Node) => {
           if (history.replayGraph) {
+            handleNodeDragStop(_, node);
             return;
           }
           setPositionOverrides((previous) => {
@@ -377,23 +619,7 @@ function CanvasInner() {
             savePositions(runId, next);
             return next;
           });
-          const task = tasks[node.id];
-          if (!task || task.kind !== 'worker') {
-            return;
-          }
-          const target = getIntersectingNodes(node).find((candidate) => {
-            const candidateTask = tasks[candidate.id];
-            return (
-              candidate.id !== node.id &&
-              candidateTask !== undefined &&
-              (candidateTask.kind === 'superagent' || candidateTask.kind === 'hyperagent') &&
-              candidate.id !== task.parentId
-            );
-          });
-          if (target !== undefined) {
-            selectTask(node.id);
-            void rewireSelected(target.id);
-          }
+          handleNodeDragStop(_, node);
         }}
         onPaneClick={() => selectTask(null)}
         onMoveEnd={(_, viewport) => {
