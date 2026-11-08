@@ -295,6 +295,101 @@ Migration {
         ALTER TABLE agent_messages DROP COLUMN status;
     "#,
 },
+Migration {
+    version: 13,
+    name: "task_identity",
+    up: r#"
+        ALTER TABLE tasks ADD COLUMN class TEXT;
+        ALTER TABLE tasks ADD COLUMN rank INTEGER;
+        ALTER TABLE tasks ADD COLUMN profile_id TEXT;
+        UPDATE tasks SET
+            class = CASE
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'hyper'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('super','superagent','super-agent','sub-hive','subhive') THEN 'super'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('subagent','sub-agent') THEN 'subagent'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('agent','worker','workeragent','worker-agent','content-writer',
+                     'data-analyst','code-reviewer','chatbot') THEN 'agent'
+                ELSE NULL END,
+            rank = CASE
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 1
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('super','superagent','super-agent','sub-hive','subhive') THEN 2
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('subagent','sub-agent') THEN 4
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('agent','worker','workeragent','worker-agent','content-writer',
+                     'data-analyst','code-reviewer','chatbot') THEN 3
+                ELSE NULL END,
+            profile_id = CASE
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'planner'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('super','superagent','super-agent','sub-hive','subhive') THEN 'superagent'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('subagent','sub-agent') THEN 'subagent'
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('content-writer','data-analyst','code-reviewer','chatbot')
+                    THEN replace(replace(lower(trim(role)),'_','-'),' ','-')
+                WHEN replace(replace(lower(trim(role)),'_','-'),' ','-') IN
+                    ('agent','worker','workeragent','worker-agent') THEN 'agent'
+                ELSE NULL END;
+        CREATE TRIGGER IF NOT EXISTS tasks_identity_after_insert
+        AFTER INSERT ON tasks
+        WHEN NEW.class IS NULL
+        BEGIN
+            UPDATE tasks SET
+                class = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'hyper'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN 'super'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('subagent','sub-agent') THEN 'subagent'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('agent','worker','workeragent','worker-agent','content-writer',
+                         'data-analyst','code-reviewer','chatbot') THEN 'agent'
+                    ELSE NULL END,
+                rank = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 1
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN 2
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('subagent','sub-agent') THEN 4
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('agent','worker','workeragent','worker-agent','content-writer',
+                         'data-analyst','code-reviewer','chatbot') THEN 3
+                    ELSE NULL END,
+                profile_id = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'planner'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN 'superagent'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('subagent','sub-agent') THEN 'subagent'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('content-writer','data-analyst','code-reviewer','chatbot')
+                        THEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-')
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('agent','worker','workeragent','worker-agent') THEN 'agent'
+                    ELSE NULL END
+            WHERE id = NEW.id;
+        END;
+        CREATE INDEX IF NOT EXISTS idx_tasks_identity ON tasks(run_id, class, profile_id);
+    "#,
+    down: r#"
+        DROP INDEX IF EXISTS idx_tasks_identity;
+        DROP TRIGGER IF EXISTS tasks_identity_after_insert;
+        ALTER TABLE tasks DROP COLUMN profile_id;
+        ALTER TABLE tasks DROP COLUMN rank;
+        ALTER TABLE tasks DROP COLUMN class;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -909,10 +1004,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 12);
-        assert_eq!(database.migrate().expect("second migrate"), 12);
+        assert_eq!(database.migrate().expect("first migrate"), 13);
+        assert_eq!(database.migrate().expect("second migrate"), 13);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 12);
+        assert_eq!(applied.len(), 13);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -949,7 +1044,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 12);
+        assert_eq!(database.migrate().expect("re-migrate"), 13);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -965,7 +1060,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 12);
+        assert_eq!(reopened.schema_version().expect("version"), 13);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1120,7 +1215,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 12);
+        assert_eq!(database.migrate().expect("migrate"), 13);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1155,7 +1250,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 12);
+        assert_eq!(database.migrate().expect("re-migrate"), 13);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1179,7 +1274,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (13, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (14, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1189,12 +1284,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 13,
-                latest: 12
+                current: 14,
+                latest: 13
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 13);
+        assert_eq!(database.schema_version().expect("version"), 14);
     }
 
     #[test]

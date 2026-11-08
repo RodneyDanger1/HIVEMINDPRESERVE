@@ -34,6 +34,17 @@ pub struct AgentMemoryRecord {
     pub created_at: String,
 }
 
+/// Persisted task identity derived at admission by the v13 task trigger.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TaskIdentity {
+    /// `hyper`, `super`, `agent`, or `subagent`.
+    pub class: String,
+    /// Rank 1..4.
+    pub rank: u8,
+    /// Persona/profile id.
+    pub profile_id: String,
+}
+
 /// One durable agent-to-agent message row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AgentMessageRecord {
@@ -787,6 +798,32 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(u64::try_from(count).unwrap_or(0))
+    }
+
+    /// Reads a task's persisted class/rank/profile, when the v13 trigger
+    /// resolved it. An unknown role stays `None`; it is never guessed.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn task_identity(&self, task_id: TaskId) -> Result<Option<TaskIdentity>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let row: Option<(Option<String>, Option<i64>, Option<String>)> = connection
+                    .query_row(
+                        "SELECT class, rank, profile_id FROM tasks WHERE id = ?1",
+                        params![task_id.to_string()],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                Ok(row.and_then(|(class, rank, profile)| {
+                    Some(TaskIdentity {
+                        class: class?,
+                        rank: u8::try_from(rank?).ok()?,
+                        profile_id: profile?,
+                    })
+                }))
+            })
+            .map_err(map)
     }
 
     /// Lists a run's durable agent messages in insertion order.
@@ -1606,6 +1643,44 @@ mod tests {
             store.answer_agent_message(run.id, Uuid::now_v7(), "operator", "missing"),
             Err(Refusal::TaskNotFound)
         );
+    }
+
+    #[test]
+    fn task_identity_is_persisted_by_the_v13_trigger() {
+        let store = store();
+        let run = store
+            .create_run("p", "identity", AgentState::Running)
+            .expect("run");
+        let subagent = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "sub-agent".to_owned(),
+            depth: 2,
+            spawn_seq: 1,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        let unknown = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "researcher".to_owned(),
+            depth: 1,
+            spawn_seq: 2,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        store.insert_task(&subagent).expect("subagent");
+        store.insert_task(&unknown).expect("unknown");
+        let identity = store
+            .task_identity(subagent.id)
+            .expect("identity")
+            .expect("resolved");
+        assert_eq!(identity.class, "subagent");
+        assert_eq!(identity.rank, 4);
+        assert_eq!(identity.profile_id, "subagent");
+        assert!(store.task_identity(unknown.id).expect("unknown").is_none());
     }
 
     #[test]

@@ -282,3 +282,9 @@ Not delivered and must not be claimed:
 - Subagent aliases (`subagent`, `sub_agent`, `sub-agent`, case variants) now share one admission policy; a worker can spawn any alias and cannot spawn a worker.
 - A too-shallow Subagent now returns `E_SPAWN_DEPTH` instead of the misleading `E_TOOL_NOT_ALLOWED` in plan, command, and model/template paths.
 - Generic `agent` persona/template added (8 embedded profiles) with a 9-tool worker grant; persisted class/rank/profile and the full identity resolver remain unimplemented.
+### P3 v13 identity persistence (partial)
+
+- v13 adds `tasks.class/rank/profile_id`; an `AFTER INSERT` trigger derives them from the role using the same alias table as the resolver work, and existing rows are backfilled. Unknown roles remain NULL.
+- `RunStore::task_identity` reads the triple; `/api/agents/runs/{id}/roster` exposes class/rank/profile alongside role/kind. The wire kind still comes from `AgentTier`, so Subagent still renders as worker until the additive kind delta lands.
+- New test: subagent alias resolves to class `subagent`, rank 4, profile `subagent`; unknown role remains unreported.
+- Not delivered: `TaskRecord` fields, engine authorization by persisted class, ownership columns, strict unknown-role admission, Subagent wire kind/card.

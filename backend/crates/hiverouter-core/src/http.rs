@@ -1142,10 +1142,14 @@ async fn agent_roster(
                 .iter()
                 .map(|task| {
                     let kind = node_kind(task_agent_tier(task));
+                    let identity = state.engine.store.task_identity(task.id).ok().flatten();
                     serde_json::json!({
                         "task_id": task.id.to_string(),
                         "parent_task_id": task.parent_task_id.map(|id| id.to_string()),
                         "role": task.role,
+                        "class": identity.as_ref().map(|identity| identity.class.as_str()),
+                        "rank": identity.as_ref().map(|identity| identity.rank),
+                        "profile_id": identity.as_ref().map(|identity| identity.profile_id.as_str()),
                         "kind": kind,
                         "label": node_label_for(&task.role, kind, &task.id.to_string()),
                         "state": task.state.as_str(),
