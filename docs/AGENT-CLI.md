@@ -4,6 +4,10 @@
 localhost HTTP routes and WebSocket COMMAND/EVENT contract the UI uses. It is
 not a second backend and does not read, print, or store the provider key.
 
+> The shipped `hiverouter-cli.exe` is a separate, read-only diagnostics binary
+> (version/preflight/schema/tools/cost/health). This `hivemind` front-door is the
+> lifecycle + control client. Do not mix their command tables.
+
 - Human wrapper: `tools/hivemind.cmd` or `tools/hivemind.ps1`
 - Direct: `node tools/hivemind-cli.mjs`
 - Agent skill: `skills/hivemind/SKILL.md`
@@ -42,7 +46,7 @@ accepted. No environment variable is required for normal operation.
 This aligns with the shipped `hiverouter-cli` classes (0/2/3/4); semantic detail
 comes from `error.code`, not from extra process codes.
 
-## Full command list
+## Full command list (45 commands)
 
 ### Lifecycle and local
 
