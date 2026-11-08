@@ -156,4 +156,23 @@ describe('HISTORY_SNAPSHOT replay projection (S10)', () => {
     const distinct = new Set(nodes.map((node) => `${node.position.x},${node.position.y}`));
     expect(distinct.size).toBe(nodes.length);
   });
+
+  it('keeps a subagent as a distinct card kind and role on replay', () => {
+    const replay = buildReplayTasks(
+      snapshot([
+        {
+          task_id: 'sub-1',
+          state: 'completed',
+          rev: 2,
+          kind: 'subagent',
+          role: 'subagent',
+          label: 'Subagent sub-1',
+        },
+      ]),
+    );
+    expect(replay['sub-1']?.kind).toBe('subagent');
+    expect(replay['sub-1']?.role).toBe('subagent');
+    const nodes = buildNodes(replay, null, noop, false);
+    expect(nodes[0]?.type).toBe('subagent');
+  });
 });

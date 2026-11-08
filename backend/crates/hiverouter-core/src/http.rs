@@ -743,6 +743,7 @@ fn node_kind_for_role(role: &str) -> &'static str {
     match role.trim().to_ascii_lowercase().as_str() {
         "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => "hyperagent",
         "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => "superagent",
+        "subagent" | "sub_agent" => "subagent",
         "tool" | "toolagent" | "tool_agent" => "tool",
         _ => "worker",
     }

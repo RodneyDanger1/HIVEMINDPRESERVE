@@ -210,7 +210,7 @@ export interface ReplyDonePayload {
   readonly usage: Usage;
 }
 /** Node type vocabulary: 4 node types + 1 broken-route error state (R-U5). */
-export const NODE_KINDS = ['hyperagent', 'superagent', 'worker', 'tool', 'error'] as const;
+export const NODE_KINDS = ['hyperagent', 'superagent', 'subagent', 'worker', 'tool', 'error'] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 export function isNodeKind(value: unknown): value is NodeKind {
   return typeof value === 'string' && (NODE_KINDS as readonly string[]).includes(value);

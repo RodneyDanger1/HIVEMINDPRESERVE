@@ -122,13 +122,14 @@ export function isRunActive(state: AgentState): boolean {
   return !isTerminal(state) && state !== 'empty' && state !== 'loading';
 }
 
-/** Node type vocabulary (4 node types + 1 broken-route error state, R-U5). */
-export const NODE_KIND_KEYS = ['hyperagent', 'superagent', 'worker', 'tool', 'error'] as const;
+/** Node type vocabulary (agent ranks + tool + broken-route error state). */
+export const NODE_KIND_KEYS = ['hyperagent', 'superagent', 'subagent', 'worker', 'tool', 'error'] as const;
 export type NodeKindLabel = (typeof NODE_KIND_KEYS)[number];
 
 export const NODE_KIND_LABELS: Readonly<Record<NodeKindLabel, string>> = {
   hyperagent: STRINGS.node.hyperAgent,
   superagent: STRINGS.node.superAgent,
+  subagent: 'Subagent',
   worker: STRINGS.node.workerAgent,
   tool: STRINGS.node.toolAgent,
   error: STRINGS.node.errorState,

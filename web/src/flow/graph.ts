@@ -31,6 +31,7 @@ export const HIVE_ANCHOR_ID = 'hive-core-anchor';
 const NODE_SIZE: Record<NodeKindLabel, { width: number; height: number }> = {
   hyperagent: { width: LAYOUT.chat.width, height: LAYOUT.chat.height },
   superagent: LAYOUT.cards.superagent,
+  subagent: LAYOUT.cards.worker,
   worker: LAYOUT.cards.worker,
   tool: LAYOUT.cards.tool,
   error: LAYOUT.cards.error,
@@ -333,6 +334,7 @@ export function taskCounts(tasks: Readonly<Record<string, TaskRecord>>): {
   const byKind: Record<NodeKindLabel, number> = {
     hyperagent: 0,
     superagent: 0,
+    subagent: 0,
     worker: 0,
     tool: 0,
     error: 0,

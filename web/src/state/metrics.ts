@@ -7,7 +7,7 @@ import type { RunMetricsPayload } from '../api/contract';
 import type { AgentState } from './agentState';
 
 export interface TaskLike {
-  readonly kind: 'hyperagent' | 'superagent' | 'worker' | 'tool' | 'error';
+  readonly kind: 'hyperagent' | 'superagent' | 'subagent' | 'worker' | 'tool' | 'error';
   readonly state: AgentState;
 }
 
@@ -39,7 +39,9 @@ export function deriveHud(
     return { superagents: null, workers: null, greenPct: null, delta: null, source: 'none' };
   }
   const superagents = list.filter((task) => task.kind === 'superagent').length;
-  const workers = list.filter((task) => task.kind === 'worker' || task.kind === 'tool').length;
+  const workers = list.filter(
+    (task) => task.kind === 'worker' || task.kind === 'subagent' || task.kind === 'tool',
+  ).length;
   const green = list.filter((task) => GREEN_STATES.includes(task.state)).length;
   const greenPct = list.length > 0 ? (green / list.length) * 100 : null;
   return { superagents, workers, greenPct, delta: null, source: 'derived' };

@@ -700,6 +700,8 @@ function CanvasInner() {
             switch (kind) {
               case 'superagent':
                 return 'var(--color-honey-400)';
+              case 'subagent':
+                return 'var(--color-verify)';
               case 'worker':
                 return 'var(--color-honey-600)';
               case 'tool':

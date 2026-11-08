@@ -193,6 +193,31 @@ export function WorkerAgentNode({ data }: HiveNodeProps) {
   );
 }
 
+export function SubagentNode({ data }: HiveNodeProps) {
+  return (
+    <Frame data={data} radius={12}>
+      <button
+        type="button"
+        className="flex min-h-0 flex-1 flex-col px-4 py-3 text-left"
+        onClick={() => data.onSelect(data.task.id)}
+        aria-label={`${data.task.label} — Subagent, ${visualFor(data.task.state).label}`}
+        aria-pressed={data.selected}
+      >
+        <div className="flex items-center gap-2">
+          <StateDot state={data.task.state} size={9} />
+          <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium leading-[17px] text-ink-900">
+            {data.task.label}
+          </span>
+        </div>
+        <span className="type-mono-meta mt-1 text-meta">SUBAGENT · bounded worker</span>
+        <div className="mt-auto">
+          <Progress value={data.task.progress} height={3} tone="worker" />
+        </div>
+      </button>
+    </Frame>
+  );
+}
+
 export function ToolAgentNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} radius={14}>
@@ -277,6 +302,7 @@ export function HiveAnchorNode() {
 export const NODE_RENDERERS = {
   hyperagent: HyperAgentNode,
   superagent: SuperAgentNode,
+  subagent: SubagentNode,
   worker: WorkerAgentNode,
   tool: ToolAgentNode,
   error: BrokenRouteNode,
