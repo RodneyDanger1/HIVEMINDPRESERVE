@@ -3,14 +3,22 @@
  * object, so this surface renders the store's actual hierarchy rather than a
  * second graph implementation. It is read-only; selection is owned by the store.
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS, isTerminal } from '../state/agentState';
 import { buildReplayTasks } from '../flow/graph';
+import { apiBaseUrl } from '../api/client';
 import { STRINGS } from '../state/strings';
 import { AgentHierarchy } from './AgentHierarchy';
 import { PanelTitle } from './StatePack';
 import { ProjectsPanel } from './ProjectsPanel';
+
+interface RuntimeCapacity {
+  readonly state: string;
+  readonly active: number;
+  readonly maxAgents: number;
+  readonly maxCalls: number;
+}
 
 export function SwarmPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -20,12 +28,52 @@ export function SwarmPanel() {
   const setNav = useUiStore((state) => state.setNav);
   const project = useUiStore((state) => state.project);
   const setTab = useUiStore((state) => state.setTab);
+  const [capacity, setCapacity] = useState<RuntimeCapacity | null>(null);
   const replayTasks = useMemo(
     () => (replayGraph === null ? null : buildReplayTasks(replayGraph.graph)),
     [replayGraph],
   );
   const sourceTasks = replayTasks ?? tasks;
   const list = Object.values(sourceTasks);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${apiBaseUrl()}/api/runtime`, { headers: { Accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`runtime HTTP ${response.status}`);
+        }
+        const body = (await response.json()) as Record<string, unknown>;
+        const caps =
+          typeof body.caps === 'object' && body.caps !== null
+            ? (body.caps as Record<string, unknown>)
+            : null;
+        if (
+          typeof body.status !== 'string' ||
+          caps === null ||
+          typeof caps.max_agents !== 'number' ||
+          typeof caps.max_calls !== 'number'
+        ) {
+          throw new Error('runtime payload missing capacity fields');
+        }
+        if (!cancelled) {
+          setCapacity({
+            state: body.status,
+            active: typeof body.active_task_count === 'number' ? body.active_task_count : 0,
+            maxAgents: caps.max_agents,
+            maxCalls: caps.max_calls,
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCapacity(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const counts = {
     hyperagents: list.filter((task) => task.kind === 'hyperagent').length,
     superagents: list.filter((task) => task.kind === 'superagent').length,
@@ -40,6 +88,11 @@ export function SwarmPanel() {
     <div className="h-full min-h-0 overflow-y-auto bg-canvas p-4">
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3">
         <PanelTitle>{STRINGS.tabs.swarm}</PanelTitle>
+        <p className="type-mono-meta text-[9px] tracking-[0.08em] text-meta">
+          {capacity === null
+            ? 'CAPACITY UNKNOWN'
+            : `CAP ${capacity.maxAgents} AGENTS / ${capacity.maxCalls} CALLS · ${capacity.active} ACTIVE · ${capacity.state.toUpperCase()}`}
+        </p>
         <p className="type-body-l max-w-[720px] text-ink-500">
           The HyperAgent tree and the live swarm graph are one object. Re-parenting is only
           possible while a branch is not streaming; every edge is a bee line, never decoration.
