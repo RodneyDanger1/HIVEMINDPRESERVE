@@ -167,7 +167,9 @@ impl ProviderExecutorAdapter {
         let (usage, finish_reason) = loop {
             let next = tokio::select! {
                 _ = cancel.cancelled() => {
-                    let _ = budget.record_call(self.settings.model, None, now_unix_secs());
+                    // A cancelled stream is not a completed billable call. Do not
+                    // settle it as INCOMPLETE: that would poison the shared run
+                    // budget and fail sibling tasks the run deliberately keeps.
                     return Err(Refusal::ToolCancelled);
                 }
                 event = handle.next() => event,

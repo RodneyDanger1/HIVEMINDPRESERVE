@@ -91,7 +91,70 @@ Weighted code maturity ~5.2/10; verified-evidence maturity ~3.5/10. One solid ve
 Highest-leverage sequence: **S0 prove current SHA** (freeze writer, compile/test/typecheck/build, one authorized smoke, regenerate status/trace), **S1 one agent-text trust boundary**, **S2 real role enum/spawn matrix/autonomy**, **S3 bank tree + A2A answer**, **S4 measured concurrency/scheduler**, **S5 daemon/remote R0-R2**, **S6 seal**. Remote/daemon is decision-gated and should not block v1 at 50-150 active.
 
 
+## Wave synthesis
+
+### Agent classes: truth
+HiveMind currently has **4 enforced authority tiers** (Hyper, Super, Worker, Tool). "Subagent" is a role string mapped to Worker; it has no tier, contract kind, distinct allowlist, card, or bank. HyperAgent is a root row plus one answer-only synthesis turn; planning is a separate provider call and the root never uses its spawn/report tools. ToolAgent has no validated creator and cannot finish/report. Remote is a proposed tree-free principal/connector, not a tier or NODE kind; daemon/watchdog/supervisor are non-agent records/lanes. Required fix: one closed role/persona/tier/kind table, plan-path spawn validation, Subagent tier decision, root always-or-named-refusal policy, and Remote kept outside AgentTier.
+
+### Memory/A2A Venn
+- Write: own task branch (now), engine run bank (now); read: own + parent + run bank (now), originally seeded before writes and role-filtered.
+- Still open: no bank tree/trust/retention; root prints raw run rows; rewire can retain old-parent facts; roster is stale/truncated; no answer/wake/status; terminal recipients accepted; TOCTOU 32 budget; approved cross-branch send lacks args/grant binding; secret filtering is partial and inconsistent.
+- Clean target: run digest + hive summaries + branch raw; read set computed per turn; A2A status open/answered/expired and answers never grant authority; roster is discovery-only.
+
+### Security/quality
+Open P0/P1: unauthenticated `/api/*` mutations and loopback token issuance; persona allowlist now enforced but import validation/tool advertisement still loose; `cmd.exe` allowlist is not containment; approval preview truncation; fail-open security gate/absent CI; provider routes accept missing Origin; weak session token; missing FKs and transactions; raw tool-result/A2A injection labels; no durable event journal. Snapshot write now fsyncs.
+
+### CLI/agent surface
+Fixed: dry-run no-side-effect for lifecycle, `--y` alias conflict for viewport, fractional viewport numbers, submit run-id capture, stale CLI state cleanup, persona scope. Open: `--timeout-ms` not global, some exit codes wrong, stop identity/pid reuse, failed-start cleanup, bind/IPv6 validation, CLI does not decrypt DPAPI key, release packaging omits Node CLI, no CLI tests/gates, await-result commands not correlation-scoped.
+
+### Target architecture
+Five planes: control (commands/orchestrator/scheduler/policy/budget), agent-host (actor loop/supervisor/mailbox), state (event log/projections/memory/audit), interop (A2A/MCP/remote transport/devices), experience (UI projections/controls). Existing contract, run state machine, graph, provider gateway, tool/approval/jail, snapshots, and UI are reusable primitives. The run engine becomes one component; it is not the runtime.
+
+## Production completion checklist
+
+### P0 - blocks any completion claim
+- Freeze one SHA and run full backend/web/build/e2e gates; skipped security specs are not passes.
+- Release build must run cargo test/clippy/fmt/dependency checks; a failing test must refuse release.
+- Choose one shipped artifact set and record hashes/ports/data dirs; remove contradictory artifacts.
+- DB newer-version boot refusal, pre-migration backup, upgrade/rollback drill, backup/restore commands.
+- One agent-text trust boundary on write/store/publish/render (seed path now bounded; write redaction still partial).
+- Token-authenticated /api/* mutations and /api/session; scoped memory clear with confirmation/receipt.
+- Rewrite RUNBOOK/README/release evidence to current HEAD and actual features.
+
+### P1 - product-ready operator experience
+- A2A answer/status/wake/atomic budget; memory bank tree/trust/summaries/scoped clear; run-detail/failure ledger, roster, mailbox status/filters, kill confirmation (added).
+- FigCraft board-to-surface mapping or explicitly narrow the claim; 20MB gallery bundle decision.
+- In-app version/build stamp, support bundle, first-run key/launcher path, axe or documented exclusion, perf budget, clippy/audit/SBOM/secret scanning.
+
+### Honestly deferrable
+Remote/daemon runtime, unmeasured scale, Tauri shell, provider long-tail, pixel-perfect fidelity, Windows service/auto-update, multi-user.
+
+## Requirement-matrix synthesis
+
+| Area | Status | Remaining blocker |
+|---|---|---|
+| HyperAgent execution | PARTIAL | Root turn answer-only and hierarchical-only; flat policy undecided |
+| SuperAgent | PARTIAL | Tier/persona/spawn/aggregation; no owned branch/hive bank/budget |
+| Workers/subagents | PARTIAL | Personas exist; planner emits worker/superagent only; Subagent not a tier/card/bank |
+| Memory banks | PARTIAL | Run bank + own branch now; no bank tree/trust/summaries/scoped clear |
+| A2A | PARTIAL | Durable one-way; no status/answer/wake/continuation refresh/atomic budget |
+| UI hierarchy | PARTIAL | Canvas/hierarchy; missing run-detail, treegrid, answer, roster, remote lane; gallery static |
+| Provider | PARTIAL | DeepSeek-only chat/tools/models/balance; no context preflight/feature matrix |
+| Crash/daemon | PARTIAL | Snapshots/recovery/audit; no resume/event journal/daemon/watchdog |
+| Scale | MISSING | One active run, serial leaves, 8 in-flight, 64/40 caps |
+
+Current honest distance: strong single-run HMAS skeleton; ~0 of 10 production gates complete; code maturity ~5/10, verified evidence ~3.5/10. Next gate is P0 truth freeze + tests at one SHA.
+
 ## Security/quality safeguards still open
+
+### Highest-leverage next changes
+1. P0 truth freeze + tests at one SHA.
+2. One agent-text/trust boundary on every write/render path.
+3. Real role/persona/tier/kind resolution and plan-path spawn validation.
+4. A2A answer/status/wake and atomic budget.
+5. Run-bank/bank-tree memory read sets and root summaries.
+6. API token auth + stop/start identity + gate fixes.
+
 
 - `/api/*` profile/memory mutations are unauthenticated; `/api/session` hands the WS token to any loopback peer; provider routes accept missing Origin.
 - Persona `allowed_tool_ids` is now enforced against the scoped context, but import validation and model tool advertisement still need hardening.

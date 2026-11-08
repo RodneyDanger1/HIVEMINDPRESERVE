@@ -246,7 +246,7 @@ async fn run_lifecycle_plans_and_dispatches() {
         }
     };
     assert_eq!(final_status.envelope.payload["status"], "completed");
-    assert_eq!(reply_done, 2, "one REPLY_DONE per executed leaf task");
+    assert_eq!(reply_done, 3, "two leaves + the multi-node root synthesis");
     assert!(reply_deltas >= 2, "streamed reply chunks missing");
     assert_eq!(node_spawns, 3, "root + two planned nodes");
     assert!(run_metrics >= 1, "RUN_METRICS must have a producer");
@@ -262,15 +262,15 @@ async fn run_lifecycle_plans_and_dispatches() {
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     let usage = usage.expect("terminal usage row");
-    assert_eq!(usage.prompt_tokens, Some(2));
-    assert_eq!(usage.completion_tokens, Some(4));
-    assert_eq!(usage.total_tokens, Some(6));
+    assert_eq!(usage.prompt_tokens, Some(3));
+    assert_eq!(usage.completion_tokens, Some(6));
+    assert_eq!(usage.total_tokens, Some(9));
     assert_eq!(harness.store.task_count(run.id).expect("tasks"), 3);
     let messages = harness.store.messages(run.id).expect("messages");
     assert_eq!(
         messages.len(),
-        3,
-        "user prompt + one assistant reply per executed leaf"
+        4,
+        "user prompt + two leaf replies + root synthesis"
     );
     assert_eq!(messages[0].role, hiverouter_core::entities::ChatRole::User);
     assert_eq!(

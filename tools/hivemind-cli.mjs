@@ -780,10 +780,11 @@ async function startServer(options) {
     );
   }
   let exe = options.dryRun ? resolveExe(options) : null;
+  const bindHost = host === 'localhost' ? '127.0.0.1' : host;
   const workspaceRoot = resolveWorkspaceRoot(options);
   const dataDir = dataDirectory(options);
   const dbPath = options.db ? path.resolve(options.db) : path.resolve(dataDir, 'hiverouter.db');
-  const args = ['--bind', `${host}:${port}`, '--data-dir', dataDir, '--workspace-root', workspaceRoot, '--db', dbPath];
+  const args = ['--bind', `${bindHost}:${port}`, '--data-dir', dataDir, '--workspace-root', workspaceRoot, '--db', dbPath];
   if (options.dryRun) {
     // A dry run has no side effects: no health probe, no state write, no mkdir,
     // and no stale-state cleanup.
@@ -953,6 +954,14 @@ async function stopServer(options) {
   if (state.db_path || state.boot_id) {
     try {
       const health = await httpJson(resolveBaseUrl(options), '/health');
+      if (Number.isInteger(health?.pid) && Number(health.pid) !== Number(pid)) {
+        throw cliError(
+          'E_NOT_OWNED',
+          `The live server reports pid ${health.pid}, not the recorded pid ${pid}.`,
+          'Refusing to kill a reused/foreign process; inspect state before retrying.',
+          EXIT_NOT_RUNNING,
+        );
+      }
       if (state.db_path) {
         const actual = health?.database?.path ? path.resolve(String(health.database.path)) : null;
         if (actual !== null && path.resolve(String(state.db_path)) !== actual) {
@@ -1852,7 +1861,9 @@ async function executeLocal(command, options, baseUrl) {
       } catch (error) {
         report.checks.push({ name: 'server', ok: false, code: error.code, detail: error.message });
       }
-      report.ready = report.checks.every((check) => check.name === 'provider_key' ? true : check.ok);
+      report.ready = report.checks.every((check) =>
+        check.name === 'provider_key' || check.name === 'state' ? true : check.ok,
+      );
       return report;
     }
     case 'logs': {
@@ -2031,7 +2042,7 @@ function humanHelp(command) {
 
 function exitCodeFor(error) {
   if (Number.isInteger(error.exitCode)) return error.exitCode;
-  return EXIT.REFUSAL;
+  return EXIT.INTERNAL;
 }
 
 // ---------------------------------------------------------------------------
@@ -2152,11 +2163,11 @@ async function main() {
           follow: false,
         });
         emitSuccess(command, data, options, startedAt);
-        return EXIT.OK;
+        return data.timed_out ? EXIT_REFUSAL : EXIT.OK;
       }
       const data = await executeMutation(command, options, baseUrl);
       emitSuccess(command, data, options, startedAt);
-      return EXIT.OK;
+      return data?.timed_out === true ? EXIT_REFUSAL : EXIT.OK;
     }
     throw cliError('E_CLI_USAGE', `Command has no transport: ${command}`);
   } catch (error) {

@@ -9,7 +9,7 @@
 //!   preserves the completed partial state;
 //! - every mutating command is idempotent by `correlation_id` (24 h window).
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -59,9 +59,31 @@ fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String 
 
 /// Memory is model-visible later, so an obvious secret marker is never stored.
 fn memory_text_is_safe(text: &str) -> bool {
-    !["DEEPSEEK_API_KEY", "sk-", "Bearer ", "Authorization:"]
-        .iter()
-        .any(|marker| text.contains(marker))
+    let lower = text.to_ascii_lowercase();
+    ![
+        "deepseek_api_key",
+        "sk-",
+        "bearer ",
+        "authorization:",
+        "password=",
+        "-----begin",
+        "ghp_",
+        "akia",
+    ]
+    .iter()
+    .any(|marker| lower.contains(marker))
+}
+
+fn bounded_a2a_text(text: &str) -> Option<String> {
+    if !memory_text_is_safe(text) {
+        return None;
+    }
+    Some(
+        text.chars()
+            .take(500)
+            .map(|character| if character.is_control() { ' ' } else { character })
+            .collect(),
+    )
 }
 
 /// Maximum visible characters in one inter-agent message.
@@ -560,15 +582,30 @@ impl RunEngine {
             .is_some()
     }
 
+    /// Resolves a persona by exact id, lowercase id, or normalized separators.
+    /// Planning/UI roles are display strings; capability lookup must not depend
+    /// on their casing.
+    fn persona_for_role(&self, role: &str) -> Option<Persona> {
+        let personas = self
+            .personas
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(persona) = personas.get(role) {
+            return Some(persona.clone());
+        }
+        let lower = role.trim().to_ascii_lowercase();
+        if let Some(persona) = personas.get(&lower) {
+            return Some(persona.clone());
+        }
+        let normalized = lower.replace(['-', ' '], "_");
+        personas.get(&normalized).cloned()
+    }
+
     /// Returns the optional per-profile spawn limits for a role.
     fn persona_spawn_limits(&self, role: &str) -> (Option<usize>, Option<u8>) {
-        self.personas
-            .read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .get(role)
-            .map_or((None, None), |persona| {
-                (persona.max_children, persona.max_depth)
-            })
+        self.persona_for_role(role).map_or((None, None), |persona| {
+            (persona.max_children, persona.max_depth)
+        })
     }
 
     /// Returns the boot-loaded personas in stable id order.
@@ -889,12 +926,7 @@ impl RunEngine {
                     .collect();
             }
         }
-        if let Some(persona) = self
-            .personas
-            .read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .get(&task.role)
-        {
+        if let Some(persona) = self.persona_for_role(&task.role) {
             context.allowed_tool_ids = persona.allowed_tool_ids.clone();
             context.persona_tool_scope = true;
             context.output_schema_id = persona.output_schema_id.clone();
@@ -941,7 +973,9 @@ impl RunEngine {
             .agent_messages_for_task(task.run_id, task.id, 8)
         {
             for message in messages {
-                let text: String = message.text.chars().take(500).collect();
+                let Some(text) = bounded_a2a_text(&message.text) else {
+                    continue;
+                };
                 context.facts.insert(
                     format!("a2a:{}:{}:{}", message.from_task_id, message.kind, message.id),
                     text,
@@ -1515,14 +1549,97 @@ impl RunEngine {
         // crash during execution restores this run instead of nothing.
         self.commit_run_snapshot(run, self.snapshot_revision(run.id), start.to);
 
-        // Execute leaf tasks in topological order; reply chunks stream per task.
-        for leaf_id in plan.leaf_order()? {
+        // Execute the planned graph by readiness: a node runs only after every
+        // dependency and every direct child has a result. This covers both the
+        // parent->child aggregation edge and explicit dep edges (A -> B) in one
+        // deterministic loop; the old leaf-then-aggregator split ran a dependent
+        // before its dependency and never gave it the dependency result.
+        let children_by_parent: HashMap<TaskId, Vec<TaskId>> = {
+            let mut map: HashMap<TaskId, Vec<TaskId>> = HashMap::new();
+            for task in tasks.values() {
+                if let Some(parent) = task.parent_task_id {
+                    if tasks.contains_key(&parent) {
+                        map.entry(parent).or_default().push(task.id);
+                    }
+                }
+            }
+            for children in map.values_mut() {
+                children.sort();
+            }
+            map
+        };
+        let mut completed: HashSet<TaskId> = HashSet::new();
+        while completed.len() < plan.nodes.len() {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);
             }
-            let task = tasks.get(&leaf_id).cloned().ok_or(Refusal::InternalError)?;
-            let result = self.execute_task(run, &task, token).await;
-            // Bounded mid-run commit after every executed node (M-004).
+            let next = plan
+                .nodes
+                .iter()
+                .find(|node| {
+                    !completed.contains(&node.node_id)
+                        && node.deps.iter().all(|dep| completed.contains(dep))
+                        && children_by_parent
+                            .get(&node.node_id)
+                            .is_none_or(|children| children.iter().all(|child| completed.contains(child)))
+                })
+                .map(|node| node.node_id)
+                .ok_or(Refusal::SchemaInvalid)?;
+            let task = tasks
+                .get(&next)
+                .cloned()
+                .ok_or(Refusal::InternalError)?;
+            let mut prompt = run.prompt.clone();
+            let mut related: Vec<TaskId> = Vec::new();
+            for dep in plan.node(next).map_or(&[][..], |node| node.deps.as_slice()) {
+                related.push(*dep);
+            }
+            if let Some(children) = children_by_parent.get(&next) {
+                for child in children {
+                    if !related.contains(child) {
+                        related.push(*child);
+                    }
+                }
+            }
+            let mut has_children = false;
+            for related_id in related {
+                let Some(related_task) = tasks.get(&related_id) else {
+                    continue;
+                };
+                let is_child = related_task.parent_task_id == Some(next);
+                if is_child {
+                    has_children = true;
+                }
+                match self.store.task_result(related_id)? {
+                    Some(text) if !text.trim().is_empty() => {
+                        prompt.push_str(if is_child {
+                            "\nCompleted child "
+                        } else {
+                            "\nCompleted dependency "
+                        });
+                        prompt.push_str(&related_id.to_string());
+                        prompt.push_str(" (role ");
+                        prompt.push_str(&related_task.role);
+                        prompt.push_str("):\n");
+                        prompt.push_str(&tool_loop::bounded_tool_text(&text));
+                        prompt.push('\n');
+                    }
+                    Some(_) | None => {
+                        prompt.push_str("\nCompleted input ");
+                        prompt.push_str(&related_id.to_string());
+                        prompt.push_str(" has no recorded result.\n");
+                    }
+                }
+            }
+            if has_children {
+                prompt.push_str(
+                    "\nAggregate the completed child results below into this task's final answer. \
+                     Do not invent results for children that have none.\n",
+                );
+            }
+            let result = self
+                .execute_task_with_prompt(run, &task, token, &prompt)
+                .await;
             let status = self
                 .store
                 .get_run(run.id)
@@ -1530,16 +1647,17 @@ impl RunEngine {
                 .unwrap_or(AgentState::Running);
             self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
             match result {
-                Ok(_) => {}
+                Ok(_) => {
+                    completed.insert(next);
+                }
                 Err(refusal) => {
                     if !token.is_cancelled()
                         && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
                     {
                         let fresh = self.store.get_task(task.id)?;
                         if is_terminal_task_state(fresh.state) {
-                            // KILL_WORKER (or a kill/resolve race) stopped only
-                            // this task; the run and its remaining tasks continue
-                            // (M-012).
+                            // KILL_WORKER stops only this task; siblings continue.
+                            completed.insert(next);
                             continue;
                         }
                     }
@@ -1547,67 +1665,7 @@ impl RunEngine {
                 }
             }
         }
-        // Phase 2: aggregators run after their children, deepest first. The child
-        // result is read from the task-scoped result table, never from the
-        // run-wide chat transcript, so one branch cannot consume another
-        // branch's answer.
-        let aggregator_ids = plan.aggregation_order()?;
-        let has_aggregators = !aggregator_ids.is_empty();
-        for aggregator_id in aggregator_ids {
-            if token.is_cancelled() {
-                return Err(Refusal::ToolCancelled);
-            }
-            let task = tasks
-                .get(&aggregator_id)
-                .cloned()
-                .ok_or(Refusal::InternalError)?;
-            let mut aggregate_prompt = run.prompt.clone();
-            aggregate_prompt.push_str(
-                "\n\nAggregate the completed child results below into this task's final answer. \
-                 Do not invent results for children that have none.\n",
-            );
-            let Some(aggregator) = plan.node(aggregator_id) else {
-                return Err(Refusal::InternalError);
-            };
-            for child in tasks.values().filter(|child| {
-                child.parent_task_id == Some(aggregator_id) || aggregator.deps.contains(&child.id)
-            }) {
-                match self.store.task_result(child.id)? {
-                    Some(text) if !text.trim().is_empty() => {
-                        aggregate_prompt.push_str("\nChild ");
-                        aggregate_prompt.push_str(&child.id.to_string());
-                        aggregate_prompt.push_str(" (role ");
-                        aggregate_prompt.push_str(&child.role);
-                        aggregate_prompt.push_str("):\n");
-                        aggregate_prompt.push_str(&tool_loop::bounded_tool_text(&text));
-                        aggregate_prompt.push('\n');
-                    }
-                    Some(_) | None => {
-                        aggregate_prompt.push_str("\nChild ");
-                        aggregate_prompt.push_str(&child.id.to_string());
-                        aggregate_prompt.push_str(" has no recorded result.\n");
-                    }
-                }
-            }
-            let result = self
-                .execute_task_with_prompt(run, &task, token, &aggregate_prompt)
-                .await;
-            self.commit_run_snapshot(run, self.snapshot_revision(run.id), AgentState::Running);
-            match result {
-                Ok(_) => {}
-                Err(refusal) => {
-                    if !token.is_cancelled()
-                        && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
-                    {
-                        let fresh = self.store.get_task(task.id)?;
-                        if is_terminal_task_state(fresh.state) {
-                            continue;
-                        }
-                    }
-                    return Err(refusal);
-                }
-            }
-        }
+        let has_aggregators = !plan.aggregation_order()?.is_empty();
         // Tasks created after planning (operator SPAWN_SUB_HIVE or a model
         // spawn_agent that was not already joined inline) are executed to a
         // terminal state before the root orchestrator turn.
@@ -1618,7 +1676,7 @@ impl RunEngine {
         // result. The root row was seeded as Running at plan time and kept out
         // of the queued consumer, so its graph state is repaired to Running
         // here and snapshotted before the provider call.
-        if has_aggregators {
+        if has_aggregators || plan.nodes.len() > 1 {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);
             }
@@ -2983,10 +3041,9 @@ impl RunEngine {
         };
         context.facts.retain(|key, _| !key.starts_with("a2a:"));
         for message in messages {
-            if !memory_text_is_safe(&message.text) {
+            let Some(text) = bounded_a2a_text(&message.text) else {
                 continue;
-            }
-            let text: String = message.text.chars().take(500).collect();
+            };
             context.facts.insert(
                 format!("a2a:{}:{}:{}", message.from_task_id, message.kind, message.id),
                 text,

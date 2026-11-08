@@ -23,7 +23,7 @@ use crate::bus::EventBus;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
-use crate::execution::{ProviderExecutor, RunEngine, UnconfiguredExecutor};
+use crate::execution::{node_kind, task_agent_tier, ProviderExecutor, RunEngine, UnconfiguredExecutor};
 use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
 use crate::prompts::{load_personas_embedded, Persona, TemplateRegistry};
@@ -737,7 +737,10 @@ pub(crate) fn history_graph_value(
         .map(|node| {
             let task = run_tasks.iter().find(|task| task.id == node.task_id);
             let role = task.map_or("", |task| task.role.as_str());
-            let kind = node_kind_for_role(role);
+            let kind = task.map_or_else(
+                || node.kind.as_deref().unwrap_or("worker"),
+                |task| node_kind(task_agent_tier(task)),
+            );
             serde_json::json!({
                 "task_id": node.task_id.to_string(),
                 "parent_task_id": node.parent_task_id.map(|id| id.to_string()),
@@ -757,16 +760,6 @@ pub(crate) fn history_graph_value(
         }).collect::<Vec<_>>(),
         "toposort": graph.toposort.iter().map(ToString::to_string).collect::<Vec<_>>(),
     })
-}
-
-fn node_kind_for_role(role: &str) -> &'static str {
-    match role.trim().to_ascii_lowercase().as_str() {
-        "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => "hyperagent",
-        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => "superagent",
-        "subagent" | "sub_agent" => "subagent",
-        "tool" | "toolagent" | "tool_agent" => "tool",
-        _ => "worker",
-    }
 }
 
 fn node_label_for(role: &str, kind: &str, task_id: &str) -> String {
@@ -1038,7 +1031,7 @@ async fn agent_roster(
             let agents: Vec<serde_json::Value> = tasks
                 .iter()
                 .map(|task| {
-                    let kind = node_kind_for_role(&task.role);
+                    let kind = node_kind(task_agent_tier(task));
                     serde_json::json!({
                         "task_id": task.id.to_string(),
                         "parent_task_id": task.parent_task_id.map(|id| id.to_string()),
