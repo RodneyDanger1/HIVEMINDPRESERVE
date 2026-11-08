@@ -900,15 +900,22 @@ impl RunEngine {
             context.output_schema_id = persona.output_schema_id.clone();
         }
         if let Some(parent_task_id) = parent_task_id {
-            if let Ok(memories) = self.store.agent_memory_for_scope(
+            if let Ok(memories) = self.store.agent_memory_for_scope_any_role(
                 task.run_id,
                 &parent_task_id.to_string(),
-                &task.role,
                 8,
             ) {
                 for (key, value) in memories {
                     context.facts.insert(format!("memory:{key}"), value);
                 }
+            }
+        }
+        if let Ok(memories) = self
+            .store
+            .agent_memory_for_scope_any_role(task.run_id, "run", 8)
+        {
+            for (key, value) in memories {
+                context.facts.insert(format!("memory:run:{key}"), value);
             }
         }
         // A2A discovery: expose bounded peer ids/roles so send_to_sibling and
@@ -1408,6 +1415,32 @@ impl RunEngine {
         self.graph
             .set_metadata(root.id, "hyperagent", &root.role, Some("HyperAgent"))?;
         self.graph.set_state(root.id, AgentState::Running)?;
+        // Engine-owned run bank: public run constraints are durable before the
+        // root/child contexts are seeded, so every branch can recall them without
+        // reading a sibling's private branch.
+        self.store.record_agent_memory_scoped(
+            "engine",
+            "prompt",
+            &run.prompt.chars().take(2_000).collect::<String>(),
+            run.id,
+            root.id,
+            "run",
+        )?;
+        let plan_digest = plan
+            .nodes
+            .iter()
+            .map(|node| format!("{}:{}", node.role, node.depth))
+            .take(32)
+            .collect::<Vec<_>>()
+            .join(",");
+        self.store.record_agent_memory_scoped(
+            "engine",
+            "plan",
+            &plan_digest,
+            run.id,
+            root.id,
+            "run",
+        )?;
         self.seed_task_context(&root, None)?;
         self.publish_node_spawn(run.id, &root);
 
@@ -1426,6 +1459,13 @@ impl RunEngine {
             if !tasks.contains_key(&parent_id) {
                 return Err(Refusal::SchemaInvalid);
             }
+            // Planned roles are model-authored. Resolve and validate them against
+            // the real parent tier before any child row exists; otherwise a plan
+            // can self-select hyper/tool authority or bypass the spawn matrix.
+            let parent_tier = tasks
+                .get(&parent_id)
+                .map_or(AgentTier::HyperAgent, task_agent_tier);
+            validate_spawn_role(parent_tier, &node.role)?;
             // Fan-out is per parent, not the global plan index. Passing the plan
             // index here made the 9th planned node fail even with a fresh parent.
             let siblings = tasks
@@ -2894,6 +2934,38 @@ impl RunEngine {
         }
     }
 
+    /// Re-reads the run bank and immediate-parent bank at execution start, so a
+    /// task spawned before its parent completed still receives the durable
+    /// run constraints and any parent bookkeeping that landed meanwhile.
+    fn refresh_memory_bank(
+        &self,
+        task: &TaskRecord,
+        context: Option<ScopedContext>,
+    ) -> Result<Option<ScopedContext>, Refusal> {
+        let Some(mut context) = context else {
+            return Ok(None);
+        };
+        context.facts.retain(|key, _| !key.starts_with("memory:"));
+        let mut read = |scope: &str, prefix: &str| {
+            if let Ok(memories) = self
+                .store
+                .agent_memory_for_scope_any_role(task.run_id, scope, 8)
+            {
+                for (key, value) in memories {
+                    context
+                        .facts
+                        .insert(format!("{prefix}{key}"), value);
+                }
+            }
+        };
+        read("run", "memory:run:");
+        if let Some(parent) = task.parent_task_id {
+            read(&parent.to_string(), "memory:");
+        }
+        self.contexts.set(task.id, context.clone())?;
+        Ok(Some(context))
+    }
+
     /// Refreshes the recipient-specific A2A inbox from durable rows at task
     /// execution start. This makes messages that arrived after context seeding
     /// visible without leaking to children. Failure to read the inbox leaves the
@@ -2949,6 +3021,7 @@ impl RunEngine {
     ) -> Result<Option<String>, Refusal> {
         let task_token = self.register_task_token(task.id, token)?;
         let context = self.contexts.get(task.id)?;
+        let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
         let prompt = prompt_with_context(prompt, context.as_ref());
         let result = self
@@ -2970,6 +3043,7 @@ impl RunEngine {
     ) -> Result<Option<String>, Refusal> {
         let task_token = self.register_task_token(task.id, token)?;
         let context = self.contexts.get(task.id)?;
+        let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
         let prompt = prompt_with_context(prompt, context.as_ref());
         let result = self

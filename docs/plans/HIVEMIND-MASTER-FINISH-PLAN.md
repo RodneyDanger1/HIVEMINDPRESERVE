@@ -91,6 +91,16 @@ Weighted code maturity ~5.2/10; verified-evidence maturity ~3.5/10. One solid ve
 Highest-leverage sequence: **S0 prove current SHA** (freeze writer, compile/test/typecheck/build, one authorized smoke, regenerate status/trace), **S1 one agent-text trust boundary**, **S2 real role enum/spawn matrix/autonomy**, **S3 bank tree + A2A answer**, **S4 measured concurrency/scheduler**, **S5 daemon/remote R0-R2**, **S6 seal**. Remote/daemon is decision-gated and should not block v1 at 50-150 active.
 
 
+## Security/quality safeguards still open
+
+- `/api/*` profile/memory mutations are unauthenticated; `/api/session` hands the WS token to any loopback peer; provider routes accept missing Origin.
+- Persona `allowed_tool_ids` is now enforced against the scoped context, but import validation and model tool advertisement still need hardening.
+- `cmd.exe` is an allowlisted shell program with cwd/PATH resolution; this is not containment.
+- Approval preview truncation can consent to a prefix; args hash binds full payload.
+- e2e/security gate wrapper can skip on missing results; no CI.
+- Snapshot fsync is now added; missing FKs, duplicate cap authority, non-transactional multi-row writes, raw tool-result/A2A injection labels remain.
+- Event journal/recovery-resume and daemon watchdogs are absent.
+
 ## Derived P0-P9 gate plan
 
 | Gate | Outcome | Key work | Exit |

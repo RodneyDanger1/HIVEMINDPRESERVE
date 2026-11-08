@@ -490,7 +490,7 @@ function parseArgs(argv) {
       options.version = true;
       continue;
     }
-    if (name === 'yes' || name === 'y') {
+    if (name === 'yes') {
       options.yes = true;
       continue;
     }
@@ -543,6 +543,14 @@ function readNumber(value, flag, min, max) {
   const number = Number(value);
   if (!Number.isFinite(number) || !Number.isInteger(number) || number < min || number > max) {
     throw cliError('E_CLI_USAGE', `${flag} must be an integer in [${min}, ${max}].`);
+  }
+  return number;
+}
+
+function readFloat(value, flag, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < min || number > max) {
+    throw cliError('E_CLI_USAGE', `${flag} must be a number in [${min}, ${max}].`);
   }
   return number;
 }
@@ -771,21 +779,22 @@ async function startServer(options) {
       EXIT_NOT_RUNNING,
     );
   }
-  if (existingState?.pid && !processAlive(Number(existingState.pid))) {
-    clearState(options);
-  }
-  let exe = options['dry-run'] ? resolveExe(options) : null;
+  let exe = options.dryRun ? resolveExe(options) : null;
   const workspaceRoot = resolveWorkspaceRoot(options);
   const dataDir = dataDirectory(options);
   const dbPath = options.db ? path.resolve(options.db) : path.resolve(dataDir, 'hiverouter.db');
   const args = ['--bind', `${host}:${port}`, '--data-dir', dataDir, '--workspace-root', workspaceRoot, '--db', dbPath];
-  if (options['dry-run']) {
-    // A dry run has no side effects: no health probe, no state write, no mkdir.
+  if (options.dryRun) {
+    // A dry run has no side effects: no health probe, no state write, no mkdir,
+    // and no stale-state cleanup.
     return {
       dry_run: true,
       request: { executable: exe, args, cwd: workspaceRoot },
       already_running_unknown: true,
     };
+  }
+  if (existingState?.pid && !processAlive(Number(existingState.pid))) {
+    clearState(options);
   }
   try {
     const health = await fetchWithTimeout(new URL('/health', baseUrl), { timeoutMs: 2_000 });
@@ -968,7 +977,7 @@ async function stopServer(options) {
       // Server may already be stopping; process identity is checked by pid next.
     }
   }
-  if (options['dry-run']) {
+  if (options.dryRun) {
     return { dry_run: true, request: { kill_pid: pid, force: Boolean(options.force) } };
   }
   const timeoutMs = options.timeoutMs || 10_000;
@@ -1600,11 +1609,17 @@ async function executeMutation(command, options, baseUrl) {
     case 'submit':
     case 'run': {
       const text = await resolvePrompt(options);
-      const result = await wsCommand(baseUrl, 'SUBMIT_PROMPT', { text, project_id: projectOption(options) });
-      const output = { accepted: true, ack: result.ack.payload };
+      const result = await wsCommand(baseUrl, 'SUBMIT_PROMPT', { text, project_id: projectOption(options) }, { awaitEvent: 'RUN_CREATED' });
+      const runId = typeof result.event?.payload?.run_id === 'string'
+        ? result.event.payload.run_id
+        : (typeof result.ack.payload?.run_id === 'string' ? result.ack.payload.run_id : null);
+      const output = { accepted: true, run_id: runId, ack: result.ack.payload };
       if (options.wait || command === 'run') {
+        if (runId === null) {
+          throw cliError('E_RUN_NOT_FOUND', 'SUBMIT_PROMPT ACK did not include a run_id.', 'Do not watch without an authoritative run id.', EXIT_REFUSAL);
+        }
         const timeoutMs = options.timeoutMs || (command === 'run' ? 180_000 : 120_000);
-        const watched = await wsWatch(baseUrl, { timeoutMs, maxEvents: 1000, follow: false });
+        const watched = await wsWatch(baseUrl, { runId, timeoutMs, maxEvents: 1000, follow: false });
         output.events = watched.events;
         output.truncated = watched.truncated;
         output.timed_out = watched.timed_out;
@@ -1707,9 +1722,9 @@ async function executeMutation(command, options, baseUrl) {
         sent: true,
         ack: (
           await wsCommand(baseUrl, 'VIEWPORT_SET', {
-            x: readNumber(assertRequired(options, 'x'), '--x', -1_000_000, 1_000_000),
-            y: readNumber(assertRequired(options, 'y'), '--y', -1_000_000, 1_000_000),
-            zoom: readNumber(assertRequired(options, 'zoom'), '--zoom', 0.1, 3),
+            x: readFloat(assertRequired(options, 'x'), '--x', -1_000_000, 1_000_000),
+            y: readFloat(assertRequired(options, 'y'), '--y', -1_000_000, 1_000_000),
+            zoom: readFloat(assertRequired(options, 'zoom'), '--zoom', 0.1, 3),
           })
         ).ack.payload,
       };
@@ -1876,7 +1891,7 @@ function openUi(baseUrl, options) {
     throw cliError('E_BROWSER_NOT_FOUND', 'No Edge or Chrome executable found.', 'Pass --browser <path>.', EXIT.REFUSAL);
   }
   const args = options['no-app'] ? [url] : [`--app=${url}`, '--window-size=1440,900'];
-  if (options['dry-run']) return { dry_run: true, request: { executable: browser, args } };
+  if (options.dryRun) return { dry_run: true, request: { executable: browser, args } };
   const child = spawn(browser, args, { detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
   return { opened: true, url, browser };
@@ -2069,7 +2084,7 @@ async function main() {
       } else {
         data = await executeLocal(command, options, baseUrl);
       }
-      if ((command === 'start' || command === 'restart') && options.open && options['dry-run'] !== true) {
+      if ((command === 'start' || command === 'restart') && options.open && options.dryRun !== true) {
         try {
           data = { ...data, ui: openUi(baseUrl, options) };
         } catch (error) {

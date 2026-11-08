@@ -445,6 +445,10 @@ async fn planned_parent_chain_is_persisted_not_flattened_to_root() {
             .expect("context lookup")
             .expect("context seeded at task creation");
         assert_eq!(context.parent_task_id, task.parent_task_id);
+        assert!(
+            context.facts.contains_key("memory:run:prompt"),
+            "every branch must recall the engine-owned run bank"
+        );
     }
     for task in [root, super_agent, agent, subagent] {
         assert!(

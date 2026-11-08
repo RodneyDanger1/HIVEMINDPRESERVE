@@ -791,6 +791,42 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Returns the latest durable memories for one run/scope across every role,
+    /// newest first. This is the branch/run bank recall path: sibling isolation
+    /// comes from selecting the correct scope, not from a role-name filter.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory_for_scope_any_role(
+        &self,
+        run_id: RunId,
+        scope_id: &str,
+        limit: usize,
+    ) -> Result<Vec<(String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT key, value FROM agent_memory
+                     WHERE run_id = ?1 AND scope_id = ?2
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?3",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        run_id.to_string(),
+                        scope_id,
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                let mut memories = Vec::new();
+                for row in rows {
+                    memories.push(row?);
+                }
+                Ok(memories)
+            })
+            .map_err(map)
+    }
+
     /// Returns the latest durable memories for a role inside one run and one
     /// hive/branch scope, newest first.
     ///
