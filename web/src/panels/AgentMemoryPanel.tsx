@@ -2,7 +2,7 @@
  * Durable role memory: inspect and clear. The server is the source; a clear is
  * a real DELETE and the panel refreshes from the result, never locally guessed.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
 import { useUiStore } from '../state/context';
 import { EmptyState } from './StatePack';
@@ -69,6 +69,7 @@ export function AgentMemoryPanel() {
   const [scopeStatus, setScopeStatus] = useState<Status>('idle');
   const [scoped, setScoped] = useState<readonly ScopedMemoryRow[]>([]);
   const [scopeFilter, setScopeFilter] = useState('all');
+  const scopeRequest = useRef(0);
 
   const refresh = useCallback(() => {
     setStatus('loading');
@@ -122,6 +123,8 @@ export function AgentMemoryPanel() {
   }, [refresh]);
 
   const refreshScoped = useCallback(() => {
+    const request = scopeRequest.current + 1;
+    scopeRequest.current = request;
     if (runId === null || replaying) {
       setScoped([]);
       setScopeStatus('idle');
@@ -133,15 +136,21 @@ export function AgentMemoryPanel() {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
+        if (request !== scopeRequest.current) return;
         if (!response.ok) {
           throw new Error(`scoped memory HTTP ${response.status}`);
         }
-        setScoped(decodeScopedMemory(await response.json()));
-        setScopeStatus('ok');
+        const rows = decodeScopedMemory(await response.json());
+        if (request === scopeRequest.current) {
+          setScoped(rows);
+          setScopeStatus('ok');
+        }
       })
       .catch(() => {
-        setScoped([]);
-        setScopeStatus('error');
+        if (request === scopeRequest.current) {
+          setScoped([]);
+          setScopeStatus('error');
+        }
       });
   }, [runId, replaying]);
 
@@ -160,10 +169,12 @@ export function AgentMemoryPanel() {
     scopedByBranch.set(row.scopeId, list);
   }
   const scopeIds = [...scopedByBranch.keys()].sort();
+  const activeScopeFilter =
+    scopeFilter === 'all' || scopeIds.includes(scopeFilter) ? scopeFilter : 'all';
   const visibleScopes =
-    scopeFilter === 'all'
+    activeScopeFilter === 'all'
       ? [...scopedByBranch.entries()]
-      : [...scopedByBranch.entries()].filter(([scopeId]) => scopeId === scopeFilter);
+      : [...scopedByBranch.entries()].filter(([scopeId]) => scopeId === activeScopeFilter);
 
   const clear = (agentKey: string): void => {
     fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
@@ -242,7 +253,7 @@ export function AgentMemoryPanel() {
             <span className="type-mono-meta block text-meta">Branch scope</span>
             <select
               className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
-              value={scopeFilter}
+              value={activeScopeFilter}
               onChange={(event) => setScopeFilter(event.target.value)}
             >
               <option value="all">All scopes</option>
