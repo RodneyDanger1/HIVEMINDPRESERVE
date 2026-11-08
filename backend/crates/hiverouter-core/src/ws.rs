@@ -246,7 +246,18 @@ fn insert_template_dag(
     let depth = root.depth.saturating_add(1);
     let parent_tier = task_agent_tier(&root);
     for node in &dag.nodes {
-        validate_spawn_role(parent_tier, &node.role)?;
+        // A template id is a persona/profile name, not necessarily a spawn
+        // class. Library templates are worker profiles; authority-looking ids
+        // (planner/hyper) are never admitted as template children.
+        let requested_class = match node.role.trim().to_ascii_lowercase().as_str() {
+            "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => {
+                return Err(Refusal::ToolNotAllowed);
+            }
+            "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => "superagent",
+            "subagent" | "sub_agent" => "subagent",
+            _ => "worker",
+        };
+        validate_spawn_role(parent_tier, requested_class)?;
     }
     let siblings = tasks
         .iter()
