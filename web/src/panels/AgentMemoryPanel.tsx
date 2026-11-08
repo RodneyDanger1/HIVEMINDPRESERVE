@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { useUiStore } from '../state/context';
 import { EmptyState } from './StatePack';
 
 interface MemoryRow {
@@ -15,11 +16,57 @@ interface MemoryProfile {
   readonly display_name: string;
   readonly memories: readonly MemoryRow[];
 }
-type Status = 'loading' | 'ok' | 'error';
+interface ScopedMemoryRow {
+  readonly runId: string;
+  readonly scopeId: string;
+  readonly agentKey: string;
+  readonly key: string;
+  readonly value: string;
+  readonly createdAt: string;
+}
+type Status = 'idle' | 'loading' | 'ok' | 'error';
+
+function decodeScopedMemory(body: unknown): readonly ScopedMemoryRow[] {
+  if (typeof body !== 'object' || body === null) {
+    throw new Error('memory payload is not an object');
+  }
+  const rows = (body as { memories?: unknown }).memories;
+  if (!Array.isArray(rows)) {
+    throw new Error('memory payload has no memories array');
+  }
+  const decoded: ScopedMemoryRow[] = [];
+  for (const entry of rows) {
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
+    const row = entry as Record<string, unknown>;
+    if (
+      typeof row.run_id !== 'string' ||
+      typeof row.scope_id !== 'string' ||
+      typeof row.agent_key !== 'string' ||
+      typeof row.key !== 'string' ||
+      typeof row.value !== 'string'
+    ) {
+      continue;
+    }
+    decoded.push({
+      runId: row.run_id,
+      scopeId: row.scope_id,
+      agentKey: row.agent_key,
+      key: row.key,
+      value: row.value,
+      createdAt: typeof row.created_at === 'string' ? row.created_at : '',
+    });
+  }
+  return decoded;
+}
 
 export function AgentMemoryPanel() {
+  const runId = useUiStore((state) => state.run?.id ?? null);
   const [status, setStatus] = useState<Status>('loading');
   const [profiles, setProfiles] = useState<readonly MemoryProfile[]>([]);
+  const [scopeStatus, setScopeStatus] = useState<Status>('idle');
+  const [scoped, setScoped] = useState<readonly ScopedMemoryRow[]>([]);
 
   const refresh = useCallback(() => {
     setStatus('loading');
@@ -72,6 +119,40 @@ export function AgentMemoryPanel() {
     refresh();
   }, [refresh]);
 
+  const refreshScoped = useCallback(() => {
+    if (runId === null) {
+      setScoped([]);
+      setScopeStatus('idle');
+      return;
+    }
+    setScopeStatus('loading');
+    fetch(`${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/memory`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`scoped memory HTTP ${response.status}`);
+        }
+        setScoped(decodeScopedMemory(await response.json()));
+        setScopeStatus('ok');
+      })
+      .catch(() => {
+        setScoped([]);
+        setScopeStatus('error');
+      });
+  }, [runId]);
+
+  useEffect(() => {
+    refreshScoped();
+  }, [refreshScoped]);
+
+  const scopedByBranch = new Map<string, ScopedMemoryRow[]>();
+  for (const row of scoped) {
+    const list = scopedByBranch.get(row.scopeId) ?? [];
+    list.push(row);
+    scopedByBranch.set(row.scopeId, list);
+  }
+
   const clear = (agentKey: string): void => {
     fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
       .then((response) => {
@@ -120,6 +201,39 @@ export function AgentMemoryPanel() {
             </li>
           ))}
       </ul>
+      <div className="mt-3 border-t border-hairline pt-2">
+        <h4 className="type-label text-ink-900">Run memory · branch scoped</h4>
+        {runId === null ? (
+          <p className="type-mono-meta mt-1 text-meta">No active run; no branch memory shown.</p>
+        ) : null}
+        {scopeStatus === 'loading' ? (
+          <p className="type-mono-meta mt-1 text-meta">Loading run memory…</p>
+        ) : null}
+        {scopeStatus === 'error' ? (
+          <p className="type-mono-meta mt-1 text-signal">
+            Run memory unavailable; no rows invented.
+          </p>
+        ) : null}
+        {scopeStatus === 'ok' && scoped.length === 0 ? (
+          <p className="type-mono-meta mt-1 text-meta">
+            No branch-scoped memory for this run.
+          </p>
+        ) : null}
+        <ul className="mt-2 space-y-2">
+          {[...scopedByBranch.entries()].map(([scopeId, rows]) => (
+            <li key={scopeId} className="surface-panel rounded-[var(--radius-sm)] p-2">
+              <div className="type-mono-meta text-ink-700">scope {scopeId}</div>
+              <ul className="mt-1 space-y-1">
+                {rows.map((row, index) => (
+                  <li key={`${row.agentKey}:${row.key}:${index}`} className="type-mono-meta text-meta">
+                    {row.agentKey} · {row.key}: {row.value}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   );
 }
