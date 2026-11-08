@@ -3,8 +3,10 @@
  * object, so this surface renders the store's actual hierarchy rather than a
  * second graph implementation. It is read-only; selection is owned by the store.
  */
+import { useMemo } from 'react';
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS, isTerminal } from '../state/agentState';
+import { buildReplayTasks } from '../flow/graph';
 import { STRINGS } from '../state/strings';
 import { AgentHierarchy } from './AgentHierarchy';
 import { PanelTitle } from './StatePack';
@@ -12,12 +14,18 @@ import { ProjectsPanel } from './ProjectsPanel';
 
 export function SwarmPanel() {
   const tasks = useUiStore((state) => state.tasks);
+  const replayGraph = useUiStore((state) => state.history.replayGraph);
   const selectedTaskId = useUiStore((state) => state.selectedTaskId);
   const selectTask = useUiStore((state) => state.selectTask);
   const setNav = useUiStore((state) => state.setNav);
   const project = useUiStore((state) => state.project);
   const setTab = useUiStore((state) => state.setTab);
-  const list = Object.values(tasks);
+  const replayTasks = useMemo(
+    () => (replayGraph === null ? null : buildReplayTasks(replayGraph.graph)),
+    [replayGraph],
+  );
+  const sourceTasks = replayTasks ?? tasks;
+  const list = Object.values(sourceTasks);
   const counts = {
     hyperagents: list.filter((task) => task.kind === 'hyperagent').length,
     superagents: list.filter((task) => task.kind === 'superagent').length,
@@ -113,7 +121,7 @@ export function SwarmPanel() {
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
             <section className="surface-panel rounded-[14px] p-3" aria-label="Agent hierarchy">
               <div className="type-label mb-2 text-ink-500">Hierarchy / workspace-jailed</div>
-              <AgentHierarchy tasks={tasks} selectedTaskId={selectedTaskId} selectTask={selectTask} />
+              <AgentHierarchy tasks={sourceTasks} selectedTaskId={selectedTaskId} selectTask={selectTask} />
             </section>
             <section className="surface-panel rounded-[14px] p-3" aria-label="Swarm controls">
               <div className="type-label mb-2 text-ink-500">Surfaces</div>
