@@ -120,6 +120,58 @@ async fn http_json(
 }
 
 #[tokio::test]
+async fn a2a_answer_route_is_authenticated_and_cas_guarded() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "answer", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let message_id = server
+        .state
+        .engine
+        .store
+        .record_agent_message(
+            run.id,
+            hiverouter_contract::TaskId::new(),
+            hiverouter_contract::TaskId::new(),
+            "ask_parent",
+            "question",
+        )
+        .expect("message");
+    let path = format!("/api/agents/runs/{}/messages/{message_id}/answer", run.id);
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &path,
+        Some(&serde_json::json!({ "answer": "operator answer" }).to_string()),
+        Some(server.state.session.token()),
+    )
+    .await;
+    assert_eq!(status, 200, "answer: {body}");
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &path,
+        Some(&serde_json::json!({ "answer": "again" }).to_string()),
+        Some(server.state.session.token()),
+    )
+    .await;
+    assert_eq!(status, 409, "duplicate answer: {body}");
+    assert!(body.contains("E_TASK_TERMINAL"), "{body}");
+    let messages = server
+        .state
+        .engine
+        .store
+        .agent_messages_for_run(run.id)
+        .expect("messages");
+    assert_eq!(messages[0].status, "answered");
+    assert_eq!(messages[0].answer_text.as_deref(), Some("operator answer"));
+}
+
+#[tokio::test]
 async fn mutations_require_session_token() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
@@ -274,7 +326,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
-    assert_eq!(health["database"]["schema_version"], 11);
+    assert_eq!(health["database"]["schema_version"], 12);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));

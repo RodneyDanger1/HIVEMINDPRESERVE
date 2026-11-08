@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { useUiStore } from '../state/context';
+import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
 interface AgentMessageEntry {
@@ -13,17 +13,24 @@ interface AgentMessageEntry {
   readonly to_task_id: string;
   readonly kind: string;
   readonly text: string;
+  readonly status?: string;
+  readonly answer_text?: string | null;
+  readonly answer_actor?: string | null;
   readonly created_at: string;
 }
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function AgentMessagesPanel() {
+  const storeApi = useUiStoreApi();
   const runId = useUiStore((state) => state.run?.id ?? null);
   const messageVersion = useUiStore((state) => state.agentMessageVersion);
   const [status, setStatus] = useState<Status>('idle');
   const [messages, setMessages] = useState<readonly AgentMessageEntry[]>([]);
   const [kindFilter, setKindFilter] = useState('all');
+  const [answeringId, setAnsweringId] = useState<string | null>(null);
+  const [answerDraft, setAnswerDraft] = useState('');
+  const [answerError, setAnswerError] = useState<string | null>(null);
   const visibleMessages =
     kindFilter === 'all' ? messages : messages.filter((message) => message.kind === kindFilter);
 
@@ -71,6 +78,9 @@ export function AgentMessagesPanel() {
             to_task_id: item.to_task_id,
             kind: item.kind,
             text: item.text,
+            status: typeof item.status === 'string' ? item.status : 'open',
+            answer_text: typeof item.answer_text === 'string' ? item.answer_text : null,
+            answer_actor: typeof item.answer_actor === 'string' ? item.answer_actor : null,
             created_at: typeof item.created_at === 'string' ? item.created_at : '',
           });
         }
@@ -89,6 +99,50 @@ export function AgentMessagesPanel() {
       cancelled = true;
     };
   }, [runId, messageVersion]);
+
+  const answer = async (messageId: string): Promise<void> => {
+    const text = answerDraft.trim();
+    if (text.length === 0) {
+      setAnswerError('Answer text is empty.');
+      return;
+    }
+    const token = storeApi.getState().session?.token;
+    setAnswerError(null);
+    setAnsweringId(messageId);
+    try {
+      if (!runId || !token) {
+        throw new Error('session token unavailable');
+      }
+      const response = await fetch(
+        `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/messages/${encodeURIComponent(messageId)}/answer`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'x-hivemind-token': token,
+          },
+          body: JSON.stringify({ answer: text }),
+        },
+      );
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        throw new Error(body.code ?? `answer HTTP ${response.status}`);
+      }
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId
+            ? { ...message, status: 'answered', answer_text: text, answer_actor: 'operator' }
+            : message,
+        ),
+      );
+      setAnswerDraft('');
+    } catch (error: unknown) {
+      setAnswerError(error instanceof Error ? error.message : 'answer refused');
+    } finally {
+      setAnsweringId(null);
+    }
+  };
 
   return (
     <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[14px] p-3">
@@ -123,9 +177,40 @@ export function AgentMessagesPanel() {
         {visibleMessages.map((message) => (
           <li key={message.id} className="surface-panel rounded-[var(--radius-sm)] p-2">
             <div className="type-mono-meta text-meta">
-              {message.kind} · {message.from_task_id.slice(0, 8)} → {message.to_task_id.slice(0, 8)}
+              {message.kind} · {message.from_task_id.slice(0, 8)} → {message.to_task_id.slice(0, 8)} ·{' '}
+              {message.status ?? 'open'}
             </div>
             <div className="type-mono-code mt-1 break-words text-ink-900">{message.text}</div>
+            {message.answer_text ? (
+              <div className="type-mono-code mt-1 break-words text-signal">
+                answer ({message.answer_actor ?? 'operator'}): {message.answer_text}
+              </div>
+            ) : null}
+            {(message.status ?? 'open') === 'open' ? (
+              <div className="mt-1 flex gap-1">
+                <input
+                  className="h-8 min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+                  aria-label={`Answer ${message.id}`}
+                  value={answeringId === message.id ? answerDraft : ''}
+                  placeholder="Operator answer"
+                  onChange={(event) => {
+                    setAnsweringId(message.id);
+                    setAnswerDraft(event.target.value);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="h-8 rounded-[6px] border border-hairline px-2 type-mono-meta"
+                  disabled={answeringId === message.id}
+                  onClick={() => void answer(message.id)}
+                >
+                  Answer
+                </button>
+              </div>
+            ) : null}
+            {answerError && answeringId === message.id ? (
+              <div className="type-mono-meta mt-1 text-signal">{answerError}</div>
+            ) : null}
           </li>
         ))}
       </ul>

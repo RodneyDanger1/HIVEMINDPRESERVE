@@ -47,6 +47,18 @@ pub struct AgentMessageRecord {
     pub kind: String,
     /// Bounded text.
     pub text: String,
+    /// Message lifecycle status (`open`, `answered`, `expired`).
+    pub status: String,
+    /// Optional deadline (RFC3339).
+    pub deadline_at: Option<String>,
+    /// Optional answer time (RFC3339).
+    pub answered_at: Option<String>,
+    /// Optional operator/parent answer text.
+    pub answer_text: Option<String>,
+    /// Actor that answered (`operator`, task id, etc.).
+    pub answer_actor: Option<String>,
+    /// Optional message this row replies to.
+    pub in_reply_to: Option<String>,
     /// RFC3339 creation time.
     pub created_at: String,
 }
@@ -614,6 +626,56 @@ impl RunStore {
         Ok(id)
     }
 
+    /// Answers one open A2A message with a compare-and-set transition.
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` when the message is missing; `E_TASK_TERMINAL` when it
+    /// is no longer open; database refusal otherwise.
+    pub fn answer_agent_message(
+        &self,
+        run_id: RunId,
+        message_id: Uuid,
+        actor: &str,
+        answer: &str,
+    ) -> Result<(), Refusal> {
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE agent_messages
+                     SET status = 'answered', answered_at = ?3, answer_text = ?4,
+                         answer_actor = ?5
+                     WHERE run_id = ?1 AND id = ?2 AND status = 'open'",
+                    params![
+                        run_id.to_string(),
+                        message_id.to_string(),
+                        Timestamp::now().as_str(),
+                        answer,
+                        actor
+                    ],
+                )
+            })
+            .map_err(map)?;
+        if changed == 1 {
+            return Ok(());
+        }
+        let exists: i64 = self
+            .db
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT COUNT(*) FROM agent_messages WHERE run_id = ?1 AND id = ?2",
+                    params![run_id.to_string(), message_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .map_err(map)?;
+        if exists == 0 {
+            Err(Refusal::TaskNotFound)
+        } else {
+            Err(Refusal::TaskTerminal)
+        }
+    }
+
     /// Records one durable agent-to-agent message.
     ///
     /// # Errors
@@ -677,7 +739,8 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
-                    "SELECT id, from_task_id, to_task_id, kind, text, created_at
+                    "SELECT id, from_task_id, to_task_id, kind, text, created_at,
+                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to
                      FROM agent_messages WHERE run_id = ?1 ORDER BY created_at ASC, rowid ASC",
                 )?;
                 let rows = statement.query_map(params![run_id.to_string()], |row| {
@@ -688,6 +751,12 @@ impl RunStore {
                         kind: row.get(3)?,
                         text: row.get(4)?,
                         created_at: row.get(5)?,
+                        status: row.get(6)?,
+                        deadline_at: row.get(7)?,
+                        answered_at: row.get(8)?,
+                        answer_text: row.get(9)?,
+                        answer_actor: row.get(10)?,
+                        in_reply_to: row.get(11)?,
                     })
                 })?;
                 let mut messages = Vec::new();
@@ -713,7 +782,8 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
-                    "SELECT id, from_task_id, to_task_id, kind, text, created_at
+                    "SELECT id, from_task_id, to_task_id, kind, text, created_at,
+                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to
                      FROM agent_messages
                      WHERE run_id = ?1 AND to_task_id = ?2
                      ORDER BY created_at DESC, rowid DESC LIMIT ?3",
@@ -732,6 +802,12 @@ impl RunStore {
                             kind: row.get(3)?,
                             text: row.get(4)?,
                             created_at: row.get(5)?,
+                            status: row.get(6)?,
+                            deadline_at: row.get(7)?,
+                            answered_at: row.get(8)?,
+                            answer_text: row.get(9)?,
+                            answer_actor: row.get(10)?,
+                            in_reply_to: row.get(11)?,
                         })
                     },
                 )?;
@@ -1440,6 +1516,35 @@ mod tests {
             Err(Refusal::CallLimit)
         );
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
+    }
+
+    #[test]
+    fn a2a_answer_is_cas_and_duplicate_is_refused() {
+        let store = store();
+        let run = store
+            .create_run("p", "answer", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        let message_id = store
+            .record_agent_message(run.id, from, to, "ask_parent", "question")
+            .expect("message");
+        store
+            .answer_agent_message(run.id, message_id, "operator", "answer")
+            .expect("first answer");
+        assert_eq!(
+            store.answer_agent_message(run.id, message_id, "operator", "again"),
+            Err(Refusal::TaskTerminal)
+        );
+        let messages = store.agent_messages_for_run(run.id).expect("messages");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].status, "answered");
+        assert_eq!(messages[0].answer_text.as_deref(), Some("answer"));
+        assert_eq!(messages[0].answer_actor.as_deref(), Some("operator"));
+        assert_eq!(
+            store.answer_agent_message(run.id, Uuid::now_v7(), "operator", "missing"),
+            Err(Refusal::TaskNotFound)
+        );
     }
 
     #[test]

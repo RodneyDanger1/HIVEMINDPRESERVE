@@ -266,3 +266,14 @@ Each migration needs: newer-schema refusal, pre-migration backup + integrity che
 - `hiverouter-tools/src/db_admin.rs`: `backup` uses `VACUUM INTO` + integrity check; `restore` verifies, refuses schema > 11, copies the existing DB aside, removes stale `-wal`/`-shm`, and verifies the restored file.
 - CLI: `hiverouter-cli db backup --db=<file> --out=<file>` and `db restore --db=<file> --from=<file> --force=true`; both support `--dry-run` and return JSON receipts.
 - Tests: round-trip preserves rows; newer backup schema refused before copy; existing target requires force.
+### P2 interim A2A status/operator-answer slice
+
+Delivered:
+- v12 additive columns on `agent_messages`; existing rows default `status='open'`.
+- `POST /api/agents/runs/{run_id}/messages/{message_id}/answer` (token-gated) performs a CAS `open -> answered`, stores bounded operator text/actor/time, and refuses missing/closed messages by name.
+- Mailbox JSON exposes status/deadline/answer fields; UI shows status and an answer field for open messages.
+- Tests: store CAS/duplicate; HTTP route success/duplicate; migration/backup schema updated to 12.
+
+Not delivered and must not be claimed:
+- no blocking wait/wake, no deadline enforcement, no `A2A_ANSWER` command/event, no parent-model answer, no continuation inbox refresh, no answer-attempt cap, no separate answer row/table; answer authority is operator-only and the child is not resumed.
+- The v12 columns deviate from the ledger's preferred `a2a_messages` dual-write table; reconcile this in the next P2 slice or amend the ledger explicitly.

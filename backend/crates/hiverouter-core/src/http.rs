@@ -534,6 +534,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
+        .route(
+            "/api/agents/runs/{run_id}/messages/{message_id}/answer",
+            post(answer_agent_message),
+        )
         .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
         .route("/api/agents/runs/{run_id}/memory", get(agent_memory_for_run))
         .route("/api/approvals", get(pending_approvals))
@@ -868,6 +872,61 @@ async fn history_messages(
     }
 }
 
+/// `POST /api/agents/runs/{run_id}/messages/{message_id}/answer`
+///
+/// Operator answer to one open A2A question. It is a compare-and-set state
+/// transition; it never grants tool authority or fabricates a reply.
+async fn answer_agent_message(
+    State(state): State<Arc<AppState>>,
+    Path((run_raw, message_raw)): Path<(String, String)>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Ok(run_id) = run_raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let Ok(message_id) = message_raw.parse::<Uuid>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if let Err(refusal) = state.engine.store.get_run(run_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    let Some(answer) = body.get("answer").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let answer = answer.trim();
+    if answer.is_empty() || answer.chars().count() > 2_000 {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let actor = body
+        .get("actor")
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("operator");
+    match state
+        .engine
+        .store
+        .answer_agent_message(run_id, message_id, actor, answer)
+    {
+        Ok(()) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "message_id": message_id.to_string(),
+                "status": "answered",
+            })),
+        )
+            .into_response(),
+        Err(Refusal::TaskNotFound) => {
+            refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound)
+        }
+        Err(Refusal::TaskTerminal) => {
+            refusal_response(StatusCode::CONFLICT, &Refusal::TaskTerminal)
+        }
+        Err(refusal) => refusal_response(StatusCode::INTERNAL_SERVER_ERROR, &refusal),
+    }
+}
+
 async fn agent_messages(
     State(state): State<Arc<AppState>>,
     Path(run_id): Path<String>,
@@ -944,6 +1003,12 @@ async fn agent_messages(
                         "to_task_id": message.to_task_id,
                         "kind": message.kind,
                         "text": message.text,
+                        "status": message.status,
+                        "deadline_at": message.deadline_at,
+                        "answered_at": message.answered_at,
+                        "answer_text": message.answer_text,
+                        "answer_actor": message.answer_actor,
+                        "in_reply_to": message.in_reply_to,
                         "created_at": message.created_at,
                     })).collect::<Vec<_>>(),
                 })),
