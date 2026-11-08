@@ -22,10 +22,11 @@ use uuid::Uuid;
 
 use hiverouter_contract::command::{Command, CommandName, TemplateInsert};
 use hiverouter_contract::event::{
-    Ack, EmptyPayload, ErrorPayload, Event, EventName, HistorySnapshot, NodeEvent, ServerHello,
+    Ack, AgentMessagePayload, EmptyPayload, ErrorPayload, Event, EventName, HistorySnapshot,
+    NodeEvent, ServerHello,
 };
 use hiverouter_contract::schema;
-use hiverouter_contract::{AgentState, Refusal, RunId, TaskId};
+use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp};
 
 use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
@@ -642,7 +643,45 @@ async fn send_hello_replay_and_approvals(
 ) -> Result<(), ()> {
     send_hello_and_replay(socket, &state.bus, reported).await?;
     let _ = publish_pending_approval_replays(state);
+    let _ = publish_pending_a2a_replays(state);
     Ok(())
+}
+
+/// Re-publishes bounded open A2A questions after hello. The events are ordinary
+/// `AGENT_MESSAGE` frames so a reconnecting mailbox re-reads durable rows; the
+/// HTTP mailbox remains the authoritative answer surface.
+fn publish_pending_a2a_replays(state: &Arc<AppState>) -> usize {
+    let Ok(messages) = state.engine.store.pending_agent_messages(20) else {
+        return 0;
+    };
+    let mut published = 0_usize;
+    for message in messages {
+        let (Ok(run_id), Ok(from_task_id), Ok(to_task_id)) = (
+            message.run_id.parse(),
+            message.from_task_id.parse(),
+            message.to_task_id.parse(),
+        ) else {
+            continue;
+        };
+        if state
+            .bus
+            .publish(Event::AgentMessage(AgentMessagePayload {
+                run_id,
+                from_task_id,
+                to_task_id,
+                kind: message.kind,
+                text: message.text,
+                created_at: Timestamp::now(),
+            }))
+            .is_ok()
+        {
+            published += 1;
+        }
+    }
+    if published > 0 {
+        tracing::info!(published, "replayed pending A2A questions after hello");
+    }
+    published
 }
 
 async fn handle_client_text(

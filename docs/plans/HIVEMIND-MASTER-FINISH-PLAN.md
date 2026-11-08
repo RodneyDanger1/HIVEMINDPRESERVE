@@ -344,3 +344,8 @@ Not delivered and must not be claimed:
 - `POST /api/memory/trust` is token-gated and accepts only `verified`/`authoritative`; the store updates one active entry and journals `trust_changed`. Model text has no path to this method.
 - Test: promote a branch claim, assert trust changed and journal row; missing entry returns false.
 - Not delivered: hash chaining, retention sweeps, snapshots, UI promotion control.
+### P2 A2A reconnect replay
+
+- After `SERVER_HELLO`, the server republishes up to 20 open A2A questions as ordinary `AGENT_MESSAGE` frames so a reconnecting mailbox observes pending work; durable rows remain authoritative.
+- No new command/event vocabulary; replay is bounded and best-effort.
+- Still missing: answer-attempt cap, parent-model answer, continuation inbox refresh, separate answer table.
