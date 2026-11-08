@@ -428,7 +428,7 @@ async fn planned_parent_chain_is_persisted_not_flattened_to_root() {
         }
     };
     assert_eq!(final_status, "completed");
-    assert_eq!(reply_done, 3, "leaf + two aggregators must execute");
+    assert_eq!(reply_done, 4, "leaf + two aggregators + HyperAgent root");
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     let root = tasks.iter().find(|task| task.depth == 0).expect("root");
     let super_agent = tasks.iter().find(|task| task.depth == 1).expect("super");
@@ -446,17 +446,36 @@ async fn planned_parent_chain_is_persisted_not_flattened_to_root() {
             .expect("context seeded at task creation");
         assert_eq!(context.parent_task_id, task.parent_task_id);
     }
-    for task in [super_agent, agent, subagent] {
+    for task in [root, super_agent, agent, subagent] {
         assert!(
             harness.store.task_result(task.id).expect("result").is_some(),
             "every executed task must persist its result"
         );
     }
     let prompts = executor.prompts.lock().expect("prompts");
-    assert_eq!(prompts.len(), 3, "leaf + two aggregators");
+    assert_eq!(prompts.len(), 4, "leaf + two aggregators + HyperAgent root");
     assert!(
         prompts.iter().any(|prompt| prompt.contains("Aggregate the completed child results")),
         "an aggregator must receive child results, not just the original prompt: {prompts:?}"
+    );
+    assert!(
+        prompts.iter().any(|prompt| prompt.contains("You are the HyperAgent orchestrator")),
+        "the root must receive the synthesis prompt: {prompts:?}"
+    );
+    let messages = harness.store.messages(run.id).expect("messages");
+    assert_eq!(
+        messages.len(),
+        5,
+        "user + leaf + two aggregators + HyperAgent root"
+    );
+    let final_message = messages.last().expect("root answer");
+    assert_eq!(
+        final_message.role,
+        hiverouter_core::entities::ChatRole::Assistant
+    );
+    assert!(
+        final_message.text.contains(&root.id.to_string()),
+        "the final assistant message must be the root's answer"
     );
 }
 

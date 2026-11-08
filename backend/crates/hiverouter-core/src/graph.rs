@@ -24,6 +24,15 @@ pub struct TaskNode {
     pub state: AgentState,
     /// Optimistic-concurrency revision, bumped on every mutation.
     pub rev: u64,
+    /// Contract node kind, when known (`hyperagent`/`superagent`/...).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Agent role, when known.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    /// Display label, when known.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
 }
 
 /// A read-only view of the whole graph.
@@ -100,10 +109,34 @@ impl GraphAuthority {
                 parent_task_id,
                 state: AgentState::Queued,
                 rev: 0,
+                kind: None,
+                role: None,
+                label: None,
             },
         );
         state.revision += 1;
         snapshot_of(&state)
+    }
+
+    /// Attaches the task's contract kind/role/label to its graph node so the
+    /// committed snapshot can project the same hierarchy the live frames show.
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` when no node owns the id.
+    pub fn set_metadata(
+        &self,
+        task_id: TaskId,
+        kind: &str,
+        role: &str,
+        label: Option<&str>,
+    ) -> Result<(), Refusal> {
+        let mut state = self.lock()?;
+        let node = state.nodes.get_mut(&task_id).ok_or(Refusal::TaskNotFound)?;
+        node.kind = Some(kind.to_owned());
+        node.role = Some(role.to_owned());
+        node.label = label.map(str::to_owned);
+        state.revision += 1;
+        Ok(())
     }
 
     /// Marks a rewire as in flight for a task (used by async rewire flows).

@@ -77,6 +77,7 @@ function AppFrame() {
       : connection === 'reconnecting'
         ? STRINGS.connection.reconnectBanner
         : null;
+  const skipTarget = nav === 'workspace' && tab === 'workspace' ? '#hive-canvas' : '#main-content';
 
   const workspaceView =
     tab === 'swarm' ? (
@@ -134,14 +135,14 @@ function AppFrame() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-canvas text-ink-900">
-      <a className="skip-link" href="#hive-canvas">
+      <a className="skip-link" href={skipTarget}>
         {STRINGS.app.skipToCanvas}
       </a>
       <Header />
       <div className="flex min-h-0 flex-1">
         <NavRail />
         <LibraryPanel />
-        <main className="relative flex min-w-0 flex-1 flex-col">
+        <main id="main-content" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col">
           {apiKind === 'mock' ? (
             <div className="type-mono-meta border-b border-amber bg-recessed px-4 py-1 text-ink-800">
               {STRINGS.connection.mock}

@@ -248,6 +248,10 @@ export function buildNodes(
     });
 }
 
+function isBrokenState(state: TaskRecord['state']): boolean {
+  return state === 'failed' || state === 'killed' || state === 'interrupted';
+}
+
 export function buildEdges(tasks: Readonly<Record<string, TaskRecord>>): Edge[] {
   return Object.values(tasks)
     .filter((task) => task.parentId !== null && tasks[task.parentId] !== undefined)
@@ -262,10 +266,9 @@ export function buildEdges(tasks: Readonly<Record<string, TaskRecord>>): Edge[] 
         animated: false,
         data: {
           broken:
-            task.kind === 'error' ||
-            task.state === 'failed' ||
-            task.state === 'killed' ||
-            task.state === 'interrupted',
+            isBrokenState(task.state) ||
+            (parent !== undefined &&
+              (isBrokenState(parent.state) || parent.kind === 'error')),
         },
       };
     });

@@ -404,6 +404,13 @@ async fn static_ui_serves_index_assets_and_spa_fallback() {
     assert_eq!(status, 200, "asset /assets/{asset} must be embedded");
     assert!(!asset_body.is_empty());
 
+    let (status, figcraft) = http_get(server.addr, "/figcraft/a-brand.svg").await;
+    assert_eq!(status, 200, "FigCraft public asset must be embedded");
+    assert!(
+        figcraft.contains("<svg") || figcraft.contains("<?xml"),
+        "FigCraft asset must retain SVG content"
+    );
+
     // SPA client route (no file extension) falls back to index.html.
     let (status, spa_body) = http_get(server.addr, "/runs/example-revision").await;
     assert_eq!(status, 200);

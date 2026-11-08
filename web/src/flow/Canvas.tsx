@@ -321,6 +321,16 @@ function CanvasInner() {
 
   const edges = useMemo<Edge[]>(() => buildEdges(visibleTasks), [visibleTasks]);
 
+  useEffect(() => {
+    if (history.replayGraph === null) {
+      return;
+    }
+    const frame = requestAnimationFrame(() => {
+      void fitView({ padding: 0.08, duration: 0, maxZoom: 1.1 });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [history.replayGraph, fitView]);
+
   const duration = reduced ? 0 : 250;
   // Ctrl+0/Meta+0 recentres INSTANTLY at document capture level so browser
   // shortcuts, focused controls or React Flow's own key handling cannot swallow
@@ -558,7 +568,11 @@ function CanvasInner() {
           });
           handleNodeDragStop(_, node);
         }}
-        onPaneClick={() => selectTask(null)}
+        onPaneClick={() => {
+          if (!history.replayGraph) {
+            selectTask(null);
+          }
+        }}
         onMoveEnd={(_, viewport) => {
           setZoomLabel(zoomPercent(viewport.zoom));
           setViewport(viewport);

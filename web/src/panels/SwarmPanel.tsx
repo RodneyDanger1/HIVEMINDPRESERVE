@@ -15,7 +15,7 @@ import { ProjectsPanel } from './ProjectsPanel';
 
 interface RuntimeCapacity {
   readonly state: string;
-  readonly active: number;
+  readonly active: number | null;
   readonly maxAgents: number;
   readonly maxCalls: number;
 }
@@ -61,7 +61,7 @@ export function SwarmPanel() {
           if (!cancelled) {
             setCapacity({
               state: body.status,
-              active: typeof body.active_task_count === 'number' ? body.active_task_count : 0,
+              active: typeof body.active_task_count === 'number' ? body.active_task_count : null,
               maxAgents: caps.max_agents,
               maxCalls: caps.max_calls,
             });
@@ -97,7 +97,7 @@ export function SwarmPanel() {
         <p className="type-mono-meta text-[9px] tracking-[0.08em] text-meta">
           {capacity === null
             ? 'CAPACITY UNKNOWN'
-            : `CAP ${capacity.maxAgents} AGENTS / ${capacity.maxCalls} CALLS · ${capacity.active} ACTIVE · ${capacity.state.toUpperCase()}`}
+            : `CAP ${capacity.maxAgents} AGENTS / ${capacity.maxCalls} CALLS · ${capacity.active === null ? 'ACTIVE UNKNOWN' : `${capacity.active} ACTIVE`} · ${capacity.state.toUpperCase()}`}
         </p>
         <p className="type-body-l max-w-[720px] text-ink-500">
           The HyperAgent tree and the live swarm graph are one object. Re-parenting is only

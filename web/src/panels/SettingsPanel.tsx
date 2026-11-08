@@ -4,6 +4,7 @@ import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { PanelTitle, LoadingState, ErrorState } from './StatePack';
 import { DevGallery } from './DevGallery';
+import { FigCraftPanel } from './FigCraftPanel';
 
 export function SettingsPanel() {
   const settings = useUiStore((state) => state.settings);
@@ -115,6 +116,9 @@ export function SettingsPanel() {
       </section>
 
       <DevGallery />
+      <div className="mt-3">
+        <FigCraftPanel />
+      </div>
     </div>
   );
 }

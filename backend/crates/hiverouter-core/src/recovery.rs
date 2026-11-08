@@ -418,6 +418,12 @@ fn settle_graph_node(
             Err(refusal) => return Err(refusal),
         }
     }
+    graph.set_metadata(
+        task.id,
+        crate::execution::node_kind(crate::execution::task_agent_tier(task)),
+        &task.role,
+        None,
+    )?;
     graph.set_state(task.id, to)
 }
 

@@ -1,0 +1,339 @@
+{
+  "task": "task-14",
+  "title": "HiveMind memory / A2A / HyperAgent access audit",
+  "mode": "read-only-source-audit",
+  "repo": "C:/Users/Riley/Desktop/hiverouter-v1",
+  "baseline": {
+    "head": "7610b86",
+    "working_tree_notes": [
+      "backend/crates/hiverouter-core/src/execution.rs modified: uncommitted HyperAgent final-turn diff (+84/-15)",
+      "tools/desktop-launcher/HiveMind.exe modified",
+      "untracked product/planning paths present"
+    ],
+    "runtime_verified": false,
+    "tests_run": false,
+    "source_read_only": true
+  },
+  "severity_scale": ["critical", "high", "medium", "low"],
+  "findings": [
+    {
+      "id": "M-01",
+      "severity": "critical",
+      "area": "A2A / memory prompt boundary",
+      "title": "Untrusted A2A/memory text is weakly screened, injected raw at task seed, and rendered as authoritative facts",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:60-65",
+        "backend/crates/hiverouter-core/src/execution.rs:2537-2544",
+        "backend/crates/hiverouter-core/src/execution.rs:2658-2665",
+        "backend/crates/hiverouter-core/src/execution.rs:912-926",
+        "backend/crates/hiverouter-core/src/execution.rs:2840-2853",
+        "backend/crates/hiverouter-core/src/context.rs:66-95",
+        "backend/crates/hiverouter-core/src/context.rs:71",
+        "backend/crates/hiverouter-core/src/store.rs:578-605",
+        "backend/crates/hiverouter-core/src/execution.rs:721-741",
+        "backend/crates/hiverouter-core/src/http.rs:906-913",
+        "web/src/panels/AgentMessagesPanel.tsx:122-130"
+      ],
+      "current": "A2A send paths validate only non-empty length. Seed inbox inserts raw A2A text without memory_text_is_safe; refresh filters only the weak 4-marker check. prompt_block renders key = value verbatim under 'Scoped facts for this branch (authoritative):'. Raw text is persisted, published, served by HTTP, and rendered in the UI.",
+      "impact": "Cross-agent prompt injection and secret exposure. Newline/control content can forge extra fact rows; case/encoding variants and common credential shapes bypass the marker list.",
+      "fix": [
+        "Create one core agent_text guard used before every store/publish: normalize/escape newlines and control chars; redact case-insensitive secret patterns (API keys, bearer/authorization, password/token assignments, JWT/PEM etc.); enforce length; mark [redacted].",
+        "Apply it in execute_ask_parent, execute_send_to_sibling, complete_task memory write, seed_task_context, refresh_a2a_inbox; make seed and refresh identical.",
+        "Render A2A as a separate untrusted-peer-data block; label memory with trust/provenance; never call model-authored text authoritative.",
+        "Do not rely on rendering-time redaction: DB/HTTP/event/UI are read surfaces too."
+      ],
+      "tests": ["T-P0-01", "T-P0-02", "T-P0-03", "T-P1-01"]
+    },
+    {
+      "id": "M-02",
+      "severity": "high",
+      "area": "Branch isolation",
+      "title": "Memory scope is the parent task (off-by-one): siblings share a bank, ancestors are never read, and memory facts are inherited across branches",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:860-896",
+        "backend/crates/hiverouter-core/src/execution.rs:887-891",
+        "backend/crates/hiverouter-core/src/execution.rs:3169-3180",
+        "backend/crates/hiverouter-core/src/execution.rs:865-875",
+        "backend/crates/hiverouter-core/src/store.rs:725-895",
+        "docs/research/hmars/04-memory-architecture.md:165-168",
+        "docs/research/hmars/04-memory-architecture.md:475",
+        "docs/research/hmars/04-memory-architecture.md:488-500"
+      ],
+      "current": "seed_task_context reads scope = task.parent_task_id or 'root'; complete_task writes the same scope. A child reads the bank where its siblings write, not its parent's own memory; root reads only 'root'; descendants inherit parent context memory facts (only a2a:/roster: are filtered).",
+      "impact": "Horizontal cross-branch leakage (later siblings/descendants see peer memory), missing vertical inheritance (children/root cannot see parent memory), spawn-order-dependent prompts and replay drift.",
+      "fix": [
+        "Write memory to the writing task's own scope (or a real bank id); never the parent's id.",
+        "Read an explicit set: own + each ancestor up to depth 4 + role bank, at a recorded revision; no generic parent-id query.",
+        "Do not inherit memory: facts from parent context; read ancestors explicitly.",
+        "If adopting the bank tree, use memory_banks/memory_entries and invariants I1-I12 from docs/research/hmars/04-memory-architecture.md."
+      ],
+      "tests": ["T-P0-04", "T-P0-05", "T-P0-06", "T-P0-07", "T-P0-08"]
+    },
+    {
+      "id": "M-03",
+      "severity": "high",
+      "area": "HyperAgent aggregate access",
+      "title": "Root has no all-bank/hive aggregate read and silently drops task 33+ in its final prompt",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:1543-1588",
+        "backend/crates/hiverouter-core/src/execution.rs:1560",
+        "backend/crates/hiverouter-core/src/execution.rs:887-895",
+        "backend/crates/hiverouter-core/src/caps.rs:12-15",
+        "backend/crates/hiverouter-core/src/http.rs:1191",
+        "docs/research/hmars/04-memory-architecture.md:423-430",
+        "docs/research/hmars/04-memory-architecture.md:488-490",
+        "docs/provider/AGENT-ARCHITECTURE-TRUTH.md:29"
+      ],
+      "current": "Root context queries only the 'root' scope. The uncommitted final turn builds its prompt from tasks_for_run(...).take(32) with raw task_result text; MAX_AGENTS is 64, so up to 32 tasks are silently omitted. No execution.rs call reads agent_memory_entries_for_run/all banks; only HTTP does. No aggregate prompt budget or trust labels.",
+      "impact": "Final answer can ignore up to half the allowed tasks; branch/hive memory is unavailable to the orchestrator; raw child text enters without provenance; prompt size/cost are unbounded by aggregate budget.",
+      "fix": [
+        "Add a root-only aggregate read: run bank + one bounded summary/observation per hive/branch with trust, counts, and omitted count.",
+        "Do not silently take(32): include all required summaries within an explicit total char budget, or record/report omitted tasks in the prompt and a root_aggregate record.",
+        "Keep aggregation root-only and summary-oriented; do not expose raw descendant observations."
+      ],
+      "tests": ["T-P0-09", "T-P0-10", "T-P1-02"]
+    },
+    {
+      "id": "M-04",
+      "severity": "high",
+      "area": "A2A answer / wake",
+      "title": "ask_parent is write-only; inbox refreshes only at task start; no wake/answer/status; terminal recipients lose messages",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:2883",
+        "backend/crates/hiverouter-core/src/execution.rs:2904",
+        "backend/crates/hiverouter-core/src/execution.rs:2971-3102",
+        "backend/crates/hiverouter-core/src/execution.rs:2513-2584",
+        "backend/crates/hiverouter-core/src/execution.rs:2530-2536",
+        "backend/crates/hiverouter-core/src/execution.rs:2637-2657",
+        "backend/crates/hiverouter-core/src/db.rs:159-174",
+        "backend/crates/hiverouter-core/src/store.rs:578-605",
+        "docs/research/hmars/02-hmars-patterns.md:352",
+        "docs/research/hmars/02-hmars-patterns.md:361-376"
+      ],
+      "current": "refresh_a2a_inbox is called in execute_task_with_prompt and execute_root_task_with_prompt only. The continuation loop never refreshes. ask_parent returns {message_id,to_task_id,kind}; agent_messages has no status/in_reply_to/answered_at; no wait/wake. send_to_sibling/ask_parent do not check recipient state.",
+      "impact": "A question sent during the parent's tool turn or approval wait is invisible in later parent turns; if the parent completes, the message is durable but undelivered and the child proceeds on a guess. Sender gets ok for undeliverable rows; budget is consumed; mailbox cannot show answer/open/expired.",
+      "fix": [
+        "Add internal message status/in_reply_to/answered_at/expires_at and delivery tracking.",
+        "Refresh the inbox before every provider continuation; wake a queued/awaiting recipient; reject or mark terminal recipients undeliverable.",
+        "Implement minimal answer path: parent/operator answers, answered message reaches child next turn, unanswered expires with a named refusal; answer never grants tool authority.",
+        "If blocking is deferred, return an explicit open/pending status and remove any implication of an answer."
+      ],
+      "tests": ["T-P0-11", "T-P0-12", "T-P0-13", "T-P1-03", "T-P1-04"]
+    },
+    {
+      "id": "M-05",
+      "severity": "high",
+      "area": "Clear semantics",
+      "title": "Clear memory deletes all runs/scopes for a role, is one-click/unconfirmed, and has no scope, receipt, or audit",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/store.rs:1072-1087",
+        "backend/crates/hiverouter-core/src/http.rs:1245-1261",
+        "web/src/panels/AgentMemoryPanel.tsx:179-189",
+        "web/src/panels/AgentMemoryPanel.tsx:210-216",
+        "tools/hivemind-cli.mjs:1744-1748",
+        "tools/hivemind-cli.mjs:1755-1763",
+        "docs/research/hmars/04-memory-architecture.md:186-188",
+        "docs/research/hmars/05-ui-ux-patterns.md:183-184",
+        "docs/research/hmars/05-ui-ux-patterns.md:419"
+      ],
+      "current": "DELETE /api/agents/memory/{agent_key} deletes every row with that agent_key (all runs/scopes). HTTP and UI execute immediately; CLI requires --yes but has no run/scope flags. No run/branch clear exists; no receipt/journal/tombstone.",
+      "impact": "A single click or HTTP call erases active and past run memory with no confirmation or recovery; operators cannot audit erasure; the safe scoped operation is unavailable.",
+      "fix": [
+        "Add scoped clear routes/CLI/UI: run, run+scope, role; global only with explicit all=true/confirmation token.",
+        "Require confirmation dialog/--yes naming exact run/scope/key; return purge receipt and write append-only journal/audit row.",
+        "Never show unlabeled global Clear on the memory panel; use soft-delete/tombstone if retention requires undo."
+      ],
+      "tests": ["T-P0-14", "T-P1-05", "T-P1-06", "T-P2-01"]
+    },
+    {
+      "id": "M-06",
+      "severity": "high",
+      "area": "Memory bank model / provenance",
+      "title": "Run/branch rows and 'durable role memory' are conflated; global list is cross-run and persona-only; legacy scopes are unreachable",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/db.rs:249-274",
+        "backend/crates/hiverouter-core/src/db.rs:263-266",
+        "backend/crates/hiverouter-core/src/store.rs:709-718",
+        "backend/crates/hiverouter-core/src/execution.rs:887-889",
+        "backend/crates/hiverouter-core/src/store.rs:900-922",
+        "backend/crates/hiverouter-core/src/http.rs:1225-1243",
+        "web/src/panels/AgentMemoryPanel.tsx:74-123",
+        "web/src/panels/AgentMemoryPanel.tsx:200-226"
+      ],
+      "current": "v11 backfills legacy rows to scope 'legacy'; seed/refresh read parent/root scopes only, so legacy rows (and rows written by record_agent_memory as scope 'run') are never recalled. GET /api/agents/memory iterates boot personas and calls a store query that filters agent_key only across all runs/scopes; arbitrary task roles are not listed. UI labels that union 'durable role memory' with only key/value.",
+      "impact": "Cross-run data is presented as role memory without provenance; destructive clear targets it; legacy rows are invisible to recall; arbitrary task roles are invisible to the UI list yet clearable.",
+      "fix": [
+        "Separate read-mostly agent_role bank from run/hive/branch banks; never aggregate task-written rows as role memory.",
+        "Migrate legacy rows to the role bank with original run/task ids, trust=NULL, kind=note; migrate or remove the legacy 'run' scope with a documented rule.",
+        "Return run_id/scope_id/task_id/created_at/trust in API/CLI/UI; deprecate record_agent_memory or align it with the role bank.",
+        "Ensure every write scope is read by its intended consumer; test."
+      ],
+      "tests": ["T-P0-15", "T-P0-16", "T-P1-07", "T-P1-08"]
+    },
+    {
+      "id": "M-07",
+      "severity": "high",
+      "area": "A2A recipient validation / budget / delivery status",
+      "title": "Recipient state is unvalidated, the 32-message budget is check-then-insert (TOCTOU), and delivery/read/answer status does not exist",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:2530-2536",
+        "backend/crates/hiverouter-core/src/execution.rs:2637-2657",
+        "backend/crates/hiverouter-core/src/execution.rs:2545-2564",
+        "backend/crates/hiverouter-core/src/execution.rs:2666-2686",
+        "backend/crates/hiverouter-core/src/db.rs:159-174",
+        "backend/crates/hiverouter-core/src/store.rs:578-605",
+        "web/src/panels/AgentMessagesPanel.tsx:122-130"
+      ],
+      "current": "No target.state check; terminal recipients accept messages. Budget count and insert are separate statements with no atomic guard. No status/delivered_at/answered_at/in_reply_to fields; UI displays rows as if delivered.",
+      "impact": "ok is returned for undeliverable messages; budget can exceed 32 under concurrent siblings; no way to implement answer/wake or an honest mailbox; silent loss.",
+      "fix": [
+        "Validate recipient state: active states deliverable; terminal refused (E_TASK_TERMINAL) or marked undeliverable, never ok.",
+        "Make count+insert one transaction/statement/trigger; add idempotency key for retries.",
+        "Add status/in_reply_to/delivered_at/answered_at/expires_at; surface in tool result/HTTP/UI; keep AGENT_MESSAGE frozen fields if avoiding a contract change."
+      ],
+      "tests": ["T-P0-11", "T-P0-13", "T-P0-17", "T-P1-09", "T-P1-10"]
+    },
+    {
+      "id": "M-08",
+      "severity": "medium",
+      "area": "A2A roster",
+      "title": "Roster is seeded once, silently truncated at 16, never refreshed, exposes all topology, and is cacheable",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:897-911",
+        "backend/crates/hiverouter-core/src/execution.rs:2832-2856",
+        "backend/crates/hiverouter-core/src/http.rs:1026-1066",
+        "backend/crates/hiverouter-core/src/http.rs:900",
+        "backend/crates/hiverouter-core/src/http.rs:1211"
+      ],
+      "current": "Roster facts inserted at task seed, take(16), not refreshed by refresh_a2a_inbox. HTTP roster serializes all tasks with no truncated/count/limit marker, no state filter, no no-store; prompt exposes all branch ids/roles/parents.",
+      "impact": "Later peers are undiscoverable; model believes truncated roster complete; stale cache; cross-branch topology disclosure.",
+      "fix": [
+        "Refresh roster before each turn with bounded scan and omitted count; refresh after spawns.",
+        "Add truncated/total/limit/state filtering and Cache-Control: no-store; make discovery scope policy explicit.",
+        "Validate authorization separately (roster is discovery, not send permission)."
+      ],
+      "tests": ["T-P1-11", "T-P1-12", "T-P2-02"]
+    },
+    {
+      "id": "M-09",
+      "severity": "medium",
+      "area": "Cross-branch approval binding",
+      "title": "Approved cross-branch send writes without re-verifying approved args/target or single-use grant",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:1790-1815",
+        "backend/crates/hiverouter-core/src/execution.rs:2299-2301",
+        "backend/crates/hiverouter-core/src/execution.rs:2264-2327",
+        "backend/crates/hiverouter-core/tests/suspension.rs:472-542",
+        "docs/CODEMAP/17-CLAIM-REGISTER.md:25",
+        "docs/CODEMAP/17-CLAIM-REGISTER.md:40",
+        "docs/CODEMAP/17-CLAIM-REGISTER.md:43"
+      ],
+      "current": "suspend_for_approval is used for cross-branch send, but the approve path special-cases send_to_sibling and calls execute_send_to_sibling(...true) without verify_tool_grant or args_sha256 comparison; target state is not rechecked. Positive test only.",
+      "impact": "Approval is weaker than the WP-01 side-effect grant protocol; a mismatched/replayed approval or target-state change is not caught at the point of effect.",
+      "fix": [
+        "Before message write, verify engine-held resolution: approval id/nonce consumed once, request.tool == plan.tool, request.args_sha256 == hash_args(plan.args), run/target relationships unchanged; or equivalent verify_tool_grant path.",
+        "Re-check target state after approval; store approval id on message/ledger.",
+        "Add negative args/target mismatch tests."
+      ],
+      "tests": ["T-P1-13", "T-P1-14", "T-P2-03"]
+    },
+    {
+      "id": "M-10",
+      "severity": "medium",
+      "area": "Failure / truncation truth",
+      "title": "Memory and inbox read errors are swallowed as empty; 8/500/200/32 caps have no truncation markers",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/execution.rs:887",
+        "backend/crates/hiverouter-core/src/execution.rs:2840-2842",
+        "backend/crates/hiverouter-core/src/execution.rs:915-925",
+        "backend/crates/hiverouter-core/src/execution.rs:2840-2852",
+        "backend/crates/hiverouter-core/src/http.rs:1189-1192",
+        "backend/crates/hiverouter-core/src/store.rs:759-829",
+        "docs/research/hmars/04-memory-architecture.md:481-482"
+      ],
+      "current": "if let Ok(...) silently drops memory read errors; inbox read errors return unchanged context. Recall caps 8, inbox 8/500 chars, HTTP memory 200 with no omitted/truncated; run memory response has count only.",
+      "impact": "Empty vs broken is indistinguishable; operators/models believe they saw all memory/messages; incidents are unauditable.",
+      "fix": [
+        "Surface named read failure in context/prompt/log and keep existing facts; never empty-success.",
+        "Add truncated/omitted counts to store return types, HTTP/UI, and prompt facts; add render budget and record.",
+        "Distinguish no rows from read failure in tests."
+      ],
+      "tests": ["T-P1-15", "T-P1-16", "T-P2-04"]
+    },
+    {
+      "id": "M-11",
+      "severity": "medium",
+      "area": "API / CLI / UI parity and cache",
+      "title": "UI lacks roster and sender/recipient filters; clear safety differs across surfaces; memory/roster responses are missing no-store",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/http.rs:836-920",
+        "backend/crates/hiverouter-core/src/http.rs:1026-1066",
+        "backend/crates/hiverouter-core/src/http.rs:1174-1261",
+        "tools/hivemind-cli.mjs:1508-1557",
+        "tools/hivemind-cli.mjs:1744-1748",
+        "web/src/panels/AgentMessagesPanel.tsx:26-28",
+        "web/src/panels/AgentMessagesPanel.tsx:99-107",
+        "web/src/panels/AgentMemoryPanel.tsx:179-216",
+        "web/src/panels/AgentsPanel.tsx:73-75",
+        "web/src/panels/AgentsPanel.tsx:75",
+        "backend/crates/hiverouter-core/src/http.rs:1242",
+        "backend/crates/hiverouter-core/src/http.rs:1054-1062"
+      ],
+      "current": "API/CLI support task_id/from_task_id/kind and roster; UI mailbox only kind and no roster panel. API run memory supports scope; UI fetches all and client-filters. Clear is global in all surfaces but only CLI requires --yes. /api/agents/memory and /api/agents/runs/{id}/roster lack Cache-Control: no-store (messages/run memory have it).",
+      "impact": "Operators cannot exercise supported API features in the UI; destructive action is safest in CLI and weakest in UI; stale cached sensitive data is possible.",
+      "fix": [
+        "Implement one surface contract: add roster UI, mailbox sender/recipient filters, scope query use, scoped clear with confirmation.",
+        "Add no-store to memory/roster/message responses; test headers.",
+        "Make clear confirmation consistent (server token + UI dialog + CLI --yes/all)."
+      ],
+      "tests": ["T-P2-05", "T-P2-06", "T-P2-07", "T-P2-08"]
+    },
+    {
+      "id": "M-12",
+      "severity": "low",
+      "area": "Storage integrity / retention",
+      "title": "Missing recipient index/task FKs, nondeterministic memory ordering, no retention/purge receipt",
+      "evidence": [
+        "backend/crates/hiverouter-core/src/db.rs:159-174",
+        "backend/crates/hiverouter-core/src/db.rs:249-274",
+        "backend/crates/hiverouter-core/src/store.rs:664-702",
+        "backend/crates/hiverouter-core/src/store.rs:759-829",
+        "backend/crates/hiverouter-core/src/store.rs:638",
+        "backend/crates/hiverouter-core/src/store.rs:676",
+        "docs/research/hmars/04-memory-architecture.md:390-394"
+      ],
+      "current": "agent_messages: run FK only, no task FK/retry unique key, only run index; inbox filters run+to_task_id. agent_memory: no FKs/retention, clear-only deletion. Memory ORDER BY created_at DESC lacks rowid tie-break (messages include it). No pagination/cursor.",
+      "impact": "At current caps low: orphan/stale rows, nondeterministic recall, no retention/erasure receipt, inefficient query at scale.",
+      "fix": [
+        "Add (run_id,to_task_id,created_at) index (and sender if used), task FKs or boot cleanup; add retry/idempotency key.",
+        "Add rowid DESC tie-breakers to memory queries.",
+        "Add retention/expiry or documented sweep; purge by run/scope with journal/receipt; cursor/truncated for endpoints."
+      ],
+      "tests": ["T-P2-09", "T-P2-10", "T-P2-11"]
+    }
+  ],
+  "missing_tests": [
+    "No engine-level branch-isolation/leakage test (store unit tests only; run_lifecycle covers cross-run non-recall and roster presence, not prompt facts).",
+    "No root aggregate or >32-task truncation test.",
+    "No A2A continuation-refresh/wake/answer/expiry/status test.",
+    "No negative foreign-run/foreign-parent/terminal/self send tests (claim register 17:40,43).",
+    "No clear scope/confirmation/journal test beyond global HTTP delete.",
+    "No UI tests for AgentMemoryPanel/AgentMessagesPanel/roster/filters.",
+    "No CLI tests for memory/roster/agent-messages/memory-clear.",
+    "No secret-redaction/newline-injection test; no memory/inbox failure-visibility test.",
+    "No truncation/cache-header test; no legacy-migration/ordering test.",
+    "No cross-branch approval args/target binding negative test."
+  ],
+  "positive_controls": [
+    "HTTP A2A filters validate unknown/foreign task ids and kind (http.rs:841-886; http_boot.rs:352-377).",
+    "send_to_sibling same-run/same-parent checks exist (execution.rs:2647-2657); self-target/malformed target refused.",
+    "Cross-branch send suspends for approval and does not write before it (execution.rs:1790-1815; tests/suspension.rs:472-542).",
+    "No sender id in tool args; sender derives from executing task.",
+    "Per-run 32-message budget exists; cross-run memory recall is blocked by run_id filters (store.rs:759-829; run_lifecycle.rs:506-549)."
+  ],
+  "fix_order": ["M-01", "M-02", "M-04", "M-05", "M-03", "M-06", "M-07", "M-08", "M-09", "M-10", "M-11", "M-12"],
+  "references": {
+    "audit": "docs/audit/hivemind-memory-a2a/AUDIT.md",
+    "test_plan": "docs/audit/hivemind-memory-a2a/TEST-PLAN.md"
+  }
+}

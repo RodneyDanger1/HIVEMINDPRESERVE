@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SWATCHES } from '../src/tokens/tokens';
+import { FIGCRAFT_GATE } from '../src/assets/manifest';
 
 const TS_FILES = import.meta.glob('../src/**/*.{ts,tsx}', {
   query: '?raw',
@@ -50,7 +51,7 @@ describe('G-UI-11 token isolation and no illustrative hardcoding', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('UI components do not import FigCraft assets while the gate is closed', () => {
+  it('FigCraft consumers are limited to the gate-open representation seam', () => {
     const manifest = TS_FILES['../src/assets/manifest.ts'] ?? '';
     expect(manifest).toContain('allowFrontend');
     const consumers = Object.entries(TS_FILES).filter(
@@ -58,6 +59,15 @@ describe('G-UI-11 token isolation and no illustrative hardcoding', () => {
         !path.endsWith('/assets/manifest.ts') &&
         (source.includes('figcraft') || source.includes('a-foundations') || source.includes('b-boards')),
     );
-    expect(consumers.map(([path]) => path)).toEqual([]);
+    if (!FIGCRAFT_GATE.allowFrontend) {
+      expect(consumers.map(([path]) => path)).toEqual([]);
+      return;
+    }
+    expect(consumers.length).toBeGreaterThan(0);
+    expect(
+      consumers
+        .map(([path]) => path)
+        .filter((path) => !path.includes('/figcraft/') && !path.endsWith('/FigCraftPanel.tsx')),
+    ).toEqual([]);
   });
 });

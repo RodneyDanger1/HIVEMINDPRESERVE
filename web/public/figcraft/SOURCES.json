@@ -1,0 +1,195 @@
+{
+  "schema": "hivemind.figcraft.public-assets/v1",
+  "generated_at": "2026-11-07T17:16:53-06:00",
+  "generated_by": "web/src/figcraft acceptance copy from docs/ui/figcraft manifests (Lead task-11)",
+  "watchdog": {
+    "ledger": "ledgers/ui-watchdog.json",
+    "overall": "PASS",
+    "allow_frontend": true,
+    "fail_count": 0,
+    "non_blocking": [
+      "A specimens spinner #D9D9D9 (fix in progress)",
+      "pixel-layout fidelity UNVERIFIED",
+      "S25 DECISION-GATED"
+    ]
+  },
+  "counts": {
+    "boards": 21,
+    "surfaces": 114,
+    "assets": 114,
+    "distinctSurfaces": 60,
+    "owners": 3,
+    "watchdog": "PASS",
+    "allowFrontend": true
+  },
+  "boards": [
+    {
+      "publicPath": "/figcraft/hivemind-cover.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-cover.svg",
+      "sha256": "ad9f04ede5c800196e72a37f8496088190bcf840f07b2029fc4ea2fa5746ed62",
+      "bytes": 305096,
+      "owner": "figcraft-hivemind",
+      "title": "00 · Cover"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-colour.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-colour.svg",
+      "sha256": "8da62cceb2d46f5c76abd3a4ffed2baf2957ef72aa3f7bccf9cdf36077e35360",
+      "bytes": 473703,
+      "owner": "figcraft-hivemind",
+      "title": "01 · Colour"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-typography.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-typography.svg",
+      "sha256": "0236956e8f29ace3ea587ef0675c00701a1b5997502a6744220b4b95a1c77594",
+      "bytes": 569756,
+      "owner": "figcraft-hivemind",
+      "title": "02 · Typography"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-space-and-depth.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-space-and-depth.svg",
+      "sha256": "005871e538619453dd453955d221359ac89e54850e9ee5a36af836f4c4302378",
+      "bytes": 217425,
+      "owner": "figcraft-hivemind",
+      "title": "03 · Space & Depth"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-brand-lockups.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-brand-lockups.svg",
+      "sha256": "b83c5ca38c981e47b25a49a2e523c276c34d506c62fa84944a3aa865a758d473",
+      "bytes": 261958,
+      "owner": "figcraft-hivemind",
+      "title": "04 · Brand Lockups"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-agent-cards.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-agent-cards.svg",
+      "sha256": "c021a836c169125aa4be37288a2fa72f9ddc4575c1ce01c2a10443d80329fd01",
+      "bytes": 1020218,
+      "owner": "figcraft-hivemind",
+      "title": "05 · Agent Cards"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-controls-and-hud.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-controls-and-hud.svg",
+      "sha256": "d8f92f5c66cfd9353b912013eb4ff8fc6039972c377f9673077805847057ea0d",
+      "bytes": 483247,
+      "owner": "figcraft-hivemind",
+      "title": "06 · Controls & HUD"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-spatial-canvas.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-spatial-canvas.svg",
+      "sha256": "92256071aea74b869ea2145668e83af8cbd58e4bb130c321117d569ffed8bc4f",
+      "bytes": 346910,
+      "owner": "figcraft-hivemind",
+      "title": "07 · Spatial Canvas"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-hmas-hierarchy.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-hmas-hierarchy.svg",
+      "sha256": "eb1ce756e061066a77304ff5c89860cf962e443f8f3c61e2e588da84a73a877d",
+      "bytes": 587168,
+      "owner": "figcraft-hivemind",
+      "title": "08 · HMAS Hierarchy"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-hmas-governance.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-hmas-governance.svg",
+      "sha256": "7c763f8f36758318502d084baffe82dcd5483246a22c412b19edf0771c264848",
+      "bytes": 544930,
+      "owner": "figcraft-hivemind",
+      "title": "09 · HMAS Governance"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-states-and-refusals.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-states-and-refusals.svg",
+      "sha256": "580561355febbe4f73c1635464bced7b1a7007505369e4f53941b27eb12ae7f8",
+      "bytes": 769672,
+      "owner": "figcraft-hivemind",
+      "title": "10 · States & Refusals"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-motion-and-live.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-motion-and-live.svg",
+      "sha256": "c5e8b0a582dc4c9af061d0a30a388cb7142a0a3121f54949500f74cd05868998",
+      "bytes": 798976,
+      "owner": "figcraft-hivemind",
+      "title": "11 · Motion & Live"
+    },
+    {
+      "publicPath": "/figcraft/hivemind-run-detail-and-files.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/hivemind-run-detail-and-files.svg",
+      "sha256": "80afcd4f598a4e18dd1c8275fd687c2d86497d574f0ba863bfccaef03aba4167",
+      "bytes": 894743,
+      "owner": "figcraft-hivemind",
+      "title": "12 · Run Detail & Files"
+    },
+    {
+      "publicPath": "/figcraft/a-specimens.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/a-specimens.svg",
+      "sha256": "e88aeca9a0f448fe87116837e11f560d202f1d25066d441a7b591e1f70dbe350",
+      "bytes": 1800657,
+      "owner": "figcraft-a",
+      "title": "03 Specimens"
+    },
+    {
+      "publicPath": "/figcraft/a-components.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/a-components.svg",
+      "sha256": "2eb182185e22183c3473f1370784e2834c7646e7648c4d2feba95bdf3adbe0e9",
+      "bytes": 3761056,
+      "owner": "figcraft-a",
+      "title": "02 Components"
+    },
+    {
+      "publicPath": "/figcraft/a-brand.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/a-brand.svg",
+      "sha256": "94cf946703c14355601813367f9a5fa11105d4e744990dd66ac7b0e5ad0a9522",
+      "bytes": 940908,
+      "owner": "figcraft-a",
+      "title": "01 Brand"
+    },
+    {
+      "publicPath": "/figcraft/a-foundations.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/a-foundations.svg",
+      "sha256": "24536354e6ffe9ba4dda2c9682b526bb44bedea6aea7f1d21fd4e3aeb75e551a",
+      "bytes": 1768930,
+      "owner": "figcraft-a",
+      "title": "00 Foundations"
+    },
+    {
+      "publicPath": "/figcraft/b-canvas-default.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/b-canvas-default.svg",
+      "sha256": "b5a5a824145a85848247a10a663fab2d4783cc120d04de51fb93316a9ee33d9f",
+      "bytes": 1223908,
+      "owner": "figcraft-b",
+      "title": "Canvas Default"
+    },
+    {
+      "publicPath": "/figcraft/b-zoom-states.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/b-zoom-states.svg",
+      "sha256": "ab1ee97ae2b9d042b9d8b78ef22f10f1d4b594041fbc51acd27c32112a9493ae",
+      "bytes": 966005,
+      "owner": "figcraft-b",
+      "title": "Zoom States"
+    },
+    {
+      "publicPath": "/figcraft/b-interaction.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/b-interaction.svg",
+      "sha256": "927514772ac5321c3771ed7293ae72b67e53526cb544222b21af408550a2e945",
+      "bytes": 1665849,
+      "owner": "figcraft-b",
+      "title": "Interaction"
+    },
+    {
+      "publicPath": "/figcraft/b-hero.svg",
+      "sourcePath": "docs/ui/figcraft/ASSETS/b-hero.svg",
+      "sha256": "2bf8d20facba986b2c148702a774187538886658c680f7d323aa0e785a678477",
+      "bytes": 780682,
+      "owner": "figcraft-b",
+      "title": "Hero"
+    }
+  ]
+}
