@@ -26,7 +26,7 @@ import { useUiStore } from '../state/context';
 import { HudBadge } from '../panels/HudBadge';
 import { HiveField } from './HiveField';
 import { LAYOUT } from '../tokens/tokens';
-import { isTerminal } from '../state/agentState';
+import { isRunActive, isTerminal } from '../state/agentState';
 import type { TaskRecord } from '../state/store';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { STRINGS } from '../state/strings';
@@ -109,7 +109,7 @@ function CanvasInner() {
   const viewport = useViewport();
   const [zoomLabel, setZoomLabel] = useState('100%');
   const [positionOverrides, setPositionOverrides] = useState<PositionMap>({});
-  const [hideFinished, setHideFinished] = useState(true);
+  const [hideFinished, setHideFinished] = useState(false);
   const [focusBranch, setFocusBranch] = useState(false);
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
@@ -121,6 +121,8 @@ function CanvasInner() {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const chatVisible = useUiStore((state) => state.chat.visible);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
+  const runStatus = useUiStore((state) => state.run?.status ?? null);
+  const interactiveGraph = runStatus !== null && isRunActive(runStatus);
 
   useEffect(() => {
     setPositionOverrides(loadPositions(runId));
@@ -201,7 +203,7 @@ function CanvasInner() {
     if (history.replayGraph) {
       return [];
     }
-    const laidOut = buildNodes(visibleTasks, selectedTaskId, handleSelect);
+    const laidOut = buildNodes(visibleTasks, selectedTaskId, handleSelect, interactiveGraph);
     return laidOut.map((node) => {
       const override = positionOverrides[node.id];
       const highlighted =
@@ -362,7 +364,7 @@ function CanvasInner() {
       // settled; otherwise the first card fits the viewport and the rest are
       // born outside it. A quiet 240ms window is well below human perception.
       timer = window.setTimeout(() => {
-        void fitView({ padding: chatVisible ? 0.42 : 0.18, duration: 0, minZoom: 0.5, maxZoom: 1 });
+        void fitView({ padding: chatVisible ? 0.08 : 0.18, duration: 0, minZoom: 0.75, maxZoom: 0.75 });
       }, 240);
     });
     return () => {
@@ -431,11 +433,69 @@ function CanvasInner() {
     [history.replayGraph],
   );
   const noopSelect = useCallback((_taskId: string) => {}, []);
-  const replayNodes = useMemo(
-    () => buildNodes(replayTasks, null, noopSelect, false),
-    [replayTasks, noopSelect],
-  );
+  const replayNodes = useMemo(() => {
+    const nodes = buildNodes(replayTasks, null, noopSelect, false);
+    const hasHiveParent = Object.values(replayTasks).some((task) => task.kind === 'hyperagent');
+    if (!hasHiveParent) {
+      return nodes;
+    }
+    return [
+      ...nodes,
+      {
+        id: HIVE_ANCHOR_ID,
+        type: 'hiveanchor',
+        position: { x: -0.5, y: -0.5 },
+        style: { width: 1, height: 1, opacity: 0, pointerEvents: 'none' },
+        data: {},
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        focusable: false,
+      } as CanvasNode,
+    ];
+  }, [replayTasks, noopSelect]);
   const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
+  const replayOwnerLinks = useMemo(() => {
+    if (canvasSize.width === 0 || canvasSize.height === 0) {
+      return [];
+    }
+    const root = Object.values(replayTasks).find((task) => task.kind === 'hyperagent');
+    if (root === undefined) {
+      return [];
+    }
+    const cx = canvasSize.width / 2;
+    const cy = canvasSize.height / 2 - 32;
+    const links: Array<{ id: string; sx: number; sy: number; tx: number; ty: number }> = [];
+    for (const task of Object.values(replayTasks)) {
+      if (task.parentId !== root.id || task.kind === 'hyperagent') {
+        continue;
+      }
+      const node = getNode(task.id);
+      if (node === undefined) {
+        continue;
+      }
+      const width = node.measured?.width ?? 1;
+      const height = node.measured?.height ?? 1;
+      const tx = (node.position.x + width / 2) * viewport.zoom + viewport.x;
+      const ty = (node.position.y + height / 2) * viewport.zoom + viewport.y;
+      const dx = tx - cx;
+      const dy = ty - cy;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 1) {
+        continue;
+      }
+      const startRadius = 215;
+      links.push({
+        id: task.id,
+        sx: cx + (dx / distance) * startRadius,
+        sy: cy + (dy / distance) * startRadius,
+        tx,
+        ty,
+      });
+    }
+    return links;
+  }, [canvasSize, getNode, replayTasks, viewport]);
+  const visibleOwnerLinks = history.replayGraph ? replayOwnerLinks : ownerLinks;
 
   return (
     <div
@@ -458,13 +518,13 @@ function CanvasInner() {
       </svg>
       <HiveField />
       <div className="hive-scan" aria-hidden="true" />
-      {ownerLinks.length === 0 ? null : (
+      {visibleOwnerLinks.length === 0 ? null : (
         <svg
           data-testid="owner-links"
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
         >
-          {ownerLinks.map((link) => (
+          {visibleOwnerLinks.map((link) => (
             <g key={link.id}>
               <line
                 x1={link.sx}
@@ -627,7 +687,7 @@ function CanvasInner() {
           setViewport(viewport);
         }}
         fitView={history.replayGraph !== null}
-        fitViewOptions={{ padding: 0.2, minZoom: 0.5, maxZoom: 1.4 }}
+        fitViewOptions={{ padding: 0.08, minZoom: 0.75, maxZoom: 0.75 }}
         className="h-full w-full bg-transparent"
       >
         <MiniMap
@@ -722,7 +782,7 @@ function CanvasInner() {
         </button>
       </div>
 
-      {nodes.length === 0 && !history.replayGraph && !chatVisible ? (
+      {nodes.length === 0 && !history.replayGraph ? (
         <div className="pointer-events-none absolute inset-x-0 top-24 flex justify-center">
           <p className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-3 py-1.5 text-meta">
             {Object.keys(tasks).length > 0 ? 'No agents match the current filters.' : STRINGS.panels.agentsEmpty}

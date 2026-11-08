@@ -340,6 +340,18 @@ export function ApprovalOverlay() {
                 </div>
               ) : null}
 
+              {resolveState?.refusal ? null : actions.dismiss ? (
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-700"
+                    onClick={() => dismissApproval(view.approvalId)}
+                  >
+                    {STRINGS.approval.dismiss}
+                  </button>
+                </div>
+              ) : null}
+
               <div className="mt-3 flex justify-end gap-2">
                 <button
                   type="button"

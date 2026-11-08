@@ -40,7 +40,7 @@ export function nodeSize(kind: NodeKindLabel): { readonly width: number; readonl
   return NODE_SIZE[kind];
 }
 
-function radialHiveLayout(
+function columnHiveLayout(
   tasks: Readonly<Record<string, TaskRecord>>,
   rootId: string,
 ): Record<string, Point2> {
@@ -58,41 +58,61 @@ function radialHiveLayout(
     bucket.sort();
   }
 
-  const place = (id: string, angle: number, sector: number, radius: number): void => {
-    if (positions[id] !== undefined) {
-      return;
-    }
+  const sizeOf = (id: string): { readonly width: number; readonly height: number } => {
     const task = tasks[id];
-    if (task === undefined) {
-      return;
-    }
-    const size = NODE_SIZE[task.kind];
-    positions[id] = {
-      x: Math.cos(angle) * radius - size.width / 2,
-      y: Math.sin(angle) * radius - size.height / 2,
-    };
+    return task === undefined ? { width: 0, height: 0 } : NODE_SIZE[task.kind];
+  };
+  const measure = (id: string): number => {
+    const size = sizeOf(id);
     const children = childrenByParent[id] ?? [];
     if (children.length === 0) {
-      return;
+      return size.height;
     }
-    const slice = Math.max(0.52, Math.min(1.45, sector * 0.72));
-    children.forEach((childId, index) => {
-      const childAngle =
-        children.length === 1
-          ? angle
-          : angle - slice / 2 + (slice * (index + 0.5)) / children.length;
-      place(childId, childAngle, slice / children.length, radius + 170);
-    });
+    return size.height + 16 + children.reduce((total, child) => total + measure(child), 0) + (children.length - 1) * 14;
+  };
+
+  const placeColumn = (id: string, side: -1 | 1, top: number): number => {
+    const size = sizeOf(id);
+    positions[id] = { x: side * 476 - size.width / 2, y: top };
+    let cursor = top + size.height;
+    for (const child of childrenByParent[id] ?? []) {
+      cursor += 16;
+      cursor = placeColumn(child, side, cursor);
+    }
+    return cursor;
   };
 
   const direct = childrenByParent[rootId] ?? [];
-  const offset = direct.length === 2 ? 0 : -Math.PI / 2;
-  direct.forEach((id, index) => {
-    const angle = offset + (Math.PI * 2 * index) / Math.max(direct.length, 1);
-    place(id, angle, (Math.PI * 2) / Math.max(direct.length, 1), 620);
-  });
-  // The root is represented by the fixed ChatCore overlay at world origin.
+  const left = direct.filter((_, index) => index % 2 === 0);
+  const right = direct.filter((_, index) => index % 2 === 1);
+  for (const [side, group] of [
+    [-1, left],
+    [1, right],
+  ] as const) {
+    if (group.length === 0) {
+      continue;
+    }
+    const total = group.reduce((sum, id) => sum + measure(id), 0) + (group.length - 1) * 24;
+    let cursor = -total / 2;
+    for (const id of group) {
+      cursor = placeColumn(id, side, cursor) + 24;
+    }
+  }
   positions[rootId] = { x: -NODE_SIZE.hyperagent.width / 2, y: -NODE_SIZE.hyperagent.height / 2 };
+  // Orphans/parentless tasks must never pile at the world origin behind the
+  // chat. Give each unplaced node a visible slot below the hive.
+  let orphanIndex = 0;
+  for (const task of Object.values(tasks)) {
+    if (positions[task.id] !== undefined) {
+      continue;
+    }
+    const size = NODE_SIZE[task.kind];
+    positions[task.id] = {
+      x: (orphanIndex % 4) * 360 - 540 - size.width / 2,
+      y: 560 + Math.floor(orphanIndex / 4) * 150,
+    };
+    orphanIndex += 1;
+  }
   return positions;
 }
 
@@ -101,7 +121,7 @@ export function layoutTasks(tasks: Readonly<Record<string, TaskRecord>>): Record
     (task) => task.kind === 'hyperagent' && task.parentId === null,
   );
   if (hiveRoot !== undefined) {
-    return radialHiveLayout(tasks, hiveRoot.id);
+    return columnHiveLayout(tasks, hiveRoot.id);
   }
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({ rankdir: 'TB', nodesep: 40, ranksep: 90, marginx: 40, marginy: 40 });

@@ -832,13 +832,8 @@ async fn handle_client_text(
         Command::HistoryRevisionSet(payload) => {
             match state.history.state_at(payload.run_id, payload.revision) {
                 Ok(envelope) => {
-                    let graph = match serde_json::to_value(envelope.graph) {
-                        Ok(graph) => graph,
-                        Err(_) => {
-                            publish_error(state, Refusal::InternalError, Some(correlation));
-                            return Ok(());
-                        }
-                    };
+                    let graph =
+                        crate::http::history_graph_value(state.as_ref(), payload.run_id, envelope.graph);
                     let snapshot = HistorySnapshot {
                         run_id: envelope.run_id,
                         revision: envelope.revision,

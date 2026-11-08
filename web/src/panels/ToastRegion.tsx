@@ -13,7 +13,7 @@ export function ToastRegion() {
     <div
       aria-live="assertive"
       aria-label={STRINGS.toast.regionAria}
-      className="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(440px,92vw)] flex-col gap-2"
+      className="pointer-events-none fixed right-4 top-16 z-50 flex w-[min(440px,92vw)] flex-col gap-2"
     >
       <AnimatePresence initial={false}>
         {refusals.map((entry) => (

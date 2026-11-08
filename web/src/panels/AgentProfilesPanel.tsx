@@ -20,7 +20,15 @@ interface AgentProfileRow {
 }
 
 type Status = 'loading' | 'ok' | 'error';
-const BUILTIN_IDS = new Set(['planner', 'content-writer', 'data-analyst', 'code-reviewer', 'chatbot']);
+const BUILTIN_IDS = new Set([
+  'planner',
+  'content-writer',
+  'data-analyst',
+  'code-reviewer',
+  'chatbot',
+  'superagent',
+  'subagent',
+]);
 const EXAMPLE_PROFILE = `{
   "id": "custom-writer",
   "display_name": "Custom Writer",

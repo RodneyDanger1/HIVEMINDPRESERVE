@@ -86,6 +86,7 @@ export function ChatCore() {
   const cancelRun = useUiStore((state) => state.cancelRun);
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
+  const keyPresent = useUiStore((state) => state.settings.keyPresent);
   const toolActivity = useUiStore((state) => state.toolActivity);
   const runRefusal = runErrorCode === null ? null : clientRefusal(runErrorCode);
   const reduced = useAppReducedMotion();
@@ -111,7 +112,7 @@ export function ChatCore() {
 
   if (!chat.visible) {
     return (
-      <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center">
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center">
         <button
           type="button"
           className="pointer-events-auto surface-panel type-label rounded-[var(--radius-pill)] px-4 py-2 text-ink-800"
@@ -134,6 +135,19 @@ export function ChatCore() {
       return;
     }
     const text = draft;
+    if (keyPresent === false) {
+      // Do not create a doomed run just to have the server fail E_KEY_MISSING.
+      // Keep the typed draft and surface the same named refusal the server uses.
+      const refusal = clientRefusal('E_KEY_MISSING');
+      const current = store.getState();
+      store.setState({
+        refusals: [
+          ...current.refusals,
+          { id: crypto.randomUUID(), refusal, at: Date.now() },
+        ],
+      });
+      return;
+    }
     if (validatePromptText(text) !== null) {
       // The store validates before appending and raises the named refusal
       // toast; this call therefore sends nothing and renders no user message.

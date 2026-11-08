@@ -1315,6 +1315,17 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         // below uses the RESYNC_REQUIRED payload, never this cursor.
         set({ lastSeq: envelope.seq });
       }
+      const activeRunId = get().run?.id ?? null;
+      const eventRunId = envelope.run_id ?? null;
+      if (
+        activeRunId !== null &&
+        eventRunId !== null &&
+        eventRunId !== activeRunId &&
+        (event.name.startsWith('NODE_') || event.name === 'HISTORY_SNAPSHOT')
+      ) {
+        // A delayed replay from another run must never mutate this run's graph.
+        return;
+      }
       switch (event.name) {
         case 'ACK':
           return;
@@ -1689,6 +1700,12 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           return;
         }
         case 'HISTORY_SNAPSHOT': {
+          const activeRunId = get().run?.id ?? null;
+          if (activeRunId !== null && event.payload.run_id !== activeRunId) {
+            // A delayed replay from another tab/run must never overwrite this
+            // client's revision list or enter read-only mode.
+            return;
+          }
           const revision = event.payload.revision;
           const history = get().history;
           const revisions = insertRevision(history.revisions, revision);
@@ -1893,8 +1910,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       },
 
       async rewireSelected(newParentId: string): Promise<void> {
-        const current = guardActiveRun();
+        const current = get().run;
         if (current === null) {
+          pushRefusal(clientRefusal('E_RUN_NOT_FOUND'));
           return;
         }
         const taskId = get().selectedTaskId;

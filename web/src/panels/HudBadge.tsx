@@ -8,6 +8,7 @@ import { LAYOUT } from '../tokens/tokens';
 export function HudBadge() {
   const tasks = useUiStore((state) => state.tasks);
   const metrics = useUiStore((state) => state.metrics);
+  const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const hud = useMemo(() => deriveHud(tasks, metrics), [tasks, metrics]);
 
   return (
@@ -35,10 +36,17 @@ export function HudBadge() {
         />
         <span className="font-semibold">{STRINGS.node.hyperAgent}</span>
         <span aria-hidden="true">·</span>
-        {hud.source === 'none' ? (
+        {replaying ? (
+          <span className="text-ink-500">REPLAY · LIVE METRICS HIDDEN</span>
+        ) : hud.source === 'none' ? (
           <span className="text-ink-500">{STRINGS.hud.noMetrics}</span>
         ) : (
           <>
+            {hud.source === 'derived' ? (
+              <span className="rounded-[var(--radius-pill)] bg-panel-alt px-1.5 text-[7.5px] text-ink-500">
+                DERIVED
+              </span>
+            ) : null}
             <span>{formatCount(hud.superagents)} {STRINGS.hud.superagents}</span>
             <span aria-hidden="true">·</span>
             <span>{formatCount(hud.workers)} {STRINGS.hud.workers}</span>

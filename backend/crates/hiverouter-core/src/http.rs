@@ -674,66 +674,69 @@ async fn history_state(
         return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
     };
     match state.history.state_at(run_id, revision) {
-        Ok(snapshot) => {
-            let mut graph = snapshot.graph;
-            // Older snapshots predate run-scoped capture and contain the whole
-            // process graph. Filter at the read boundary as well as fixing new
-            // writes, otherwise replay can paint another run's tasks.
-            let run_tasks = state.engine.store.tasks_for_run(run_id).unwrap_or_default();
-            let allowed: std::collections::HashSet<_> =
-                run_tasks.iter().map(|task| task.id).collect();
-            if !allowed.is_empty() {
-                graph.nodes.retain(|node| allowed.contains(&node.task_id));
-                graph
-                    .edges
-                    .retain(|(parent, child)| allowed.contains(parent) && allowed.contains(child));
-                graph.toposort.retain(|task_id| allowed.contains(task_id));
-            }
-            // The immutable graph snapshot stores only topology. The task rows
-            // are the authority for role/kind, so enrich the read projection
-            // rather than flattening every historical node into "worker".
-            let nodes: Vec<serde_json::Value> = graph
-                .nodes
-                .iter()
-                .map(|node| {
-                    let task = run_tasks.iter().find(|task| task.id == node.task_id);
-                    let role = task.map_or("", |task| task.role.as_str());
-                    let kind = node_kind_for_role(role);
-                    serde_json::json!({
-                        "task_id": node.task_id.to_string(),
-                        "parent_task_id": node.parent_task_id.map(|id| id.to_string()),
-                        "state": node.state.as_str(),
-                        "rev": node.rev,
-                        "role": role,
-                        "kind": kind,
-                        "label": node_label_for(role, kind, &node.task_id.to_string()),
-                    })
-                })
-                .collect();
-            (
-                StatusCode::OK,
-                Json(serde_json::json!({
-                    "run_id": snapshot.run_id.to_string(),
-                    "revision": snapshot.revision,
-                    "schema_version": snapshot.schema_version,
-                    "run_status": snapshot.run_status.map(|state| state.as_str()),
-                    "graph": {
-                        "revision": graph.revision,
-                        "nodes": nodes,
-                        "edges": graph.edges.iter().map(|(parent, child)| {
-                            [parent.to_string(), child.to_string()]
-                        }).collect::<Vec<_>>(),
-                        "toposort": graph.toposort.iter().map(ToString::to_string).collect::<Vec<_>>(),
-                    },
-                })),
-            )
-                .into_response()
-        }
+        Ok(snapshot) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "run_id": snapshot.run_id.to_string(),
+                "revision": snapshot.revision,
+                "schema_version": snapshot.schema_version,
+                "run_status": snapshot.run_status.map(|state| state.as_str()),
+                "graph": history_graph_value(&state, run_id, snapshot.graph),
+            })),
+        )
+            .into_response(),
         Err(refusal) if refusal == hiverouter_contract::Refusal::HistoryGap => {
             refusal_response(StatusCode::NOT_FOUND, &refusal)
         }
         Err(refusal) => refusal_response(StatusCode::CONFLICT, &refusal),
     }
+}
+
+/// The one run-scoped, identity-enriched graph projection used by both the
+/// HTTP history read and the WebSocket replay event.
+///
+/// The stored snapshot is topology-only and may predate run-scoped capture.
+/// Filter by the run's task rows, then add role/kind/label from the authority.
+pub(crate) fn history_graph_value(
+    state: &AppState,
+    run_id: hiverouter_contract::RunId,
+    mut graph: crate::graph::GraphSnapshot,
+) -> serde_json::Value {
+    let run_tasks = state.engine.store.tasks_for_run(run_id).unwrap_or_default();
+    let allowed: std::collections::HashSet<_> = run_tasks.iter().map(|task| task.id).collect();
+    // Fail closed: an unavailable/empty task index must never return the
+    // unfiltered process graph. The filtered graph can legitimately be empty.
+    graph.nodes.retain(|node| allowed.contains(&node.task_id));
+    graph
+        .edges
+        .retain(|(parent, child)| allowed.contains(parent) && allowed.contains(child));
+    graph.toposort.retain(|task_id| allowed.contains(task_id));
+    let nodes: Vec<serde_json::Value> = graph
+        .nodes
+        .iter()
+        .map(|node| {
+            let task = run_tasks.iter().find(|task| task.id == node.task_id);
+            let role = task.map_or("", |task| task.role.as_str());
+            let kind = node_kind_for_role(role);
+            serde_json::json!({
+                "task_id": node.task_id.to_string(),
+                "parent_task_id": node.parent_task_id.map(|id| id.to_string()),
+                "state": node.state.as_str(),
+                "rev": node.rev,
+                "role": role,
+                "kind": kind,
+                "label": node_label_for(role, kind, &node.task_id.to_string()),
+            })
+        })
+        .collect();
+    serde_json::json!({
+        "revision": graph.revision,
+        "nodes": nodes,
+        "edges": graph.edges.iter().map(|(parent, child)| {
+            [parent.to_string(), child.to_string()]
+        }).collect::<Vec<_>>(),
+        "toposort": graph.toposort.iter().map(ToString::to_string).collect::<Vec<_>>(),
+    })
 }
 
 fn node_kind_for_role(role: &str) -> &'static str {

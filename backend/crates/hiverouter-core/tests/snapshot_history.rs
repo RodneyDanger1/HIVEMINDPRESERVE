@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId};
 use hiverouter_core::db::Database;
+use hiverouter_core::entities::TaskRecord;
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::history::HistoryReadModel;
 use hiverouter_core::snapshot::{
@@ -155,7 +156,26 @@ async fn history_http_api() {
     let run = run_store
         .create_run("p", "http history", AgentState::Running)
         .expect("run");
-    let (graph, _root, child) = graph_with_two_tasks();
+    let (graph, root, child) = graph_with_two_tasks();
+    // The read projection is task-row authoritative and fail-closed. Seed the
+    // two rows so this HTTP test exercises a real run, not an unfiltered graph.
+    for (id, parent, role, depth, spawn_seq) in [
+        (root, None, "planner", 0, 1),
+        (child, Some(root), "worker", 1, 2),
+    ] {
+        run_store
+            .insert_task(&TaskRecord {
+                id,
+                run_id: run.id,
+                parent_task_id: parent,
+                role: role.to_owned(),
+                depth,
+                spawn_seq,
+                state: AgentState::Completed,
+                rev: 1,
+            })
+            .expect("seed task");
+    }
     let store = SnapshotStore::new(&state.config.data_dir, state.db.clone());
     store
         .write(&capture(&graph, run.id, 0, AgentState::Running).expect("r0"))
