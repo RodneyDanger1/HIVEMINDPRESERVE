@@ -1538,11 +1538,17 @@ async function executeRead(command, options, baseUrl) {
     }
     case 'memory':
       if (!options.run) {
+        if (options.scope !== undefined) {
+          throw cliError('E_CLI_USAGE', '--scope requires --run.');
+        }
         return httpJson(baseUrl, '/api/agents/memory');
       }
       {
         const run = runIdOption(options);
         const scope = options.scope ? String(options.scope) : null;
+        if (scope !== null && (scope.trim() === '' || scope.length > 128)) {
+          throw cliError('E_CLI_USAGE', '--scope must be 1..128 characters.');
+        }
         return httpJson(
           baseUrl,
           `/api/agents/runs/${run}/memory${scope ? `?scope=${encodeURIComponent(scope)}` : ''}`,

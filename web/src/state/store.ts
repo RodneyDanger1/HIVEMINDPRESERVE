@@ -2288,6 +2288,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             toolActivity: [],
             approvals: [],
             approvalsStale: false,
+            approvalResolve: {},
+            resolvingApprovals: [],
+            approvalReplay: initialApprovalReplayState(),
+            approvalSeenEpoch: {},
             resyncGap: null,
             history: {
               ...get().history,
