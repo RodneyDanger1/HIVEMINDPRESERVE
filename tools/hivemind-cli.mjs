@@ -897,6 +897,14 @@ async function stopServer(options) {
   }
   const pid = options.pid ? Number(options.pid) : state?.pid;
   if (!Number.isInteger(pid) || pid <= 0) {
+    if (state.external === true) {
+      throw cliError(
+        'E_NOT_OWNED',
+        'The recorded server is external and has no CLI-owned pid.',
+        'Use the process manager that started it, or start through this CLI.',
+        EXIT_NOT_RUNNING,
+      );
+    }
     return { stopped: false, reason: 'no CLI-owned server pid is recorded' };
   }
   if (state.external === true) {
@@ -919,17 +927,19 @@ async function stopServer(options) {
     clearState(options);
     return { stopped: false, reason: `pid ${pid} is not running`, stale: true };
   }
-  if (state.db_path) {
+  if (state.db_path || state.boot_id) {
     try {
       const health = await httpJson(resolveBaseUrl(options), '/health');
-      const actual = health?.database?.path ? path.resolve(String(health.database.path)) : null;
-      if (actual !== null && path.resolve(String(state.db_path)) !== actual) {
-        throw cliError(
-          'E_NOT_OWNED',
-          'The live server database does not match the CLI-owned state.',
-          'Refusing to kill a foreign instance; use its own manager.',
-          EXIT_NOT_RUNNING,
-        );
+      if (state.db_path) {
+        const actual = health?.database?.path ? path.resolve(String(health.database.path)) : null;
+        if (actual !== null && path.resolve(String(state.db_path)) !== actual) {
+          throw cliError(
+            'E_NOT_OWNED',
+            'The live server database does not match the CLI-owned state.',
+            'Refusing to kill a foreign instance; use its own manager.',
+            EXIT_NOT_RUNNING,
+          );
+        }
       }
       if (state.boot_id && health?.boot_id && health.boot_id !== state.boot_id) {
         throw cliError(
@@ -1989,10 +1999,10 @@ async function main() {
     }
     if (!command || command === 'help' || options.help) {
       if (command && command !== 'help' && options.help) {
-        process.stdout.write(humanHelp(command));
+        process.stderr.write(humanHelp(command));
         return EXIT.OK;
       }
-      process.stdout.write(humanHelp());
+      process.stderr.write(humanHelp());
       return EXIT.OK;
     }
     if (!COMMANDS[command]) {

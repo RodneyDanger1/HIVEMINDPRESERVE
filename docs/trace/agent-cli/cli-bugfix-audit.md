@@ -30,6 +30,10 @@ UNVERIFIED by explicit instruction.
 | `start --force` could bypass instance conflict | WEAK (fixed) | conflict now unconditional |
 | `taskkill` without `/F` does nothing on Windows console children | MISSING (fixed by design) | graceful attempt then one automatic force escalation; `graceful:false` |
 | stop required `--yes` even for own instance | WEAK (fixed) | own stop is explicit; `--force` on external requires `--yes` |
+| external state with no pid returned a successful no-op stop | CONFLICT (fixed) | explicit `E_NOT_OWNED` |
+| boot-id check was skipped for legacy state without db_path | WEAK (fixed) | identity checks run when either db_path or boot_id exists |
+| human help went to stdout | WEAK (fixed) | help is stderr; JSON-only stdout |
+| new approvals/templates/workspace/active-run reads return honest empties | OK | routes implemented; no nonce consumption |
 | exe search missed repo-root `target/release` | MISSING (fixed) | search order widened |
 | CLI envelope lacked top-level `schema` | MISSING (fixed) | `schema: hivemind.cli.v1` on success/failure |
 | `--workspace-root` absent from server help | MISSING (fixed) | help text and `.cmd` launch path corrected |
