@@ -27,6 +27,7 @@ export function BeeEdge(props: EdgeProps) {
   ) * 180) /
     Math.PI;
   const broken = (props.data as { broken?: boolean } | undefined)?.broken === true;
+  const flip = Math.abs(angle) > 90;
   return (
     <>
       <BaseEdge
@@ -37,14 +38,16 @@ export function BeeEdge(props: EdgeProps) {
           stroke: broken ? 'var(--color-signal)' : 'var(--color-honey-400)',
           strokeWidth: 1.5,
           strokeDasharray: broken ? '6 6' : '10 10',
-          animation: reduced ? undefined : 'bee-dash 2.4s linear infinite',
+          animation: reduced
+            ? undefined
+            : `${broken ? 'bee-dash-broken' : 'bee-dash'} 2.4s linear infinite`,
         }}
       />
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${angle}deg)`,
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${flip ? angle + 180 : angle}deg) scale(${flip ? -1 : 1}, 1)`,
             pointerEvents: 'none',
             color: broken ? 'var(--color-signal)' : 'var(--color-ink-800)',
           }}

@@ -1623,14 +1623,16 @@ impl RunEngine {
                 let result = self.store.task_result(child.id)?;
                 let text = match result {
                     Some(text) if !text.trim().is_empty() => {
+                        let sanitized: String = tool_loop::bounded_tool_text(&text)
+                            .chars()
+                            .map(|character| if character.is_control() { ' ' } else { character })
+                            .take(ROOT_RESULT_LIMIT)
+                            .collect();
                         format!(
                             "\nTask {} (role {}):\n{}\n",
                             child.id,
                             child.role,
-                            tool_loop::bounded_tool_text(&text)
-                                .chars()
-                                .take(ROOT_RESULT_LIMIT)
-                                .collect::<String>()
+                            sanitized
                         )
                     }
                     Some(_) | None => format!("\nTask {} has no recorded result.\n", child.id),

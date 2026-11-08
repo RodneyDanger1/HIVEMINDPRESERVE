@@ -41,6 +41,35 @@ fn graph_with_two_tasks() -> (GraphAuthority, TaskId, TaskId) {
 }
 
 #[test]
+fn snapshot_preserves_agent_kind_and_role() {
+    let (_db, _store, _temp) = setup();
+    let (graph, root, child) = graph_with_two_tasks();
+    graph
+        .set_metadata(root, "hyperagent", "planner", Some("HyperAgent"))
+        .expect("root metadata");
+    graph
+        .set_metadata(child, "superagent", "super", Some("SuperAgent"))
+        .expect("child metadata");
+    let envelope = capture(&graph, RunId::new(), 1, AgentState::Running).expect("capture");
+    let root_node = envelope
+        .graph
+        .nodes
+        .iter()
+        .find(|node| node.task_id == root)
+        .expect("root node");
+    assert_eq!(root_node.kind.as_deref(), Some("hyperagent"));
+    assert_eq!(root_node.role.as_deref(), Some("planner"));
+    let child_node = envelope
+        .graph
+        .nodes
+        .iter()
+        .find(|node| node.task_id == child)
+        .expect("child node");
+    assert_eq!(child_node.kind.as_deref(), Some("superagent"));
+    assert_eq!(child_node.label.as_deref(), Some("SuperAgent"));
+}
+
+#[test]
 fn migration_roundtrip() {
     let (_db, _store, _temp) = setup();
     let (graph, root, child) = graph_with_two_tasks();

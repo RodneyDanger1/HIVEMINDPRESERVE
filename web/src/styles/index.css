@@ -179,9 +179,15 @@
 @keyframes bee-dash {
   to { stroke-dashoffset: -40; }
 }
+@keyframes bee-dash-broken {
+  to { stroke-dashoffset: -36; }
+}
 @keyframes bee-bob {
   0%, 100% { transform: translateY(0) rotate(var(--bee-rotation, 0deg)); }
   50% { transform: translateY(-1.5px) rotate(var(--bee-rotation, 0deg)); }
+}
+.bee-bob {
+  animation: bee-bob 3.4s ease-in-out infinite;
 }
 
 @keyframes state-pulse {
