@@ -54,7 +54,7 @@ export function HudBadge() {
             <span>{formatPercent(hud.greenPct)} {STRINGS.hud.green}</span>
           </>
         )}
-        {hud.delta === null ? null : (
+        {replaying || hud.delta === null ? null : (
           <span className="text-ink-800">{formatDelta(hud.delta)}</span>
         )}
       </div>

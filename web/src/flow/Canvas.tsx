@@ -218,7 +218,7 @@ function CanvasInner() {
           : node;
       return override ? { ...highlighted, position: override } : highlighted;
     });
-  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, positionOverrides, dropTargetId]);
+  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, interactiveGraph, positionOverrides, dropTargetId]);
 
   const hasTasks = Object.keys(visibleTasks).length > 0;
   const taskCount = Object.keys(tasks).length;
@@ -455,6 +455,8 @@ function CanvasInner() {
     ];
   }, [replayTasks, noopSelect]);
   const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
+  const displayedVisibleTasks = history.replayGraph ? replayTasks : visibleTasks;
+  const displayedTasks = history.replayGraph ? replayTasks : tasks;
   const replayOwnerLinks = useMemo(() => {
     if (canvasSize.width === 0 || canvasSize.height === 0) {
       return [];
@@ -637,7 +639,7 @@ function CanvasInner() {
           Focus branch
         </button>
         <span className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 py-1 text-meta">
-          {Object.keys(visibleTasks).length}/{Object.keys(tasks).length}
+          {Object.keys(displayedVisibleTasks).length}/{Object.keys(displayedTasks).length}
         </span>
         <button
           type="button"
@@ -693,7 +695,7 @@ function CanvasInner() {
         <MiniMap
           pannable
           zoomable
-          className={Object.keys(visibleTasks).length === 0 ? 'hive-minimap-empty' : undefined}
+          className={Object.keys(displayedVisibleTasks).length === 0 ? 'hive-minimap-empty' : undefined}
           ariaLabel={STRINGS.minimap.aria}
           nodeColor={(node: Node) => {
             const kind = (node.data as { task?: { kind?: string } } | undefined)?.task?.kind;

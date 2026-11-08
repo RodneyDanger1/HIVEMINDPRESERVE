@@ -1,8 +1,10 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
+import { useMemo } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
 import { StateDot } from '../flow/nodes';
+import { buildReplayTasks } from '../flow/graph';
 import { LAYOUT } from '../tokens/tokens';
 
 const TEMPLATES: ReadonlyArray<{ id: string; label: string }> = [
@@ -31,13 +33,18 @@ function agentChipLabel(task: { readonly id: string; readonly label: string; rea
 
 export function LibraryPanel() {
   const tasks = useUiStore((state) => state.tasks);
+  const replayGraph = useUiStore((state) => state.history.replayGraph);
   const project = useUiStore((state) => state.project);
   const settings = useUiStore((state) => state.settings);
   const insertTemplate = useUiStore((state) => state.insertTemplate);
   const selectTask = useUiStore((state) => state.selectTask);
   const tab = useUiStore((state) => state.view.tab);
   const setTab = useUiStore((state) => state.setTab);
-  const agents = Object.values(tasks).filter((task) => task.kind !== 'hyperagent');
+  const sourceTasks = useMemo(
+    () => (replayGraph === null ? tasks : buildReplayTasks(replayGraph.graph)),
+    [replayGraph, tasks],
+  );
+  const agents = Object.values(sourceTasks).filter((task) => task.kind !== 'hyperagent');
 
   return (
     <aside

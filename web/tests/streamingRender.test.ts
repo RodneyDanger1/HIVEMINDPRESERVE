@@ -172,6 +172,16 @@ describe('streaming render-back (REPLY_DELTA → REPLY_DONE)', () => {
     expect(store.getState().streamingRunId).toBeNull();
   });
 
+  it('ignores a foreign run’s deltas without a run switch', async () => {
+    const { api, store } = await runningStore('run-foreign-host');
+    api.emit({
+      name: 'REPLY_DELTA',
+      payload: { run_id: 'run-other', text_delta: 'must not appear' },
+    });
+    expect(assistantMessages(store)).toHaveLength(0);
+    expect(store.getState().streamingRunId).not.toBe('run-other');
+  });
+
   it('duplicate REPLY_DONE is idempotent (text and message count unchanged)', async () => {
     const { api, store } = await runningStore('run-5');
     api.emit({ name: 'REPLY_DELTA', payload: { run_id: 'run-5', text_delta: 'done once' } });

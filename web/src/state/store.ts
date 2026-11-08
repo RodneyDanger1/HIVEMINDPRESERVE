@@ -333,6 +333,32 @@ function fallbackTaskLabel(kind: NodeKindLabel | null, id: string): string {
   return kind === null ? `Agent ${suffix}` : `${NODE_KIND_LABELS[kind]} ${suffix}`;
 }
 
+/**
+ * Reconcile live node records with a committed snapshot. The snapshot is
+ * authoritative unless the live record carries a strictly newer node revision
+ * (an event that landed after the snapshot). This prevents a resync from
+ * downgrading a node's revision while still repairing missed state changes.
+ */
+export function mergeSnapshotTasks(
+  snapshot: Readonly<Record<string, TaskRecord>>,
+  live: Readonly<Record<string, TaskRecord>>,
+): Record<string, TaskRecord> {
+  const merged: Record<string, TaskRecord> = { ...snapshot };
+  for (const [id, liveTask] of Object.entries(live)) {
+    const snapshotTask = merged[id];
+    if (snapshotTask === undefined) {
+      merged[id] = liveTask;
+      continue;
+    }
+    const snapshotRev = snapshotTask.rev ?? 0;
+    const liveRev = liveTask.rev ?? 0;
+    if (liveRev > snapshotRev) {
+      merged[id] = liveTask;
+    }
+  }
+  return merged;
+}
+
 function baseProject(): { id: string; name: string; owner: string } {
   const key = 'hivemind.project-id';
   let id: string | null = null;
@@ -1189,7 +1215,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               : projection !== null
                 ? {
                     tasks: preserveLiveTasks
-                      ? { ...projection.tasks, ...liveTasks }
+                      ? mergeSnapshotTasks(projection.tasks, liveTasks)
                       : projection.tasks,
                   }
                 : {}),
@@ -1467,6 +1493,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         }
         case 'REPLY_DELTA': {
           const runId = event.payload.run_id;
+          if (get().run !== null && get().run?.id !== runId) {
+            // A delayed/foreign stream must not append to this run's chat.
+            return;
+          }
           const messages = [...get().messages];
           const lastIndex = messages.length - 1;
           const last = messages[lastIndex];
@@ -1485,6 +1515,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           return;
         }
         case 'REPLY_DONE': {
+          if (get().run !== null && get().run?.id !== event.payload.run_id) {
+            return;
+          }
           set({
             messages: get().messages.map((message) =>
               message.role === 'assistant' && message.runId === event.payload.run_id

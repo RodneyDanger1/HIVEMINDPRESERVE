@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createUiStore } from '../src/state/store';
+import { createUiStore, mergeSnapshotTasks, type TaskRecord } from '../src/state/store';
 import { clientRefusal, RefusalError } from '../src/api/refusals';
 import { SCHEMA_VERSION, type DecodedEvent, type Envelope, type Refusal, type ServerCommandName } from '../src/api/contract';
 import type { ConnectionStatus, SessionInfo, UiApi } from '../src/api/client';
@@ -185,5 +185,25 @@ describe('UI store command lifecycle', () => {
       payload: { task_id: 't-2', state: 'running', kind: 'superagent', label: 'Backend', parent_task_id: null },
     });
     expect(store.getState().tasks['t-2']?.kind).toBe('superagent');
+  });
+
+  it('lets a newer committed snapshot repair a stale live record but keeps a newer live rev', () => {
+    const record = (id: string, rev: number, state: TaskRecord['state']): TaskRecord => ({
+      id,
+      parentId: null,
+      kind: 'worker',
+      label: `Agent ${id}`,
+      state,
+      progress: null,
+      errorCode: null,
+      rev,
+    });
+    const merged = mergeSnapshotTasks(
+      { a: record('a', 4, 'running'), b: record('b', 2, 'completed') },
+      { a: record('a', 5, 'interrupted'), b: record('b', 1, 'running'), c: record('c', 1, 'queued') },
+    );
+    expect(merged.a?.rev).toBe(5);
+    expect(merged.b?.rev).toBe(2);
+    expect(merged.c?.rev).toBe(1);
   });
 });

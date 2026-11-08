@@ -399,6 +399,10 @@ export class WsApiClient implements UiApi {
       this.session = null;
       this.manuallyClosed = false;
       await this.open();
+      if (this.recoveryTimer !== null) {
+        clearTimeout(this.recoveryTimer);
+        this.recoveryTimer = null;
+      }
     } catch {
       this.setStatus(
         'reconnecting',

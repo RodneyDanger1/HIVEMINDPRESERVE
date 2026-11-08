@@ -207,4 +207,26 @@ async fn history_http_api() {
         raw_get(server.addr, &format!("/api/history/runs/{}/state?revision=9", run.id)).await;
     assert_eq!(status, 404);
     assert_eq!(gap["code"], "E_HISTORY_GAP");
+
+    let (status, roster) = raw_get(
+        server.addr,
+        &format!("/api/agents/runs/{}/roster", run.id),
+    )
+    .await;
+    assert_eq!(status, 200);
+    assert_eq!(roster["run_id"], run.id.to_string());
+    assert_eq!(roster["count"], 2);
+    assert_eq!(roster["agents"][0]["role"], "planner");
+    assert_eq!(roster["agents"][0]["kind"], "hyperagent");
+    assert_eq!(roster["agents"][1]["role"], "worker");
+    assert_eq!(roster["agents"][1]["parent_task_id"], root.to_string());
+    assert_eq!(roster["agents"][1]["state"], "completed");
+
+    let (status, unknown) = raw_get(
+        server.addr,
+        &format!("/api/agents/runs/{}/roster", RunId::new()),
+    )
+    .await;
+    assert_eq!(status, 404);
+    assert_eq!(unknown["code"], "E_RUN_NOT_FOUND");
 }

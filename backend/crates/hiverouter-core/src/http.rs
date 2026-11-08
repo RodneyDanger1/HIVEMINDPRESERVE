@@ -519,6 +519,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/state", get(history_state))
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
+        .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
         .route("/api/agents/profiles", get(agent_profiles))
         .route("/api/agents/profiles/import", post(import_agent_profile))
         .route("/api/agents/profiles/{profile_id}", delete(delete_agent_profile))
@@ -936,6 +937,52 @@ async fn agent_profiles(State(state): State<Arc<AppState>>) -> Response {
         })
         .collect();
     (StatusCode::OK, Json(serde_json::json!({ "profiles": profiles }))).into_response()
+}
+
+/// A2A discovery: the authoritative agent roster for one run.
+///
+/// IDs here are the exact `TaskId`s that `send_to_sibling` / `ask_parent` need,
+/// so a model can discover peers instead of inventing an id.
+async fn agent_roster(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    }
+    match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => {
+            let agents: Vec<serde_json::Value> = tasks
+                .iter()
+                .map(|task| {
+                    let kind = node_kind_for_role(&task.role);
+                    serde_json::json!({
+                        "task_id": task.id.to_string(),
+                        "parent_task_id": task.parent_task_id.map(|id| id.to_string()),
+                        "role": task.role,
+                        "kind": kind,
+                        "label": node_label_for(&task.role, kind, &task.id.to_string()),
+                        "state": task.state.as_str(),
+                        "depth": task.depth,
+                        "rev": task.rev,
+                    })
+                })
+                .collect();
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "run_id": run_id.to_string(),
+                    "count": agents.len(),
+                    "agents": agents,
+                })),
+            )
+                .into_response()
+        }
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
 }
 
 async fn agent_memory_list(State(state): State<Arc<AppState>>) -> Response {
