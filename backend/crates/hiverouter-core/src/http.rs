@@ -533,6 +533,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/history/runs/{run_id}/messages", get(history_messages))
         .route("/api/agents/runs/{run_id}/messages", get(agent_messages))
         .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
+        .route("/api/agents/runs/{run_id}/memory", get(agent_memory_for_run))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
         .route("/api/workspace", get(workspace))
@@ -1103,6 +1104,46 @@ async fn active_run(State(state): State<Arc<AppState>>) -> Response {
             })),
         )
             .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn agent_memory_for_run(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
+    };
+    if let Err(refusal) = state.engine.store.get_run(run_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    match state.engine.store.agent_memory_entries_for_run(run_id, 200) {
+        Ok(entries) => {
+            let rows: Vec<serde_json::Value> = entries
+                .into_iter()
+                .map(|entry| {
+                    serde_json::json!({
+                        "run_id": entry.run_id,
+                        "scope_id": entry.scope_id,
+                        "agent_key": entry.agent_key,
+                        "key": entry.key,
+                        "value": entry.value,
+                        "task_id": entry.task_id,
+                        "created_at": entry.created_at,
+                    })
+                })
+                .collect();
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "run_id": run_id.to_string(),
+                    "count": rows.len(),
+                    "memories": rows,
+                })),
+            )
+                .into_response()
+        }
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }

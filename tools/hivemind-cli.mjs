@@ -235,10 +235,10 @@ const COMMANDS = {
     args: [ARG('agent', 'string', true, 'Agent/persona key.')],
   },
   memory: {
-    summary: 'List durable role memory (per-run/branch writes are in the server).',
+    summary: 'List durable role memory, or one run’s branch-scoped memory rows.',
     safety: 'read',
     transport: 'http',
-    args: [],
+    args: [ARG('run', 'uuid', false, 'Optional run id for branch-scoped memory.')],
   },
   projects: {
     summary: 'List projects known to the local server.',
@@ -1515,7 +1515,9 @@ async function executeRead(command, options, baseUrl) {
       };
     }
     case 'memory':
-      return httpJson(baseUrl, '/api/agents/memory');
+      return options.run
+        ? httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/memory`)
+        : httpJson(baseUrl, '/api/agents/memory');
     case 'projects':
       return httpJson(baseUrl, '/api/projects');
     case 'models':

@@ -81,7 +81,7 @@ comes from `error.code`, not from extra process codes.
 | `active-run` | HTTP | `GET /api/runs/active` |
 | `profiles` | HTTP | `GET /api/agents/profiles` |
 | `session` | HTTP | `GET /api/session`; token redacted in output |
-| `memory` | HTTP | `GET /api/agents/memory` |
+| `memory` | HTTP | `GET /api/agents/memory`; `--run` selects `GET /api/agents/runs/{run}/memory` |
 | `projects` | HTTP | `GET /api/projects` |
 | `models` | HTTP | `GET /api/provider/models`; keyless refuses |
 | `balance` | HTTP | `GET /api/provider/balance`; keyless refuses |
@@ -135,6 +135,7 @@ Non-follow mode returns `{events, truncated, timed_out}`.
 | `GET /api/history/runs/{run}/messages` | `messages` |
 | `GET /api/agents/runs/{run}/messages` | `agent-messages` |
 | `GET /api/agents/runs/{run}/roster` | `roster` |
+| `GET /api/agents/runs/{run}/memory` | `memory --run` |
 | `GET /api/approvals` | `approvals` |
 | `GET /api/templates` | `templates` |
 | `GET /api/workspace` | `workspace` |

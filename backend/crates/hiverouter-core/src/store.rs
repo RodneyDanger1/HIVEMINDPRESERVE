@@ -15,6 +15,25 @@ fn map(error: DbError) -> Refusal {
     error.refusal()
 }
 
+/// One durable memory row, including its hive/branch scope.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AgentMemoryRecord {
+    /// Owning run.
+    pub run_id: String,
+    /// Hive/branch scope (parent task id or `root`).
+    pub scope_id: String,
+    /// Agent/role key.
+    pub agent_key: String,
+    /// Memory key.
+    pub key: String,
+    /// Memory value.
+    pub value: String,
+    /// Task that wrote the row.
+    pub task_id: String,
+    /// RFC3339 creation time.
+    pub created_at: String,
+}
+
 /// One durable agent-to-agent message row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AgentMessageRecord {
@@ -754,6 +773,47 @@ impl RunStore {
                         i64::try_from(limit).unwrap_or(i64::MAX)
                     ],
                     |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                let mut memories = Vec::new();
+                for row in rows {
+                    memories.push(row?);
+                }
+                Ok(memories)
+            })
+            .map_err(map)
+    }
+
+    /// Lists every durable memory row for one run with its branch scope.
+    ///
+    /// This is the read-only operator surface; it never feeds a running task.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory_entries_for_run(
+        &self,
+        run_id: RunId,
+        limit: usize,
+    ) -> Result<Vec<AgentMemoryRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT run_id, scope_id, agent_key, key, value, task_id, created_at
+                     FROM agent_memory WHERE run_id = ?1
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?2",
+                )?;
+                let rows = statement.query_map(
+                    params![run_id.to_string(), i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| {
+                        Ok(AgentMemoryRecord {
+                            run_id: row.get(0)?,
+                            scope_id: row.get(1)?,
+                            agent_key: row.get(2)?,
+                            key: row.get(3)?,
+                            value: row.get(4)?,
+                            task_id: row.get(5)?,
+                            created_at: row.get(6)?,
+                        })
+                    },
                 )?;
                 let mut memories = Vec::new();
                 for row in rows {

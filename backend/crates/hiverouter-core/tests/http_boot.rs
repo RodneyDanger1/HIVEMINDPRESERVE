@@ -271,6 +271,60 @@ async fn agent_read_surfaces_are_mounted_and_truthful() {
 }
 
 #[tokio::test]
+async fn run_scoped_memory_route_exposes_branch_rows() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "memory", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped(
+            "worker",
+            "task:a",
+            "branch-a",
+            run.id,
+            hiverouter_contract::TaskId::new(),
+            "hive-a",
+        )
+        .expect("memory a");
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped(
+            "worker",
+            "task:b",
+            "branch-b",
+            run.id,
+            hiverouter_contract::TaskId::new(),
+            "hive-b",
+        )
+        .expect("memory b");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/agents/runs/{}/memory", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "memory route: {body}");
+    let value: Value = serde_json::from_str(&body).expect("memory JSON");
+    assert_eq!(value["count"], 2);
+    let scopes = value["memories"]
+        .as_array()
+        .expect("memories array")
+        .iter()
+        .filter_map(|row| row["scope_id"].as_str())
+        .collect::<Vec<_>>();
+    assert!(scopes.contains(&"hive-a"));
+    assert!(scopes.contains(&"hive-b"));
+}
+
+#[tokio::test]
 async fn static_ui_serves_index_assets_and_spa_fallback() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

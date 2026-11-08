@@ -49,6 +49,7 @@ tools\hivemind.cmd workspace --json
 tools\hivemind.cmd active-run --json
 tools\hivemind.cmd profiles --json
 tools\hivemind.cmd memory --json
+tools\hivemind.cmd memory --run <run-id> --json
 tools\hivemind.cmd projects --json
 tools\hivemind.cmd usage --run <run-id> --json
 ```
