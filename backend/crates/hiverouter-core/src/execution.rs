@@ -90,6 +90,8 @@ fn bounded_a2a_text(text: &str) -> Option<String> {
 const MAX_AGENT_MESSAGE_CHARS: usize = 2_000;
 /// Per-run agent-message budget (prevents peer loops).
 const MAX_AGENT_MESSAGES_PER_RUN: u64 = 32;
+/// Maximum wait for an operator answer to an `ask_parent` question.
+const A2A_ANSWER_TIMEOUT_SECS: u64 = 120;
 
 /// One time source for approval timestamps/CAS (tests inject a fixed clock).
 pub type Clock = Arc<dyn Fn() -> u64 + Send + Sync>;
@@ -478,6 +480,9 @@ pub struct RunEngine {
     tools: Option<Arc<ToolsBridge>>,
     /// In-process approval waiters (one server process; no cross-process wait).
     waiters: Arc<ApprovalWaiters>,
+    /// In-process A2A answer waiters keyed by message id. A crash loses the
+    /// waiter; the message remains open for an operator answer after restart.
+    a2a_waiters: tokio::sync::Mutex<HashMap<Uuid, tokio::sync::oneshot::Sender<()>>>,
     /// One clock for approval timestamps/CAS (tests inject a fixed clock).
     clock: Clock,
     /// Shell allowlist used only for an approved `shell_exec`.
@@ -535,6 +540,7 @@ impl RunEngine {
             tool_registry: ToolRegistry::standard(),
             tools: None,
             waiters: Arc::new(ApprovalWaiters::new()),
+            a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             clock: Arc::new(default_now_unix_secs),
             shell_policy: ShellPolicy::conservative_default(),
             task_tokens: Mutex::new(HashMap::new()),
@@ -702,6 +708,7 @@ impl RunEngine {
             tool_registry: ToolRegistry::standard(),
             tools: None,
             waiters: Arc::new(ApprovalWaiters::new()),
+            a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             clock: Arc::new(default_now_unix_secs),
             shell_policy: ShellPolicy::conservative_default(),
             task_tokens: Mutex::new(HashMap::new()),
@@ -796,6 +803,14 @@ impl RunEngine {
                     "failed to persist run usage totals"
                 );
             }
+        }
+    }
+
+    /// Wakes an in-process `ask_parent` waiter after the operator answer is
+    /// committed. A missing waiter is normal after a restart.
+    pub async fn wake_a2a_waiter(&self, message_id: Uuid) {
+        if let Some(sender) = self.a2a_waiters.lock().await.remove(&message_id) {
+            let _ = sender.send(());
         }
     }
 
@@ -1999,7 +2014,7 @@ impl RunEngine {
                                     self.execute_spawn_agent(run, task, &plan, token)
                                         .await
                                 } else if plan.tool == "ask_parent" {
-                                    self.execute_ask_parent(run, task, &plan)
+                                    self.execute_ask_parent(run, task, &plan, token).await
                                 } else if plan.tool == "send_to_sibling"
                                     && self.is_cross_branch_message(task, &plan)
                                 {
@@ -2722,11 +2737,12 @@ impl RunEngine {
     }
 
     /// Executes one model-originated `ask_parent` call.
-    fn execute_ask_parent(
+    async fn execute_ask_parent(
         &self,
         run: &Run,
         task: &TaskRecord,
         plan: &ToolCallPlan,
+        token: &CancellationToken,
     ) -> ToolExecution {
         let args: AskParentArgs = match serde_json::from_value(plan.args.clone()) {
             Ok(args) => args,
@@ -2771,36 +2787,108 @@ impl RunEngine {
                 );
             }
         }
-        let message = self.store.record_agent_message_limited(
+        let message_id = match self.store.record_agent_message_limited(
             run.id,
             task.id,
             parent,
             "ask_parent",
             text,
             MAX_AGENT_MESSAGES_PER_RUN,
-        );
-        match message {
-            Ok(message_id) => {
-                self.publish_agent_message(run.id, task.id, parent, "ask_parent", text);
-                ToolExecution::ok(
+        ) {
+            Ok(message_id) => message_id,
+            Err(Refusal::CallLimit) => {
+                return ToolExecution::refused(
                     plan.tool_call_id.clone(),
-                    serde_json::json!({
-                        "message_id": message_id.to_string(),
-                        "to_task_id": parent.to_string(),
-                        "kind": "ask_parent",
-                    })
-                    .to_string(),
-                )
+                    Refusal::CallLimit.code(),
+                    "ask_parent refused: the per-run agent-message budget is exhausted".to_owned(),
+                );
             }
-            Err(Refusal::CallLimit) => ToolExecution::refused(
-                plan.tool_call_id.clone(),
-                Refusal::CallLimit.code(),
-                "ask_parent refused: the per-run agent-message budget is exhausted".to_owned(),
-            ),
-            Err(refusal) => ToolExecution::refused(
+            Err(refusal) => {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    refusal.message().to_owned(),
+                );
+            }
+        };
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |duration| duration.as_secs());
+        let deadline = Timestamp::from_unix_secs(now.saturating_add(A2A_ANSWER_TIMEOUT_SECS));
+        if let Err(refusal) = self
+            .store
+            .set_agent_message_deadline(run.id, message_id, deadline.as_str())
+        {
+            return ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),
                 refusal.message().to_owned(),
+            );
+        }
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        self.a2a_waiters.lock().await.insert(message_id, sender);
+        self.publish_agent_message(run.id, task.id, parent, "ask_parent", text);
+
+        // An answer can win the race between insert and waiter registration.
+        if self.store.agent_message_status(run.id, message_id)
+            == Ok(Some("answered".to_owned()))
+        {
+            self.a2a_waiters.lock().await.remove(&message_id);
+        } else {
+            tokio::select! {
+                _ = receiver => {}
+                _ = token.cancelled() => {
+                    self.a2a_waiters.lock().await.remove(&message_id);
+                    return ToolExecution::refused(
+                        plan.tool_call_id.clone(),
+                        Refusal::ToolCancelled.code(),
+                        "ask_parent cancelled while waiting for an answer".to_owned(),
+                    );
+                }
+                _ = tokio::time::sleep(std::time::Duration::from_secs(A2A_ANSWER_TIMEOUT_SECS)) => {
+                    self.a2a_waiters.lock().await.remove(&message_id);
+                    let _ = self.store.expire_agent_message(run.id, message_id);
+                    return ToolExecution::refused(
+                        plan.tool_call_id.clone(),
+                        Refusal::ToolTimeout.code(),
+                        "ask_parent timed out waiting for an operator answer".to_owned(),
+                    );
+                }
+            }
+        }
+
+        let status = self.store.agent_message_status(run.id, message_id);
+        let messages = self.store.agent_messages_for_run(run.id);
+        let answer = messages
+            .ok()
+            .and_then(|messages| messages.into_iter().find(|message| message.id == message_id.to_string()))
+            .and_then(|message| message.answer_text);
+        match (status, answer) {
+            (Ok(Some(status)), Some(answer)) if status == "answered" => ToolExecution::ok(
+                plan.tool_call_id.clone(),
+                serde_json::json!({
+                    "message_id": message_id.to_string(),
+                    "to_task_id": parent.to_string(),
+                    "kind": "ask_parent",
+                    "status": "answered",
+                    "answer": answer,
+                })
+                .to_string(),
+            ),
+            (Ok(Some(status)), _) if status == "expired" => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolTimeout.code(),
+                "ask_parent expired before an operator answer".to_owned(),
+            ),
+            (Err(refusal), _) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                refusal.message().to_owned(),
+            ),
+            _ => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolTimeout.code(),
+                "ask_parent did not receive a committed answer".to_owned(),
             ),
         }
     }

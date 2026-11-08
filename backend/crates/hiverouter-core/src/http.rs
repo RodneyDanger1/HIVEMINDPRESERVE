@@ -908,15 +908,18 @@ async fn answer_agent_message(
         .store
         .answer_agent_message(run_id, message_id, actor, answer)
     {
-        Ok(()) => (
-            [(header::CACHE_CONTROL, "no-store")],
-            Json(serde_json::json!({
-                "run_id": run_id.to_string(),
-                "message_id": message_id.to_string(),
-                "status": "answered",
-            })),
-        )
-            .into_response(),
+        Ok(()) => {
+            state.engine.wake_a2a_waiter(message_id).await;
+            (
+                [(header::CACHE_CONTROL, "no-store")],
+                Json(serde_json::json!({
+                    "run_id": run_id.to_string(),
+                    "message_id": message_id.to_string(),
+                    "status": "answered",
+                })),
+            )
+                .into_response()
+        }
         Err(Refusal::TaskNotFound) => {
             refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound)
         }

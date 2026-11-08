@@ -270,10 +270,10 @@ Each migration needs: newer-schema refusal, pre-migration backup + integrity che
 
 Delivered:
 - v12 additive columns on `agent_messages`; existing rows default `status='open'`.
-- `POST /api/agents/runs/{run_id}/messages/{message_id}/answer` (token-gated) performs a CAS `open -> answered`, stores bounded operator text/actor/time, and refuses missing/closed messages by name.
+- `POST /api/agents/runs/{run_id}/messages/{message_id}/answer` (token-gated) performs a CAS `open -> answered`, stores bounded operator text/actor/time, and refuses missing/closed messages by name.\n- `ask_parent` now registers an in-process waiter, sets a 120-second deadline, and blocks the tool turn until the operator answer wakes it; expiry marks the message `expired` and returns a named timeout. The child then continues with the answer in its tool result.
 - Mailbox JSON exposes status/deadline/answer fields; UI shows status and an answer field for open messages.
 - Tests: store CAS/duplicate; HTTP route success/duplicate; migration/backup schema updated to 12.
 
 Not delivered and must not be claimed:
-- no blocking wait/wake, no deadline enforcement, no `A2A_ANSWER` command/event, no parent-model answer, no continuation inbox refresh, no answer-attempt cap, no separate answer row/table; answer authority is operator-only and the child is not resumed.
+- no `A2A_ANSWER` command/event, no parent-model answer, no continuation inbox refresh, no answer-attempt cap, no separate answer row/table; answer authority is operator-only. The blocking/wake/deadline path is in-process only and a crash loses the waiter (the open row remains).
 - The v12 columns deviate from the ledger's preferred `a2a_messages` dual-write table; reconcile this in the next P2 slice or amend the ledger explicitly.

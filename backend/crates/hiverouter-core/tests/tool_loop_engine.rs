@@ -270,6 +270,28 @@ async fn drive(harness: &Harness, prompt: &str) -> (Run, Collected) {
             "AGENT_MESSAGE" => {
                 collected.sequence.push("AGENT_MESSAGE".to_owned());
                 collected.agent_messages.push(event.envelope.payload.clone());
+                if event.envelope.payload["kind"] == "ask_parent" {
+                    let message_id = harness
+                        .engine
+                        .store
+                        .agent_messages_for_run(run.id)
+                        .ok()
+                        .and_then(|messages| {
+                            messages
+                                .into_iter()
+                                .find(|message| message.status == "open")
+                                .and_then(|message| message.id.parse::<Uuid>().ok())
+                        });
+                    if let Some(message_id) = message_id {
+                        // Simulated operator answer for the blocking ask_parent path.
+                        harness
+                            .engine
+                            .store
+                            .answer_agent_message(run.id, message_id, "operator", "parent answer")
+                            .expect("answer");
+                        harness.engine.wake_a2a_waiter(message_id).await;
+                    }
+                }
             }
             "REPLY_DELTA" => {
                 if let Some(text) = event.envelope.payload["text_delta"].as_str() {
@@ -324,6 +346,13 @@ async fn ask_parent_writes_a_durable_message() {
     assert_eq!(collected.agent_messages.len(), 1);
     assert_eq!(collected.agent_messages[0]["kind"], "ask_parent");
     assert_eq!(collected.agent_messages[0]["text"], "need the parent decision");
+    let messages = harness
+        .engine
+        .store
+        .agent_messages_for_run(run.id)
+        .expect("messages");
+    assert_eq!(messages[0].status, "answered");
+    assert_eq!(messages[0].answer_text.as_deref(), Some("parent answer"));
 }
 
 #[tokio::test]

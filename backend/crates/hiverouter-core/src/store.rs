@@ -676,6 +676,67 @@ impl RunStore {
         }
     }
 
+    /// Sets the deadline for one open message.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn set_agent_message_deadline(
+        &self,
+        run_id: RunId,
+        message_id: Uuid,
+        deadline: &str,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE agent_messages SET deadline_at = ?3
+                     WHERE run_id = ?1 AND id = ?2 AND status = 'open'",
+                    params![run_id.to_string(), message_id.to_string(), deadline],
+                )
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Reads one message's current status, if it exists.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_message_status(
+        &self,
+        run_id: RunId,
+        message_id: Uuid,
+    ) -> Result<Option<String>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT status FROM agent_messages WHERE run_id = ?1 AND id = ?2",
+                        params![run_id.to_string(), message_id.to_string()],
+                        |row| row.get(0),
+                    )
+                    .optional()
+            })
+            .map_err(map)
+    }
+
+    /// Marks an open message expired.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn expire_agent_message(&self, run_id: RunId, message_id: Uuid) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE agent_messages SET status = 'expired'
+                     WHERE run_id = ?1 AND id = ?2 AND status = 'open'",
+                    params![run_id.to_string(), message_id.to_string()],
+                )
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
     /// Records one durable agent-to-agent message.
     ///
     /// # Errors
