@@ -51,6 +51,14 @@ pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[
         include_str!("../assets/prompts/content-writer.prompty"),
     ),
     (
+        "superagent.prompty",
+        include_str!("../assets/prompts/superagent.prompty"),
+    ),
+    (
+        "subagent.prompty",
+        include_str!("../assets/prompts/subagent.prompty"),
+    ),
+    (
         "data-analyst.prompty",
         include_str!("../assets/prompts/data-analyst.prompty"),
     ),

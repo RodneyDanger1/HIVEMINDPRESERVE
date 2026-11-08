@@ -1,6 +1,7 @@
 //! Localhost HTTP surface: `GET /health`, `GET /api/session`, `GET /ws`, and an
 //! honest 404 until the embedded web build exists.
 
+use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Instant;
@@ -226,12 +227,19 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
 
 /// Builds the production executor. Missing key or disabled provider falls back
 /// to the honest `E_KEY_MISSING` executor; it never fabricates replies.
-fn build_executor(config: &Config) -> Arc<dyn ProviderExecutor> {
+fn build_executor(
+    config: &Config,
+    personas: &[Persona],
+    templates: &TemplateRegistry,
+) -> Arc<dyn ProviderExecutor> {
     if !config.provider.enabled {
         tracing::info!("provider disabled by configuration; live prompts refuse E_KEY_MISSING");
         return Arc::new(UnconfiguredExecutor);
     }
-    match ProviderExecutorAdapter::from_env(config.provider.clone()) {
+    let prompts = persona_system_prompts(personas, templates);
+    match ProviderExecutorAdapter::from_env(config.provider.clone())
+        .map(|adapter| adapter.with_persona_prompts(prompts))
+    {
         Ok(executor) => Arc::new(executor),
         Err(error) => {
             tracing::warn!(
@@ -241,6 +249,29 @@ fn build_executor(config: &Config) -> Arc<dyn ProviderExecutor> {
             Arc::new(UnconfiguredExecutor)
         }
     }
+}
+
+/// Renders each persona's template and keeps its system prompt, so leaf and
+/// tool-turn calls use the persona's actual identity instead of one generic
+/// prompt for every role. A malformed/missing template simply leaves that role
+/// on the honest generic fallback; the planner already validates templates.
+fn persona_system_prompts(
+    personas: &[Persona],
+    templates: &TemplateRegistry,
+) -> std::collections::HashMap<String, String> {
+    let inputs = BTreeMap::new();
+    let mut prompts = std::collections::HashMap::new();
+    for persona in personas {
+        if let Ok(messages) = templates.render(&persona.template_id, &inputs) {
+            if let Some(system) = messages
+                .into_iter()
+                .find(|message| message.role == crate::prompts::MessageRole::System)
+            {
+                prompts.insert(persona.id.clone(), system.content);
+            }
+        }
+    }
+    prompts
 }
 
 
@@ -258,7 +289,7 @@ fn build_engine(
     tools: Arc<ToolsBridge>,
     wire_workspace_jail: bool,
 ) -> Arc<RunEngine> {
-    let mut engine = RunEngine::new(db, bus, graph, build_executor(config), templates)
+    let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
         .with_tools(tools);

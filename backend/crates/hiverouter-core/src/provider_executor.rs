@@ -25,7 +25,8 @@ use crate::tool_loop;
 const PLANNER_SYSTEM: &str = "You are the HiveMind planner. Return ONE JSON object only, \
 no markdown fences, no prose. Schema: {\"nodes\":[{\"id\":\"n1\",\"role\":\"worker\",\
 \"deps\":[],\"depth\":1}]}. Use short string ids; every dep must be the id of another node; \
-depth must be >= 1 and <= 3. Produce the smallest useful DAG (1..=8 nodes).";
+depth must be >= 1 and <= 3. role is worker or superagent (use superagent only when a branch \
+needs its own spawning/delegation). Produce the smallest useful DAG (1..=8 nodes).";
 
 const TASK_SYSTEM: &str = "You are a HiveMind agent. Answer the assigned task directly and \
 concisely. Do not claim tool calls or side effects you did not perform. If the task cannot be \
@@ -36,6 +37,7 @@ pub struct ProviderExecutorAdapter {
     client: DeepSeekClient,
     settings: ProviderSettings,
     budgets: tokio::sync::Mutex<HashMap<RunId, RunBudget>>,
+    persona_prompts: HashMap<String, String>,
 }
 
 impl std::fmt::Debug for ProviderExecutorAdapter {
@@ -66,7 +68,22 @@ impl ProviderExecutorAdapter {
             client,
             settings,
             budgets: tokio::sync::Mutex::new(HashMap::new()),
+            persona_prompts: HashMap::new(),
         }
+    }
+
+    /// Attaches rendered persona system prompts keyed by role/persona id.
+    #[must_use]
+    pub fn with_persona_prompts(mut self, prompts: HashMap<String, String>) -> Self {
+        self.persona_prompts = prompts;
+        self
+    }
+
+    fn system_prompt_for(&self, task: &TaskRecord) -> &str {
+        self.persona_prompts
+            .get(&task.role)
+            .map(String::as_str)
+            .unwrap_or(TASK_SYSTEM)
     }
 
     async fn complete(
@@ -308,7 +325,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         let mut request = ChatRequest::new(
             self.settings.model,
             vec![
-                ChatMessage::system(TASK_SYSTEM),
+                ChatMessage::system(self.system_prompt_for(task)),
                 ChatMessage::user(task_prompt(prompt, task)),
             ],
         )
