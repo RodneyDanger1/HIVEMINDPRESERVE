@@ -1166,14 +1166,32 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               ? liveRun.status
               : chosen?.status ?? null;
           const resolvedGap = resyncSerial === capturedSerial;
+          const liveStreaming =
+            get().streamingRunId !== null &&
+            get().run !== null &&
+            chosen !== null &&
+            get().run?.id === chosen.runId;
+          const liveRunCurrent = get().run;
+          const preserveLiveTasks =
+            chosen !== null &&
+            liveRunCurrent !== null &&
+            liveRunCurrent.id === chosen.runId &&
+            isRunActive(liveRunCurrent.status);
+          const liveTasks = get().tasks;
           set({
-            ...(chosen !== null && historyMessages !== null
+            // A committed snapshot can lag the live stream. Replacing the
+            // transcript mid-stream would erase the partial assistant reply.
+            ...(chosen !== null && historyMessages !== null && !liveStreaming
               ? { messages: historyMessages }
               : {}),
             ...(chosen === null
               ? { tasks: {} }
               : projection !== null
-                ? { tasks: projection.tasks }
+                ? {
+                    tasks: preserveLiveTasks
+                      ? { ...projection.tasks, ...liveTasks }
+                      : projection.tasks,
+                  }
                 : {}),
             run:
               chosen === null
