@@ -507,7 +507,7 @@ async fn cross_branch_message_requires_approval_then_writes_once() {
     let executor = ScriptedExecutor::with_plan(
         plan,
         vec![
-            tool_only_reply(vec![sibling_call("call-cross", worker_a, "hello branch", 0)]),
+            tool_only_reply(vec![sibling_call("call-cross", worker_b, "hello branch", 0)]),
             final_answer(),
             final_answer(),
         ],

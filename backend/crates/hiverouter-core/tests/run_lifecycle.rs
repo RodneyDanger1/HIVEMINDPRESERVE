@@ -50,7 +50,7 @@ fn tree_plan() -> Plan {
     };
     let subagent = PlanNode {
         node_id: TaskId::new(),
-        role: "worker".to_owned(),
+        role: "subagent".to_owned(),
         deps: Vec::new(),
         depth: 3,
         parent: Some(agent.node_id),
