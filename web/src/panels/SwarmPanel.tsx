@@ -19,7 +19,9 @@ export function SwarmPanel() {
   const setTab = useUiStore((state) => state.setTab);
   const list = Object.values(tasks);
   const counts = {
+    hyperagents: list.filter((task) => task.kind === 'hyperagent').length,
     superagents: list.filter((task) => task.kind === 'superagent').length,
+    subagents: list.filter((task) => task.kind === 'subagent').length,
     workers: list.filter((task) => task.kind === 'worker').length,
     tools: list.filter((task) => task.kind === 'tool').length,
     errors: list.filter((task) => task.kind === 'error').length,
@@ -35,9 +37,11 @@ export function SwarmPanel() {
           possible while a branch is not streaming; every edge is a bee line, never decoration.
         </p>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {[
+            ['ROOT', counts.hyperagents],
             ['SUB-HIVES', counts.superagents],
+            ['SUBAGENTS', counts.subagents],
             ['WORKERS', counts.workers],
             ['TOOLS', counts.tools],
             ['ERRORS', counts.errors],
