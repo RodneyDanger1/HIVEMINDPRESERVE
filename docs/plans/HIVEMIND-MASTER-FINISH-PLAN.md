@@ -327,3 +327,9 @@ Not delivered and must not be claimed:
 - UI bank inspector adds a `Clear run memory` confirmation flow for terminal runs.
 - New HTTP test proves receipts and active-run refusal; store transaction closes banks and removes entries.
 - Still missing: preview/CAS rev checks, journal receipts, role/global policies.
+### P2 A2A pending/expiry
+
+- `GET /api/a2a/pending` lists open questions across runs for the operator mailbox.
+- Boot recovery now expires open questions of interrupted runs; a late answer is refused with `E_TASK_TERMINAL`, so a crashed child cannot hang open forever.
+- Store tests cover pending listing, crash expiry, and late-answer refusal; HTTP test covers the pending route.
+- Still missing: reconnect replay, parent-model answer, continuation inbox refresh, answer-attempt cap, separate answer table.

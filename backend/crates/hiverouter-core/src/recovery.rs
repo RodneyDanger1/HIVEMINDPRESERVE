@@ -130,6 +130,12 @@ pub fn recover_on_boot_with_events(
         report.interrupted_runs.push(run.id);
     }
 
+    // An in-process A2A waiter cannot survive this boot: expire open questions
+    // of interrupted runs so they are never silently answerable-open.
+    for run_id in &report.interrupted_runs {
+        let _ = store.expire_open_agent_messages(*run_id);
+    }
+
     // 2. Restore snapshots deterministically (oldest first, so the newest
     //    committed image is the one in memory). Loading before settlement lets
     //    the graph nodes be updated by id instead of rebuilt. Every snapshot is

@@ -45,6 +45,27 @@ pub struct MemoryClearReceipt {
     pub banks_closed: u64,
 }
 
+/// One open A2A question listed for the operator.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PendingAgentMessage {
+    /// Owning run.
+    pub run_id: String,
+    /// Message id.
+    pub id: String,
+    /// Sender task.
+    pub from_task_id: String,
+    /// Recipient task.
+    pub to_task_id: String,
+    /// ask_parent/send_to_sibling.
+    pub kind: String,
+    /// Bounded text.
+    pub text: String,
+    /// Deadline, when set.
+    pub deadline_at: Option<String>,
+    /// Creation time.
+    pub created_at: String,
+}
+
 /// One entry returned to an agent's bank read-set.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemoryReadEntry {
@@ -1281,6 +1302,66 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Lists open A2A questions across runs, newest first and bounded.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn pending_agent_messages(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<PendingAgentMessage>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT run_id, id, from_task_id, to_task_id, kind, text,
+                            deadline_at, created_at
+                     FROM agent_messages
+                     WHERE status = 'open'
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?1",
+                )?;
+                let rows = statement.query_map(
+                    params![i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| {
+                        Ok(PendingAgentMessage {
+                            run_id: row.get(0)?,
+                            id: row.get(1)?,
+                            from_task_id: row.get(2)?,
+                            to_task_id: row.get(3)?,
+                            kind: row.get(4)?,
+                            text: row.get(5)?,
+                            deadline_at: row.get(6)?,
+                            created_at: row.get(7)?,
+                        })
+                    },
+                )?;
+                let mut messages = Vec::new();
+                for row in rows {
+                    messages.push(row?);
+                }
+                Ok(messages)
+            })
+            .map_err(map)
+    }
+
+    /// Expires every open message of a crashed run; the in-process waiter no
+    /// longer exists, so the rows must not stay answerable-open forever.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn expire_open_agent_messages(&self, run_id: RunId) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE agent_messages SET status = 'expired'
+                     WHERE run_id = ?1 AND status = 'open'",
+                    params![run_id.to_string()],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
     /// Reads the bounded bank set for one task: own branch, parent branch, and
     /// the run bank. Sibling/foreign-run banks are not addressable.
     ///
@@ -1945,6 +2026,28 @@ mod tests {
             Err(Refusal::CallLimit)
         );
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
+    }
+
+    #[test]
+    fn pending_a2a_questions_expire_on_crash() {
+        let store = store();
+        let run = store
+            .create_run("p", "pending", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        let id = store
+            .record_agent_message(run.id, from, to, "ask_parent", "question")
+            .expect("message");
+        let pending = store.pending_agent_messages(10).expect("pending");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].id, id.to_string());
+        store.expire_open_agent_messages(run.id).expect("expire");
+        assert!(store.pending_agent_messages(10).expect("pending").is_empty());
+        assert_eq!(
+            store.answer_agent_message(run.id, id, "operator", "late"),
+            Err(Refusal::TaskTerminal)
+        );
     }
 
     #[test]

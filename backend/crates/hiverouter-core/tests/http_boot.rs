@@ -120,6 +120,34 @@ async fn http_json(
 }
 
 #[tokio::test]
+async fn a2a_pending_route_lists_open_questions() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "pending", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    server
+        .state
+        .engine
+        .store
+        .record_agent_message(
+            run.id,
+            hiverouter_contract::TaskId::new(),
+            hiverouter_contract::TaskId::new(),
+            "ask_parent",
+            "open question",
+        )
+        .expect("message");
+    let (status, body) = http_get(server.addr, "/api/a2a/pending").await;
+    assert_eq!(status, 200, "pending: {body}");
+    let value: Value = serde_json::from_str(&body).expect("pending JSON");
+    assert_eq!(value["messages"].as_array().expect("messages").len(), 1);
+}
+
+#[tokio::test]
 async fn memory_clear_is_run_scoped_and_requires_a_terminal_run() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

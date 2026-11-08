@@ -548,6 +548,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             get(memory_bank_entries),
         )
         .route("/api/memory/clear", post(clear_run_memory))
+        .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
         .route("/api/workspace", get(workspace))
@@ -1325,6 +1326,29 @@ async fn clear_run_memory(
                 "bank_entries": receipt.bank_entries,
                 "banks_closed": receipt.banks_closed,
                 "reason": reason,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `GET /api/a2a/pending` — open A2A questions for the operator mailbox.
+async fn a2a_pending(State(state): State<Arc<AppState>>) -> Response {
+    match state.engine.store.pending_agent_messages(100) {
+        Ok(messages) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "messages": messages.into_iter().map(|message| serde_json::json!({
+                    "run_id": message.run_id,
+                    "id": message.id,
+                    "from_task_id": message.from_task_id,
+                    "to_task_id": message.to_task_id,
+                    "kind": message.kind,
+                    "text": message.text,
+                    "deadline_at": message.deadline_at,
+                    "created_at": message.created_at,
+                })).collect::<Vec<_>>(),
             })),
         )
             .into_response(),
