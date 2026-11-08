@@ -656,6 +656,51 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Lists durable messages addressed to one task inside one run, newest
+    /// first and bounded by `limit`. This is the recipient's A2A inbox.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_messages_for_task(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        limit: usize,
+    ) -> Result<Vec<AgentMessageRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, from_task_id, to_task_id, kind, text, created_at
+                     FROM agent_messages
+                     WHERE run_id = ?1 AND to_task_id = ?2
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?3",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        run_id.to_string(),
+                        task_id.to_string(),
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
+                    |row| {
+                        Ok(AgentMessageRecord {
+                            id: row.get(0)?,
+                            from_task_id: row.get(1)?,
+                            to_task_id: row.get(2)?,
+                            kind: row.get(3)?,
+                            text: row.get(4)?,
+                            created_at: row.get(5)?,
+                        })
+                    },
+                )?;
+                let mut messages = Vec::new();
+                for row in rows {
+                    messages.push(row?);
+                }
+                Ok(messages)
+            })
+            .map_err(map)
+    }
+
 
     /// Upserts one durable role-scoped memory entry.
     ///

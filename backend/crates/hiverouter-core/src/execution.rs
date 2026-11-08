@@ -902,6 +902,21 @@ impl RunEngine {
                 );
             }
         }
+        // A2A inbox: messages addressed to this task are model-visible facts.
+        // Bound both count and text; the sender id is part of the key so two
+        // messages from the same peer cannot overwrite each other silently.
+        if let Ok(messages) = self
+            .store
+            .agent_messages_for_task(task.run_id, task.id, 8)
+        {
+            for message in messages {
+                let text: String = message.text.chars().take(500).collect();
+                context.facts.insert(
+                    format!("a2a:{}:{}:{}", message.from_task_id, message.kind, message.id),
+                    text,
+                );
+            }
+        }
         self.contexts.set(task.id, context)
     }
 
