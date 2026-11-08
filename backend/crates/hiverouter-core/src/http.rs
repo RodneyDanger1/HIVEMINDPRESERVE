@@ -1344,16 +1344,18 @@ async fn projects(State(state): State<Arc<AppState>>) -> Response {
 /// boolean and runtime caps are the effective values enforced by the engine.
 async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
     let active_run = state.engine.active_run();
-    let latest = state
-        .engine
-        .store
-        .latest_active_run()
-        .ok()
-        .flatten()
-        .map(|run| run.id);
-    let task_count = active_run
-        .or(latest)
-        .and_then(|run_id| state.engine.store.task_count(run_id).ok());
+    let latest_run = match state.engine.store.latest_active_run() {
+        Ok(run) => run,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let latest_run_id = latest_run.as_ref().map(|run| run.id);
+    let task_count = match active_run.or(latest_run_id) {
+        Some(run_id) => match state.engine.store.task_count(run_id) {
+            Ok(count) => Some(count),
+            Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+        },
+        None => None,
+    };
     let key_present = state
         .checks
         .iter()
@@ -1362,10 +1364,11 @@ async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
     let caps = state.engine.caps;
     (
         StatusCode::OK,
+        [(header::CACHE_CONTROL, "no-store")],
         Json(serde_json::json!({
             "status": if active_run.is_some() { "busy" } else { "idle" },
             "active_run_id": active_run.map(|id| id.to_string()),
-            "latest_active_run_id": latest.map(|id| id.to_string()),
+            "latest_active_run_id": latest_run_id.map(|id| id.to_string()),
             "active_task_count": task_count,
             "caps": {
                 "max_depth": caps.max_depth,

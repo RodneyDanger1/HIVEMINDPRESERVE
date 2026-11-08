@@ -2287,6 +2287,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             metrics: null,
             toolActivity: [],
             approvals: [],
+            approvalsStale: false,
+            resyncGap: null,
             history: {
               ...get().history,
               latest: list.latest ?? -1,
