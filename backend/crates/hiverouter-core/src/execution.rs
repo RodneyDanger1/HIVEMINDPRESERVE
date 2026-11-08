@@ -132,7 +132,7 @@ pub(crate) fn node_kind(tier: AgentTier) -> &'static str {
 /// Hyper may spawn Super/Agent/Subagent; Super may spawn Agent/Subagent; Agent
 /// (Worker) may spawn **Subagent only** — never a Super, so a child cannot
 /// escalate its own capability tier. Subagents and tool actors cannot spawn.
-fn validate_spawn_role(parent: AgentTier, requested_role: &str) -> Result<(), Refusal> {
+pub(crate) fn validate_spawn_role(parent: AgentTier, requested_role: &str) -> Result<(), Refusal> {
     let role = requested_role.trim().to_ascii_lowercase();
     let allowed = match parent {
         AgentTier::HyperAgent => matches!(
@@ -598,7 +598,14 @@ impl RunEngine {
             return Some(persona.clone());
         }
         let normalized = lower.replace(['-', ' '], "_");
-        personas.get(&normalized).cloned()
+        if let Some(persona) = personas.get(&normalized) {
+            return Some(persona.clone());
+        }
+        let compact = lower.replace(['-', ' ', '_'], "");
+        personas
+            .values()
+            .find(|persona| persona.id.replace(['-', ' ', '_'], "") == compact)
+            .cloned()
     }
 
     /// Returns the optional per-profile spawn limits for a role.

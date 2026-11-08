@@ -31,7 +31,7 @@ use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
 use crate::context::{ContextStore, ContextSwitchOutcome, ScopedContext};
 use crate::entities::TaskRecord;
-use crate::execution::{node_kind, task_agent_tier};
+use crate::execution::{node_kind, task_agent_tier, validate_spawn_role};
 use crate::graph::{GraphAuthority, TaskNode};
 use crate::http::AppState;
 use crate::prompts::TemplateRegistry;
@@ -244,6 +244,10 @@ fn insert_template_dag(
         .cloned()
         .ok_or(Refusal::TaskNotFound)?;
     let depth = root.depth.saturating_add(1);
+    let parent_tier = task_agent_tier(&root);
+    for node in &dag.nodes {
+        validate_spawn_role(parent_tier, &node.role)?;
+    }
     let siblings = tasks
         .iter()
         .filter(|task| task.parent_task_id == Some(root.id))
@@ -287,6 +291,12 @@ fn insert_template_dag(
         };
         store.insert_task(&task)?;
         graph.add_task(task.id, Some(root.id))?;
+        graph.set_metadata(
+            task.id,
+            node_kind(task_agent_tier(&task)),
+            &task.role,
+            None,
+        )?;
         inserted.push(task);
     }
     Ok(inserted)

@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: commit `fa4c373` plus this working wave. Offline only; no server/UI/provider run.
+Baseline: commit `66aff50` plus the agent-definitions wave. The prior wave commits were `fa4c373`, `679bd6b`, `bb95a44`, `aa15ec9`, `66aff50`. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
