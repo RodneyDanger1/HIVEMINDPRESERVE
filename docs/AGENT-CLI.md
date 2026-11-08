@@ -20,7 +20,7 @@ not a second backend and does not read, print, or store the provider key.
 | Option | Meaning |
 |---|---|
 | `--json` | JSON envelope on stdout (automatic when stdout is not a TTY) |
-| `--format json\|table\|jsonl` | Explicit format; `jsonl` for `watch --follow` |
+| `--format json\|table\|jsonl\|human` | Explicit format; `jsonl` for `watch --follow` |
 | `--url <url>` | Loopback base URL (default `http://127.0.0.1:8099` or CLI state) |
 | `--data-dir <path>` | HiveMind data directory (state/logs) |
 | `--workspace-root <path>` | Workspace root passed to a started server |

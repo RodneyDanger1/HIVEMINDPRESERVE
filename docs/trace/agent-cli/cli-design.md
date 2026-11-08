@@ -18,7 +18,7 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 | Surface | State | Scope | Score |
 |---|---|---|---|
 | `hiverouter-cli` (`backend/crates/hiverouter-tools/src/cli.rs`, artifact `hiverouter-cli.exe`) | shipped in 1.0/1.1 release lineage; 9 commands; no mutating command by design (`cli.rs:16–18`) | read-only diagnostics (`version`, `preflight`, `schema`, `tools.*`, `capabilities.census`, `provider.cost`, `health`, `diagnose`) | **19/28** — partially agent-native for the narrow surface |
-| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd|ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **15/28** — broad; latest snapshot aligns the envelope basics; contract gaps remain |
+| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd\|ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **15/28** — broad; latest snapshot aligns the envelope basics; contract gaps remain |
 | **target production CLI** | this document | one contract, one owner, full control plane | **28/28** |
 
 ---
@@ -34,7 +34,7 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 
 **Recommendation.** Build one production CLI — `hivemind` — as a **Rust binary** (extend `hiverouter-cli`, or add a `hivemind` binary beside it), keep `hiverouter-cli` as a deprecated alias for one release, and keep the Node prototype as a **non-shipped behavioral reference** until parity. Do **not** ship the Node prototype as the release artifact unless Node >= 22.12 is explicitly declared a runtime prerequisite, bundled, and the Rust CLI's exit table is changed in the same release. Never ship two CLI contracts.
 
-**Target verdict if the plan lands: agent-native (28/28).** The design is deliberately local-first and CLI-first; MCP is deferred (see §12).
+**Target verdict if the plan lands: agent-native (28/28).** The design is deliberately local-first and CLI-first; MCP is deferred (see §9.5).
 
 ---
 
@@ -102,7 +102,7 @@ The skill's loop is bootstrap → discovery → planning → execution → inter
 |---|---|---|---|---|
 | 0. Bootstrap | key presence only; no session token | fetches `/api/session` internally; no token env/file; inherits env | operator sets key/exe/workspace; CLI fetches token; `HIVEROUTER_SESSION_TOKEN`/`--token-file` for orchestrators | `/api/*` auth; no token delegation; no lock identity |
 | 1. Discovery | top/resource help, `schema`, 9 commands | flat help, `commands`, `schema`, 32 commands | progressive `help`, `commands`, `schema`, `doctor`, `completion`, `skill` | no action-level typed help; Node help is prose on stdout; no typed schema |
-| 2. Planning | `--dry-run` on health/diagnose/provider.cost | `--dry-run` broadly, but `start --dry-run` can write state | every mutating command previews the transport payload/process plan with no side effect | dry-run is not side-effect-free; no `would_request` contract for WS |
+| 2. Planning | `--dry-run` on health/diagnose/provider.cost | `--dry-run` broadly; latest snapshot checks before `start` writes; WS dry-run is still generic | every mutating command previews the transport payload/process plan with no side effect | no `would_request` contract for WS; verify side-effect freedom with a fingerprint test |
 | 3. Execution | HTTP reads only | HTTP + manual WS client; not runtime-verified | one HTTP read client + one WS command/client; bounded waits; correlation filtering | WS client must set `Origin`; Node now does manually; no tests; no resync |
 | 4. Interpretation | `hiverouter.cli.v1` envelope with `schema` | latest snapshot has `schema`; `doctor` can still be `ok:false` with no `error`; help is prose | stable envelope, `meta`, `page`, `next`, error catalog | Node doctor error shape; human help; no `page`/`next` |
 | 5. Recovery | named `retryable`; no idempotency key | timeout/exit classes; no resync; no idempotency | exit table + `retryable` + `--idempotency-key` + resync policy | only `SUBMIT_PROMPT` server-idempotent; no resync; no lock/stale identity |
@@ -125,7 +125,7 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 | 4 | Exit-code semantics (P1/P2) | 1 | 1 | 2 | Rust 0/2/3/4; Node aliases to 0/2/3/4 but collapses transport/timeout/safety into 3/2; no 5/6/7/8/9 |
 | 5 | Self-description/help (P3) | 1 | 1 | 2 | Rust top/resource but no action-level flags; Node flat list, prose help; no progressive tree |
 | 6 | Schema introspection (P6) | 1 | 1 | 2 | Rust `schema` returns command specs + hand-written response placeholder; Node returns registry args but no typed JSON Schema/output/errors/examples |
-| 7 | Dry-run (P3/P4) | 1 | 1 | 2 | Rust only health/diagnose/provider.cost; Node broad but `start --dry-run` writes state, WS dry-run generic |
+| 7 | Dry-run (P3/P4) | 1 | 1 | 2 | Rust only health/diagnose/provider.cost; Node broad; latest snapshot checks `start` dry-run before writes, WS dry-run still generic |
 | 8 | Idempotent retries (P1) | 1 | 0 | 2 | Only `SUBMIT_PROMPT` has a server receipt (`store.rs:960–1005`, `execution.rs:1031–1073`); no CLI key; no receipts for spawn/template/rewire/kill/cancel/approval |
 | 9 | Non-interactive operation (P0) | 2 | 2 | 2 | Neither prompts; Node has `--yes` for most destructive commands; no `--no-input`; `restart` bypasses `--yes` |
 | 10 | Safety tiers (P4) | 1 | 1 | 2 | Rust has tier metadata, no mutating; Node has safety strings/`--yes` but inconsistent (`restart`, `open`), no dispatch enforcement |
@@ -140,7 +140,7 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 | Principle | Status | Evidence | Issue | Recommendation |
 |---|---|---|---|---|
 | P0 One CLI, three audiences | partial | Rust is human/agent/system for reads; Node is broad but help is stdout | two surfaces, one owner unresolved | one `hivemind` binary; Node prototype not shipped; one table |
-| P1 Structured output is the interface | partial | Rust `hiverouter.cli.v1` with `schema`; Node envelope lacks `schema` | two envelope shapes; human/help on stdout | keep `schema`, `ok`, `command`, `data|error`, `meta`; add `page`/`next`; never prose on stdout |
+| P1 Structured output is the interface | partial | Rust `hiverouter.cli.v1` with `schema`; latest Node snapshot added `schema` | two envelope shapes; human help still on stdout; no `page`/`next` | keep `schema`, `ok`, `command`, `data\|error`, `meta`; add `page`/`next`; never prose on stdout |
 | P2 Trust is directional | partial | loopback URL guard, no key args; Node `--exe`/`--browser` | agent can choose arbitrary executable/browser | operator-only `--exe`; require `--yes`/hash; `--browser` human-only |
 | P3 CLI describes itself | partial | `commands`/`schema`; Rust top/resource help | no action-level typed help; Node flat prose help | progressive `help` → resource → action → `schema`; top help < 500 tokens |
 | P4 Safety through graduated visibility | partial | tiers/`--yes`; Node exposes UI-only commands and `restart` bypass | destructive actions not consistently gated | tier table + dispatch enforcement; `restart`/`stop` confirm; UI-only hidden |
@@ -900,7 +900,7 @@ If an MCP host requires it later, add `hivemind mcp serve --read-only` as a thin
 - `HiveMind.cmd` (human launcher): `hivemind start --open`, no `pause` on error, `exit /b %ERRORLEVEL%`; `--pause-on-error` optional.
 - `HiveMind-Agent.cmd` / `HiveMind-Agent.ps1` (headless): `hivemind` with passed args, no PowerShell `Start-Process`, no browser, no `pause`.
 - `tools/hivemind.cmd` / `.ps1`: thin wrapper over the production binary; do not invoke `node` once the Rust binary exists. If the Node prototype remains for development, label it `hivemind-dev` and do not ship it.
-- The old `tools/start-hivemind.ps1` is deprecated: it always opens a browser, truncates logs, omits `--workspace-root`, and uses 8099. Keep it only as a compatibility shim that calls `hivemind start` with explicit flags, or delete it in the release that ships `hivemind`.
+- The old `tools/start-hivemind.ps1` is deprecated: it always opens a browser, truncates logs on each start, and uses 8099. It now forwards `--workspace-root $root` (fixed during this seat), but it still has no headless mode, no lock/PID identity, and no graceful stop. Keep it only as a compatibility shim that calls `hivemind start` with explicit flags, or delete it in the release that ships `hivemind`.
 
 ### 10.3 Headless vs app-open parity
 
@@ -920,7 +920,7 @@ The CLI's agent-native claim is falsifiable. These tests are cheap and belong in
 
 | Gate | What it proves | Harness |
 |---|---|---|
-| Envelope shape | every command success/failure/partial is one valid JSON object with `schema`, `ok`, `command`, `data|error`, `meta`; no prose on stdout | `assert_cmd` + JSON Schema snapshot; iterate `commands` |
+| Envelope shape | every command success/failure/partial is one valid JSON object with `schema`, `ok`, `command`, `data\|error`, `meta`; no prose on stdout | `assert_cmd` + JSON Schema snapshot; iterate `commands` |
 | Stdout/stderr split | stdout parses as one JSON doc in `json`/`jsonl`; stderr never contains the envelope; human mode stdout empty | capture both streams; `serde_json::from_str`; assert stderr no `"schema"` |
 | TTY behavior | non-TTY defaults to JSON; TTY defaults to human-on-stderr; `--format` overrides; no pager; no prompt | `portable-pty`/ConPTY on Windows; fallback explicit `--format` tests; `PAGER=false` |
 | Exit matrix | each class 0/2/3/4/5/6/7/8/9/130 | synthesize each failure (bad flag, keyless submit, unreachable, stale lock, timeout, omitted `--yes`, partial, schema mismatch, SIGINT) |
@@ -989,7 +989,7 @@ The gap is not "nothing exists"; it is "the existing pieces do not add up to one
 | 2 | Typed schema as source of truth | Rust `CommandSpec` has only flag names (`cli.rs:59–78,81–172`); `schema` emits a hand-written response placeholder (`cli.rs:558–591`); Node registry args are not JSON Schema | help/validation/schema drift; agents guess flags | `CommandSpec` + `ArgSpec`; derive help/schema/completion/skill; `since`/deprecated | **P0** |
 | 3 | Lifecycle lock, identity, stale-PID safety | no lock/PID/instance record in product (`lifecycle-map §6`); prototype state file is non-atomic, no creation time, no lock | two servers on one data dir; wrong-instance adoption; kill unrelated PID | `hivemind.lock` + `server.json`, atomic, PID creation time, exe hash, boot_id | **P0** |
 | 4 | Instance-identifying `/health` | `/health` has no `pid`/`boot_id`/`data_dir`/`workspace_root`/build (`http.rs:456–476`) | CLI cannot prove which server it talks to | add fields (or make `server.json` authoritative) | **P0** |
-| 5 | Truthful graceful stop | server only handles Ctrl+C (`main.rs:178–184`); `taskkill` without `/F` no-ops on headless children (lifecycle-map §7) | `stop` burns 10s then fails or force-kills; audit loss | `stop` reports `graceful:false` + one-command escalation now; add Ctrl+Break/SIGTERM or token-authenticated shutdown P1 | **P0** (truth) / **P1** (grace) |
+| 5 | Truthful graceful stop | server only handles Ctrl+C (`main.rs:178–184`); `taskkill` without `/F` no-ops on headless children (lifecycle-map §7) | `stop` may force-kill after the grace window; audit loss | `stop` reports `graceful:false` + one-command escalation now; add Ctrl+Break/SIGTERM or token-authenticated shutdown P1 | **P0** (truth) / **P1** (grace) |
 | 6 | `/api/*` token authentication | only `/ws` checks token (`ws.rs:382–384`); `/api/*` only Host-guarded (`http.rs:543–564`); DELETE profile/memory unauthenticated | any loopback client can mutate profiles/memory; CLI token is only used for WS | token middleware on `/api/*` except `/health`/`/api/session`; `Cache-Control: no-store` on session | **P0** |
 | 7 | General mutation idempotency | only `SUBMIT_PROMPT` receipt (`execution.rs:1031–1073`); contract claims all (`UI-COMMANDS-v1.md:24`) | retries duplicate spawn/template/rewire/kill/cancel/approval | generalize `command_receipts` to all mutating commands with result JSON + 24h TTL | **P0** for spawn/template, **P1** for rest |
 | 8 | WS client with Origin/correlation/resync | server requires `Origin` (`ws.rs:75–83,376–381`); Node built-in WebSocket sends none (observed; candidate now has a manual upgrade); no correlation filtering/resync | commands/watch fail or pick another client's event | Rust WS client that sets Origin, filters by correlation/run, handles `RESYNC_REQUIRED` | **P0** |
@@ -1001,10 +1001,10 @@ The gap is not "nothing exists"; it is "the existing pieces do not add up to one
 | 14 | `hivemind completion` and generated `skill` | no completions; skill exists untracked but documents Node exit table | discoverability/ergonomics; drift | generate both from `CommandSpec`; CI drift gate | **P2** |
 | 15 | MCP wrapper | none | not needed for local CLI; some hosts want tools | defer; optional read-only adapter P2 | **P2** |
 | 16 | CLI contract test harness | only `cli.rs` unit tests + `backend/cli-smoke.log`; no TTY/exit/dry-run/lock/resync/secret tests | regressions are invisible; "should work" is not evidence | add `cli_contract` integration suite + fake server + optional real smoke | **P0** |
-| 17 | Windows launcher parity | `HiveMind.cmd` opens browser always, pauses on error, omits `--workspace-root`, 8099; `HiveMind-Agent` headless | agent blocks on pause; wrong workspace; port split | wrappers call `hivemind`; no pause; explicit workspace; one port | **P1** |
+| 17 | Windows launcher parity | `HiveMind.cmd` opens browser always and pauses on error; `start-hivemind.ps1` still truncates logs and uses 8099; `HiveMind-Agent` is headless | agent blocks on pause; port split; log loss | wrappers call `hivemind`; no pause; one port; bounded logs | **P1** |
 | 18 | Log policy | `.cmd` truncates each start; Node appends forever; `logs` reads whole file | evidence loss/OOM | append + size cap + rotation + bounded tail | **P1** |
 | 19 | Server boot exit taxonomy | every boot failure exit 1 (`main.rs:18–24`) | supervisor cannot classify port/DB/config | distinct server codes or boot error file | **P2** |
-| 20 | Doc truth and drift | `docs/CODEMAP/03-BACKEND.md:67` and `09-RISKS-GAPS.md:5` say no chat-history endpoint, but `http.rs:520,772` exposes it; `runbook.md:3–8` says two binaries while a Node CLI exists; `--workspace-root` undocumented in server `--help` (`main.rs:192–201`) | agents/docs disagree; false "missing" claims | update docs in the same change; add a docs-truth check | **P2** |
+| 20 | Doc truth and drift | `docs/CODEMAP/03-BACKEND.md:67` and `09-RISKS-GAPS.md:5` say no chat-history endpoint, but `http.rs:520,772` exposes it; `runbook.md:3–8` says two binaries while a Node CLI exists | agents/docs disagree; false "missing" claims | update docs in the same change; add a docs-truth check | **P2** |
 
 ### 12.3 Candidate-specific defects to fix before calling it done
 
@@ -1014,15 +1014,15 @@ From the lifecycle snapshot (`lifecycle-map §11`) and this review; line numbers
 - **`ok:false` without `error`** — `doctor` ready=false can return `ok:false` with only `data`; the envelope contract requires `error` on `ok:false`.
 - **Coarse exit table** — the latest snapshot aliases `NOT_RUNNING`/`AUTH`/`TIMEOUT` to 3 and `UNSAFE` to 2; it matches Rust but loses the semantic classes 5/6/7/8/9/130 that the design requires.
 - **No lock / non-atomic state** — `agent-cli-state.json` write is not atomic, no PID creation time, no boot_id, no exclusive lock; two starts can share a data dir.
-- **Stop cannot be graceful** — `taskkill /T` without `/F` no-ops on headless children; `stop` then times out; `restart` passes `yes:true` internally.
-- **`--dry-run` on `start` writes state** — it performs the already-running branch (`writeState`) before checking dry-run; dry-run must be side-effect-free.
+- **Stop cannot be graceful** — `taskkill /T` without `/F` no-ops on headless children; the latest snapshot auto-escalates to `/F`, which still loses the audit flush; `restart` passes `yes:true` internally.
+- **`--dry-run` side effects (earlier snapshot)** — the earlier `start` path wrote state before checking dry-run; the latest snapshot checks first. Verify with a state/log fingerprint test before calling it fixed.
 - **No resync** — `watch` treats `RESYNC_REQUIRED` as an ordinary event; no reconnect/snapshot.
 - **Name-only event matching** — `wsCommand` waits for any event with the awaited name, not the `correlation_id`/`run_id`; the bus broadcasts all clients.
 - **Submit/watch race** — `run` opens a second WS after ACK; it can miss `RUN_CREATED`/terminal events; use the same connection or read back.
 - **Integer-only `viewport`** — `readNumber` rejects fractional zoom/x/y; server accepts f64; the command is UI-only and should be hidden anyway.
 - **UTF-16 prompt length** — `text.length` differs from server `chars().count()` for non-BMP characters.
 - **Unknown flags ignored** — parse accepts any `--name` into options; boundary validation must reject unknown flags per command.
-- **Binary search order** — `backend/target/{release,debug}` instead of the documented `target/{release,debug}` and `dist/HiveMind`; can launch stale server (lifecycle-map D2).
+- **Executable search still includes `backend/target` fallbacks** — `target/release` is first now, but a missing target can fall through to a stale `backend/target/debug` build (lifecycle-map D2); prefer the installed binary and record its hash.
 - **No instance identity** — "already running" = 200 + same URL + PID alive; a foreign HiveMind can be adopted (D3).
 - **Node runtime dependency** — the prototype requires Node >= 22.12; the release/runbook says Node is only for web build, not server runtime. Decide before shipping.
 
@@ -1161,7 +1161,7 @@ Skill references: `agent-native-design/SKILL.md` (seven principles, interaction 
 | Release artifacts | `tools/release-manifest.json` (`hiverouter.exe`, `hiverouter-cli.exe`) |
 | Candidate CLI / doc / skill | `tools/hivemind-cli.mjs`; `docs/AGENT-CLI.md`; `skills/hivemind/SKILL.md` |
 | Surface/gap recon | `docs/trace/agent-cli/api-map.md` §2, §11, §12; `docs/trace/agent-cli/lifecycle-map.md` §3, §6, §7, §9, §10, §11 |
-| Doc drift (chat route, `--workspace-root`) | `docs/CODEMAP/03-BACKEND.md:65–71`; `docs/CODEMAP/09-RISKS-GAPS.md:5–12` vs `http.rs:520,772`; `main.rs:192–201` |
+| Doc drift (chat route) | `docs/CODEMAP/03-BACKEND.md:65–71`; `docs/CODEMAP/09-RISKS-GAPS.md:5–12` vs `http.rs:520,772` |
 
 ### 15.3 Unverified / not claimed
 
