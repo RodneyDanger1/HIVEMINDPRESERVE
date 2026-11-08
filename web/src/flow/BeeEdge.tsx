@@ -9,8 +9,10 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import { beeAngle } from '../a11y/keyboard';
+import { useAppReducedMotion } from '../state/useAppReducedMotion';
 
 export function BeeEdge(props: EdgeProps) {
+  const reduced = useAppReducedMotion();
   const [path] = getStraightPath({
     sourceX: props.sourceX,
     sourceY: props.sourceY,
@@ -35,7 +37,7 @@ export function BeeEdge(props: EdgeProps) {
           stroke: broken ? 'var(--color-signal)' : 'var(--color-honey-400)',
           strokeWidth: 1.5,
           strokeDasharray: broken ? '6 6' : '10 10',
-          animation: 'bee-dash 2.4s linear infinite',
+          animation: reduced ? undefined : 'bee-dash 2.4s linear infinite',
         }}
       />
       <EdgeLabelRenderer>
@@ -48,7 +50,7 @@ export function BeeEdge(props: EdgeProps) {
           }}
           aria-hidden="true"
         >
-          <div className="bee-bob">
+          <div className={reduced ? undefined : 'bee-bob'}>
             <svg width="18" height="18" viewBox="0 0 18 18">
               <ellipse cx="9" cy="9" rx="5" ry="3.2" fill="currentColor" />
               <path d="M3 9h12M5.5 6.5h7M5.5 11.5h7" stroke="var(--color-honey-300)" strokeWidth="1.1" />

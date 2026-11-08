@@ -3,9 +3,10 @@
  * Bootstrap connects to the local server; when the socket fails the UI shows
  * a named offline banner and blocks mutations — it never fakes a run.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createUiApi } from './api';
 import { createUiStore } from './state/store';
+import type { NavSection, TabId } from './state/store';
 import { UiStoreContext, useUiStore } from './state/context';
 import { useAppReducedMotion } from './state/useAppReducedMotion';
 import { STRINGS } from './state/strings';
@@ -26,15 +27,45 @@ import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
 
+const NAV_SECTIONS = ['workspace', 'agents', 'data', 'models', 'routing', 'settings'] as const;
+const TAB_IDS = ['workspace', 'swarm', 'routing', 'history'] as const;
+
 function AppFrame() {
   const nav = useUiStore((state) => state.view.nav);
   const tab = useUiStore((state) => state.view.tab);
+  const setNav = useUiStore((state) => state.setNav);
+  const setTab = useUiStore((state) => state.setTab);
   const connection = useUiStore((state) => state.connection);
   const connectionRefusal = useUiStore((state) => state.connectionRefusal);
   const apiKind = useUiStore((state) => state.apiKind);
   const run = useUiStore((state) => state.run);
-  const setTab = useUiStore((state) => state.setTab);
   const reduced = useAppReducedMotion();
+
+  const applyHash = useCallback((): void => {
+    const raw = window.location.hash.replace(/^#\/?/, '');
+    const [nextNavRaw, nextTabRaw] = raw.split('/');
+    const nextNav = (NAV_SECTIONS as readonly string[]).includes(nextNavRaw)
+      ? (nextNavRaw as NavSection)
+      : null;
+    const nextTab = (TAB_IDS as readonly string[]).includes(nextTabRaw)
+      ? (nextTabRaw as TabId)
+      : null;
+    if (nextNav !== null) setNav(nextNav);
+    if (nextTab !== null) setTab(nextTab);
+  }, [setNav, setTab]);
+
+  useEffect(() => {
+    applyHash();
+    const onHashChange = (): void => applyHash();
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [applyHash]);
+
+  useEffect(() => {
+    const next = `#/${nav}/${tab}`;
+    if (window.location.hash === next) return;
+    window.history.replaceState(null, '', next);
+  }, [nav, tab]);
 
   useEffect(() => {
     document.documentElement.dataset.reducedMotion = reduced ? 'true' : 'false';

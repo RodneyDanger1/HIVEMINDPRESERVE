@@ -118,7 +118,6 @@ function CanvasInner() {
     readonly targetId: string;
   } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const chatVisible = useUiStore((state) => state.chat.visible);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
   const runStatus = useUiStore((state) => state.run?.status ?? null);
@@ -127,20 +126,6 @@ function CanvasInner() {
   useEffect(() => {
     setPositionOverrides(loadPositions(runId));
   }, [runId]);
-
-  useEffect(() => {
-    const element = canvasRef.current;
-    if (element === null) {
-      return;
-    }
-    const update = (): void => {
-      setCanvasSize({ width: element.clientWidth, height: element.clientHeight });
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
 
   const handleSelect = useCallback(
     (taskId: string) => {
@@ -311,47 +296,6 @@ function CanvasInner() {
     return { sx, sy, tx, ty };
   }, [dragSourceId, dropTargetId, getNode, viewport]);
 
-  const ownerLinks = useMemo(() => {
-    if (history.replayGraph || canvasSize.width === 0 || canvasSize.height === 0) {
-      return [];
-    }
-    const root = Object.values(visibleTasks).find((task) => task.kind === 'hyperagent');
-    if (root === undefined) {
-      return [];
-    }
-    const cx = canvasSize.width / 2;
-    const cy = canvasSize.height / 2 - 32;
-    const links: Array<{ id: string; sx: number; sy: number; tx: number; ty: number }> = [];
-    for (const task of Object.values(visibleTasks)) {
-      if (task.parentId !== root.id || task.kind === 'hyperagent') {
-        continue;
-      }
-      const node = getNode(task.id);
-      if (node === undefined) {
-        continue;
-      }
-      const width = node.measured?.width ?? 1;
-      const height = node.measured?.height ?? 1;
-      const tx = (node.position.x + width / 2) * viewport.zoom + viewport.x;
-      const ty = (node.position.y + height / 2) * viewport.zoom + viewport.y;
-      const dx = tx - cx;
-      const dy = ty - cy;
-      const distance = Math.hypot(dx, dy);
-      if (distance < 1) {
-        continue;
-      }
-      const startRadius = 215;
-      links.push({
-        id: task.id,
-        sx: cx + (dx / distance) * startRadius,
-        sy: cy + (dy / distance) * startRadius,
-        tx,
-        ty,
-      });
-    }
-    return links;
-  }, [canvasSize, getNode, history.replayGraph, viewport, visibleTasks]);
-
   useEffect(() => {
     // First graph: fit the whole swarm so child cards are never born outside
     // the viewport. Ctrl+0 still returns to the hive origin.
@@ -457,47 +401,6 @@ function CanvasInner() {
   const replayEdges = useMemo(() => buildEdges(replayTasks), [replayTasks]);
   const displayedVisibleTasks = history.replayGraph ? replayTasks : visibleTasks;
   const displayedTasks = history.replayGraph ? replayTasks : tasks;
-  const replayOwnerLinks = useMemo(() => {
-    if (canvasSize.width === 0 || canvasSize.height === 0) {
-      return [];
-    }
-    const root = Object.values(replayTasks).find((task) => task.kind === 'hyperagent');
-    if (root === undefined) {
-      return [];
-    }
-    const cx = canvasSize.width / 2;
-    const cy = canvasSize.height / 2 - 32;
-    const links: Array<{ id: string; sx: number; sy: number; tx: number; ty: number }> = [];
-    for (const task of Object.values(replayTasks)) {
-      if (task.parentId !== root.id || task.kind === 'hyperagent') {
-        continue;
-      }
-      const node = getNode(task.id);
-      if (node === undefined) {
-        continue;
-      }
-      const width = node.measured?.width ?? 1;
-      const height = node.measured?.height ?? 1;
-      const tx = (node.position.x + width / 2) * viewport.zoom + viewport.x;
-      const ty = (node.position.y + height / 2) * viewport.zoom + viewport.y;
-      const dx = tx - cx;
-      const dy = ty - cy;
-      const distance = Math.hypot(dx, dy);
-      if (distance < 1) {
-        continue;
-      }
-      const startRadius = 215;
-      links.push({
-        id: task.id,
-        sx: cx + (dx / distance) * startRadius,
-        sy: cy + (dy / distance) * startRadius,
-        tx,
-        ty,
-      });
-    }
-    return links;
-  }, [canvasSize, getNode, replayTasks, viewport]);
-  const visibleOwnerLinks = history.replayGraph ? replayOwnerLinks : ownerLinks;
 
   return (
     <div
@@ -520,34 +423,6 @@ function CanvasInner() {
       </svg>
       <HiveField />
       <div className="hive-scan" aria-hidden="true" />
-      {visibleOwnerLinks.length === 0 ? null : (
-        <svg
-          data-testid="owner-links"
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
-        >
-          {visibleOwnerLinks.map((link) => (
-            <g key={link.id}>
-              <line
-                x1={link.sx}
-                y1={link.sy}
-                x2={link.tx}
-                y2={link.ty}
-                stroke="var(--color-honey-500)"
-                strokeWidth="1.5"
-                strokeDasharray="7 6"
-                opacity="0.85"
-              />
-              <circle
-                cx={(link.sx + link.tx) / 2}
-                cy={(link.sy + link.ty) / 2}
-                r="3.5"
-                fill="var(--color-honey-500)"
-              />
-            </g>
-          ))}
-        </svg>
-      )}
       <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[660px] w-[620px] -translate-x-1/2 -translate-y-1/2">
         <span className="ambient-bee ambient-bee-a" aria-hidden="true">
           <BeeMark />
@@ -732,7 +607,22 @@ function CanvasInner() {
         </div>
       ) : null}
 
+      <div
+        className="pointer-events-none absolute bottom-32 left-1/2 z-20 -translate-x-1/2 rounded-[var(--radius-pill)] border border-hairline bg-panel/95 px-3 py-1.5 shadow-[var(--shadow-e1)]"
+        aria-label="Hierarchy legend"
+      >
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 type-mono-meta text-[8px] text-meta">
+          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-500" />HYPER</span>
+          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-400" />SUPER</span>
+          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-verify" />SUB</span>
+          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-600" />WORKER</span>
+          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-ink-500" />TOOL</span>
+          <span className="flex items-center gap-1 text-honey-700">bee route</span>
+          <span className="flex items-center gap-1 text-signal">broken</span>
+        </div>
+      </div>
       <div className="absolute bottom-32 left-3 flex flex-col gap-1" aria-label="Zoom controls">
+
         <button
           type="button"
           className="surface-panel flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-ink-800 hover:bg-honey-100"
