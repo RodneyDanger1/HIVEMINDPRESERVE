@@ -292,6 +292,17 @@ pub enum DbError {
     /// The requested down-migration target is not a known version.
     #[error("unknown migration version {0}")]
     UnknownMigration(i64),
+    /// The database was written by a newer schema than this binary supports.
+    #[error("database schema {current} is newer than the newest supported migration {latest}")]
+    SchemaNewer {
+        /// Schema version found in the database.
+        current: i64,
+        /// Newest migration compiled into this binary.
+        latest: i64,
+    },
+    /// The pre-migration backup was created but failed integrity verification.
+    #[error("pre-migration backup failed integrity check: {0}")]
+    BackupInvalid(String),
     /// A tool-turn row could not be stored or read truthfully (integrity defect,
     /// not a transport failure).
     #[error("invalid tool-turn persistence: {0}")]
@@ -304,6 +315,7 @@ impl DbError {
     pub fn refusal(&self) -> Refusal {
         match self {
             DbError::Busy(_) => Refusal::DbBusy,
+            DbError::SchemaNewer { .. } => Refusal::SchemaNewer,
             DbError::Sqlite(rusqlite::Error::SqliteFailure(code, _))
                 if matches!(
                     code.code,
@@ -424,6 +436,13 @@ impl Database {
             );",
         )?;
         let current = Self::current_version(&connection)?;
+        let latest = MIGRATIONS.last().map_or(0, |migration| migration.version);
+        if current > latest {
+            return Err(DbError::SchemaNewer { current, latest });
+        }
+        if current > 0 && MIGRATIONS.iter().any(|migration| migration.version > current) {
+            self.backup_before_migration(&connection, current)?;
+        }
         for migration in MIGRATIONS {
             if migration.version <= current {
                 continue;
@@ -441,6 +460,60 @@ impl Database {
             transaction.commit()?;
         }
         Self::current_version(&connection)
+    }
+
+    /// Writes and verifies a consistent backup before any pending migration.
+    ///
+    /// The backup is created with SQLite `VACUUM INTO` (safe with WAL) and is
+    /// verified with `PRAGMA integrity_check`; a failed backup refuses migration.
+    fn backup_before_migration(
+        &self,
+        connection: &Connection,
+        version: i64,
+    ) -> Result<PathBuf, DbError> {
+        if self.path == Path::new(":memory:") {
+            return Ok(PathBuf::new());
+        }
+        let stem = self
+            .path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("hiverouter");
+        let stamp: String = Timestamp::now()
+            .as_str()
+            .chars()
+            .map(|character| {
+                if character.is_ascii_alphanumeric() {
+                    character
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        let mut backup = self
+            .path
+            .with_file_name(format!("{stem}.pre-v{version}-{stamp}.bak"));
+        let mut suffix = 1_u32;
+        while backup.exists() {
+            backup = self
+                .path
+                .with_file_name(format!("{stem}.pre-v{version}-{stamp}-{suffix}.bak"));
+            suffix = suffix.saturating_add(1);
+        }
+        connection.execute(
+            "VACUUM INTO ?1",
+            rusqlite::params![backup.to_string_lossy().to_string()],
+        )?;
+        let verified = Connection::open(&backup)?;
+        let integrity: String =
+            verified.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
+        if integrity != "ok" {
+            return Err(DbError::BackupInvalid(format!(
+                "{}: {integrity}",
+                backup.display()
+            )));
+        }
+        Ok(backup)
     }
 
     /// Rolls back migrations down to (and including) `target` being the highest
@@ -1032,5 +1105,80 @@ mod tests {
             database.tool_turns_for_run(run_id).expect("turns").len(),
             1
         );
+    }
+
+    #[test]
+    fn schema_newer_than_binary_is_refused_without_running_migrations() {
+        let temp = tempfile::tempdir().expect("temp");
+        let path = temp.path().join("newer.db");
+        let database = Database::open(&path).expect("open");
+        database.migrate().expect("initial migrate");
+        database
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (12, 'future', ?1)",
+                    rusqlite::params![Timestamp::now().as_str()],
+                )
+            })
+            .expect("insert future version");
+        let before = database.applied_migrations().expect("before");
+        let error = database.migrate().expect_err("newer schema must refuse");
+        assert!(matches!(
+            error,
+            DbError::SchemaNewer {
+                current: 12,
+                latest: 11
+            }
+        ));
+        assert_eq!(database.applied_migrations().expect("after"), before);
+        assert_eq!(database.schema_version().expect("version"), 12);
+    }
+
+    #[test]
+    fn pending_migration_writes_a_verified_backup() {
+        let temp = tempfile::tempdir().expect("temp");
+        let path = temp.path().join("backup.db");
+        let database = Database::open(&path).expect("open");
+        database
+            .with_connection(|connection| {
+                connection.execute_batch(
+                    "CREATE TABLE schema_migrations (
+                        version    INTEGER PRIMARY KEY,
+                        name       TEXT NOT NULL,
+                        applied_at TEXT NOT NULL
+                    );",
+                )?;
+                for migration in MIGRATIONS.iter().take(10) {
+                    connection.execute_batch(migration.up)?;
+                    connection.execute(
+                        "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?1, ?2, ?3)",
+                        rusqlite::params![
+                            migration.version,
+                            migration.name,
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                }
+                Ok(())
+            })
+            .expect("seed v10 schema");
+        database.migrate().expect("upgrade to 11");
+        let backups: Vec<PathBuf> = std::fs::read_dir(temp.path())
+            .expect("dir")
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.contains(".pre-v10-") && name.ends_with(".bak"))
+            })
+            .collect();
+        assert_eq!(backups.len(), 1, "one pre-v10 backup must be written");
+        let backup = Connection::open(&backups[0]).expect("open backup");
+        let integrity: String = backup
+            .query_row("PRAGMA integrity_check", [], |row| row.get(0))
+            .expect("integrity");
+        assert_eq!(integrity, "ok");
     }
 }

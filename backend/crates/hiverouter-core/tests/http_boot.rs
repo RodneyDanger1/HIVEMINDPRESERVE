@@ -90,11 +90,15 @@ async fn http_json(
     method: &str,
     path: &str,
     body: Option<&str>,
+    token: Option<&str>,
 ) -> (u16, String) {
     let mut stream = TcpStream::connect(addr).await.expect("connect");
     let body = body.unwrap_or_default();
+    let auth = token
+        .map(|token| format!("Authorization: Bearer {token}\r\n"))
+        .unwrap_or_default();
     let request = format!(
-        "{method} {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\nAccept: application/json\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+        "{method} {path} HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\nAccept: application/json\r\n{auth}Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
         body.len()
     );
     stream.write_all(request.as_bytes()).await.expect("write request");
@@ -113,6 +117,44 @@ async fn http_json(
         .unwrap_or_default()
         .to_owned();
     (status, body)
+}
+
+#[tokio::test]
+async fn mutations_require_session_token() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let profile = serde_json::json!({
+        "id": "unauth-writer",
+        "display_name": "Unauth Writer",
+        "tier": "worker",
+        "template_id": "content-writer",
+        "allowed_tool_ids": ["file_read", "ask_parent", "finish"],
+        "output_schema_id": null,
+        "refusal_policy": "strict",
+        "max_children": 1,
+        "max_depth": 1
+    });
+    let body = serde_json::json!({ "profile": profile }).to_string();
+    let (status, response) = http_json(
+        server.addr,
+        "POST",
+        "/api/agents/profiles/import",
+        Some(&body),
+        None,
+    )
+    .await;
+    assert_eq!(status, 401, "mutation without token: {response}");
+    assert!(response.contains("E_TOKEN_INVALID"), "{response}");
+    let (_, list) = http_get(server.addr, "/api/agents/profiles").await;
+    let value: Value = serde_json::from_str(&list).expect("profiles JSON");
+    assert!(
+        !value["profiles"]
+            .as_array()
+            .expect("profiles")
+            .iter()
+            .any(|profile| profile["id"] == "unauth-writer"),
+        "unauthenticated import must not persist"
+    );
 }
 
 #[tokio::test]
@@ -135,6 +177,7 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
         "POST",
         "/api/agents/profiles/import",
         Some(&serde_json::json!({ "profile": profile }).to_string()),
+        Some(server.state.session.token()),
     )
     .await;
     assert_eq!(status, 200, "profile import: {body}");
@@ -174,6 +217,7 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
         "DELETE",
         "/api/agents/profiles/custom-writer",
         None,
+        Some(server.state.session.token()),
     )
     .await;
     assert_eq!(status, 200, "profile delete: {body}");
@@ -204,6 +248,7 @@ async fn agent_profiles_import_refuses_unknown_template() {
         "POST",
         "/api/agents/profiles/import",
         Some(&serde_json::json!({ "profile": profile }).to_string()),
+        Some(server.state.session.token()),
     )
     .await;
     assert_eq!(status, 400, "unknown template must refuse: {body}");
@@ -542,8 +587,9 @@ async fn agent_memory_route_lists_and_clears_role_memory() {
 
     let mut stream = TcpStream::connect(server.addr).await.expect("connect");
     let request = format!(
-        "DELETE /api/agents/memory/content-writer HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
-        server.addr
+        "DELETE /api/agents/memory/content-writer HTTP/1.1\r\nHost: {}\r\nAuthorization: Bearer {}\r\nConnection: close\r\n\r\n",
+        server.addr,
+        server.state.session.token()
     );
     stream.write_all(request.as_bytes()).await.expect("delete");
     let mut raw = Vec::new();

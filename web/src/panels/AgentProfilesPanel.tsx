@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
 interface AgentProfileRow {
@@ -40,6 +41,7 @@ const EXAMPLE_PROFILE = `{
 }`;
 
 export function AgentProfilesPanel() {
+  const storeApi = useUiStoreApi();
   const [status, setStatus] = useState<Status>('loading');
   const [profiles, setProfiles] = useState<readonly AgentProfileRow[]>([]);
   const [importText, setImportText] = useState(EXAMPLE_PROFILE);
@@ -102,9 +104,14 @@ export function AgentProfilesPanel() {
       setImportStatus('Import refused: the text is not valid JSON.');
       return;
     }
+    const token = storeApi.getState().session?.token;
     fetch(`${apiBaseUrl()}/api/agents/profiles/import`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        ...(token ? { 'x-hivemind-token': token } : {}),
+      },
       body: JSON.stringify({ profile: parsed }),
     })
       .then(async (response) => {
@@ -121,7 +128,11 @@ export function AgentProfilesPanel() {
   };
 
   const removeProfile = (profileId: string): void => {
-    fetch(`${apiBaseUrl()}/api/agents/profiles/${encodeURIComponent(profileId)}`, { method: 'DELETE' })
+    const token = storeApi.getState().session?.token;
+    fetch(`${apiBaseUrl()}/api/agents/profiles/${encodeURIComponent(profileId)}`, {
+      method: 'DELETE',
+      headers: token ? { 'x-hivemind-token': token } : {},
+    })
       .then(async (response) => {
         if (!response.ok) {
           const body = (await response.json().catch(() => ({}))) as { code?: string };

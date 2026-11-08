@@ -18,8 +18,8 @@ describe('refusal-code parity', () => {
     expect(frontend).toEqual(backendCodes());
   });
 
-  it('pins the frozen 65-code contract', () => {
-    expect(new Set(KNOWN_REFUSAL_CODES).size).toBe(65);
-    expect(KNOWN_REFUSAL_CODES.length).toBe(65);
+  it('pins the frozen 66-code contract', () => {
+    expect(new Set(KNOWN_REFUSAL_CODES).size).toBe(66);
+    expect(KNOWN_REFUSAL_CODES.length).toBe(66);
   });
 });

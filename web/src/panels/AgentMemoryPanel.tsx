@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { useUiStore } from '../state/context';
+import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
 interface MemoryRow {
@@ -62,6 +62,7 @@ function decodeScopedMemory(body: unknown): readonly ScopedMemoryRow[] {
 }
 
 export function AgentMemoryPanel() {
+  const storeApi = useUiStoreApi();
   const runId = useUiStore((state) => state.run?.id ?? null);
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const [status, setStatus] = useState<Status>('loading');
@@ -177,7 +178,11 @@ export function AgentMemoryPanel() {
       : [...scopedByBranch.entries()].filter(([scopeId]) => scopeId === activeScopeFilter);
 
   const clear = (agentKey: string): void => {
-    fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
+    const token = storeApi.getState().session?.token;
+    fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, {
+      method: 'DELETE',
+      headers: token ? { 'x-hivemind-token': token } : {},
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`clear HTTP ${response.status}`);

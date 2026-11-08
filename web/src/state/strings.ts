@@ -330,6 +330,11 @@ export const STRINGS = {
       howToFix: 'Start the HiveMind server (cargo run --release) and reload the UI.',
       retryable: true,
     },
+    E_DB_SCHEMA_NEWER: {
+      message: 'This database was written by a newer HiveMind build.',
+      howToFix: 'Upgrade HiveMind or restore a backup made by this build; do not delete the database.',
+      retryable: false,
+    },
     E_SCHEMA_INVALID: {
       message: 'A frame did not match the frozen contract.',
       howToFix: 'Reload the UI; if it repeats, record the frame and restart the server.',

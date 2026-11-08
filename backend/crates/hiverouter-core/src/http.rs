@@ -523,6 +523,7 @@ pub struct PromptAssetsHealth {
 #[must_use]
 pub fn build_router(state: Arc<AppState>) -> Router {
     let guard_state = Arc::clone(&state);
+    let auth_state = Arc::clone(&state);
     Router::new()
         .route("/health", get(health))
         .route("/diagnose", get(diagnose))
@@ -551,11 +552,11 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .layer(middleware::from_fn_with_state(guard_state, host_guard))
+        .layer(middleware::from_fn_with_state(auth_state, mutation_auth))
         .with_state(state)
 }
 
 /// Rejects a request whose `Host` header is not this loopback server.
-///
 /// Origin checks do not stop DNS rebinding: a rebinding page can issue a
 /// same-origin request with a hostile `Host`. The Host header is therefore the
 /// server's own identity check, applied before any route runs.
@@ -580,6 +581,47 @@ async fn host_guard(
             .into_response();
     }
     next.run(request).await
+}
+
+/// Requires the per-boot session token on every mutating `/api/*` request.
+///
+/// Read routes stay loopback/Host-gated for now; mutations can change profiles,
+/// memory, approvals, or run state, so they must not be driveable by an
+/// unauthenticated local page or process.
+async fn mutation_auth(
+    State(state): State<Arc<AppState>>,
+    request: Request,
+    next: Next,
+) -> Response {
+    if matches!(request.method().as_str(), "GET" | "HEAD" | "OPTIONS") {
+        return next.run(request).await;
+    }
+    let supplied = request
+        .headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .map(str::trim)
+        .or_else(|| {
+            request
+                .headers()
+                .get("x-hivemind-token")
+                .and_then(|value| value.to_str().ok())
+                .map(str::trim)
+        });
+    if supplied == Some(state.session.token()) {
+        return next.run(request).await;
+    }
+    (
+        StatusCode::UNAUTHORIZED,
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "code": Refusal::TokenInvalid.code(),
+            "message": "this HTTP mutation requires the per-boot HiveMind session token",
+            "how_to_fix": "send Authorization: Bearer <session token> or x-hivemind-token",
+        })),
+    )
+        .into_response()
 }
 
 /// Whether a `Host` header names this bound loopback server.

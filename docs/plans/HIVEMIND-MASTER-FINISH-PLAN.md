@@ -249,3 +249,9 @@ Each migration needs: newer-schema refusal, pre-migration backup + integrity che
 - FigCraft: 13 HiveMind boards are proposed additions; 20 A/B artifacts are watchdog-passed; no built-binary serving proof.
 - Scale: no measurement; do not claim 50-150 active or 300-600.
 - Evidence: only `docs/evidence/gate-8a19d0b5-offline.json` is SHA-bound; no e2e/live evidence at this SHA.
+## P1 safety progress
+
+- DB: newer-schema boot refusal (`E_DB_SCHEMA_NEWER`) and verified pre-migration `VACUUM INTO` backup are implemented with tests; backup/restore CLI and full v10→v11 drill remain.
+- Admission: a keyless submit is refused in `RunEngine::submit_prompt` before any run/user-message/RUN_CREATED row; `ProviderExecutor::key_available` is `Some(false)` only for the unconfigured executor.
+- HTTP: every non-GET `/api/*` route requires `Authorization: Bearer <session token>` or `x-hivemind-token`; UI profile import/delete and memory clear attach it. Reads and `/api/session` hardening remain.
+- Evidence at `31e1fea`: cargo workspace 519 passed / 2 ignored; web typecheck 0; web 189/189; build 0.
