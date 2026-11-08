@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: commit `66aff50` plus the agent-definitions wave. The prior wave commits were `fa4c373`, `679bd6b`, `bb95a44`, `aa15ec9`, `66aff50`. Offline only; no server/UI/provider run.
+Baseline: commit `7ce2716`; prior wave commits `fa4c373`, `679bd6b`, `bb95a44`, `aa15ec9`, `66aff50`, `6e3294c`, `5d8b611`. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -110,7 +110,19 @@ Fixed: dry-run no-side-effect for lifecycle, `--y` alias conflict for viewport, 
 ### Target architecture
 Five planes: control (commands/orchestrator/scheduler/policy/budget), agent-host (actor loop/supervisor/mailbox), state (event log/projections/memory/audit), interop (A2A/MCP/remote transport/devices), experience (UI projections/controls). Existing contract, run state machine, graph, provider gateway, tool/approval/jail, snapshots, and UI are reusable primitives. The run engine becomes one component; it is not the runtime.
 
-## Production completion checklist
+## Offline gate evidence (2026-11-08)
+
+- `cargo test --workspace` with bundled `tools/w64devkit/bin` on PATH: **exit 0**; core suite green including 12 lifecycle, 15 suspension, 12 tool-loop, 13 WebSocket, 5 snapshot/history, 114 tools tests.
+- `npm.cmd run typecheck`: clean. `npm.cmd test`: **189/189 passed**. `npm.cmd run build`: exit 0. FigCraft public assets copied to `web/dist/figcraft`.
+- CLI `node --check`: exit 0.
+- No server/browser/provider call; key absent; no live run.
+
+These are offline unit/build gates, not e2e/live/UI/scale evidence.
+
+## Baseline note
+Current tested baseline: `7ce2716` on top of the root/readiness/memory/CLI/FigCraft wave. The next P0 gate is guarded e2e + one authorized keyless refuse-path run + release packaging/database upgrade drill.
+
+
 
 ### P0 - blocks any completion claim
 - Freeze one SHA and run full backend/web/build/e2e gates; skipped security specs are not passes.
