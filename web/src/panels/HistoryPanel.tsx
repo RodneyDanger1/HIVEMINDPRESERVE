@@ -10,6 +10,7 @@ export function HistoryPanel() {
   const history = useUiStore((state) => state.history);
   const run = useUiStore((state) => state.run);
   const setHistoryRevision = useUiStore((state) => state.setHistoryRevision);
+  const selectHistoryRun = useUiStore((state) => state.selectHistoryRun);
   const exitHistoryReplay = useUiStore((state) => state.exitHistoryReplay);
   const refreshRunSnapshot = useUiStore((state) => state.refreshRunSnapshot);
   const replaying = history.replayGraph !== null;
@@ -19,6 +20,24 @@ export function HistoryPanel() {
   return (
     <aside className="flex h-full w-[300px] shrink-0 flex-col border-r border-hairline bg-panel p-3" aria-label="Committed run history">
       <PanelTitle>{STRINGS.tabs.history}</PanelTitle>
+      {history.runs.length > 1 ? (
+        <label className="mb-2 block">
+          <span className="type-mono-meta block text-meta">Run</span>
+          <select
+            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+            value={run?.id ?? ''}
+            onChange={(event) => {
+              void selectHistoryRun(event.target.value);
+            }}
+          >
+            {history.runs.map((candidate) => (
+              <option key={candidate.runId} value={candidate.runId}>
+                {candidate.runId.slice(0, 8)} · {candidate.status}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       {refreshFailure === null ? null : (
         <div
           role="alert"

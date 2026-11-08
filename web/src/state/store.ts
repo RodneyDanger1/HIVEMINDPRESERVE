@@ -147,6 +147,8 @@ export interface ReplayGraph {
 
 /** Committed-revision cursor for time travel (server history is the authority). */
 export interface HistoryState {
+  /** Known committed runs, newest first (server order). */
+  readonly runs: readonly HistoryRunSummary[];
   /** Latest committed revision number; `-1` when the run has none. */
   readonly latest: number;
   /** Number of committed revisions (clamp target, not `latest + 1`). */
@@ -303,6 +305,8 @@ export interface UiState {
   pinChat(pinned: boolean): Promise<void>;
   insertTemplate(templateId: string): Promise<void>;
   setHistoryRevision(revision: number): Promise<void>;
+  /** Switch the client's viewed run to one of the committed history runs. */
+  selectHistoryRun(runId: string): Promise<void>;
   /** Leave replay and render the live graph again (explicit exit, not just a disabled control). */
   exitHistoryReplay(): void;
   /** Rehydrate run/tasks/history from the committed server snapshot. */
@@ -429,6 +433,7 @@ function initialChatVisible(): boolean {
 
 function initialHistory(): HistoryState {
   return {
+    runs: [],
     latest: -1,
     count: 0,
     revisions: [],
@@ -494,7 +499,7 @@ function toRefusal(error: unknown): Refusal {
   return error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
 }
 
-interface HistoryRunSummary {
+export interface HistoryRunSummary {
   readonly runId: string;
   readonly status: AgentState;
   readonly errorCode: string | null;
@@ -1227,6 +1232,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             graphRev: get().graphRev + 1,
             history: {
               ...history,
+              runs,
               latest,
               count: list.revisions.length,
               revisions: list.revisions,
@@ -2218,6 +2224,75 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           template_id: templateId,
           project_id: get().project.id,
         });
+      },
+
+      async selectHistoryRun(runId: string): Promise<void> {
+        if (get().run?.id === runId) {
+          return;
+        }
+        const summary = get().history.runs.find((candidate) => candidate.runId === runId);
+        if (summary === undefined) {
+          pushRefusal(clientRefusal('E_RUN_NOT_FOUND'));
+          return;
+        }
+        try {
+          const list = decodeHistoryRevisions(
+            await historyFetch(
+              historyRevisionsPath(runId),
+              `GET /api/history/runs/${shortId(runId)}/revisions`,
+            ),
+          );
+          let projection: HistoryStateProjection | null = null;
+          if (list.latest !== null) {
+            projection = decodeHistoryState(
+              await historyFetch(
+                historyStatePath(runId, list.latest),
+                `GET /api/history/runs/${shortId(runId)}/state`,
+              ),
+            );
+          }
+          let transcript: readonly ChatMessage[] = [];
+          try {
+            transcript = decodeHistoryMessages(
+              await historyFetch(
+                historyMessagesPath(runId),
+                `GET /api/history/runs/${shortId(runId)}/messages`,
+              ),
+            );
+          } catch {
+            transcript = [];
+          }
+          set({
+            run: { id: runId, status: summary.status, errorCode: summary.errorCode },
+            tasks: projection?.tasks ?? {},
+            messages: transcript,
+            selectedTaskId: null,
+            history: {
+              ...get().history,
+              latest: list.latest ?? -1,
+              count: list.revisions.length,
+              revisions: list.revisions,
+              selected: Math.max(list.latest ?? 0, 0),
+              replayGraph: null,
+              refreshStatus: 'ok',
+              refreshRefusal: null,
+            },
+            snapshot: {
+              status: projection === null ? 'degraded' : 'ready',
+              source: 'manual',
+              runId,
+              revision: projection?.revision ?? null,
+              revisionCount: list.revisions.length,
+              incomplete: projection === null ? ['no-committed-revision'] : [],
+              refusal: null,
+              attempts: get().snapshot.attempts,
+              updatedAt: Date.now(),
+            },
+            graphRev: get().graphRev + 1,
+          });
+        } catch (error) {
+          pushRefusal(toRefusal(error));
+        }
       },
 
       async setHistoryRevision(revision: number): Promise<void> {
