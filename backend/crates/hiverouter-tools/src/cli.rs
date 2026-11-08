@@ -1146,5 +1146,34 @@ mod tests {
         assert_eq!(parsed["schema"], CLI_SCHEMA);
         assert_eq!(parsed["ok"], false);
     }
+
+    #[test]
+    fn db_backup_command_writes_a_receipt() {
+        let temp = tempfile::tempdir().expect("temp");
+        let db = temp.path().join("hiverouter.db");
+        let saved = temp.path().join("saved.db");
+        let connection = rusqlite::Connection::open(&db).expect("db");
+        connection
+            .execute_batch(
+                "CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL);
+                 INSERT INTO schema_migrations VALUES (11, 'test', 'now');",
+            )
+            .expect("seed");
+        drop(connection);
+        let (code, payload) = dispatch_json(&[
+            "db",
+            "backup",
+            &format!("--db={}", db.display()),
+            &format!("--out={}", saved.display()),
+            "--format=json",
+        ]);
+        assert_eq!(code, EXIT_OK, "{payload}");
+        assert_eq!(payload["data"]["schema_version"], 11);
+        assert!(saved.is_file());
+        assert_eq!(
+            payload["data"]["sha256"].as_str().expect("sha").len(),
+            64
+        );
+    }
 }
 
