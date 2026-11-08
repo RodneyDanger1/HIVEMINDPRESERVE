@@ -390,6 +390,128 @@ Migration {
         ALTER TABLE tasks DROP COLUMN class;
     "#,
 },
+Migration {
+    version: 14,
+    name: "memory_banks",
+    up: r#"
+        CREATE TABLE memory_banks (
+            id             TEXT PRIMARY KEY NOT NULL,
+            kind           TEXT NOT NULL CHECK (kind IN
+                             ('global','project','run','hive','branch','agent_role')),
+            scope_id       TEXT NOT NULL,
+            run_id         TEXT,
+            owner_task_id  TEXT,
+            parent_bank_id TEXT,
+            display_name   TEXT,
+            rev            INTEGER NOT NULL DEFAULT 0 CHECK (rev >= 0),
+            created_at     TEXT NOT NULL,
+            closed_at      TEXT,
+            UNIQUE (kind, scope_id)
+        );
+        CREATE TABLE memory_entries (
+            id             TEXT PRIMARY KEY NOT NULL,
+            bank_id        TEXT NOT NULL,
+            entry_key      TEXT NOT NULL,
+            kind           TEXT NOT NULL CHECK (kind IN
+                             ('observation','summary','fact','decision','constraint',
+                              'preference','artifact_ref','note')),
+            value          TEXT NOT NULL,
+            source_kind    TEXT NOT NULL CHECK (source_kind IN
+                             ('agent_result','engine_summary','operator','tool_output',
+                              'import','migration','a2a_message','parent_snapshot')),
+            source_task_id TEXT,
+            source_run_id  TEXT,
+            trust          TEXT CHECK (trust IN
+                             ('quarantined','unverified','verified','authoritative')),
+            status         TEXT NOT NULL DEFAULT 'active'
+                             CHECK (status IN ('active','superseded','retracted')),
+            created_at     TEXT NOT NULL,
+            updated_at     TEXT NOT NULL,
+            FOREIGN KEY (bank_id) REFERENCES memory_banks(id) ON DELETE CASCADE
+        );
+        CREATE UNIQUE INDEX idx_memory_entries_active
+            ON memory_entries(bank_id, entry_key) WHERE status = 'active';
+        CREATE INDEX idx_memory_banks_run ON memory_banks(run_id);
+        CREATE INDEX idx_memory_banks_kind ON memory_banks(kind);
+        CREATE INDEX idx_memory_entries_bank ON memory_entries(bank_id, created_at);
+
+        INSERT OR IGNORE INTO memory_banks
+            (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+             display_name, rev, created_at, closed_at)
+        VALUES ('bank:global:default', 'global', 'default', NULL, NULL, NULL,
+                'Global', 0, strftime('%Y-%m-%dT%H:%M:%SZ','now'), NULL);
+
+        INSERT OR IGNORE INTO memory_banks
+            (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+             display_name, rev, created_at, closed_at)
+        SELECT 'bank:run:'||m.run_id, 'run', m.run_id, m.run_id, NULL,
+               'bank:global:default', 'Run '||substr(m.run_id,1,8), 0,
+               MIN(m.created_at), NULL
+        FROM agent_memory m
+        WHERE EXISTS (SELECT 1 FROM runs r WHERE r.id = m.run_id)
+        GROUP BY m.run_id;
+
+        INSERT OR IGNORE INTO memory_banks
+            (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+             display_name, rev, created_at, closed_at)
+        SELECT 'bank:agent_role:'||
+               replace(replace(lower(trim(m.agent_key)),'-','_'),' ','_'),
+               'agent_role',
+               replace(replace(lower(trim(m.agent_key)),'-','_'),' ','_'),
+               NULL, NULL, NULL, m.agent_key, 0, MIN(m.created_at), NULL
+        FROM agent_memory m
+        WHERE m.scope_id = 'legacy'
+           OR NOT EXISTS (SELECT 1 FROM tasks t WHERE t.id = m.scope_id)
+        GROUP BY replace(replace(lower(trim(m.agent_key)),'-','_'),' ','_');
+
+        INSERT OR IGNORE INTO memory_banks
+            (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+             display_name, rev, created_at, closed_at)
+        SELECT 'bank:branch:'||t.id, 'branch', t.id, t.run_id, t.id,
+               'bank:run:'||t.run_id, 'Task '||substr(t.id,1,8), 0,
+               MIN(m.created_at), NULL
+        FROM agent_memory m
+        JOIN tasks t ON t.id = m.scope_id
+        GROUP BY t.id;
+
+        INSERT OR IGNORE INTO memory_entries
+            (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
+             source_run_id, trust, status, created_at, updated_at)
+        SELECT 'entry:legacy:'||m.rowid,
+               'bank:agent_role:'||
+               replace(replace(lower(trim(m.agent_key)),'-','_'),' ','_'),
+               'legacy:'||m.scope_id||':'||m.agent_key||':'||m.key,
+               'note', m.value, 'migration', m.task_id, m.run_id,
+               NULL, 'active', m.created_at, m.created_at
+        FROM agent_memory m
+        WHERE m.scope_id = 'legacy'
+           OR NOT EXISTS (SELECT 1 FROM tasks t WHERE t.id = m.scope_id);
+
+        INSERT OR IGNORE INTO memory_entries
+            (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
+             source_run_id, trust, status, created_at, updated_at)
+        SELECT 'entry:run:'||m.rowid, 'bank:run:'||m.run_id,
+               'legacy:run:'||m.agent_key||':'||m.key, 'note', m.value,
+               'migration', m.task_id, m.run_id, NULL, 'active',
+               m.created_at, m.created_at
+        FROM agent_memory m
+        WHERE m.scope_id = 'run'
+          AND EXISTS (SELECT 1 FROM runs r WHERE r.id = m.run_id);
+
+        INSERT OR IGNORE INTO memory_entries
+            (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
+             source_run_id, trust, status, created_at, updated_at)
+        SELECT 'entry:branch:'||m.rowid, 'bank:branch:'||t.id,
+               'legacy:branch:'||m.agent_key||':'||m.key, 'note', m.value,
+               'migration', m.task_id, m.run_id, NULL, 'active',
+               m.created_at, m.created_at
+        FROM agent_memory m JOIN tasks t ON t.id = m.scope_id;
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS memory_entries;
+        DROP TABLE IF EXISTS memory_banks;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -1004,10 +1126,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 13);
-        assert_eq!(database.migrate().expect("second migrate"), 13);
+        assert_eq!(database.migrate().expect("first migrate"), 14);
+        assert_eq!(database.migrate().expect("second migrate"), 14);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 13);
+        assert_eq!(applied.len(), 14);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1044,7 +1166,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 13);
+        assert_eq!(database.migrate().expect("re-migrate"), 14);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1060,7 +1182,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 13);
+        assert_eq!(reopened.schema_version().expect("version"), 14);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1215,7 +1337,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 13);
+        assert_eq!(database.migrate().expect("migrate"), 14);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1250,7 +1372,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 13);
+        assert_eq!(database.migrate().expect("re-migrate"), 14);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1274,7 +1396,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (14, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (15, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1284,12 +1406,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 14,
-                latest: 13
+                current: 15,
+                latest: 14
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 14);
+        assert_eq!(database.schema_version().expect("version"), 15);
     }
 
     #[test]

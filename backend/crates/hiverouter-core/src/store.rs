@@ -34,6 +34,31 @@ pub struct AgentMemoryRecord {
     pub created_at: String,
 }
 
+/// One persisted memory bank row.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MemoryBankRecord {
+    /// Bank id.
+    pub id: String,
+    /// global/project/run/hive/branch/agent_role.
+    pub kind: String,
+    /// Opaque scope id.
+    pub scope_id: String,
+    /// Owning run, when any.
+    pub run_id: Option<String>,
+    /// Owning task, when any.
+    pub owner_task_id: Option<String>,
+    /// Parent bank provenance.
+    pub parent_bank_id: Option<String>,
+    /// Display label.
+    pub display_name: Option<String>,
+    /// Monotonic revision.
+    pub rev: i64,
+    /// Creation time.
+    pub created_at: String,
+    /// Close time, when cleared.
+    pub closed_at: Option<String>,
+}
+
 /// Persisted task identity derived at admission by the v13 task trigger.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskIdentity {
@@ -967,13 +992,106 @@ impl RunStore {
                         Timestamp::now().as_str()
                     ],
                 )?;
+                // Dual-write the bank view. The flat table remains the legacy
+                // read path until the P4 read-set migration lands.
+                let bank_id = if scope_id == "run" || scope_id == "legacy" {
+                    let bank_id = format!("bank:run:{}", run_id);
+                    connection.execute(
+                        "INSERT OR IGNORE INTO memory_banks
+                         (id, kind, scope_id, run_id, parent_bank_id, display_name,
+                          rev, created_at, closed_at)
+                         VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
+                        params![bank_id, run_id.to_string(), format!("Run {run_id}"), Timestamp::now().as_str()],
+                    )?;
+                    bank_id
+                } else {
+                    let run_bank = format!("bank:run:{run_id}");
+                    connection.execute(
+                        "INSERT OR IGNORE INTO memory_banks
+                         (id, kind, scope_id, run_id, parent_bank_id, display_name,
+                          rev, created_at, closed_at)
+                         VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
+                        params![run_bank, run_id.to_string(), format!("Run {run_id}"), Timestamp::now().as_str()],
+                    )?;
+                    let bank_id = format!("bank:branch:{task_id}");
+                    connection.execute(
+                        "INSERT OR IGNORE INTO memory_banks
+                         (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+                          display_name, rev, created_at, closed_at)
+                         VALUES (?1, 'branch', ?2, ?3, ?2, ?4, ?5, 0, ?6, NULL)",
+                        params![
+                            bank_id,
+                            task_id.to_string(),
+                            run_id.to_string(),
+                            run_bank,
+                            format!("Task {task_id}"),
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                    bank_id
+                };
+                connection.execute(
+                    "DELETE FROM memory_entries WHERE bank_id = ?1 AND entry_key = ?2 AND status = 'active'",
+                    params![bank_id, key],
+                )?;
+                connection.execute(
+                    "INSERT INTO memory_entries
+                     (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
+                      source_run_id, trust, status, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, 'observation', ?4, 'agent_result', ?5, ?6,
+                             'unverified', 'active', ?7, ?7)",
+                    params![
+                        format!("entry:{}", Uuid::now_v7()),
+                        bank_id,
+                        key,
+                        value,
+                        task_id.to_string(),
+                        run_id.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
                 Ok(())
             })
             .map_err(map)?;
         Ok(())
     }
 
-    /// Returns the latest durable memories for a role **inside one run**,
+    /// Lists memory banks for one run.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_banks_for_run(&self, run_id: RunId) -> Result<Vec<MemoryBankRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+                            display_name, rev, created_at, closed_at
+                     FROM memory_banks WHERE run_id = ?1
+                     ORDER BY CASE kind WHEN 'run' THEN 0 WHEN 'hive' THEN 1
+                                        WHEN 'branch' THEN 2 ELSE 3 END, id",
+                )?;
+                let rows = statement.query_map(params![run_id.to_string()], |row| {
+                    Ok(MemoryBankRecord {
+                        id: row.get(0)?,
+                        kind: row.get(1)?,
+                        scope_id: row.get(2)?,
+                        run_id: row.get(3)?,
+                        owner_task_id: row.get(4)?,
+                        parent_bank_id: row.get(5)?,
+                        display_name: row.get(6)?,
+                        rev: row.get(7)?,
+                        created_at: row.get(8)?,
+                        closed_at: row.get(9)?,
+                    })
+                })?;
+                let mut banks = Vec::new();
+                for row in rows {
+                    banks.push(row?);
+                }
+                Ok(banks)
+            })
+            .map_err(map)
+    }
     /// newest first. This is the recall path used by a running task: facts from
     /// another run or another hive must not be injected.
     ///
@@ -1681,6 +1799,23 @@ mod tests {
         assert_eq!(identity.rank, 4);
         assert_eq!(identity.profile_id, "subagent");
         assert!(store.task_identity(unknown.id).expect("unknown").is_none());
+    }
+
+    #[test]
+    fn agent_memory_dual_writes_branch_bank() {
+        let store = store();
+        let run = store
+            .create_run("p", "banks", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "note", "banked", run.id, task, &task.to_string())
+            .expect("memory");
+        let banks = store.memory_banks_for_run(run.id).expect("banks");
+        assert!(banks.iter().any(|bank| bank.kind == "run"));
+        assert!(banks
+            .iter()
+            .any(|bank| bank.kind == "branch" && bank.owner_task_id.as_deref() == Some(&task.to_string())));
     }
 
     #[test]

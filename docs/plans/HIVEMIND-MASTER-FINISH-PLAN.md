@@ -298,3 +298,8 @@ Not delivered and must not be claimed:
 - `role_class` and `class_may_spawn` now enforce the persisted class matrix in `spawn_sub_hive`: a Subagent parent cannot spawn a Subagent, Agent can spawn only Subagent, Super can spawn Agent/Subagent, Hyper can spawn Super/Agent/Subagent.
 - The check reads `tasks.class` first and falls back to the role only for pre-v13/unresolved rows; unknown roles are not laundered into Agent.
 - New unit test covers the matrix and unknown-role rejection; plan insertion and TEMPLATE_INSERT now apply the same class matrix against the real parent.
+### P4 memory-bank schema (partial)
+
+- v14 adds `memory_banks` and `memory_entries`, backs up/backfills the flat `agent_memory` rows into global/run/role/branch banks as `note` rows with `trust NULL` and `source_kind=migration`.
+- `record_agent_memory_scoped` now dual-writes a branch/run bank entry (`observation`, `unverified`) alongside the legacy flat row; `memory_banks_for_run` reads banks.
+- Not delivered: journal/context snapshots, trust promotion, read-set isolation, root digest, scoped clear, engine reads from banks.
