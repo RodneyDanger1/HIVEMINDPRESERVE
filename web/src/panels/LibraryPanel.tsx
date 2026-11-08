@@ -1,7 +1,7 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
-import { DOT_STATES, visualFor } from '../state/agentState';
+import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
 import { StateDot } from '../flow/nodes';
 import { LAYOUT } from '../tokens/tokens';
 
@@ -18,6 +18,16 @@ const TABS = [
   { id: 'routing' as const, label: STRINGS.tabs.routing },
   { id: 'history' as const, label: STRINGS.tabs.history },
 ];
+
+/** The backend does not send labels; show a short id rather than an opaque
+ * repeated "Task …" chip when the store's fallback label is kind + id. */
+function agentChipLabel(task: { readonly id: string; readonly label: string; readonly kind: string }): string {
+  const kindLabel = NODE_KIND_LABELS[task.kind as keyof typeof NODE_KIND_LABELS];
+  const generated =
+    task.label.startsWith('Agent ') ||
+    (kindLabel !== undefined && task.label.startsWith(`${kindLabel} `));
+  return generated ? `#${task.id.slice(-8)}` : task.label;
+}
 
 export function LibraryPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -109,7 +119,9 @@ export function LibraryPanel() {
                   >
                     <StateDot state={task.state} size={9} />
                   </span>
-                  <span className="type-mono-meta block w-12 truncate text-[8px] text-ink-700">{task.label}</span>
+                  <span className="type-mono-meta block w-12 truncate text-[8px] text-ink-700">
+                    {agentChipLabel(task)}
+                  </span>
                 </button>
               </li>
             ))}

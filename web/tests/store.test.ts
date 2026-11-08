@@ -178,7 +178,8 @@ describe('UI store command lifecycle', () => {
     api.emit({ name: 'NODE_SPAWN', payload: { task_id: 't-1', state: 'running' } });
     const task = store.getState().tasks['t-1'];
     expect(task.kind).toBe('worker');
-    expect(task.label).toContain('Task');
+    expect(task.label).toMatch(/^Agent\s/);
+    expect(task.label).toContain('t-1');
     api.emit({
       name: 'NODE_SPAWN',
       payload: { task_id: 't-2', state: 'running', kind: 'superagent', label: 'Backend', parent_task_id: null },

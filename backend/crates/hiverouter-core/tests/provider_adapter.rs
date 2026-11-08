@@ -1,11 +1,11 @@
-﻿//! Adapter run-path matrix without a live provider: a local wiremock server
+//! Adapter run-path matrix without a live provider: a local wiremock server
 //! proves valid plan parsing and the named error mappings.
 
 use std::sync::Arc;
 
-use hiverouter_contract::{Refusal, RunId};
+use hiverouter_contract::{AgentState, Refusal, RunId, TaskId};
 use hiverouter_core::config::ProviderSettings;
-use hiverouter_core::execution::ProviderExecutor;
+use hiverouter_core::execution::{DeltaSink, ProviderExecutor};
 use hiverouter_core::provider_executor::ProviderExecutorAdapter;
 use hiverouter_provider::client::{ClientConfig, DeepSeekClient};
 use hiverouter_provider::secret::ApiKey;
@@ -74,6 +74,49 @@ async fn malformed_plan_is_a_named_schema_refusal() {
         .await
         .expect_err("malformed plan");
     assert_eq!(error, Refusal::SchemaInvalid);
+}
+
+#[tokio::test]
+async fn leaf_execute_advertises_tools_on_the_first_request() {
+    let server = MockServer::start().await;
+    let body = concat!(
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":null}]}\n\n",
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":2,\"total_tokens\":12,\"prompt_cache_hit_tokens\":0,\"prompt_cache_miss_tokens\":10}}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(body),
+        )
+        .mount(&server)
+        .await;
+
+    let task = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: RunId::new(),
+        parent_task_id: None,
+        role: "worker".to_owned(),
+        depth: 1,
+        spawn_seq: 1,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    let cancel = CancellationToken::new();
+    let sink: DeltaSink = Arc::new(|_| {});
+    adapter(&server)
+        .execute(RunId::new(), &task, "read a file", &cancel, &sink)
+        .await
+        .expect("leaf execute");
+
+    let requests = server.received_requests().await.expect("captured requests");
+    let first = requests.first().expect("one request");
+    let body: serde_json::Value = serde_json::from_slice(&first.body).expect("request JSON");
+    let tools = body.get("tools").and_then(|value| value.as_array()).expect("tools array");
+    assert!(!tools.is_empty(), "the first leaf request must advertise tool specs");
+    assert_eq!(body.get("tool_choice"), Some(&json!("auto")));
 }
 
 #[tokio::test]

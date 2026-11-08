@@ -25,7 +25,7 @@ use crate::tool_loop;
 const PLANNER_SYSTEM: &str = "You are the HiveMind planner. Return ONE JSON object only, \
 no markdown fences, no prose. Schema: {\"nodes\":[{\"id\":\"n1\",\"role\":\"worker\",\
 \"deps\":[],\"depth\":1}]}. Use short string ids; every dep must be the id of another node; \
-depth must be >= 1 and <= 3. Produce the smallest useful DAG (1..=40 nodes).";
+depth must be >= 1 and <= 3. Produce the smallest useful DAG (1..=8 nodes).";
 
 const TASK_SYSTEM: &str = "You are a HiveMind agent. Answer the assigned task directly and \
 concisely. Do not claim tool calls or side effects you did not perform. If the task cannot be \
@@ -76,7 +76,7 @@ impl ProviderExecutorAdapter {
         max_output_tokens: u32,
     ) -> Result<Completion, Refusal> {
         let estimate = CallEstimate {
-            prompt_tokens: None,
+            prompt_tokens: estimate_prompt_tokens(request),
             max_output_tokens: Some(u64::from(max_output_tokens)),
         };
         let mut budgets = self.budgets.lock().await;
@@ -112,7 +112,7 @@ impl ProviderExecutorAdapter {
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         let estimate = CallEstimate {
-            prompt_tokens: None,
+            prompt_tokens: estimate_prompt_tokens(request),
             max_output_tokens: Some(u64::from(max_output_tokens)),
         };
         let mut budgets = self.budgets.lock().await;
@@ -227,6 +227,16 @@ impl ProviderExecutorAdapter {
             );
             return Err(Refusal::ProviderIncomplete);
         }
+        if let Some(reason) = finish_reason.as_deref() {
+            if !matches!(reason, "stop" | "tool_calls") {
+                tracing::warn!(
+                    finish_reason = reason,
+                    run_id = %run_id,
+                    "provider ended the reply with a non-success finish reason"
+                );
+                return Err(Refusal::ProviderIncomplete);
+            }
+        }
         let tool_calls = assembler.finish().map_err(|error| {
             tracing::warn!(
                 code = error.code(),
@@ -293,7 +303,9 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
-        let request = ChatRequest::new(
+        let registry = ToolRegistry::standard();
+        let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
+        let mut request = ChatRequest::new(
             self.settings.model,
             vec![
                 ChatMessage::system(TASK_SYSTEM),
@@ -302,6 +314,12 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         )
         .with_thinking(self.settings.leaf_thinking)
         .with_max_tokens(self.settings.leaf_max_tokens);
+        // A compliant provider only returns tool calls when the first request
+        // advertises the tool specs. Without this the continuation loop is
+        // unreachable in production even though it exists and is tested.
+        if !tools.is_empty() {
+            request = request.with_tools(tools).with_tool_choice(ToolChoice::Auto);
+        }
         self.stream_reply(
             run_id,
             &request,
@@ -359,11 +377,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                     tool_calls,
                 )
             };
-            let assistant = if turn.reasoning.is_empty() {
-                assistant
-            } else {
-                assistant.with_reasoning_content(turn.reasoning.clone())
-            };
+            let assistant = assistant.with_reasoning_content(turn.reasoning.clone());
             messages.push(assistant);
             for (_, execution) in &turn.results {
                 messages.push(ChatMessage::tool_result(
@@ -397,6 +411,14 @@ impl ProviderExecutor for ProviderExecutorAdapter {
     }
 }
 
+fn estimate_prompt_tokens(request: &ChatRequest) -> Option<u64> {
+    // Local pre-send guard only. The provider's reported usage is authoritative
+    // for accounting; this estimate makes the 400K combined-token budget able to
+    // fire before a call rather than silently skipping it.
+    let bytes = serde_json::to_vec(request).ok()?;
+    Some(((bytes.len() as u64) / 4).max(1))
+}
+
 fn task_prompt(prompt: &str, task: &TaskRecord) -> String {
     format!(
         "Original user prompt:\n{prompt}\n\nAssigned role: {}\nSpawn depth: {}\n\
@@ -406,6 +428,21 @@ fn task_prompt(prompt: &str, task: &TaskRecord) -> String {
 }
 
 fn message_text(completion: &Completion) -> Result<String, Refusal> {
+    let finish = completion
+        .response
+        .choices
+        .first()
+        .and_then(|choice| choice.finish_reason.clone());
+    if let Some(reason) = finish.as_deref() {
+        if !matches!(reason, "stop" | "tool_calls") {
+            tracing::warn!(
+                response_id = %completion.response.id,
+                finish_reason = reason,
+                "provider ended a non-streaming reply without a success finish reason"
+            );
+            return Err(Refusal::ProviderIncomplete);
+        }
+    }
     if let Some(content) = completion
         .response
         .first_message()
@@ -414,11 +451,6 @@ fn message_text(completion: &Completion) -> Result<String, Refusal> {
     {
         return Ok(content);
     }
-    let finish = completion
-        .response
-        .choices
-        .first()
-        .and_then(|choice| choice.finish_reason.clone());
     let has_tool_calls = completion
         .response
         .first_message()

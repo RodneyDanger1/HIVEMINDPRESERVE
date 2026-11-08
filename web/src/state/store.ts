@@ -17,6 +17,7 @@ import type {
   ToolOutcome,
 } from '../api/contract';
 import {
+  NODE_KIND_LABELS,
   isAgentState,
   isRunActive,
   isTerminal,
@@ -321,6 +322,14 @@ export interface UiState {
 
 const HEALTHY_GREEN: readonly AgentState[] = ['healthy', 'completed'];
 
+/** The event producer does not send a display label. UUIDv7 prefixes are the
+ * same timestamp bucket across a run, so use the random tail and do not assert a
+ * kind when the frame omitted `kind`. */
+function fallbackTaskLabel(kind: NodeKindLabel | null, id: string): string {
+  const suffix = id.length > 8 ? id.slice(-8) : id;
+  return kind === null ? `Agent ${suffix}` : `${NODE_KIND_LABELS[kind]} ${suffix}`;
+}
+
 function baseProject(): { id: string; name: string; owner: string } {
   const key = 'hivemind.project-id';
   let id: string | null = null;
@@ -605,7 +614,7 @@ function recordsFromSnapshotGraph(graph: unknown): Readonly<Record<string, TaskR
       parentId: node.parentId !== null && ids.has(node.parentId) ? node.parentId : null,
       // `GraphSnapshot::TaskNode` carries no kind/label/progress: none is invented.
       kind: 'worker',
-      label: `Task ${shortId(node.id)}`,
+      label: fallbackTaskLabel(null, node.id),
       state: node.state,
       progress: null,
       errorCode: null,
@@ -1382,6 +1391,13 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               errorCode: event.payload.error_code ?? null,
             },
             streamingRunId: isTerminal(event.payload.status) ? null : get().streamingRunId,
+            messages: isTerminal(event.payload.status)
+              ? get().messages.map((message) =>
+                  message.streaming && message.runId === event.payload.run_id
+                    ? { ...message, streaming: false }
+                    : message,
+                )
+              : get().messages,
             graphRev: get().graphRev + 1,
           });
           if (isTerminal(event.payload.status)) {
@@ -1445,7 +1461,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             id: payload.task_id,
             parentId: payloadParent ?? intended?.newParentId ?? existing?.parentId ?? null,
             kind,
-            label: payload.label ?? existing?.label ?? `Task ${shortId(payload.task_id)}`,
+            label: payload.label ?? existing?.label ?? fallbackTaskLabel(payload.kind ?? null, payload.task_id),
             state: payload.state,
             progress:
               payload.progress !== null && payload.progress !== undefined

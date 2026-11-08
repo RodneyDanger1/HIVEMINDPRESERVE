@@ -45,8 +45,9 @@ pub use client::{
     parse_sse_line, ClientConfig, Completion, DeepSeekClient, SseLine, StreamEvent, StreamHandle,
 };
 pub use dto::{
-    ChatMessage, ChatRequest, ChatResponse, FunctionDefinition, Model, ReasoningEffort, Role,
-    Thinking, ToolChoice, ToolSpec, CHAT_COMPLETIONS_PATH, DEFAULT_BASE_URL, MAX_OUTPUT_TOKENS,
+    BalanceInfo, BalanceResponse, ChatMessage, ChatRequest, ChatResponse, FunctionDefinition,
+    Model, ModelInfo, ModelsResponse, ReasoningEffort, Role, Thinking, ToolChoice, ToolSpec,
+    CHAT_COMPLETIONS_PATH, DEFAULT_BASE_URL, MAX_OUTPUT_TOKENS,
 };
 pub use error::ProviderError;
 pub use pricing::{peak_at_unix, Peak, PricingTable};

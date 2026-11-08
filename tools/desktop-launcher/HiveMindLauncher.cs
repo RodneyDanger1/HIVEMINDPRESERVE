@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -15,6 +17,7 @@ namespace HiveMindLauncher
         private const string DefaultRoot = @"C:\Users\Riley\Desktop\hiverouter-v1";
         private const string Edge = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
         private const string Chrome = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+        private const string KeyEntropy = "HiveMind.ProviderKey.v1";
 
         [STAThread]
         private static void Main()
@@ -61,6 +64,7 @@ namespace HiveMindLauncher
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     };
+                    ApplyProviderKey(start);
                     serverProcess = Process.Start(start);
                     if (serverProcess == null || !WaitForHealth(port, 60000))
                     {
@@ -116,9 +120,47 @@ namespace HiveMindLauncher
             }
         }
 
-        private static string ResolveServer()
+        /// <summary>
+        /// Loads the provider key from a DPAPI-encrypted per-user file and
+        /// injects it into the server child's environment. The key is never
+        /// written to source, a command line, a log, or stdout/stderr.
+        /// </summary>
+        private static void ApplyProviderKey(ProcessStartInfo start)
         {
-            string besideLauncher = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hiverouter.exe");
+            var key = LoadProviderKey();
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                start.EnvironmentVariables["DEEPSEEK_API_KEY"] = key;
+            }
+        }
+
+        private static string LoadProviderKey()
+        {
+            try
+            {
+                var data = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "HiveMind");
+                var file = Path.Combine(data, "provider.key");
+                if (File.Exists(file))
+                {
+                    var encrypted = File.ReadAllBytes(file);
+                    var plain = ProtectedData.Unprotect(
+                        encrypted,
+                        Encoding.UTF8.GetBytes(KeyEntropy),
+                        DataProtectionScope.CurrentUser);
+                    return Encoding.UTF8.GetString(plain).Trim();
+                }
+            }
+            catch
+            {
+                // Fall through to the environment fallback; never print key material.
+            }
+            return Environment.GetEnvironmentVariable("DEEPSEEK_API_KEY") ?? string.Empty;
+        }
+
+        private static string ResolveServer()
+        {            string besideLauncher = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hiverouter.exe");
             if (File.Exists(besideLauncher))
             {
                 return besideLauncher;

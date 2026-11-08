@@ -169,7 +169,7 @@ async fn malformed_json_is_a_named_refusal() {
 }
 
 #[tokio::test]
-async fn undocumented_status_is_refused_by_name() {
+async fn transient_500_is_retried_then_refused_by_name() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/chat/completions"))
@@ -179,8 +179,9 @@ async fn undocumented_status_is_refused_by_name() {
 
     let client = client_for(&server);
     let error = client.complete(&request()).await.expect_err("500");
-    assert_eq!(error.code(), "E_PROVIDER_INVALID_RESPONSE");
+    assert_eq!(error.code(), "E_PROVIDER_TIMEOUT");
     assert_eq!(error.http_status(), Some(500));
+    assert!(error.retryable(), "transient provider 5xx is retryable");
 }
 
 #[tokio::test]

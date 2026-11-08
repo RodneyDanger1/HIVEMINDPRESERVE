@@ -29,7 +29,8 @@ use crate::budget::{
     RunBudget,
 };
 use crate::dto::{
-    ChatRequest, ChatResponse, Delta, StreamChunk, CHAT_COMPLETIONS_PATH, DEFAULT_BASE_URL,
+    BalanceResponse, ChatRequest, ChatResponse, Delta, ModelsResponse, StreamChunk,
+    CHAT_COMPLETIONS_PATH, DEFAULT_BASE_URL,
 };
 use crate::error::ProviderError;
 use crate::secret::ApiKey;
@@ -257,6 +258,60 @@ impl DeepSeekClient {
         &self.config.base_url
     }
 
+    /// Reads the documented model catalogue (`GET /models`).
+    ///
+    /// # Errors
+    /// Named [`ProviderError`] for auth, rate limit, transport or malformed
+    /// response. The key is never included in the error.
+    pub async fn list_models(&self) -> Result<ModelsResponse, ProviderError> {
+        self.account_get::<ModelsResponse>("/models").await
+    }
+
+    /// Reads the documented account balance (`GET /user/balance`).
+    ///
+    /// # Errors
+    /// Named [`ProviderError`] for auth, rate limit, transport or malformed
+    /// response. The key is never included in the error.
+    pub async fn balance(&self) -> Result<BalanceResponse, ProviderError> {
+        self.account_get::<BalanceResponse>("/user/balance").await
+    }
+
+    async fn account_get<T>(&self, path: &str) -> Result<T, ProviderError>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let url = format!("{}{path}", self.config.base_url.trim_end_matches('/'));
+        let bearer = self.bearer_header()?;
+        let response = self
+            .http
+            .get(url)
+            .header(AUTHORIZATION, bearer)
+            .header(ACCEPT, "application/json")
+            .send()
+            .await
+            .map_err(|error| {
+                map_transport_error(&error, self.config.request_timeout, "reading account metadata")
+            })?;
+        let response = self.classify_status(response)?;
+        let status = response.status().as_u16();
+        let body = response.text().await.map_err(|error| {
+            map_transport_error(&error, self.config.request_timeout, "reading account metadata body")
+        })?;
+        serde_json::from_str(&body).map_err(|error| {
+            ProviderError::new(
+                Refusal::ProviderInvalidResponse,
+                format!(
+                    "account metadata body is not the documented shape \
+                     (json error line {} column {}; body bytes {})",
+                    error.line(),
+                    error.column(),
+                    body.len()
+                ),
+            )
+            .with_status(status)
+        })
+    }
+
     /// The documented model ids this client may call.
     #[must_use]
     pub fn model_ids(&self) -> Vec<&'static str> {
@@ -457,6 +512,10 @@ impl DeepSeekClient {
             429 => ProviderError::new(
                 Refusal::ProviderRateLimit,
                 format!("the provider rate-limited the request (HTTP {status})"),
+            ),
+            500 | 502 | 503 | 504 => ProviderError::new(
+                Refusal::ProviderTimeout,
+                format!("the provider returned a transient HTTP {status}; retry is allowed"),
             ),
             _ => ProviderError::new(
                 Refusal::ProviderInvalidResponse,

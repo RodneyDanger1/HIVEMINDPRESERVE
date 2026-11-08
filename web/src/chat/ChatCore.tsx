@@ -83,8 +83,10 @@ export function ChatCore() {
   const setChatVisible = useUiStore((state) => state.setChatVisible);
   const streamingRunId = useUiStore((state) => state.streamingRunId);
   const runStatus = useUiStore((state) => state.run?.status ?? null);
+  const cancelRun = useUiStore((state) => state.cancelRun);
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
+  const toolActivity = useUiStore((state) => state.toolActivity);
   const runRefusal = runErrorCode === null ? null : clientRefusal(runErrorCode);
   const reduced = useAppReducedMotion();
   const store = useUiStoreApi();
@@ -269,6 +271,41 @@ export function ChatCore() {
               </article>
             ))
           )}
+          {toolActivity.length > 0 ? (
+            <section
+              aria-label="Tool activity in chat"
+              className="mt-2 rounded-[8px] border border-hairline bg-panel px-2 py-1.5"
+            >
+              <div className="type-mono-meta flex items-center justify-between text-[8px] text-meta">
+                <span>ACTIONS</span>
+                <span>{toolActivity.length}</span>
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {[...toolActivity]
+                  .sort((a, b) => a.turn - b.turn || a.toolCallId.localeCompare(b.toolCallId))
+                  .slice(-4)
+                  .map((entry) => (
+                    <li key={entry.toolCallId} className="type-mono-meta flex items-center gap-1.5 text-[9px]">
+                      <span className="text-ink-800">{entry.tool}</span>
+                      <span
+                        className={
+                          entry.outcome === 'ok'
+                            ? 'text-verify'
+                            : entry.outcome === 'pending'
+                              ? 'text-meta'
+                              : 'text-signal'
+                        }
+                      >
+                        {entry.outcome}
+                      </span>
+                      {entry.text === undefined || entry.text.length === 0 ? null : (
+                        <span className="min-w-0 flex-1 truncate text-meta">{entry.text}</span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ) : null}
           {streamingRunId ? (
             <div className="type-mono-meta flex items-center gap-2 text-meta" role="status">
               {messages.some((message) => message.streaming && message.text.length > 0) ? null : (
@@ -299,6 +336,19 @@ export function ChatCore() {
             rows={1}
             disabled={connection !== 'open' || replaying}
           />
+          <button
+            type="button"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Stop the active run"
+            disabled={connection !== 'open' || replaying || (streamingRunId === null && runStatus !== 'running')}
+            onClick={() => {
+              void cancelRun();
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+              <rect x="2.5" y="2.5" width="7" height="7" rx="1" fill="currentColor" />
+            </svg>
+          </button>
           <button
             type="submit"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-honey-300 text-ink-900 hover:bg-honey-400 disabled:cursor-not-allowed disabled:opacity-50"

@@ -48,7 +48,7 @@ if (-not (Test-Path $csc)) {
     throw "csc.exe not found at $csc"
 }
 $launcherExe = Join-Path $launcherDir 'HiveMind.exe'
-& $csc /nologo /target:winexe /optimize+ /out:$launcherExe /r:System.Windows.Forms.dll (Join-Path $launcherDir 'HiveMindLauncher.cs')
+& $csc /nologo /target:winexe /optimize+ /out:$launcherExe /r:System.Windows.Forms.dll /r:System.Security.dll (Join-Path $launcherDir 'HiveMindLauncher.cs')
 if ($LASTEXITCODE -ne 0) {
     throw "launcher compile failed: $LASTEXITCODE"
 }
@@ -71,6 +71,13 @@ waits for /health, then opens the HiveMind UI in an Edge WebView2 app window.
 
 Data and the WebView profile live in:
   %LOCALAPPDATA%\HiveMind
+
+The DeepSeek provider key is stored encrypted (Windows DPAPI, current user) at:
+  %LOCALAPPDATA%\HiveMind\provider.key
+The launcher decrypts it and injects DEEPSEEK_API_KEY into the server child only.
+Create or rotate it with:
+  powershell -ExecutionPolicy Bypass -File tools\set-provider-key.ps1
+It is never written into this folder, source, command lines, or logs.
 
 The launcher keeps the server windowless. Closing the app window stops the
 server process it owns. If a compatible HiveMind server is already running on

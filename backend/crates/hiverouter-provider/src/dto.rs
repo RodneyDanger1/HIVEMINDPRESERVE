@@ -877,3 +877,84 @@ mod tests {
         );
     }
 }
+
+/// `GET /models` response (documented account surface).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModelsResponse {
+    /// Always `list`.
+    pub object: String,
+    /// Available model offerings.
+    pub data: Vec<ModelInfo>,
+}
+
+/// One model offering from `GET /models`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModelInfo {
+    /// Wire model id.
+    pub id: String,
+    /// Object type, always `model`.
+    pub object: String,
+    /// Owner organization.
+    #[serde(default)]
+    pub owned_by: String,
+    /// Display name, when reported.
+    #[serde(default)]
+    pub name: Option<String>,
+    /// Total context capacity, when reported.
+    #[serde(default)]
+    pub context_window: Option<u64>,
+    /// Maximum output tokens, when reported.
+    #[serde(default)]
+    pub max_output_tokens: Option<u64>,
+}
+
+/// `GET /user/balance` response (documented account surface).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BalanceResponse {
+    /// Whether the account can make calls.
+    pub is_available: bool,
+    /// One row per currency.
+    pub balance_infos: Vec<BalanceInfo>,
+}
+
+/// One currency balance row.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BalanceInfo {
+    /// Currency code (`USD`/`CNY`).
+    pub currency: String,
+    /// Total available balance as a decimal string.
+    pub total_balance: String,
+    /// Unexpired granted balance.
+    #[serde(default)]
+    pub granted_balance: String,
+    /// Topped-up balance.
+    #[serde(default)]
+    pub topped_up_balance: String,
+}
+
+#[cfg(test)]
+mod account_dto_tests {
+    use super::*;
+
+    #[test]
+    fn models_response_keeps_documented_metadata() {
+        let parsed: ModelsResponse = serde_json::from_str(
+            r#"{"object":"list","data":[{"id":"deepseek-flash","object":"model","owned_by":"deepseek","name":"DeepSeek-V4.1-Flash","context_window":1048576,"max_output_tokens":393216}]}"#,
+        )
+        .expect("documented models shape");
+        assert_eq!(parsed.object, "list");
+        assert_eq!(parsed.data[0].id, "deepseek-flash");
+        assert_eq!(parsed.data[0].context_window, Some(1_048_576));
+        assert_eq!(parsed.data[0].max_output_tokens, Some(393_216));
+    }
+
+    #[test]
+    fn balance_response_keeps_decimal_strings() {
+        let parsed: BalanceResponse = serde_json::from_str(
+            r#"{"is_available":true,"balance_infos":[{"currency":"USD","total_balance":"9.68","granted_balance":"0.00","topped_up_balance":"9.68"}]}"#,
+        )
+        .expect("documented balance shape");
+        assert!(parsed.is_available);
+        assert_eq!(parsed.balance_infos[0].total_balance, "9.68");
+    }
+}

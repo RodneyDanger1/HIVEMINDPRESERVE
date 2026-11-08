@@ -1343,13 +1343,19 @@ impl RunEngine {
         let mut planned: Vec<(usize, &crate::planner::PlanNode)> =
             plan.nodes.iter().enumerate().collect();
         planned.sort_by_key(|(index, node)| (node.depth, *index));
-        for (index, node) in planned {
+        for (_, node) in planned {
             let agents = self.store.task_count(run.id)?;
-            self.caps.check_spawn(node.depth, index, agents)?;
             let parent_id = node.parent.unwrap_or(root.id);
             if !tasks.contains_key(&parent_id) {
                 return Err(Refusal::SchemaInvalid);
             }
+            // Fan-out is per parent, not the global plan index. Passing the plan
+            // index here made the 9th planned node fail even with a fresh parent.
+            let siblings = tasks
+                .values()
+                .filter(|task| task.parent_task_id == Some(parent_id))
+                .count();
+            self.caps.check_spawn(node.depth, siblings, agents)?;
             spawn_seq = spawn_seq.saturating_add(1);
             let record = TaskRecord {
                 id: node.node_id,

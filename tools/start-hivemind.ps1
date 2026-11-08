@@ -24,6 +24,26 @@ try {
 }
 
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+# Prefer the DPAPI-encrypted key written by tools\set-provider-key.ps1. The
+# decrypted value is put into the child process environment only; it is never
+# printed, logged, or embedded in a command line.
+$keyFile = Join-Path $DataDir 'provider.key'
+if (Test-Path $keyFile) {
+    try {
+        Add-Type -AssemblyName System.Security
+        $entropy = [Text.Encoding]::UTF8.GetBytes('HiveMind.ProviderKey.v1')
+        $encrypted = [IO.File]::ReadAllBytes($keyFile)
+        $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+            $encrypted,
+            $entropy,
+            [Security.Cryptography.DataProtectionScope]::CurrentUser
+        )
+        $env:DEEPSEEK_API_KEY = [Text.Encoding]::UTF8.GetString($plainBytes).Trim()
+        [Array]::Clear($plainBytes, 0, $plainBytes.Length)
+    } catch {
+        Write-Warning 'The provider key file could not be decrypted; prompts will refuse E_KEY_MISSING.'
+    }
+}
 $stdout = Join-Path $DataDir 'server.stdout.log'
 $stderr = Join-Path $DataDir 'server.stderr.log'
 $process = Start-Process -FilePath $exe `

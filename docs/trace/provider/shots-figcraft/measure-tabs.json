@@ -1,0 +1,306 @@
+{
+  "swarmClicked": true,
+  "swarm": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Workspace",
+    "panels": [
+      {
+        "label": "Agent hierarchy",
+        "box": {
+          "x": 328,
+          "y": 272,
+          "w": 622.7,
+          "h": 232
+        }
+      },
+      {
+        "label": "Agent hierarchy",
+        "box": {
+          "x": 341,
+          "y": 309,
+          "w": 596.7,
+          "h": 92
+        }
+      },
+      {
+        "label": "Swarm controls",
+        "box": {
+          "x": 962.7,
+          "y": 272,
+          "w": 461.3,
+          "h": 232
+        }
+      },
+      {
+        "label": "Projects",
+        "box": {
+          "x": 328,
+          "y": 516,
+          "w": 1096,
+          "h": 76
+        }
+      }
+    ],
+    "nodeCount": 0,
+    "nodeBoxes": [],
+    "nodeText": [],
+    "chat": null,
+    "minimap": null,
+    "minimapHtml": 0,
+    "smallButtons": 13,
+    "buttons": 21,
+    "scroll": {
+      "w": 1440,
+      "h": 900
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nSwarm\n\nThe HyperAgent tree and the live swarm graph are one object. Re-parenting is only possible while a branch is not streaming; every edge is a bee line, never decoration.\n\nSUB-HIVES\n0\nWORKERS\n2\nTOOLS\n0\nERRORS\n0\nACTIVE\n0\nHIERARCHY / WORKSPACE-JAILED\nHIERARCHY\n◆\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\n└\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\nSURFACES\n\nProfiles, memory and the cross-branch mailbox live in the Agents surface. Approvals are nonce-bound and appear as a blocking decision when a branch requests them.\n\nOPEN AGENTS\nOPEN FILES\nWORKERAGENT\nWorkerAgent 01a1b86d\nWORKERAGENT\nWorkerAgent 01a1b86d\nPROJECTS\n01A1B86D-6F38-7377-AB83-1A2A1F5B147E\nCOMMITTED",
+    "shot": 106706
+  },
+  "historyClicked": true,
+  "history": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Workspace",
+    "panels": [
+      {
+        "label": "Committed run history",
+        "box": {
+          "x": 312,
+          "y": 52,
+          "w": 300,
+          "h": 848
+        }
+      }
+    ],
+    "nodeCount": 2,
+    "nodeBoxes": [
+      {
+        "x": 734,
+        "y": 494.2,
+        "w": 129.4,
+        "h": 38.8
+      },
+      {
+        "x": 1188.6,
+        "y": 419,
+        "w": 129.4,
+        "h": 38.8
+      }
+    ],
+    "nodeText": [
+      "WorkerAgent 01a1b86d / — / WORKER / —",
+      "WorkerAgent 01a1b86d / — / WORKER / —"
+    ],
+    "chat": null,
+    "minimap": {
+      "x": 1180,
+      "y": 630,
+      "w": 220,
+      "h": 150
+    },
+    "minimapHtml": 564,
+    "smallButtons": 24,
+    "buttons": 32,
+    "scroll": {
+      "w": 1440,
+      "h": 900
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHistory\n01A1B86D\n4 REVISIONS\nREV 0\nCOMMITTED\nREV 1\nCOMMITTED\nREV 2\nCOMMITTED\nREV 3\nLATEST\nLIVE\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n40%\nROUTING STATE\n4 OF 4\nLIVE",
+    "shot": 590044
+  },
+  "agentsClicked": true,
+  "agents": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Agents",
+    "panels": [
+      {
+        "label": "Agent hierarchy",
+        "box": {
+          "x": 328,
+          "y": 108,
+          "w": 1081,
+          "h": 92
+        }
+      },
+      {
+        "label": "Tool activity",
+        "box": {
+          "x": 341,
+          "y": 321,
+          "w": 1055,
+          "h": 134
+        }
+      },
+      {
+        "label": "Agent profiles",
+        "box": {
+          "x": 328,
+          "y": 480,
+          "w": 1081,
+          "h": 448
+        }
+      },
+      {
+        "label": "Agent memory",
+        "box": {
+          "x": 328,
+          "y": 940,
+          "w": 1081,
+          "h": 112
+        }
+      },
+      {
+        "label": "Agent messages",
+        "box": {
+          "x": 328,
+          "y": 1064,
+          "w": 1081,
+          "h": 112
+        }
+      }
+    ],
+    "nodeCount": 0,
+    "nodeBoxes": [],
+    "nodeText": [],
+    "chat": null,
+    "minimap": null,
+    "minimapHtml": 0,
+    "smallButtons": 12,
+    "buttons": 22,
+    "scroll": {
+      "w": 1440,
+      "h": 900
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nAgents · 2\nHIERARCHY\n◆\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\n└\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\nWORKERAGENT\nCOMPLETED\nWorkerAgent 01a1b86d\n01A1B86D\n—\nWORKERAGENT\nCOMPLETED\nWorkerAgent 01a1b86d\n01A1B86D\n—\nTool activity · 0\n\nNo tool activity yet — tool calls appear here when the model invokes a tool.\n\nAGENT PROFILES\nChatbot\nWORKER\nCHATBOT · 4 TOOLS · REPORT\nCode Reviewer\nWORKER\nCODE-REVIEWER · 6 TOOLS · STRICT\nContent Writer\nWORKER\nCONTENT-WRITER · 6 TOOLS · STRICT\nData Analyst\nWORKER\nDATA-ANALYST · 6 TOOLS · STRICT\nHive Planner\nHYPER\nPLANNER · 0 TOOLS · STRICT\nIMPORT NATIVE PROFILE JSON\nIMPORT PROFILE\nAGENT MEMORY\n\nNo durable memories for the boot profiles.\n\nAGENT MESSAGES\n\nNo agent-to-agent messages in this run.",
+    "shot": 100902
+  },
+  "modelsClicked": true,
+  "models": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Models",
+    "panels": [
+      {
+        "label": "Provider account",
+        "box": {
+          "x": 512,
+          "y": 358,
+          "w": 728,
+          "h": 186
+        }
+      }
+    ],
+    "nodeCount": 0,
+    "nodeBoxes": [],
+    "nodeText": [],
+    "chat": null,
+    "minimap": null,
+    "minimapHtml": 0,
+    "smallButtons": 9,
+    "buttons": 17,
+    "scroll": {
+      "w": 1440,
+      "h": 900
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nModels\nPROVIDER\ndeepseek\nMODEL\ndeepseek-flash\nPROMPT TOKENS\n88\nCOMPLETION TOKENS\n5\nTOTAL TOKENS\n93\nCACHE HIT / MISS\n0 / 88\nREASONING TOKENS\nNot reported\nPROVIDER ACCOUNT\nBALANCE\nUSD\n9.17\nAVAILABLE MODELS\ndeepseek-flash\nDEEPSEEK-V4.1-FLASH · 1048576 CTX · 393216 MAX OUT\ndeepseek-v4-pro\nDEEPSEEK-V4-PRO · 1048576 CTX · 393216 MAX OUT\n\nCONTRACT REFERENCE (FACT-REGISTER): DEEPSEEK-FLASH; DEEPSEEK-V4-PRO IS OPTIONAL.",
+    "shot": 71164
+  },
+  "w1280": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Workspace",
+    "panels": [
+      {
+        "label": "Committed run history",
+        "box": {
+          "x": 312,
+          "y": 52,
+          "w": 300,
+          "h": 848
+        }
+      }
+    ],
+    "nodeCount": 2,
+    "nodeBoxes": [
+      {
+        "x": 734,
+        "y": 494.2,
+        "w": 129.4,
+        "h": 38.8
+      },
+      {
+        "x": 1188.6,
+        "y": 419,
+        "w": 129.4,
+        "h": 38.8
+      }
+    ],
+    "nodeText": [
+      "WorkerAgent 01a1b86d / — / WORKER / —",
+      "WorkerAgent 01a1b86d / — / WORKER / —"
+    ],
+    "chat": null,
+    "minimap": {
+      "x": 1020,
+      "y": 630,
+      "w": 220,
+      "h": 150
+    },
+    "minimapHtml": 564,
+    "smallButtons": 24,
+    "buttons": 32,
+    "scroll": {
+      "w": 1280,
+      "h": 900
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHistory\n01A1B86D\n4 REVISIONS\nREV 0\nCOMMITTED\nREV 1\nCOMMITTED\nREV 2\nCOMMITTED\nREV 3\nLATEST\nLIVE\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n40%\nROUTING STATE\n4 OF 4\nLIVE",
+    "shot": 531517
+  },
+  "w1024": {
+    "tabText": "WORKSPACE | SWARM | ROUTING | HISTORY",
+    "navCurrent": "Workspace",
+    "panels": [
+      {
+        "label": "Committed run history",
+        "box": {
+          "x": 312,
+          "y": 52,
+          "w": 300,
+          "h": 748
+        }
+      }
+    ],
+    "nodeCount": 2,
+    "nodeBoxes": [
+      {
+        "x": 734,
+        "y": 494.2,
+        "w": 129.4,
+        "h": 38.8
+      },
+      {
+        "x": 1188.6,
+        "y": 419,
+        "w": 129.4,
+        "h": 38.8
+      }
+    ],
+    "nodeText": [
+      "WorkerAgent 01a1b86d / — / WORKER / —",
+      "WorkerAgent 01a1b86d / — / WORKER / —"
+    ],
+    "chat": null,
+    "minimap": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "minimapHtml": 562,
+    "smallButtons": 24,
+    "buttons": 32,
+    "scroll": {
+      "w": 1024,
+      "h": 800
+    },
+    "text": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHistory\n01A1B86D\n4 REVISIONS\nREV 0\nCOMMITTED\nREV 1\nCOMMITTED\nREV 2\nCOMMITTED\nREV 3\nLATEST\nLIVE\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n40%\nROUTING STATE\n4 OF 4\nLIVE",
+    "shot": 337429
+  }
+}

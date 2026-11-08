@@ -11,6 +11,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
+use hiverouter_provider::{ClientConfig, DeepSeekClient};
 use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
 use tokio::net::TcpListener;
@@ -492,6 +493,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
         .route("/api/projects", get(projects))
+        .route("/api/provider/models", get(provider_models))
+        .route("/api/provider/balance", get(provider_balance))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .with_state(state)
@@ -838,6 +841,76 @@ async fn run_usage(
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+/// `GET /api/provider/models` — documented DeepSeek model catalogue proxy.
+///
+/// The API key never reaches the browser: the local server reads
+/// `DEEPSEEK_API_KEY`, calls the provider, and returns only public metadata.
+async fn provider_models(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
+    if !provider_origin_allowed(&state, &headers) {
+        return refusal_response(StatusCode::FORBIDDEN, &Refusal::OriginRejected);
+    }
+    let client = match DeepSeekClient::from_env(ClientConfig::default()) {
+        Ok(client) => client,
+        Err(error) => return provider_error_response(&error),
+    };
+    match client.list_models().await {
+        Ok(models) => (
+            StatusCode::OK,
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "object": models.object,
+                "models": models.data,
+            })),
+        )
+            .into_response(),
+        Err(error) => provider_error_response(&error),
+    }
+}
+
+/// `GET /api/provider/balance` — documented DeepSeek account balance proxy.
+async fn provider_balance(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
+    if !provider_origin_allowed(&state, &headers) {
+        return refusal_response(StatusCode::FORBIDDEN, &Refusal::OriginRejected);
+    }
+    let client = match DeepSeekClient::from_env(ClientConfig::default()) {
+        Ok(client) => client,
+        Err(error) => return provider_error_response(&error),
+    };
+    match client.balance().await {
+        Ok(balance) => (
+            StatusCode::OK,
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "is_available": balance.is_available,
+                "balances": balance.balance_infos,
+            })),
+        )
+            .into_response(),
+        Err(error) => provider_error_response(&error),
+    }
+}
+
+fn provider_origin_allowed(state: &AppState, headers: &HeaderMap) -> bool {
+    match headers.get(header::ORIGIN).and_then(|value| value.to_str().ok()) {
+        None => true,
+        Some(origin) => state
+            .config
+            .allowed_origins
+            .iter()
+            .any(|allowed| allowed.eq_ignore_ascii_case(origin)),
+    }
+}
+
+fn provider_error_response(error: &hiverouter_provider::ProviderError) -> Response {
+    let status = match error.code() {
+        "E_KEY_MISSING" => StatusCode::SERVICE_UNAVAILABLE,
+        "E_PROVIDER_AUTH" => StatusCode::UNAUTHORIZED,
+        "E_PROVIDER_RATE_LIMIT" => StatusCode::TOO_MANY_REQUESTS,
+        _ => StatusCode::BAD_GATEWAY,
+    };
+    refusal_response(status, &error.refusal())
 }
 
 async fn projects(State(state): State<Arc<AppState>>) -> Response {

@@ -1,0 +1,797 @@
+{
+  "workspace1440": {
+    "label": "workspace-1440x900",
+    "viewport": {
+      "w": 1440,
+      "h": 900,
+      "dpr": 1,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 848
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 848
+    },
+    "hud": {
+      "x": 646,
+      "y": 64,
+      "w": 460,
+      "h": 44
+    },
+    "hudText": "HYPERAGENT | · | 0 SUPERAGENTS | · | 2 WORKERS | · | 100.0% GREEN",
+    "chat": {
+      "x": 676,
+      "y": 204,
+      "w": 400,
+      "h": 480
+    },
+    "minimap": {
+      "x": 1180,
+      "y": 630,
+      "w": 220,
+      "h": 150
+    },
+    "minimapStyle": {
+      "background": "rgb(255, 255, 255)",
+      "backgroundImage": "radial-gradient(circle, rgb(229, 225, 216) 1px, rgba(0, 0, 0, 0) 1px)",
+      "borderRadius": "12px",
+      "width": "220px",
+      "height": "150px"
+    },
+    "minimapInner": 559,
+    "controlBar": {
+      "x": 312,
+      "y": 804,
+      "w": 1128,
+      "h": 53
+    },
+    "controlBarText": "TARGET | — | WorkerAgent 01a1b86d | WorkerAgent 01a1b86d | SPAWN SUB-HIVE | Re-route | RE-ROUTE | CANCEL | KILL WORKER | 01A1B86D · UNAVAILABLE",
+    "buttonCount": 33,
+    "under40Count": 19,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30",
+      "Hide finished:26",
+      "Focus branch:26",
+      "Graph only:26",
+      "Zoom in:32",
+      "Zoom out:32",
+      "Recentre hive (Ctrl+0):32",
+      "Fit swarm:32",
+      "Hide the chat core (the hive:22",
+      "Submit prompt:32",
+      "live:26"
+    ],
+    "composerButtons": [
+      "Submit prompt"
+    ],
+    "headerButtons": 1,
+    "chatText": "Hive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES",
+    "navCurrent": "Workspace",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "motion-honeycomb-travel",
+        "target": "motion-honeycomb-glow absolute inset-0"
+      },
+      {
+        "name": "motion-hive-sheen-sweep",
+        "target": "motion-hive-sheen absolute inset-0"
+      },
+      {
+        "name": "hive-scan",
+        "target": "hive-scan"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-a"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-b"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-c"
+      },
+      {
+        "name": "bee-dash",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      }
+    ],
+    "animationCount": 12,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n55%\nHive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES\n\nTARGET\n—\nWorkerAgent 01a1b86d\nWorkerAgent 01a1b86d\nSPAWN SUB-HIVE\nRe-route\nRE-ROUTE\nCANCEL\nKILL WORKER\n01A1B86D · UNAVAILABLE\nROUTING STATE\n4 OF 4\nLIVE",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\workspace-1440x900.png",
+      "bytes": 405533
+    }
+  },
+  "models1440": {
+    "label": "models-1440x900",
+    "viewport": {
+      "w": 1440,
+      "h": 900,
+      "dpr": 1,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 848
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 848
+    },
+    "hud": null,
+    "hudText": null,
+    "chat": null,
+    "minimap": null,
+    "minimapStyle": null,
+    "minimapInner": 0,
+    "controlBar": null,
+    "controlBarText": null,
+    "buttonCount": 17,
+    "under40Count": 9,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30"
+    ],
+    "composerButtons": [],
+    "headerButtons": 0,
+    "chatText": null,
+    "navCurrent": "Models",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      }
+    ],
+    "animationCount": 1,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nModels\nPROVIDER\ndeepseek\nMODEL\ndeepseek-flash\nPROMPT TOKENS\n88\nCOMPLETION TOKENS\n5\nTOTAL TOKENS\n93\nCACHE HIT / MISS\n0 / 88\nREASONING TOKENS\nNot reported\nPROVIDER ACCOUNT\nBALANCE\nUSD\n9.19\nAVAILABLE MODELS\ndeepseek-flash\nDEEPSEEK-V4.1-FLASH · 1048576 CTX · 393216 MAX OUT\ndeepseek-v4-pro\nDEEPSEEK-V4-PRO · 1048576 CTX · 393216 MAX OUT\n\nCONTRACT REFERENCE (FACT-REGISTER): DEEPSEEK-FLASH; DEEPSEEK-V4-PRO IS OPTIONAL.",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\models-1440x900.png",
+      "bytes": 71496
+    }
+  },
+  "models1024": {
+    "label": "models-1024x800",
+    "viewport": {
+      "w": 1024,
+      "h": 800,
+      "dpr": 1,
+      "scrollW": 1024,
+      "scrollH": 800
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 748
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 748
+    },
+    "hud": null,
+    "hudText": null,
+    "chat": null,
+    "minimap": null,
+    "minimapStyle": null,
+    "minimapInner": 0,
+    "controlBar": null,
+    "controlBarText": null,
+    "buttonCount": 17,
+    "under40Count": 9,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30"
+    ],
+    "composerButtons": [],
+    "headerButtons": 0,
+    "chatText": null,
+    "navCurrent": "Models",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      }
+    ],
+    "animationCount": 1,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nModels\nPROVIDER\ndeepseek\nMODEL\ndeepseek-flash\nPROMPT TOKENS\n88\nCOMPLETION TOKENS\n5\nTOTAL TOKENS\n93\nCACHE HIT / MISS\n0 / 88\nREASONING TOKENS\nNot reported\nPROVIDER ACCOUNT\nBALANCE\nUSD\n9.19\nAVAILABLE MODELS\ndeepseek-flash\nDEEPSEEK-V4.1-FLASH · 1048576 CTX · 393216 MAX OUT\ndeepseek-v4-pro\nDEEPSEEK-V4-PRO · 1048576 CTX · 393216 MAX OUT\n\nCONTRACT REFERENCE (FACT-REGISTER): DEEPSEEK-FLASH; DEEPSEEK-V4-PRO IS OPTIONAL.",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\models-1024x800.png",
+      "bytes": 68404
+    }
+  },
+  "swarm1440": {
+    "label": "swarm-1440x900",
+    "viewport": {
+      "w": 1440,
+      "h": 900,
+      "dpr": 1,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 848
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 848
+    },
+    "hud": {
+      "x": 646,
+      "y": 64,
+      "w": 460,
+      "h": 44
+    },
+    "hudText": "HYPERAGENT | · | 0 SUPERAGENTS | · | 2 WORKERS | · | 100.0% GREEN",
+    "chat": {
+      "x": 676,
+      "y": 204,
+      "w": 400,
+      "h": 480
+    },
+    "minimap": {
+      "x": 1180,
+      "y": 630,
+      "w": 220,
+      "h": 150
+    },
+    "minimapStyle": {
+      "background": "rgb(255, 255, 255)",
+      "backgroundImage": "radial-gradient(circle, rgb(229, 225, 216) 1px, rgba(0, 0, 0, 0) 1px)",
+      "borderRadius": "12px",
+      "width": "220px",
+      "height": "150px"
+    },
+    "minimapInner": 559,
+    "controlBar": {
+      "x": 312,
+      "y": 804,
+      "w": 1128,
+      "h": 53
+    },
+    "controlBarText": "TARGET | — | WorkerAgent 01a1b86d | WorkerAgent 01a1b86d | SPAWN SUB-HIVE | Re-route | RE-ROUTE | CANCEL | KILL WORKER | 01A1B86D · UNAVAILABLE",
+    "buttonCount": 33,
+    "under40Count": 19,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30",
+      "Hide finished:26",
+      "Focus branch:26",
+      "Graph only:26",
+      "Zoom in:32",
+      "Zoom out:32",
+      "Recentre hive (Ctrl+0):32",
+      "Fit swarm:32",
+      "Hide the chat core (the hive:22",
+      "Submit prompt:32",
+      "live:26"
+    ],
+    "composerButtons": [
+      "Submit prompt"
+    ],
+    "headerButtons": 1,
+    "chatText": "Hive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES",
+    "navCurrent": "Workspace",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "motion-honeycomb-travel",
+        "target": "motion-honeycomb-glow absolute inset-0"
+      },
+      {
+        "name": "motion-hive-sheen-sweep",
+        "target": "motion-hive-sheen absolute inset-0"
+      },
+      {
+        "name": "hive-scan",
+        "target": "hive-scan"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-a"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-b"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-c"
+      },
+      {
+        "name": "bee-dash",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      }
+    ],
+    "animationCount": 12,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n55%\nHive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES\n\nTARGET\n—\nWorkerAgent 01a1b86d\nWorkerAgent 01a1b86d\nSPAWN SUB-HIVE\nRe-route\nRE-ROUTE\nCANCEL\nKILL WORKER\n01A1B86D · UNAVAILABLE\nROUTING STATE\n4 OF 4\nLIVE",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\swarm-1440x900.png",
+      "bytes": 512530
+    }
+  },
+  "history1440": {
+    "label": "history-1440x900",
+    "viewport": {
+      "w": 1440,
+      "h": 900,
+      "dpr": 1,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 848
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 848
+    },
+    "hud": {
+      "x": 646,
+      "y": 64,
+      "w": 460,
+      "h": 44
+    },
+    "hudText": "HYPERAGENT | · | 0 SUPERAGENTS | · | 2 WORKERS | · | 100.0% GREEN",
+    "chat": {
+      "x": 676,
+      "y": 204,
+      "w": 400,
+      "h": 480
+    },
+    "minimap": {
+      "x": 1180,
+      "y": 630,
+      "w": 220,
+      "h": 150
+    },
+    "minimapStyle": {
+      "background": "rgb(255, 255, 255)",
+      "backgroundImage": "radial-gradient(circle, rgb(229, 225, 216) 1px, rgba(0, 0, 0, 0) 1px)",
+      "borderRadius": "12px",
+      "width": "220px",
+      "height": "150px"
+    },
+    "minimapInner": 559,
+    "controlBar": {
+      "x": 312,
+      "y": 804,
+      "w": 1128,
+      "h": 53
+    },
+    "controlBarText": "TARGET | — | WorkerAgent 01a1b86d | WorkerAgent 01a1b86d | SPAWN SUB-HIVE | Re-route | RE-ROUTE | CANCEL | KILL WORKER | 01A1B86D · UNAVAILABLE",
+    "buttonCount": 33,
+    "under40Count": 19,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30",
+      "Hide finished:26",
+      "Focus branch:26",
+      "Graph only:26",
+      "Zoom in:32",
+      "Zoom out:32",
+      "Recentre hive (Ctrl+0):32",
+      "Fit swarm:32",
+      "Hide the chat core (the hive:22",
+      "Submit prompt:32",
+      "live:26"
+    ],
+    "composerButtons": [
+      "Submit prompt"
+    ],
+    "headerButtons": 1,
+    "chatText": "Hive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES",
+    "navCurrent": "Workspace",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "motion-honeycomb-travel",
+        "target": "motion-honeycomb-glow absolute inset-0"
+      },
+      {
+        "name": "motion-hive-sheen-sweep",
+        "target": "motion-hive-sheen absolute inset-0"
+      },
+      {
+        "name": "hive-scan",
+        "target": "hive-scan"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-a"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-b"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-c"
+      },
+      {
+        "name": "bee-dash",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      }
+    ],
+    "animationCount": 12,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n55%\nHive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES\n\nTARGET\n—\nWorkerAgent 01a1b86d\nWorkerAgent 01a1b86d\nSPAWN SUB-HIVE\nRe-route\nRE-ROUTE\nCANCEL\nKILL WORKER\n01A1B86D · UNAVAILABLE\nROUTING STATE\n4 OF 4\nLIVE",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\history-1440x900.png",
+      "bytes": 406604
+    }
+  },
+  "agents1440": {
+    "label": "agents-1440x900",
+    "viewport": {
+      "w": 1440,
+      "h": 900,
+      "dpr": 1,
+      "scrollW": 1440,
+      "scrollH": 900
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 848
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 848
+    },
+    "hud": null,
+    "hudText": null,
+    "chat": null,
+    "minimap": null,
+    "minimapStyle": null,
+    "minimapInner": 0,
+    "controlBar": null,
+    "controlBarText": null,
+    "buttonCount": 22,
+    "under40Count": 12,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30",
+      "◆CompletedWorkerAgent 01a1b8:32",
+      "└CompletedWorkerAgent 01a1b8:32",
+      "Import profile:26"
+    ],
+    "composerButtons": [],
+    "headerButtons": 0,
+    "chatText": null,
+    "navCurrent": "Agents",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      }
+    ],
+    "animationCount": 1,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nAgents · 2\nHIERARCHY\n◆\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\n└\nCOMPLETED\nWorkerAgent 01a1b86d\nWORKERAGENT\nWORKERAGENT\nCOMPLETED\nWorkerAgent 01a1b86d\n01A1B86D\n—\nWORKERAGENT\nCOMPLETED\nWorkerAgent 01a1b86d\n01A1B86D\n—\nTool activity · 0\n\nNo tool activity yet — tool calls appear here when the model invokes a tool.\n\nAGENT PROFILES\nChatbot\nWORKER\nCHATBOT · 4 TOOLS · REPORT\nCode Reviewer\nWORKER\nCODE-REVIEWER · 6 TOOLS · STRICT\nContent Writer\nWORKER\nCONTENT-WRITER · 6 TOOLS · STRICT\nData Analyst\nWORKER\nDATA-ANALYST · 6 TOOLS · STRICT\nHive Planner\nHYPER\nPLANNER · 0 TOOLS · STRICT\nIMPORT NATIVE PROFILE JSON\nIMPORT PROFILE\nAGENT MEMORY\n\nNo durable memories for the boot profiles.\n\nAGENT MESSAGES\n\nNo agent-to-agent messages in this run.",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\agents-1440x900.png",
+      "bytes": 101297
+    }
+  },
+  "workspace1024": {
+    "label": "workspace-1024x800",
+    "viewport": {
+      "w": 1024,
+      "h": 800,
+      "dpr": 1,
+      "scrollW": 1024,
+      "scrollH": 800
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "w": 1024,
+      "h": 52
+    },
+    "nav": {
+      "x": 0,
+      "y": 52,
+      "w": 72,
+      "h": 748
+    },
+    "library": {
+      "x": 72,
+      "y": 52,
+      "w": 240,
+      "h": 748
+    },
+    "hud": {
+      "x": 438,
+      "y": 64,
+      "w": 460,
+      "h": 44
+    },
+    "hudText": "HYPERAGENT | · | 0 SUPERAGENTS | · | 2 WORKERS | · | 100.0% GREEN",
+    "chat": {
+      "x": 468,
+      "y": 154,
+      "w": 400,
+      "h": 480
+    },
+    "minimap": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "minimapStyle": {
+      "background": "rgb(255, 255, 255)",
+      "backgroundImage": "radial-gradient(circle, rgb(229, 225, 216) 1px, rgba(0, 0, 0, 0) 1px)",
+      "borderRadius": "12px",
+      "width": "220px",
+      "height": "150px"
+    },
+    "minimapInner": 555,
+    "controlBar": {
+      "x": 312,
+      "y": 656,
+      "w": 712,
+      "h": 101
+    },
+    "controlBarText": "TARGET | — | WorkerAgent 01a1b86d | WorkerAgent 01a1b86d | SPAWN SUB-HIVE | Re-route | RE-ROUTE | CANCEL | KILL WORKER | 01A1B86D · UNAVAILABLE",
+    "buttonCount": 33,
+    "under40Count": 21,
+    "under40labels": [
+      "Search agents:32",
+      "Workspace:26",
+      "Swarm:26",
+      "Routing:26",
+      "History:26",
+      "Content Writer:30",
+      "Data Analyst:30",
+      "Code Reviewer:30",
+      "Chatbot:30",
+      "Hide finished:26",
+      "Focus branch:26",
+      "Graph only:26",
+      "WorkerAgent 01a1b86d—WORKER—:33",
+      "WorkerAgent 01a1b86d—WORKER—:33",
+      "Zoom in:32",
+      "Zoom out:32",
+      "Recentre hive (Ctrl+0):32",
+      "Fit swarm:32",
+      "Hide the chat core (the hive:22",
+      "Submit prompt:32",
+      "live:26"
+    ],
+    "composerButtons": [
+      "Submit prompt"
+    ],
+    "headerButtons": 1,
+    "chatText": "Hive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES",
+    "navCurrent": "Workspace",
+    "animations": [
+      {
+        "name": "state-pulse",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "motion-honeycomb-travel",
+        "target": "motion-honeycomb-glow absolute inset-0"
+      },
+      {
+        "name": "motion-hive-sheen-sweep",
+        "target": "motion-hive-sheen absolute inset-0"
+      },
+      {
+        "name": "hive-scan",
+        "target": "hive-scan"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-a"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-b"
+      },
+      {
+        "name": "ambient-flight",
+        "target": "ambient-bee ambient-bee-c"
+      },
+      {
+        "name": "bee-dash",
+        "target": "[object SVGAnimatedString]"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "node-rise",
+        "target": "hive-node relative flex h-full w-full fl"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      },
+      {
+        "name": "soft-in",
+        "target": "chat-message mb-2 rounded-[10px] px-2 py"
+      }
+    ],
+    "animationCount": 12,
+    "bodyText": "Skip to canvas\nHiveMind\nCONNECTED\nHM\nOPERATOR\nWorkspace\nAgents\nData\nModels\nRouting\nSettings\nProject: HiveMind AI\nWORKSPACE\nSWARM\nROUTING\nHISTORY\nACTIVE AGENTS\n#01A1B86D\n#01A1B86D\nTEMPLATES\nContent Writer\nData Analyst\nCode Reviewer\nChatbot\nTIP\n\nDrag a worker onto another super-agent to re-route its context stream live.\n\nSTATE & SETTINGS\nHYPERAGENT\n·\n0 SUPERAGENTS\n·\n2 WORKERS\n·\n100.0% GREEN\nHIDE FINISHED\nFOCUS BRANCH\n2/2\nGRAPH ONLY\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nWorkerAgent 01a1b86d\n—\nWORKER\n—\nReact Flow\n35%\nHive AI Assistant\n×\nYOU\nReply with exactly HIVE_UI_OK\nHIVE AI ASSISTANT\nHIVE_UI_OK\nType your prompt...\n\nENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES\n\nTARGET\n—\nWorkerAgent 01a1b86d\nWorkerAgent 01a1b86d\nSPAWN SUB-HIVE\nRe-route\nRE-ROUTE\nCANCEL\nKILL WORKER\n01A1B86D · UNAVAILABLE\nROUTING STATE\n4 OF 4\nLIVE",
+    "documentTitle": "HiveMind — Spatial Execution Environment",
+    "screenshot": {
+      "file": "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\trace\\provider\\shots-figcraft\\workspace-1024x800.png",
+      "bytes": 301145
+    }
+  }
+}

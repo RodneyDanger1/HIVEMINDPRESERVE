@@ -13,7 +13,7 @@ export function HudBadge() {
   return (
     <div className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2">
       <div
-        className="type-mono-meta flex items-center gap-2 rounded-[var(--radius-pill)] border bg-panel px-4 text-[9.5px] text-ink-800 shadow-[var(--shadow-e2)]"
+        className="type-mono-meta flex items-center gap-1.5 whitespace-nowrap rounded-[var(--radius-pill)] border bg-panel px-4 text-[8.5px] text-ink-800 shadow-[var(--shadow-e2)]"
         style={{
           width: LAYOUT.hud.width,
           height: LAYOUT.hud.height,
