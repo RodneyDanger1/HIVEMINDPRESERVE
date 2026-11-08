@@ -257,6 +257,9 @@ fn insert_template_dag(
             "subagent" | "sub_agent" => "subagent",
             _ => "worker",
         };
+        if requested_class == "subagent" && depth < 2 {
+            return Err(Refusal::ToolNotAllowed);
+        }
         validate_spawn_role(parent_tier, requested_class)?;
     }
     let siblings = tasks

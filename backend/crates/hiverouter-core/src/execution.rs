@@ -127,6 +127,14 @@ pub(crate) fn node_kind(tier: AgentTier) -> &'static str {
     }
 }
 
+/// Whether a role string denotes the bounded Subagent class.
+pub(crate) fn is_subagent_role(role: &str) -> bool {
+    role.trim()
+        .to_ascii_lowercase()
+        .replace(['-', ' ', '_'], "")
+        == "subagent"
+}
+
 /// Enforces the hierarchical spawn policy before a child row is created.
 ///
 /// Hyper may spawn Super/Agent/Subagent; Super may spawn Agent/Subagent; Agent
@@ -1194,6 +1202,9 @@ impl RunEngine {
             if profile_max_depth.is_some_and(|limit| depth > limit) {
                 return Err(Refusal::SpawnDepth);
             }
+            if is_subagent_role(role) && depth < 2 {
+                return Err(Refusal::ToolNotAllowed);
+            }
             self.caps.check_spawn(depth, siblings, agents)?;
             let task = TaskRecord {
                 id: TaskId::new(),
@@ -1507,6 +1518,9 @@ impl RunEngine {
                 .get(&parent_id)
                 .map_or(AgentTier::HyperAgent, task_agent_tier);
             validate_spawn_role(parent_tier, &node.role)?;
+            if is_subagent_role(&node.role) && node.depth < 2 {
+                return Err(Refusal::ToolNotAllowed);
+            }
             // Fan-out is per parent, not the global plan index. Passing the plan
             // index here made the 9th planned node fail even with a fresh parent.
             let siblings = tasks

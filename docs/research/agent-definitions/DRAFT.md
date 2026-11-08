@@ -2,31 +2,32 @@
 
 ## VERIFIER-PATCHES
 
-Independent verification pass, 2026-11-08. Snapshot verified: **HEAD `de0f4e6`** ("fix: admit
-template personas through spawn classes") with a clean backend worktree (**S4**; the tree was still
-moving during the pass: `bb95a44` -> `aa15ec9` -> `66aff50` -> `45914dc` -> `de0f4e6`).
-`execution.rs` is **3,430 lines**, `ws.rs` **1,417 lines**. No runtime, build, test, server, UI, or
+Independent verification pass, 2026-11-08. Snapshot verified: **HEAD `6e3294c`** ("fix: template
+authority mapping and verified taxonomy") with a clean backend worktree (**S4**; the tree was still
+moving during the pass: `bb95a44` -> `aa15ec9` -> `66aff50` -> `45914dc` -> `de0f4e6` -> `6e3294c`).
+`execution.rs` is **3,430 lines**, `ws.rs` **1,435 lines**. No runtime, build, test, server, UI, or
 provider call was executed. Evidence: `VERIFIED.md`.
 
 - **P1 - Snapshot added.** S3 was the dirty worktree (now committed as `45914dc`): `validate_spawn_role`
   `pub(crate)`, the compact persona match (`execution.rs:600-609`), and a first template validation
-  call in `ws.rs`. **S4 (`de0f4e6`)** adds the template-id-to-spawn-class mapping
-  (`ws.rs:248-261`). The S2 anchor table still applies; the compact-match block adds **+7** to every
+  call in `ws.rs`. **S4** adds the template-id-to-spawn-class mapping (`ws.rs:248-261`, code at
+  `de0f4e6`; `6e3294c` updates the tests and commits these docs) and keeps the metadata write
+  (`:305-311`). The S2 anchor table still applies; the compact-match block adds **+7** to every
   `execution.rs` line after 609.
 - **P2 - F4/C4 ("sub_agent alias escapes narrowing") is REFUTED in S3/S4.** The compact match maps
   `"sub_agent"`, `"sub-agent"`, `"Subagent"` and any `-`/`_`/space variant to the `subagent` profile,
   so the alias no longer receives the 9-tool Worker grant. Patched §3.2, §5.4, §6, §7/F4, §14/C4.
-  The remaining critical defect is the **unknown-role fallback** (F3), not the alias. This is
-  source-read, not a runtime test.
+  The remaining identity defect is the **unknown-role fallback** (F3); it is now **latent at
+  admission** (P12), not a live promotion. This is source-read, not a runtime test.
 - **P3 - F8/C7 ("TEMPLATE_INSERT can create a depth-1 HyperAgent") is REFUTED in S3/S4.** The first
   S3 fix validated the **raw template id**, which fixed Hyper but refused the shipped Library
   templates. **S4 maps the template id to a spawn class** (`ws.rs:248-261`): `planner`/`hyper` are
   refused; `superagent` maps to the Super class; `subagent` to the Subagent class; every other
-  template id to `worker`. So the Hyper path is closed, the Library templates are admitted again,
-  and the residual template gaps are (a) `"subagent"` is still admitted at depth 1 and (b) the
-  in-file test `template_insert_spawns_manifest_backed_dag` still expects `"planner"` to insert and
-  must be changed to expect `E_TOOL_NOT_ALLOWED`. Patched §3.5, §5.1, §5.4, §7/F8, §14/C7; M7 is
-  updated to "landed with residual depth floor + test expectation".
+  template id to `worker`. So the Hyper path is closed and the Library templates are admitted again.
+  `6e3294c` updates the in-file test accordingly (`content-writer` inserts; `planner` returns
+  `E_TOOL_NOT_ALLOWED`). **The only residual template gap is `"subagent"` at depth 1**, which is the
+  F6 depth-floor gap, not a Hyper path. Patched §3.5, §5.1, §5.4, §7/F8, §14/C7; M7 is updated to
+  "landed; residual depth floor".
 - **P4 - F6 self-contradiction.** F6 said "the plan loop calls only `caps.check_spawn`" and cited
   `execution.rs:1509`; that line is exactly the `validate_spawn_role(parent_tier, &node.role)?` call.
   The plan loop validates the role (since `aa15ec9`); the depth-floor gap remains. Patched F6.
@@ -52,12 +53,23 @@ provider call was executed. Evidence: `VERIFIED.md`.
 - **P11 - ToolActor is dormant, not engine-created.** §4 said the ToolActor is "engine-created for
   approved tool work"; no code path creates a task with tier `ToolAgent`. `task_agent_tier` maps
   `"tool"`, but the plan gate, `SPAWN_SUB_HIVE`, `spawn_agent`, and `TEMPLATE_INSERT` all reject it
-  (`execution.rs:180`, `:157`; `ws.rs:247-250`), and approved tool work executes under the calling
+  (`execution.rs:180`, `:157`; `ws.rs:252-260`), and approved tool work executes under the calling
   task's tier. Patched §4. It is a tier-with-no-producer, not an agent class.
+- **P12 - F3 is latent at admission, not a live promotion.** `task_agent_tier` still falls back to
+  `WorkerAgent` (`execution.rs:183`), but **every production task insert is preceded by
+  `validate_spawn_role`**: `spawn_sub_hive` (`execution.rs:1180`, insert `:1208`), the plan loop
+  (`:1509`, insert `:1528`), and the template path (`ws.rs:260`, insert `:303`). The root is a fixed
+  `"planner"` role (`execution.rs:1454`). So a **new** unknown role is refused with
+  `E_TOOL_NOT_ALLOWED`; the fallback is a latent hazard for legacy/direct-DB rows or a future spawn
+  source that forgets admission, not a live path from any current command, plan, model tool, or
+  template. Patched A2, §3.2, §5.3, F3 (Critical -> Medium/latent), S1/S2 severity notes, and the
+  root-cause sentence. The **design** defect (tier inferred from a string, no class field) remains
+  and is still the reason the resolver is the right fix; it is no longer accurate to say an unknown
+  role is "promoted to the most capable tier" today.
 
 **Status:** DRAFT research note. Not a specification, not an implementation plan approved by the
 Lead, and not evidence that anything works.
-**Repository:** `C:\Users\Riley\Desktop\hiverouter-v1`. The pass began at HEAD `bb95a44`; the tree advanced to `66aff50` ("fix: readiness DAG, run memory recall, CLI truth, kill confirm") while the pass ran, then to `45914dc`/`de0f4e6` while the verifier patched. The verified snapshot is S4 = `de0f4e6` with a clean backend worktree. All four snapshots are recorded below.
+**Repository:** `C:\Users\Riley\Desktop\hiverouter-v1`. The pass began at HEAD `bb95a44`; the tree advanced to `66aff50` ("fix: readiness DAG, run memory recall, CLI truth, kill confirm") while the pass ran, then to `45914dc`/`de0f4e6`/`6e3294c` while the verifier patched. The verified snapshot is S4 = `6e3294c` (code unchanged from `de0f4e6`; `6e3294c` updates the template tests and commits the verifier docs) with a clean backend worktree. All four snapshots are recorded below.
 **Scope of this pass:** read-only inspection of source and docs, plus external reading. **No**
 runtime, server, UI, provider call, build, migration, or test was executed. The only writes are this
 file and `VERIFIED.md`.
@@ -71,17 +83,17 @@ file and `VERIFIED.md`.
 | **[DR]** | **Doc-read.** The claim exists in a repository document. It may be stale, self-contradictory, or unsupported by code. |
 | **[WR]** | **Web-read.** An official page was fetched in this pass; the fact is quoted/paraphrased from it. |
 | **VERIFIED** | **Reserved and not used in this file for product behavior.** Nothing was executed. There is no runtime verification here, and the task forbids obtaining one. |
-| **[SR S1] / [SR S2] / [SR S3] / [SR S4]** | A source-read qualified by snapshot (section 0.1): S1 = HEAD `bb95a44` plus the initial dirty set; S2 = HEAD `66aff50`; S3 = HEAD `45914dc`; S4 = HEAD `de0f4e6`. |
+| **[SR S1] / [SR S2] / [SR S3] / [SR S4]** | A source-read qualified by snapshot (section 0.1): S1 = HEAD `bb95a44` plus the initial dirty set; S2 = HEAD `66aff50`; S3 = HEAD `45914dc`; S4 = HEAD `6e3294c` (code same as `de0f4e6`). |
 
 **Moving-tree caveat (important).** `execution.rs`, `http.rs`, `provider_executor.rs`, and web files
-were being edited by another writer while this pass ran. Three snapshots matter:
+were being edited by another writer while this pass ran. Four snapshots matter:
 
 | Snapshot | Meaning |
 |---|---|
 | **S1** | HEAD `bb95a44` plus the small initial dirty set. This is what most repo docs (2026-11-07/08) describe. |
 | **S2** | HEAD `66aff50` (committed mid-pass): `execution.rs` 3,423 lines, a `persona_for_role` normalizer, a tier-based `node_kind` in `http.rs`, a **readiness-based dispatcher**, and a wider root-turn gate (`has_aggregators || plan.nodes.len() > 1`). **Unbuilt and untested in this pass.** |
 | **S3** | HEAD `45914dc`: `validate_spawn_role` is `pub(crate)`, `persona_for_role` gains a compact id match, and `insert_template_dag` validates the spawn role and sets graph metadata. `execution.rs` 3,430 lines. **Unbuilt and untested.** |
-| **S4** | HEAD `de0f4e6`: `insert_template_dag` maps the template id to a spawn class (`ws.rs:248-261`), so `planner` is refused and Library templates are admitted as workers. This is the **verified snapshot**. `execution.rs` 3,430 lines, `ws.rs` 1,417 lines. **Unbuilt and untested.** |
+| **S4** | HEAD `6e3294c`: code as `de0f4e6` (template id -> spawn class at `ws.rs:248-261`; metadata at `:305-311`), plus the updated template tests. `planner` is refused, Library templates are admitted as workers. This is the **verified snapshot**. `execution.rs` 3,430 lines, `ws.rs` 1,435 lines. **Unbuilt and untested.** |
 
 In S3/S4, add **+7** to every `execution.rs` line after 609 (the `persona_for_role` compact-match
 block); `persona_for_role` itself starts at 588 and ends at 609. `ws.rs` shifted +12 after the
@@ -160,8 +172,10 @@ differ in who writes them, what they are allowed to authorize, and how long they
   `shell_exec` **[SR]** `tool.rs:392-421`. Rank buys accountability and delegation scope, not
   capability. Any UI or doc implying "HyperAgent can do everything" is false.
 - **A2 - A role string must never authorize.** `task_agent_tier` maps unknown strings to
-  `WorkerAgent` **[SR]** `execution.rs:183`, which is the broadest tool set. Today an unknown or
-  mistyped role is therefore promoted to the most capable tier instead of being refused.
+  `WorkerAgent` **[SR]** `execution.rs:183`, the broadest tool set. Every **production** spawn
+  source now validates the role first, so a new unknown role is refused at admission rather than
+  promoted (P12); the fallback is latent for legacy/direct rows. The rule stands: the resolver must
+  be total, not a fallback.
 - **A3 - A profile is policy, not identity.** Two instances with the same profile can have different
   rank if rank is derived from ownership (a branch lead vs a department owner). The profile must not
   be used as the primary key of identity.
@@ -200,7 +214,9 @@ This section is the shared factual base for the five definitions. All claims are
 - `task_agent_tier` lowercases `task.role` and maps known aliases; **everything else becomes
   `WorkerAgent`** **[SR]** `execution.rs:173-185`. `"subagent"` has no tier arm of its own (it is
   accepted by the spawn matrix, not mapped to a tier), so it takes the `_` fallback to
-  `WorkerAgent` **[SR]** `:183`.
+  `WorkerAgent` **[SR]** `:183`. **Caveat (P12):** every production insert path calls
+  `validate_spawn_role` first, so this fallback is reached for legacy/direct rows, not for a new
+  unknown role from the plan, command, model, or template path.
 - Empty role at depth 0 becomes HyperAgent **[SR]** `:182`; an empty role at depth > 0 becomes
   WorkerAgent.
 - The persona lookup used to be exact-match on `task.role`. S2 normalized it to exact -> lowercase ->
@@ -258,7 +274,7 @@ Read carefully:
 | Planning (`dispatch_inner`) | `plan.validate()` + parent tier resolution + `validate_spawn_role` + caps per node **[SR]** `execution.rs:1487-1529` | Roles are model-authored; no profile resolution; a planned `"subagent"` at depth 1 is accepted; no dedupe. |
 | Operator `SPAWN_SUB_HIVE` | `validate_spawn_role` + per-profile `max_children`/`max_depth` + caps under one lock **[SR]** `execution.rs:1167-1224` | Depth floor absent; UI sends Title-Case roles **[SR]** `web/src/state/store.ts:1976-1982`; the S3 persona lookup now resolves them, but the row stores the role verbatim. |
 | Model `spawn_agent` tool | Reuses `spawn_sub_hive`; parent claim checked; child executed inline and its bounded result returned **[SR]** `execution.rs:2889-3000` | Same depth/profile gaps; child runs inside the parent's turn (blocking). |
-| `TEMPLATE_INSERT` | Template lookup + template-id-to-spawn-class mapping + `validate_spawn_role` + caps; graph metadata written **[SR]** `ws.rs:240-311` (S4) | **S1/S2 bypassed the gate and could create a depth-1 `"planner"` HyperAgent; S3/S4 close that.** S4 maps `planner`/`hyper` to a refusal, `superagent` to the Super class, `subagent` to the Subagent class, and every other template id to `worker` (`ws.rs:248-261`), so the four shipped Library templates are admitted again. Residual: a `"subagent"` template is still admitted at depth 1 (no depth floor); no profile resolution; the in-file test `template_insert_spawns_manifest_backed_dag` still expects `"planner"` to insert and must be changed to expect `E_TOOL_NOT_ALLOWED`. |
+| `TEMPLATE_INSERT` | Template lookup + template-id-to-spawn-class mapping + `validate_spawn_role` + caps; graph metadata written **[SR]** `ws.rs:240-311` (S4) | **S1/S2 bypassed the gate and could create a depth-1 `"planner"` HyperAgent; S3/S4 close that.** S4 maps `planner`/`hyper` to a refusal, `superagent` to the Super class, `subagent` to the Subagent class, and every other template id to `worker` (`ws.rs:248-261`); the four shipped Library templates are admitted again and `6e3294c` updates the test to prove it. Residual: a `"subagent"` template is still admitted at depth 1 (no depth floor), and there is no profile resolution. |
 
 ### 3.6 Context and memory: scopes, not banks
 
@@ -397,7 +413,9 @@ Read carefully:
   DANGEROUS SHORTCUTS THE DIAGRAM FORBIDS
     role string  -/-> authority
     card click   -/-> grant
-    unknown role -/-> WorkerAgent with 9 tools   (today's behavior; must become a refusal)
+    unknown role -/-> WorkerAgent with 9 tools   (S1 behavior; admission now refuses
+                                                  unknown new roles, but the resolver fallback
+                                                  remains latent)
     remote       -/-> task row / depth / NODE_*  (today: absent; must stay absent)
 ```
 
@@ -584,20 +602,21 @@ only class expected to write files or run allowlisted programs (after approval).
 - *Current:* Tier WorkerAgent with all 9 tools **[SR]** `tool.rs:408-421`; write/exec require approval
   **[SR]** `tool.rs:55-57`, `:632-639`; may spawn **Subagent only** **[SR]**
   `execution.rs:156`.
-- It is the **fallback tier for every unknown role** **[SR]** `execution.rs:183` and it has **no
-  built-in profile** named `agent` **[SR]** `personas.json:1-67` (7 ids: planner, content-writer,
-  superagent, subagent, data-analyst, code-reviewer, chatbot). So "regular Agent" is currently an
-  unnamed, maximally-capable default.
+- It is the **fallback tier in the resolver for every unknown role** **[SR]** `execution.rs:183`;
+  admission refuses unknown **new** roles at every production spawn source (P12), so this is a
+  latent hazard, not a live promotion. It has **no built-in profile** named `agent`
+  **[SR]** `personas.json:1-67` (7 ids: planner, content-writer, superagent, subagent, data-analyst,
+  code-reviewer, chatbot). So "regular Agent" is currently an unnamed, maximally-capable default.
 
 **Lifecycle / lifetime.** Task row at depth 1-2 under the root or a Super; born Queued, runs once,
-terminal one of the five terminal states; terminal is absorbing **[SR]** `execution.rs:3336-3355`.
+terminal one of the five terminal states; terminal is absorbing **[SR]** `execution.rs:3343-3362`.
 No process outlives the task.
 
 **Memory.**
-- Read: parent facts + parent-scope memory + run memory (8+8) **[SR]** `execution.rs:936-962`;
-  re-read at start **[SR]** `:2950-2977`; roster (16) and inbox (8) **[SR]** `:941-970`.
+- Read: parent facts + parent-scope memory + run memory (8+8) **[SR]** `execution.rs:943-969`;
+  re-read at start **[SR]** `:3005-3024`; roster (16) and inbox (8) **[SR]** `:956-990`.
 - Write: own final text, own task-id scope, 2,000 chars, secret-marker filtered **[SR]**
-  `execution.rs:3381-3392`, `:60-65`.
+  `execution.rs:3388-3399`, `:60-75`.
 - Target: branch bank read (own branch + ancestors + role bank); write own branch. **[DR]**
   `12-role-capability-model.md:292-293`.
 
@@ -654,7 +673,8 @@ delegation, no side effects. **[DR]** `12-role-capability-model.md:299-313`;
   maps `"sub_agent"`, `"sub-agent"`, `"Subagent"` and other `-`/`_`/space variants to the
   `subagent` profile **[SR]** `execution.rs:588-609`, so those tasks get the 6-tool narrowed grant,
   not the 9-tool Worker grant. **The remaining escalation is an arbitrary unknown role** (F3), which
-  still falls back to WorkerAgent with all 9 tools. This is a source-read finding, not a runtime test.
+  is now refused at admission by every production spawn source; only the resolver fallback remains
+  latent for legacy/direct rows. This is a source-read finding, not a runtime test.
 - The model is *advertised* the 9 Worker tools regardless **[SR]** `provider_executor.rs:335-351`.
 
 **Lifecycle / lifetime.** Task row at depth 2-3 in the design **[DR]**
@@ -836,7 +856,7 @@ columns are marked `D` where the answer is the target, not the code.
 | May spawn | Super, Agent, Subagent (via plan/command gate) | Agent, Subagent | Subagent | **nothing** | nothing |
 | Spawnable by | nobody | Hyper | Hyper, Super | Hyper, Super, Agent | operator enrol only |
 | Tool count today | 3 (never advertised) | 7 | 9 | 6 via profile, 9 advertised | 0 model tools; closed device verbs |
-| Write / exec | no / no | no / no | approval / approval | no / no (by profile; unknown roles escape) | device actions only, approval per risk |
+| Write / exec | no / no | no / no | approval / approval | no / no (by profile; admission refuses unknown roles, resolver fallback latent) | device actions only, approval per risk |
 | Memory read | run + all-run aggregate (32) | parent + run + branch (D) | parent + run | parent + run | global RO + own bank (D) |
 | Memory write | own task scope (if it runs) | own task scope | own task scope | own task scope | own remote bank, quarantined (D) |
 | Outbound comms | none | ask_parent, sibling | ask_parent, sibling | ask_parent, sibling | request/ack/report on remote transport (D) |
@@ -869,12 +889,12 @@ judgment, not the project's.
 |---|---|---|---|---|
 | F1 | The operator's four-rank hierarchy is presented as a **runtime** model, although only the requirement exists. | Operator requirement **[DR]** `OPERATOR-DECISIONS.md:39`; UI labels **[SR]** `strings.ts:275-278` | There is **no rank field** and no Subagent tier; rank is inferred from `tasks.role` **[SR]** `execution.rs:173-185`. Subagent shares WorkerAgent's tier **[SR]** `tool.rs:72-81`. The requirement is real; the implementation is not. | High |
 | F2 | "Subagent has a card and a wire kind." | Web kind union **[SR]** `contract.ts:213`; `agentState.ts:126`; `SubagentNode` **[SR]** `nodes.tsx:196-219`; swarm bucket **[SR]** `SwarmPanel.tsx:86` | No server path emits `subagent`: `node_kind` maps Worker->`worker` **[SR]** `execution.rs:121-128`; vocabulary is 4 values **[SR]** `event.rs:240`; the S2 `http.rs` fix removed the only producer **[SR]** `http.rs:737-744`, `:1031-1038`. Dead card. | High |
-| F3 | "Unknown/foreign role is handled safely." | Implicit in "known roles are mapped explicitly" | Unknown role **falls back to the broadest tier** (9 tools) with no persona narrowing **[SR]** `execution.rs:183`; `tool.rs:408-421`. | **Critical** |
-| F4 | "Subagent cannot spawn / is narrowed." | Docs **[DR]** `12-role-capability-model.md:305-306`; code comment **[SR]** `execution.rs:130-134` | S1/S2: `"sub_agent"` was accepted by the spawn matrix **[SR]** `execution.rs:149-150`, `:156` but did not match the persona id **[SR]** `personas.json:32`, so it got the 9-tool Worker grant. **S3 fixes it**: the compact persona match maps `"sub_agent"`/`"sub-agent"`/casing variants to `subagent` **[SR]** `execution.rs:588-609`. Remaining: an arbitrary unknown role still gets the 9-tool grant (F3). The alias finding is historical, not live. | Medium (was Critical) |
+| F3 | "Unknown/foreign role is handled safely." | Implicit in "known roles are mapped explicitly" | **Admission is safe; resolution is not.** Every production insert path calls `validate_spawn_role` first (`execution.rs:1180`, `:1509`; `ws.rs:260`), so a new unknown role is refused with `E_TOOL_NOT_ALLOWED`, not promoted. But `task_agent_tier` still falls back to the broadest tier (`execution.rs:183`, `tool.rs:408-421`), so a legacy/direct row - or any future spawn source that forgets admission - gets the 9-tool Worker grant. The defect is latent, not live. | Medium (latent; was Critical at S1) |
+| F4 | "Subagent cannot spawn / is narrowed." | Docs **[DR]** `12-role-capability-model.md:305-306`; code comment **[SR]** `execution.rs:130-134` | S1/S2: `"sub_agent"` was accepted by the spawn matrix **[SR]** `execution.rs:149-150`, `:156` but did not match the persona id **[SR]** `personas.json:32`, so it got the 9-tool Worker grant. **S3 fixes it**: the compact persona match maps `"sub_agent"`/`"sub-agent"`/casing variants to `subagent` **[SR]** `execution.rs:588-609`. The only remaining unknown-role exposure is the latent resolver fallback (F3), not the alias. | Medium (was Critical) |
 | F5 | "A profile has a tier." | `Persona.tier` **[SR]** `prompts.rs:389`; API field **[SR]** `http.rs:950`, `:1009` | `persona.tier` is **never read for authorization**; grep shows only serialization **[GV]**. Tier comes from the role string. A profile declaring `tier:"super"` and a task role `"worker"` silently gets the Worker tier. | High |
 | F6 | "Subagent is legal only at depth >= 2." | **[DR]** `12-role-capability-model.md:170-172`; `21-roles-daemons-implementation.md:557-560` | No depth floor. Hyper's spawn list accepts `subagent` at depth 1 **[SR]** `execution.rs:138-151`. The draft's old evidence ("the plan loop calls only `caps.check_spawn`") was wrong: `execution.rs:1509` **is** `validate_spawn_role(parent_tier, &node.role)?`, and the plan loop has validated the role since `aa15ec9`. The gap is the missing **depth** floor, not a missing role check. | High |
 | F7 | "HyperAgent orchestrates and produces the run answer." | **[DR]** `docs/provider/AGENT-ARCHITECTURE-TRUTH.md:17`; `provider_executor.rs:35-38` | S1: the root turn runs **only when the plan has an aggregator** **[SR S1]** `execution.rs:1554-1555`, `:1631`. S2 widens the gate to `has_aggregators or plan.nodes.len() > 1` **[SR S2]** `execution.rs:1668-1679`, so a 2+ node flat plan now gets a root turn, but a **single-node plan still does not**. On any plan it is answer-only and cannot use tools **[SR]** `:3171-3176`. | High |
-| F8 | "HyperAgent is one per run and cannot be spawned." | **[DR]** `12-role-capability-model.md:233` (one per run); `21-roles-daemons-implementation.md:565-566` | S1/S2: `TEMPLATE_INSERT` bypassed `validate_spawn_role` and used the template id as the role **[SR]** `ws.rs:200-293`, so a depth-1 `"planner"` Hyper was one command away. **S3/S4 close it**: S3 validated the role, S4 maps the template id to a spawn class (`ws.rs:248-261`) - `planner`/`hyper` are refused, Library templates go to `worker`. Residual: a `"subagent"` template is still admitted at depth 1, and the `template_insert_spawns_manifest_backed_dag` test still expects the old `"planner"` insert. | Low (Hyper path resolved; subagent depth + test expectation open) |
+| F8 | "HyperAgent is one per run and cannot be spawned." | **[DR]** `12-role-capability-model.md:233` (one per run); `21-roles-daemons-implementation.md:565-566` | S1/S2: `TEMPLATE_INSERT` bypassed `validate_spawn_role` and used the template id as the role **[SR]** `ws.rs:200-293`, so a depth-1 `"planner"` Hyper was one command away. **S3/S4 close it**: S3 validated the role, S4 maps the template id to a spawn class (`ws.rs:248-261`) - `planner`/`hyper` refused, Library templates go to `worker`; `6e3294c` updates the test to prove both. The remaining Subagent-at-depth-1 template is the F6 depth-floor gap, not a Hyper path. | Resolved |
 | F9 | "40 provider calls / run is a hard cap." | `/api/runtime` exposes `max_calls:40` **[SR]** `http.rs:1412`; caps doc comment **[SR]** `caps.rs:14-15` | Both `check_calls` call sites pass the literal `1` **[SR]** `execution.rs:1435`, `:3129`, so the check cannot fail. Real bounds are the tool-loop budget **[SR]** `tool_loop.rs:16`, `execution.rs:1911` and the provider `RunBudget`. The number is advertised but not enforced by this path. | Medium |
 | F10 | "Remote agent exists / universal memory exists." | UI/roadmap language; **[DR]** remote-agents folder; operator decisions | Zero remote/device/daemon symbols **[GV]**; memory scopes are run + task only **[SR]** `db.rs:251-272`. There is no global bank and no remote bank. | High |
 | F11 | "Remote is a daemon." | **[DR]** `12-role-capability-model.md:315-333`, `:451` | Contradicts the remote-agents design (tree-free principal, private bank) **[DR]** `01-remote-agent-model.md:9-43`. No code for either. The naming conflict itself is the defect. | High |
@@ -885,9 +905,10 @@ judgment, not the project's.
 
 **Root cause shared by F1-F3, F5, F15:** one string does four jobs. Fix the identity object and most
 of these collapse; patch them individually and they will reappear as soon as a new alias, template,
-or UI label is added. F4 is now fixed in S3 by canonicalization, which shows the point: the fix is a
-resolver, not another alias. F7's root-turn gate is a separate engine-policy defect, not an identity
-defect.
+or UI label is added. F4 is now fixed in S3/S4 by canonicalization, which shows the point: the fix is
+a resolver, not another alias. F3 is latent at admission but its fallback still exists, and a new
+spawn source that forgets the gate reopens it. F7's root-turn gate is a separate engine-policy
+defect, not an identity defect.
 
 ---
 
@@ -1092,15 +1113,14 @@ root-only, and template ids must map to non-Hyper spawn roles.
 **Why minimal:** without this, the name "HyperAgent" promises a run owner that, on a one-node plan,
 never speaks.
 
-### M7 - Close the template side door (0.25 day) - **landed in S4; residual depth/test work**
+### M7 - Close the template side door (0.25 day) - **landed in S4; residual depth work**
 
 S4 maps the template id to a spawn class (`ws.rs:248-261`): `planner`/`hyper` are refused,
 `superagent` maps to Super, `subagent` to Subagent, every other id to `worker`; the role is then
-validated and metadata is written (`ws.rs:305-311`). This closes the depth-1 Hyper path and keeps the
-four shipped Library templates insertable. **Residual:** (a) a `"subagent"` template is still
-admitted at depth 1 because the template path has no depth parameter, and it must be refused with
-the same depth floor as M4; (b) the in-file test `template_insert_spawns_manifest_backed_dag` still
-expects `"planner"` to insert and must be changed to expect `E_TOOL_NOT_ALLOWED`; add
+validated and metadata is written (`ws.rs:305-311`). `6e3294c` updates
+`template_insert_spawns_manifest_backed_dag` to insert `content-writer` and assert `planner` returns
+`E_TOOL_NOT_ALLOWED`. **Residual:** a `"subagent"` template is still admitted at depth 1 because the
+template path has no depth parameter; it must be refused with the same depth floor as M4. Add
 `template_insert_keeps_library_templates` as the regression guard.
 
 ### M8 - Memory identity and scope (1-1.5 days)
@@ -1147,10 +1167,9 @@ The remote-agents design is already detailed enough to build **[DR]**
 Names are proposed. Each must fail before the fix and pass after; none were run in this pass.
 **S3/S4 note:** `sub_agent_alias_is_canonical` and `template_insert_cannot_create_hyper` are now
 satisfied by construction (S4 changed the template path so `planner` is refused and Library
-templates are admitted as workers). Two test adjustments are still needed: change
-`template_insert_spawns_manifest_backed_dag` to expect `E_TOOL_NOT_ALLOWED` for `"planner"` (it still
-expects success), and add a `subagent`-template-at-depth-1 refusal case to `subagent_depth_floor`
-(S4 admits it today). All other rows still describe open gaps.
+templates are admitted as workers; `6e3294c` updated the test). One case is still missing: add a
+`subagent`-template-at-depth-1 refusal case to `subagent_depth_floor` (S4 admits it today). All other
+rows still describe open gaps.
 
 | Test | Asserts | Kills |
 |---|---|---|
@@ -1240,9 +1259,9 @@ Not used by rule: forums, social posts, SEO summaries, AI-generated pages. No pa
 | # | Claim | Tag | Basis |
 |---|---|---|---|
 | C1 | There is no `Subagent` tier or `AgentClass`; Subagent maps to WorkerAgent. | SR | `tool.rs:72-81`; `execution.rs:173-185` |
-| C2 | `tasks.role` is the only identity source; unknown roles fall back to the broadest tier. | SR | `execution.rs:173-185`, `:183` |
+| C2 | `tasks.role` is the only identity source; the resolver falls back to the broadest tier for an unknown role, but every production insert validates the role first (latent fallback). | SR | `execution.rs:173-185`, `:183`, `:1180`, `:1509`; `ws.rs:260` |
 | C3 | A matched persona narrows tools at call time; an empty persona grant means none. | SR | `execution.rs:1091-1105`; `personas.json:7` |
-| C4 | **Historical (S1/S2):** the `sub_agent` alias bypassed the Subagent persona and got the full Worker grant. **S3 refutes this:** the compact persona match canonicalizes alias/case/separator variants. Unknown roles still escape (C2/F3). | SR | `execution.rs:588-609`; `:149-156`; `personas.json:32` |
+| C4 | **Historical (S1/S2):** the `sub_agent` alias bypassed the Subagent persona and got the full Worker grant. **S3 refutes this:** the compact persona match canonicalizes alias/case/separator variants. Only the latent F3 resolver fallback remains. | SR | `execution.rs:588-609`; `:149-156`; `personas.json:32` |
 | C5 | No depth floor exists for Subagent. | SR | `execution.rs:138-151`, `:1509` |
 | C6 | S1: the root turn ran only for aggregating plans. S2/S3: for plans with 2+ nodes; a single-node plan still has no root turn. | SR | S1 `execution.rs:1554-1555`, `:1631`; S2/S3 `:1675-1686` |
 | C7 | **Historical (S1/S2):** `TEMPLATE_INSERT` bypassed the spawn gate and could create a depth-1 Hyper. **S3/S4 refuse it**: S4 maps the template id to a spawn class (`ws.rs:248-261`) - `planner`/`hyper` refused, Library templates admitted as workers, `subagent` still admitted at depth 1. | SR | `ws.rs:248-261`, `:305-311` |
