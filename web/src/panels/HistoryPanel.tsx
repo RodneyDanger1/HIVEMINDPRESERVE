@@ -3,6 +3,7 @@
  * store to load a revision; replay itself is read-only and owned by the store.
  */
 import { useUiStore } from '../state/context';
+import { isRunActive } from '../state/agentState';
 import { STRINGS } from '../state/strings';
 import { EmptyState, PanelTitle } from './StatePack';
 
@@ -24,8 +25,14 @@ export function HistoryPanel() {
         <label className="mb-2 block">
           <span className="type-mono-meta block text-meta">Run</span>
           <select
-            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900 disabled:opacity-50"
             value={run?.id ?? ''}
+            disabled={run !== null && isRunActive(run.status)}
+            title={
+              run !== null && isRunActive(run.status)
+                ? 'Finish or cancel the active run before viewing another run'
+                : 'Select a committed run'
+            }
             onChange={(event) => {
               void selectHistoryRun(event.target.value);
             }}

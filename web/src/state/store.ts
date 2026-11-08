@@ -2230,6 +2230,12 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         if (get().run?.id === runId) {
           return;
         }
+        if (get().run !== null && isRunActive(get().run?.status ?? 'queued')) {
+          pushRefusal(clientRefusal('E_RUN_ACTIVE', {
+            message: 'An active run owns the command surface; finish or cancel it before viewing another run.',
+          }));
+          return;
+        }
         const summary = get().history.runs.find((candidate) => candidate.runId === runId);
         if (summary === undefined) {
           pushRefusal(clientRefusal('E_RUN_NOT_FOUND'));
