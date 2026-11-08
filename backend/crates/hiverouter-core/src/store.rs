@@ -353,6 +353,39 @@ impl RunStore {
         }
     }
 
+    /// Moves a persisted task row to a new parent and pins its row revision to
+    /// the graph node revision produced by the same rewire.
+    ///
+    /// The graph is the live authority, but roster/fan-out/A2A readers use the
+    /// task rows. Without this write those readers keep the pre-rewire parent
+    /// forever, including across a restart.
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` when the row does not exist; database refusal otherwise.
+    pub fn update_task_parent(
+        &self,
+        task_id: TaskId,
+        parent_task_id: Option<TaskId>,
+        rev: u64,
+    ) -> Result<(), Refusal> {
+        let id = task_id.to_string();
+        let parent = parent_task_id.map(|parent| parent.to_string());
+        let revision = i64::try_from(rev).map_err(|_| Refusal::InternalError)?;
+        let updated = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE tasks SET parent_task_id = ?2, rev = ?3 WHERE id = ?1",
+                    params![id, parent, revision],
+                )
+            })
+            .map_err(map)?;
+        if updated == 0 {
+            return Err(Refusal::TaskNotFound);
+        }
+        Ok(())
+    }
+
     /// Lists a run's tasks in spawn order.
     ///
     /// # Errors
@@ -1010,6 +1043,23 @@ mod tests {
             Ok(completed)
         );
         assert_eq!(store.get_task(task.id).expect("task").rev, completed);
+    }
+
+    #[test]
+    fn task_parent_row_follows_a_rewire() {
+        let store = store();
+        let task = seed_task(&store, AgentState::Running);
+        let new_parent = TaskId::new();
+        store
+            .update_task_parent(task.id, Some(new_parent), 9)
+            .expect("parent write");
+        let stored = store.get_task(task.id).expect("task");
+        assert_eq!(stored.parent_task_id, Some(new_parent));
+        assert_eq!(stored.rev, 9, "row rev is pinned to the graph rev");
+        assert_eq!(
+            store.update_task_parent(TaskId::new(), None, 1),
+            Err(Refusal::TaskNotFound)
+        );
     }
 
     #[test]

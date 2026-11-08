@@ -11,12 +11,32 @@ export function HistoryPanel() {
   const run = useUiStore((state) => state.run);
   const setHistoryRevision = useUiStore((state) => state.setHistoryRevision);
   const exitHistoryReplay = useUiStore((state) => state.exitHistoryReplay);
+  const refreshRunSnapshot = useUiStore((state) => state.refreshRunSnapshot);
   const replaying = history.replayGraph !== null;
   const revisions = history.revisions;
+  const refreshFailure = history.refreshRefusal;
 
   return (
     <aside className="flex h-full w-[300px] shrink-0 flex-col border-r border-hairline bg-panel p-3" aria-label="Committed run history">
       <PanelTitle>{STRINGS.tabs.history}</PanelTitle>
+      {refreshFailure === null ? null : (
+        <div
+          role="alert"
+          className="mb-2 rounded-[8px] border border-signal bg-panel-alt p-2"
+        >
+          <div className="type-mono-meta text-signal">{refreshFailure.code}</div>
+          <p className="type-body-l mt-1 text-ink-900">{refreshFailure.message}</p>
+          <button
+            type="button"
+            className="type-label mt-2 rounded-[6px] border border-hairline px-2 py-1 text-ink-900 hover:bg-honey-100"
+            onClick={() => {
+              void refreshRunSnapshot('manual');
+            }}
+          >
+            Retry history read
+          </button>
+        </div>
+      )}
       {run === null ? (
         <EmptyState message="No run yet. Start a run in Workspace; committed revisions will appear here." />
       ) : revisions.length === 0 ? (

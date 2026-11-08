@@ -8,8 +8,8 @@ This register is the merge; it does not replace the detailed reports. Status ref
 | ID | Claim | Source | Status |
 |---|---|---|---|
 | R9-B01 | Memory is keyed by role string, not hive/branch/run; cross-run facts leak and survive rewire | `execution.rs:3029`; `store.rs:612-671`; `context.rs:100-159` | OPEN — design blocker |
-| R9-B02 | `REWIRE_TASK` never updates `tasks.parent_task_id`; roster/A2A/fan-out/recovery keep stale parent | no such UPDATE; `ws.rs:650-736` | OPEN — design blocker |
-| F-UI-01 | Server-restart client adopts server `last_seq`; store never rehydrates while snapshot is ready | `client.ts:309,319`; `store.ts:1381-1391` | OPEN — needs restart fixture |
+| R9-B02 | `REWIRE_TASK` never updates `tasks.parent_task_id`; roster/A2A/fan-out/recovery keep stale parent | no such UPDATE; `ws.rs:650-736` | **FIXED** — row parent + row rev now updated after graph rewire; store + WS tests |
+| F-UI-01 | Server-restart client adopts server `last_seq`; store never rehydrates while snapshot is ready | `client.ts:309,319`; `store.ts:1381-1391` | **FIXED** — reconnect boundary now forces a committed refresh even when snapshot was ready |
 | FE-01 | Approval modal has no focus trap/initial focus/Escape/restore; destructive decision keyboard-unreachable | `ApprovalOverlay.tsx:221-250` | OPEN — needs DOM test tooling |
 | R9-B09 | Keyless WS guard depends on a check suppressed when provider disabled | `ws.rs:743-753`; `checks.rs:143-146` | OPEN — add WS keyless test |
 
@@ -23,7 +23,7 @@ This register is the merge; it does not replace the detailed reports. Status ref
 | R9-B06 | HyperAgent root never executes and never aggregates | `planner.rs:143-193`; `execution.rs:1331-1345` | OPEN |
 | R9-B07 | `ask_parent` has no answer path | `execution.rs:2427-2497`; no reader | OPEN |
 | R9-B08 | 40-provider-call cap is not enforced; `check_calls(1)` only | `execution.rs:1323,2781` | OPEN |
-| FE-02 | Snapshot/resync error model is computed but never rendered; failed boot looks empty | `store.ts:1211-1248`; zero UI consumers | OPEN |
+| FE-02 | Snapshot/resync error model is computed but never rendered; failed boot looks empty | `store.ts:1211-1248`; zero UI consumers | **PARTIAL** — HistoryPanel now renders `history.refreshRefusal` + Retry; bootstrap snapshot refusal still unrendered |
 | FE-03 | Any snapshot refresh clears `replayGraph`, silently exits replay | `store.ts:1201-1210` | OPEN |
 | FE-04 | Scrubber thumb can claim a refused revision | `Scrubber.tsx:21-25,57-59` | OPEN |
 | FE-05 | Typed chat draft destroyed on tab switch (ChatCore unmount) | `ChatCore.tsx:94`; `App.tsx:50-102` | OPEN |
@@ -79,6 +79,9 @@ This register is the merge; it does not replace the detailed reports. Status ref
 6. Foreign `REPLY_DELTA`/`REPLY_DONE` ignored + test.
 7. Reconnect timer cleared on success.
 8. Roster formatting repaired; unknown run returns 404 + test.
+9. `REWIRE_TASK` now persists the new parent into the task row and pins row rev to graph rev + tests.
+10. Reconnect boundary forces committed refresh even when the pre-restart snapshot was ready.
+11. HistoryPanel renders `history.refreshRefusal` with a Retry action.
 
 ## Verification
 

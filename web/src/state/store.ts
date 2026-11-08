@@ -925,6 +925,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
 
     let disposed = false;
     let socketOpen = false;
+    let reconnectPending = false;
     let resyncSerial = 0;
     let resyncFollowUp = false;
     let snapshotInFlight: Promise<void> | null = null;
@@ -1404,14 +1405,18 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             approvalsStale: true,
           });
           armApprovalReplayTimer();
+          const reconnected = reconnectPending;
+          reconnectPending = false;
           if (
+            reconnected ||
             get().snapshot.status === 'idle' ||
             get().snapshot.status === 'degraded' ||
             get().snapshot.status === 'failed'
           ) {
             // Reconnect/reload with no confirmed server snapshot yet (e.g. boot while
-            // the server was down): rehydrate quietly. When `ready`, the replayed
-            // events are authoritative and no extra read is issued.
+            // the server was down): rehydrate quietly. A server restart also resets
+            // the bus cursor, so a transport reconnect must re-read the committed
+            // state even when the pre-restart snapshot was 'ready'.
             void performSnapshotRefresh('reconnect');
           }
           return;
@@ -1875,6 +1880,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           api.subscribe((event, envelope) => applyEvent(event, envelope)),
           api.subscribeStatus((status, detail) => {
             socketOpen = status === 'open';
+            if (status === 'reconnecting') {
+              reconnectPending = true;
+            }
             set({
               // An unresolved RESYNC gap outranks a transport "open": the events in the
               // gap are still missing until a snapshot rehydrate settles.

@@ -231,6 +231,20 @@ async fn rewire_ack_and_node_event_fan_out_to_both_clients() {
         server.state.graph.parent_of(task).expect("parent"),
         Some(root_b)
     );
+    let stored = server.state.engine.store.get_task(task).expect("task row");
+    assert_eq!(
+        stored.parent_task_id,
+        Some(root_b),
+        "the task row must follow the graph rewire, not keep the stale parent"
+    );
+    let graph_rev = server
+        .state
+        .graph
+        .node(task)
+        .expect("node")
+        .expect("node exists")
+        .rev;
+    assert_eq!(stored.rev, graph_rev, "row and graph revision must agree");
 }
 
 #[tokio::test]

@@ -690,6 +690,26 @@ async fn handle_client_text(
                             return Ok(());
                         }
                     };
+                    // Roster/fan-out/A2A readers use the task row, not the graph:
+                    // persist the new parent and pin the row rev to the graph rev
+                    // so a restart cannot resurrect the previous edge.
+                    if let Some(task) = &task {
+                        if let Err(refusal) =
+                            state.engine.store.update_task_parent(
+                                task.id,
+                                Some(payload.new_parent_id),
+                                node.rev,
+                            )
+                        {
+                            tracing::error!(
+                                code = refusal.code(),
+                                task = %task.id,
+                                "rewire graph committed but the task row parent write failed; refusing"
+                            );
+                            publish_error(state, refusal, Some(correlation));
+                            return Ok(());
+                        }
+                    }
                     // Live context-stream switch (M-016): the graph rewire alone
                     // left the old parent's scoped context in place.
                     if let Some(task) = &task {
