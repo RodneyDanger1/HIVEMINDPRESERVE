@@ -41,6 +41,8 @@ pub struct AppState {
     pub checks: Vec<Check>,
     /// Process start time.
     pub started_at: Instant,
+    /// Per-process identity issued at construction (never reused across boots).
+    pub boot_id: String,
     /// Resolved configuration.
     pub config: Arc<Config>,
     /// Server event sequencer + fan-out.
@@ -356,6 +358,7 @@ impl AppState {
             db,
             checks,
             started_at: Instant::now(),
+            boot_id: Uuid::now_v7().to_string(),
             config,
             bus,
             graph,
@@ -400,6 +403,7 @@ impl AppState {
             db,
             checks,
             started_at: Instant::now(),
+            boot_id: Uuid::now_v7().to_string(),
             config,
             bus,
             graph,
@@ -435,6 +439,7 @@ impl AppState {
             db,
             checks,
             started_at: Instant::now(),
+            boot_id: Uuid::now_v7().to_string(),
             config,
             bus,
             graph,
@@ -465,6 +470,14 @@ pub struct HealthResponse {
     pub schema: &'static str,
     /// Process uptime in seconds.
     pub uptime_secs: u64,
+    /// OS process id (diagnostic identity; not a stable machine identifier).
+    pub pid: u32,
+    /// Per-process identity issued at boot.
+    pub boot_id: String,
+    /// Effective data directory.
+    pub data_dir: String,
+    /// Effective file-tool workspace root.
+    pub workspace_root: String,
     /// Environment checks.
     pub checks: Vec<Check>,
     /// Database health.
@@ -1183,6 +1196,10 @@ async fn health(State(state): State<Arc<AppState>>) -> Response {
         version: env!("CARGO_PKG_VERSION"),
         schema: hiverouter_contract::SCHEMA_VERSION,
         uptime_secs: state.started_at.elapsed().as_secs(),
+        pid: std::process::id(),
+        boot_id: state.boot_id.clone(),
+        data_dir: state.config.data_dir.display().to_string(),
+        workspace_root: state.config.workspace_root.display().to_string(),
         checks: state.checks.clone(),
         database,
         transport: TransportHealth {

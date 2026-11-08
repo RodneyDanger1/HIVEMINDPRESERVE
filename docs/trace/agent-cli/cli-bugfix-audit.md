@@ -17,6 +17,8 @@ UNVERIFIED by explicit instruction.
 | Start/stop identity checks use database path | `startServer`/`stopServer` | VERIFIED (source); live UNVERIFIED |
 | Stop auto-escalates and reports graceful:false | `stopServer` | VERIFIED (source); live UNVERIFIED |
 | Exit table aligns with Rust CLI 0/2/3/4 | `EXIT` constants + docs | VERIFIED (source) |
+| `/health` exposes pid/boot_id/data_dir/workspace_root | `HealthResponse` + additive assertions | VERIFIED (source); not run |
+| CLI checks boot identity on start/stop | `startServer`/`stopServer` | VERIFIED (source); live UNVERIFIED |
 | Full runtime command verification | not run | UNVERIFIED |
 
 ## Gap matrix
@@ -31,7 +33,8 @@ UNVERIFIED by explicit instruction.
 | exe search missed repo-root `target/release` | MISSING (fixed) | search order widened |
 | CLI envelope lacked top-level `schema` | MISSING (fixed) | `schema: hivemind.cli.v1` on success/failure |
 | `--workspace-root` absent from server help | MISSING (fixed) | help text and `.cmd` launch path corrected |
-| PID-reuse/process-image identity | MISSING | remains open |
+| `/health` lacked process identity | MISSING (fixed source) | added additive `pid`, `boot_id`, `data_dir`, `workspace_root`; CLI records/checks boot id |
+| PID-reuse/process-image identity | MISSING | boot id now narrows this; creation-time image check remains open |
 | OS-level data-dir lock | MISSING | state conflict only |
 | DPAPI provider-key startup | MISSING | deliberately not implemented; key stays off |
 | Live command verification | UNVERIFIED | requires a user-authorized test session |

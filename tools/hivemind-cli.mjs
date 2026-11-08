@@ -769,7 +769,8 @@ async function startServer(options) {
       const sameOwned =
         existingState?.url === baseUrl.href.replace(/\/$/, '') &&
         processAlive(Number(existingState?.pid)) &&
-        existingState?.external !== true;
+        existingState?.external !== true &&
+        (!existingState?.boot_id || existingState.boot_id === body.boot_id);
       writeState(
         {
           state_schema: 'hivemind.cli.state.v1',
@@ -782,6 +783,8 @@ async function startServer(options) {
           workspace_root: existingState?.workspace_root ?? workspaceRoot,
           data_dir: dataDir,
           db_path: expectedDb,
+          boot_id: typeof body.boot_id === 'string' ? body.boot_id : null,
+          server_pid: Number.isInteger(body.pid) ? body.pid : null,
         },
         options,
       );
@@ -847,6 +850,8 @@ async function startServer(options) {
         ...currentState,
         status: 'ready',
         provider_key_present: keyCheck ? keyCheck.ok === true : null,
+        boot_id: typeof health.boot_id === 'string' ? health.boot_id : null,
+        server_pid: Number.isInteger(health.pid) ? health.pid : child.pid,
       },
       options,
     );
@@ -899,6 +904,14 @@ async function stopServer(options) {
           'E_NOT_OWNED',
           'The live server database does not match the CLI-owned state.',
           'Refusing to kill a foreign instance; use its own manager.',
+          EXIT_NOT_RUNNING,
+        );
+      }
+      if (state.boot_id && health?.boot_id && health.boot_id !== state.boot_id) {
+        throw cliError(
+          'E_NOT_OWNED',
+          'The live server boot identity does not match the CLI-owned state.',
+          'The recorded process was replaced; inspect state before killing anything.',
           EXIT_NOT_RUNNING,
         );
       }

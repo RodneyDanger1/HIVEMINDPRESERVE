@@ -225,6 +225,10 @@ async fn health_endpoint_reports_boot_checks_and_database() {
         health["status"]
     );
     assert!(health["uptime_secs"].is_u64());
+    assert!(health["pid"].as_u64().is_some_and(|pid| pid > 0));
+    assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
+    assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
+    assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
     assert_eq!(health["database"]["schema_version"], 11);
 
     let checks = health["checks"].as_array().expect("checks array");
