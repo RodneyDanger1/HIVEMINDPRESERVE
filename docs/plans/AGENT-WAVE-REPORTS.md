@@ -8,7 +8,7 @@ This file compiles the read-only seats and points to the detailed reports. Findi
 | Report | Seat | Verdict |
 |---|---|---|
 | [agent-definitions/DRAFT.md](../research/agent-definitions/DRAFT.md) | taxonomy author | five classes defined with code mapping; one free-form role currently does label/rank/grant/memory-key work |
-| [agent-definitions/VERIFIED.md](../research/agent-definitions/VERIFIED.md) | independent verifier | ACCEPT WITH CORRECTIONS; Subagent is a profile-only class, Remote has zero code |
+| [agent-definitions/VERIFIED.md](../research/agent-definitions/VERIFIED.md) | independent verifier | ACCEPT WITH CORRECTIONS; Subagent is a profile-only class, Remote has zero code; draft evidence patched to S4 |
 | [memory/AUDIT.md](../audit/hivemind-memory-a2a/AUDIT.md) | memory/A2A audit | flat scopes, no bank tree, one-way A2A; some findings stale after fixes |
 | [remote-agents/00-README.md](../research/remote-agents/00-README.md) | remote/daemon design | tree-free principal, device ACL, supervisor/watchdog records; design only |
 | [HIVEMIND-MASTER-FINISH-PLAN.md](HIVEMIND-MASTER-FINISH-PLAN.md) | merged master plan | current truth, P0-P9 gates, must-not-claim list |
@@ -34,7 +34,7 @@ This file compiles the read-only seats and points to the detailed reports. Findi
 - Multi-node plans get a root synthesis answer; single-node plans do not (open policy decision).
 - Root synthesis uses a synthesis system prompt, no tools, bounded results, run/agent memory summary; tool calls are rejected.
 - Memory: engine run bank written before seeding; own-task branch writes; parent/run any-role recall; root aggregate; seed/refresh A2A sanitized.
-- Role safety: planned roles validated against parent tier; template ids mapped to spawn classes; compact persona aliases; persona tool scope enforced; HTTP kinds use the tier classifier.
+- Role safety: planned roles validated against parent tier; template ids mapped to spawn classes; compact persona aliases; persona tool scope enforced; HTTP kinds use the tier classifier; Subagent depth floor enforced in plan/spawn/template paths.
 - Cancelled streams no longer poison the run budget.
 - Snapshot file write fsyncs before rename; snapshot carries kind/role/label.
 - CLI: dry-run no longer executes lifecycle commands; `--y` alias removed for viewport; fractional viewport values; submit captures RUN_ID; stale state removed; timeout exits refusal; stop checks health pid; doctor no longer requires local state.
