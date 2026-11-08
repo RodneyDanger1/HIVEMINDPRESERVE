@@ -1421,6 +1421,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               status: event.payload.status,
               errorCode: event.payload.error_code ?? null,
             },
+            ...(event.payload.error_code === 'E_KEY_MISSING'
+              ? { settings: { ...get().settings, keyPresent: false } }
+              : {}),
             streamingRunId: isTerminal(event.payload.status) ? null : get().streamingRunId,
             messages: isTerminal(event.payload.status)
               ? get().messages.map((message) =>
@@ -1431,6 +1434,11 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               : get().messages,
             graphRev: get().graphRev + 1,
           });
+          if (event.payload.error_code === 'E_KEY_MISSING') {
+            pushRefusal(clientRefusal('E_KEY_MISSING'));
+          } else if (event.payload.error_code !== null && event.payload.error_code !== undefined) {
+            pushRefusal(clientRefusal(event.payload.error_code));
+          }
           if (isTerminal(event.payload.status)) {
             // A terminal run commits its final snapshot: refresh the revision cursor so
             // time travel becomes reachable without waiting for a reload. Quiet: any

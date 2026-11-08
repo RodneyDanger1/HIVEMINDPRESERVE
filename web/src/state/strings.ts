@@ -117,7 +117,7 @@ export const STRINGS = {
     title: 'Library',
     projectLabel: 'Project',
     projectFallback: 'HiveMind AI',
-    activeAgents: 'ACTIVE AGENTS',
+    activeAgents: 'AGENTS IN RUN',
     templates: 'TEMPLATES',
     tip: 'Drag a worker onto another super-agent to re-route its context stream live.',
     emptyAgents: 'No active agents',

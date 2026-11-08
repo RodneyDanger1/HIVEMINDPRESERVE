@@ -1,7 +1,7 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
-import { DOT_STATES, NODE_KIND_LABELS, isTerminal, visualFor } from '../state/agentState';
+import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
 import { StateDot } from '../flow/nodes';
 import { LAYOUT } from '../tokens/tokens';
 
@@ -37,9 +37,7 @@ export function LibraryPanel() {
   const selectTask = useUiStore((state) => state.selectTask);
   const tab = useUiStore((state) => state.view.tab);
   const setTab = useUiStore((state) => state.setTab);
-  const active = Object.values(tasks).filter(
-    (task) => task.kind !== 'hyperagent' && !isTerminal(task.state),
-  );
+  const agents = Object.values(tasks).filter((task) => task.kind !== 'hyperagent');
 
   return (
     <aside
@@ -99,11 +97,12 @@ export function LibraryPanel() {
 
       <div>
         <div className="text-[11.5px] font-semibold text-ink-900">{STRINGS.library.activeAgents}</div>
-        {active.length === 0 ? (
+        {agents.length === 0 ? (
           <p className="type-mono-meta mt-1 text-meta">{STRINGS.library.emptyAgents}</p>
         ) : (
+          <>
           <ul className="mt-2 flex flex-wrap gap-2">
-            {active.slice(0, 8).map((task) => (
+            {agents.slice(0, 8).map((task) => (
               <li key={task.id} className="w-12">
                 <button
                   type="button"
@@ -128,6 +127,12 @@ export function LibraryPanel() {
               </li>
             ))}
           </ul>
+          {agents.length > 8 ? (
+            <p className="type-mono-meta mt-1 text-[8px] text-ink-500">
+              +{agents.length - 8} more in this run
+            </p>
+          ) : null}
+          </>
         )}
       </div>
 

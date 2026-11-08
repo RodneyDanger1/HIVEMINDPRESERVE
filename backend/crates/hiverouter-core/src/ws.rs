@@ -741,6 +741,16 @@ async fn handle_client_text(
             Ok(())
         }
         Command::SubmitPrompt(payload) => {
+            // A keyless deployment must refuse the command before create_run,
+            // not create a run that dies later with E_KEY_MISSING.
+            if state
+                .checks
+                .iter()
+                .any(|check| check.name == "deepseek_api_key" && !check.ok)
+            {
+                publish_error(state, Refusal::KeyMissing, Some(correlation));
+                return Ok(());
+            }
             match state
                 .engine
                 .submit_prompt(&payload.text, &payload.project_id, correlation)
