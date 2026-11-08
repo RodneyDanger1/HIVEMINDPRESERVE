@@ -262,6 +262,13 @@ async fn agent_read_surfaces_are_mounted_and_truthful() {
     let unknown: Value = serde_json::from_str(&unknown).expect("unknown approval JSON");
     assert_eq!(unknown["code"], "E_RUN_NOT_FOUND");
 
+    let (status, body) = http_get(server.addr, "/api/runtime").await;
+    assert_eq!(status, 200, "runtime route: {body}");
+    let runtime: Value = serde_json::from_str(&body).expect("runtime JSON");
+    assert_eq!(runtime["status"], "idle");
+    assert_eq!(runtime["caps"]["max_agents"], 64);
+    assert_eq!(runtime["caps"]["max_calls"], 40);
+
     let (status, body) = http_get(server.addr, "/api/templates").await;
     assert_eq!(status, 200, "templates route: {body}");
     let templates: Value = serde_json::from_str(&body).expect("templates JSON");

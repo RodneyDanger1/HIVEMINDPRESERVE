@@ -526,6 +526,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/diagnose", get(diagnose))
+        .route("/api/runtime", get(runtime_status))
         .route("/api/session", get(api_session))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
@@ -1337,6 +1338,57 @@ async fn projects(State(state): State<Arc<AppState>>) -> Response {
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+/// Read-only runtime capacity/provider status. No secrets; key presence is a
+/// boolean and runtime caps are the effective values enforced by the engine.
+async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
+    let active_run = state.engine.active_run();
+    let latest = state
+        .engine
+        .store
+        .latest_active_run()
+        .ok()
+        .flatten()
+        .map(|run| run.id);
+    let task_count = active_run
+        .or(latest)
+        .and_then(|run_id| state.engine.store.task_count(run_id).ok());
+    let key_present = state
+        .checks
+        .iter()
+        .find(|check| check.name == "deepseek_api_key")
+        .map(|check| check.ok);
+    let caps = state.engine.caps;
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": if active_run.is_some() { "busy" } else { "idle" },
+            "active_run_id": active_run.map(|id| id.to_string()),
+            "latest_active_run_id": latest.map(|id| id.to_string()),
+            "active_task_count": task_count,
+            "caps": {
+                "max_depth": caps.max_depth,
+                "max_fanout": caps.max_fanout,
+                "max_agents": caps.max_agents,
+                "max_calls": caps.max_calls,
+            },
+            "provider": {
+                "enabled": state.config.provider.enabled,
+                "model": state.config.provider.model.id(),
+                "key_present": key_present,
+                "planner_thinking": format!("{:?}", state.config.provider.planner_thinking.kind).to_lowercase(),
+                "leaf_thinking": format!("{:?}", state.config.provider.leaf_thinking.kind).to_lowercase(),
+                "reasoning_effort": format!("{:?}", state.config.provider.planner_reasoning_effort).to_lowercase(),
+                "planner_max_tokens": state.config.provider.planner_max_tokens,
+                "leaf_max_tokens": state.config.provider.leaf_max_tokens,
+            },
+            "side_effects_enabled": state.config.side_effects_enabled,
+            "last_seq": state.bus.current_seq(),
+            "graph_nodes": state.graph.node_count().ok(),
+        })),
+    )
+        .into_response()
 }
 
 async fn health(State(state): State<Arc<AppState>>) -> Response {

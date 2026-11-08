@@ -138,6 +138,12 @@ const COMMANDS = {
     transport: 'http',
     args: [],
   },
+  runtime: {
+    summary: 'Read effective capacity, provider config, and active-run status.',
+    safety: 'read',
+    transport: 'http',
+    args: [],
+  },
   runs: {
     summary: 'List committed runs, newest first.',
     safety: 'read',
@@ -1474,6 +1480,8 @@ async function executeRead(command, options, baseUrl) {
       return httpJson(baseUrl, '/health');
     case 'diagnose':
       return httpJson(baseUrl, '/diagnose');
+    case 'runtime':
+      return httpJson(baseUrl, '/api/runtime');
     case 'runs': {
       const body = await httpJson(baseUrl, '/api/history/runs');
       const limit = limitOption(options, 20);

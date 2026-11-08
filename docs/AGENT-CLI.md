@@ -46,7 +46,7 @@ accepted. No environment variable is required for normal operation.
 This aligns with the shipped `hiverouter-cli` classes (0/2/3/4); semantic detail
 comes from `error.code`, not from extra process codes.
 
-## Full command list (49 commands)
+## Full command list (50 commands)
 
 ### Lifecycle and local
 
@@ -69,6 +69,7 @@ comes from `error.code`, not from extra process codes.
 |---|---|---|
 | `health` | HTTP | `GET /health` |
 | `diagnose` | HTTP | `GET /diagnose` |
+| `runtime` | HTTP | `GET /api/runtime` |
 | `runs` | HTTP | `GET /api/history/runs`; `--limit` |
 | `revisions` | HTTP | `GET /api/history/runs/{run}/revisions`; `--run` |
 | `state` | HTTP | `GET /api/history/runs/{run}/state?revision=`; latest if omitted |
@@ -128,6 +129,7 @@ Non-follow mode returns `{events, truncated, timed_out}`.
 |---|---|
 | `GET /health` | `health` |
 | `GET /diagnose` | `diagnose` |
+| `GET /api/runtime` | `runtime` |
 | `GET /api/session` | `session` (token redacted) |
 | `GET /api/history/runs` | `runs` |
 | `GET /api/history/runs/{run}/revisions` | `revisions` |

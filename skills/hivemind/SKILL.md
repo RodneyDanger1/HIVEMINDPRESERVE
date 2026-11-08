@@ -12,6 +12,7 @@ tools\hivemind.cmd start --open --json
 tools\hivemind.cmd status --json
 tools\hivemind.cmd doctor --json
 tools\hivemind.cmd health --json
+tools\hivemind.cmd runtime --json
 tools\hivemind.cmd stop --json
 ```
 
