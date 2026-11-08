@@ -864,15 +864,24 @@ async fn agent_messages(
     }
     let from_task_id = match query.get("from_task_id") {
         Some(raw) => match raw.parse::<hiverouter_contract::TaskId>() {
-            Ok(task_id) => Some(task_id.to_string()),
+            Ok(task_id) => Some(task_id),
             Err(_) => {
                 return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
             }
         },
         None => None,
     };
+    if let Some(from_task_id) = from_task_id {
+        match state.engine.store.get_task(from_task_id) {
+            Ok(task) if task.run_id == run_id => {}
+            Ok(_) => {
+                return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::TaskNotFound);
+            }
+            Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+        }
+    }
     let kind = query.get("kind").map(String::as_str);
-    if kind.is_some_and(|value| value.is_empty() || value.chars().count() > 64) {
+    if kind.is_some_and(|value| value != "ask_parent" && value != "send_to_sibling") {
         return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
     }
     let result = match task_id {
@@ -883,7 +892,7 @@ async fn agent_messages(
         Ok(messages) => {
             let messages: Vec<_> = messages
                 .into_iter()
-                .filter(|message| from_task_id.as_deref().is_none_or(|from| message.from_task_id.as_str() == from))
+                .filter(|message| from_task_id.is_none_or(|from| message.from_task_id == from.to_string()))
                 .filter(|message| kind.is_none_or(|kind| message.kind.as_str() == kind))
                 .collect();
             (
@@ -892,7 +901,7 @@ async fn agent_messages(
                 Json(serde_json::json!({
                     "run_id": run_id.to_string(),
                     "task_id": task_id.map(|id| id.to_string()),
-                    "from_task_id": from_task_id,
+                    "from_task_id": from_task_id.map(|id| id.to_string()),
                     "kind": kind,
                     "messages": messages.into_iter().map(|message| serde_json::json!({
                         "id": message.id,
