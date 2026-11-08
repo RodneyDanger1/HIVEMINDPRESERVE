@@ -137,7 +137,7 @@ async fn auth_status_is_mapped_to_provider_auth() {
 }
 
 #[tokio::test]
-async fn payment_required_is_mapped_to_provider_auth() {
+async fn payment_required_is_mapped_to_provider_balance() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/chat/completions"))
@@ -150,7 +150,7 @@ async fn payment_required_is_mapped_to_provider_auth() {
         .plan(RunId::new(), "plan this", &CancellationToken::new())
         .await
         .expect_err("402");
-    assert_eq!(error, Refusal::ProviderAuth);
+    assert_eq!(error, Refusal::ProviderBalance);
 }
 
 #[tokio::test]

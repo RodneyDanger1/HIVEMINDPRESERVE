@@ -6,7 +6,7 @@
 //! - 429 exhaustion maps the internal `ProviderRateLimit` to the final
 //!   `E_LLM_RATE_LIMIT` (both for a non-streaming call and for a stream open),
 //!   after exactly `MAX_ATTEMPTS` HTTP requests;
-//! - 401/402 are named `E_PROVIDER_AUTH` refusals and are **never** retried
+//! - 401 is `E_PROVIDER_AUTH`; 402 is `E_PROVIDER_BALANCE`; both are **never** retried
 //!   (complete and stream open);
 //! - request timeout and connect failure both map to `E_PROVIDER_TIMEOUT`
 //!   (the frozen single transport refusal), with timeout retried up to the cap;
@@ -134,7 +134,7 @@ async fn stream_rate_limit_429_exhaustion_maps_to_llm_rate_limit() {
 }
 
 // ---------------------------------------------------------------------------
-// 401/402: named auth refusal, never retried (complete and stream open)
+// 401/402: named auth/balance refusals, never retried (complete and stream open)
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -172,8 +172,8 @@ async fn payment_required_402_is_not_retried() {
         .await
         .expect_err("402 must be refused");
 
-    assert_eq!(error.code(), "E_PROVIDER_AUTH");
-    assert_eq!(error.refusal(), Refusal::ProviderAuth);
+    assert_eq!(error.code(), "E_PROVIDER_BALANCE");
+    assert_eq!(error.refusal(), Refusal::ProviderBalance);
     assert!(!error.retryable(), "402 is never retried");
     assert_eq!(error.http_status(), Some(402));
     assert_eq!(recorded_requests(&server).await, 1, "402 sends one request only");

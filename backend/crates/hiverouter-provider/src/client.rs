@@ -510,7 +510,7 @@ impl DeepSeekClient {
                 format!("the provider rejected the credentials (HTTP {status}); not retried"),
             ),
             402 => ProviderError::new(
-                Refusal::ProviderAuth,
+                Refusal::ProviderBalance,
                 format!(
                     "the provider account has insufficient balance (HTTP {status}); \
                      top up or replace the key; not retried"

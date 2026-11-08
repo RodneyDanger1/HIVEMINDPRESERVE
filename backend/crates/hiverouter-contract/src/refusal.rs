@@ -256,7 +256,10 @@ refusal_table! {
     // --- provider -----------------------------------------------------------
     ProviderAuth => ("E_PROVIDER_AUTH", false,
         "The DeepSeek API rejected the credentials.",
-        "Check DEEPSEEK_API_KEY; a 401/402 is never retried."),
+        "Check DEEPSEEK_API_KEY; HTTP 401 is never retried."),
+    ProviderBalance => ("E_PROVIDER_BALANCE", false,
+        "The DeepSeek API account has insufficient balance.",
+        "Top up the DeepSeek account or use a funded key; HTTP 402 is never retried."),
     ProviderRateLimit => ("E_PROVIDER_RATE_LIMIT", true,
         "DeepSeek returned HTTP 429 (account concurrency or rate limit).",
         "Back off and retry within the retry budget; reduce in-flight calls."),

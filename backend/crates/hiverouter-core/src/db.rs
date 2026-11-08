@@ -664,6 +664,21 @@ impl Database {
         Ok(())
     }
 
+    /// Reads one task's completed tool turns (the per-task turn cap source).
+    ///
+    /// # Errors
+    /// [`DbError`] when the query fails.
+    pub fn task_tool_turns(&self, run_id: RunId, task_id: TaskId) -> Result<u32, DbError> {
+        let connection = self.lock()?;
+        let turns: i64 = connection.query_row(
+            "SELECT COUNT(DISTINCT turn) FROM tool_turns WHERE run_id = ?1 AND task_id = ?2",
+            rusqlite::params![run_id.to_string(), task_id.to_string()],
+            |row| row.get(0),
+        )?;
+        u32::try_from(turns)
+            .map_err(|_| DbError::InvalidToolTurn(format!("negative task turn count {turns}")))
+    }
+
     /// Reads one run's persisted tool turns, ordered by turn then creation time.
     ///
     /// # Errors
@@ -1024,6 +1039,31 @@ mod tests {
         assert!(database
             .increment_run_tool_counters(unknown, 1, 0)
             .is_err());
+    }
+
+    #[test]
+    fn task_turn_count_is_per_task_not_per_run() {
+        let database = Database::open_in_memory().expect("in-memory db");
+        database.migrate().expect("migrate");
+        let run_id = RunId::new();
+        let first = TaskId::new();
+        let second = TaskId::new();
+        insert_run(&database, run_id);
+
+        let mut turn_one = sample_turn(run_id, first);
+        database.record_tool_turn(&turn_one).expect("first task turn 1");
+        turn_one.id = uuid::Uuid::now_v7().to_string();
+        turn_one.tool_call_id = "call_02".to_owned();
+        turn_one.turn = 2;
+        database.record_tool_turn(&turn_one).expect("first task turn 2");
+        let mut other = sample_turn(run_id, second);
+        other.id = uuid::Uuid::now_v7().to_string();
+        other.tool_call_id = "call_03".to_owned();
+        database.record_tool_turn(&other).expect("second task turn 1");
+
+        assert_eq!(database.task_tool_turns(run_id, first).expect("first"), 2);
+        assert_eq!(database.task_tool_turns(run_id, second).expect("second"), 1);
+        assert_eq!(database.task_tool_turns(run_id, TaskId::new()).expect("unknown"), 0);
     }
 
     #[test]

@@ -335,6 +335,11 @@ export const STRINGS = {
       howToFix: 'Upgrade HiveMind or restore a backup made by this build; do not delete the database.',
       retryable: false,
     },
+    E_PROVIDER_BALANCE: {
+      message: 'The DeepSeek API account has insufficient balance.',
+      howToFix: 'Top up the DeepSeek account or use a funded key; this call is never retried.',
+      retryable: false,
+    },
     E_SCHEMA_INVALID: {
       message: 'A frame did not match the frozen contract.',
       howToFix: 'Reload the UI; if it repeats, record the frame and restart the server.',

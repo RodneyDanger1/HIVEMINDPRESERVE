@@ -1891,7 +1891,11 @@ impl RunEngine {
                 executed: Vec::new(),
             });
         }
-        let (completed_turns, used_calls) = self
+        let completed_turns = self
+            .db
+            .task_tool_turns(run.id, task.id)
+            .map_err(|error| error.refusal())?;
+        let (_, used_calls) = self
             .db
             .run_tool_counters(run.id)
             .map_err(|error| error.refusal())?;
@@ -2767,27 +2771,15 @@ impl RunEngine {
                 );
             }
         }
-        match self.store.agent_message_count(run.id) {
-            Ok(count) if count >= MAX_AGENT_MESSAGES_PER_RUN => {
-                return ToolExecution::refused(
-                    plan.tool_call_id.clone(),
-                    Refusal::CallLimit.code(),
-                    "ask_parent refused: the per-run agent-message budget is exhausted".to_owned(),
-                );
-            }
-            Ok(_) => {}
-            Err(refusal) => {
-                return ToolExecution::refused(
-                    plan.tool_call_id.clone(),
-                    refusal.code(),
-                    refusal.message().to_owned(),
-                );
-            }
-        }
-        match self
-            .store
-            .record_agent_message(run.id, task.id, parent, "ask_parent", text)
-        {
+        let message = self.store.record_agent_message_limited(
+            run.id,
+            task.id,
+            parent,
+            "ask_parent",
+            text,
+            MAX_AGENT_MESSAGES_PER_RUN,
+        );
+        match message {
             Ok(message_id) => {
                 self.publish_agent_message(run.id, task.id, parent, "ask_parent", text);
                 ToolExecution::ok(
@@ -2800,6 +2792,11 @@ impl RunEngine {
                     .to_string(),
                 )
             }
+            Err(Refusal::CallLimit) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::CallLimit.code(),
+                "ask_parent refused: the per-run agent-message budget is exhausted".to_owned(),
+            ),
             Err(refusal) => ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),
@@ -2895,28 +2892,15 @@ impl RunEngine {
                 "send_to_sibling text must be non-empty and bounded".to_owned(),
             );
         }
-        match self.store.agent_message_count(run.id) {
-            Ok(count) if count >= MAX_AGENT_MESSAGES_PER_RUN => {
-                return ToolExecution::refused(
-                    plan.tool_call_id.clone(),
-                    Refusal::CallLimit.code(),
-                    "send_to_sibling refused: the per-run agent-message budget is exhausted"
-                        .to_owned(),
-                );
-            }
-            Ok(_) => {}
-            Err(refusal) => {
-                return ToolExecution::refused(
-                    plan.tool_call_id.clone(),
-                    refusal.code(),
-                    refusal.message().to_owned(),
-                );
-            }
-        }
-        match self
-            .store
-            .record_agent_message(run.id, task.id, target_id, "send_to_sibling", text)
-        {
+        let message = self.store.record_agent_message_limited(
+            run.id,
+            task.id,
+            target_id,
+            "send_to_sibling",
+            text,
+            MAX_AGENT_MESSAGES_PER_RUN,
+        );
+        match message {
             Ok(message_id) => {
                 self.publish_agent_message(run.id, task.id, target_id, "send_to_sibling", text);
                 ToolExecution::ok(
@@ -2929,6 +2913,12 @@ impl RunEngine {
                     .to_string(),
                 )
             }
+            Err(Refusal::CallLimit) => ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::CallLimit.code(),
+                "send_to_sibling refused: the per-run agent-message budget is exhausted"
+                    .to_owned(),
+            ),
             Err(refusal) => ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 refusal.code(),

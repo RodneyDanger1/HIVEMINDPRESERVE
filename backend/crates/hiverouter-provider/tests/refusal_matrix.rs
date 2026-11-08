@@ -2,7 +2,7 @@
 //!
 //! Every case uses `wiremock` as a local HTTP server — no key, no network, no
 //! live DeepSeek call. The matrix exercises the named refusals:
-//! 401 (auth), 402 (auth, not retried), 429 + Retry-After (retried, final
+//! 401 (auth), 402 (balance, not retried), 429 + Retry-After (retried, final
 //! E_LLM_RATE_LIMIT), socket/read timeout (E_PROVIDER_TIMEOUT), malformed JSON
 //! (E_PROVIDER_INVALID_RESPONSE), and NULL usage (INCOMPLETE, never $0.00).
 //! Budget preflight is asserted to refuse with **zero** provider requests.
@@ -67,7 +67,7 @@ async fn auth_401_is_a_named_refusal_and_is_not_retried() {
 }
 
 #[tokio::test]
-async fn payment_required_402_is_auth_and_not_retried() {
+async fn payment_required_402_is_balance_and_not_retried() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/chat/completions"))
@@ -77,7 +77,7 @@ async fn payment_required_402_is_auth_and_not_retried() {
 
     let client = client_for(&server);
     let error = client.complete(&request()).await.expect_err("402 refused");
-    assert_eq!(error.code(), "E_PROVIDER_AUTH");
+    assert_eq!(error.code(), "E_PROVIDER_BALANCE");
     let requests = server.received_requests().await.expect("recorded");
     assert_eq!(requests.len(), 1, "402 must not be retried");
 }

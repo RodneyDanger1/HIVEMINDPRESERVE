@@ -571,6 +571,49 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Records one durable agent-to-agent message under an atomic run budget.
+    ///
+    /// The insert and the count check are one SQL statement, so concurrent
+    /// senders cannot both pass a check and exceed the budget.
+    ///
+    /// # Errors
+    /// `E_CALL_LIMIT` when the run already holds `max_messages`; database refusal otherwise.
+    pub fn record_agent_message_limited(
+        &self,
+        run_id: RunId,
+        from_task_id: TaskId,
+        to_task_id: TaskId,
+        kind: &str,
+        text: &str,
+        max_messages: u64,
+    ) -> Result<Uuid, Refusal> {
+        let id = Uuid::now_v7();
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO agent_messages(id, run_id, from_task_id, to_task_id, kind, text, created_at)
+                     SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7
+                     WHERE (SELECT COUNT(*) FROM agent_messages WHERE run_id = ?2) < ?8",
+                    params![
+                        id.to_string(),
+                        run_id.to_string(),
+                        from_task_id.to_string(),
+                        to_task_id.to_string(),
+                        kind,
+                        text,
+                        Timestamp::now().as_str(),
+                        i64::try_from(max_messages).unwrap_or(i64::MAX)
+                    ],
+                )
+            })
+            .map_err(map)?;
+        if changed == 0 {
+            return Err(Refusal::CallLimit);
+        }
+        Ok(id)
+    }
+
     /// Records one durable agent-to-agent message.
     ///
     /// # Errors
@@ -1379,6 +1422,24 @@ mod tests {
         assert_ne!(message_id, Uuid::nil());
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
         assert_eq!(store.agent_message_count(RunId::new()).expect("other"), 0);
+    }
+
+    #[test]
+    fn agent_message_budget_is_atomic_and_named() {
+        let store = store();
+        let run = store
+            .create_run("p", "message budget", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        store
+            .record_agent_message_limited(run.id, from, to, "ask_parent", "one", 1)
+            .expect("first message");
+        assert_eq!(
+            store.record_agent_message_limited(run.id, from, to, "ask_parent", "two", 1),
+            Err(Refusal::CallLimit)
+        );
+        assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
     }
 
     #[test]
