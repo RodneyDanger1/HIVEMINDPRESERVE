@@ -2780,9 +2780,10 @@ impl RunEngine {
         }
     }
 
-    /// Refreshes the recipient-specific A2A inbox from durable rows. This is
-    /// called immediately before a provider turn so messages that arrived after
-    /// context seeding are visible without leaking to children.
+    /// Refreshes the recipient-specific A2A inbox from durable rows at task
+    /// execution start. This makes messages that arrived after context seeding
+    /// visible without leaking to children. Failure to read the inbox leaves the
+    /// previously seeded facts intact rather than erasing them.
     fn refresh_a2a_inbox(
         &self,
         task: &TaskRecord,
@@ -2791,15 +2792,19 @@ impl RunEngine {
         let Some(mut context) = context else {
             return Ok(None);
         };
+        let Ok(messages) = self.store.agent_messages_for_task(task.run_id, task.id, 8) else {
+            return Ok(Some(context));
+        };
         context.facts.retain(|key, _| !key.starts_with("a2a:"));
-        if let Ok(messages) = self.store.agent_messages_for_task(task.run_id, task.id, 8) {
-            for message in messages {
-                let text: String = message.text.chars().take(500).collect();
-                context.facts.insert(
-                    format!("a2a:{}:{}:{}", message.from_task_id, message.kind, message.id),
-                    text,
-                );
+        for message in messages {
+            if !memory_text_is_safe(&message.text) {
+                continue;
             }
+            let text: String = message.text.chars().take(500).collect();
+            context.facts.insert(
+                format!("a2a:{}:{}:{}", message.from_task_id, message.kind, message.id),
+                text,
+            );
         }
         self.contexts.set(task.id, context.clone())?;
         Ok(Some(context))
