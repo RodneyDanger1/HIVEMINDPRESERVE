@@ -28,6 +28,10 @@ export function AgentMessagesPanel() {
     kindFilter === 'all' ? messages : messages.filter((message) => message.kind === kindFilter);
 
   useEffect(() => {
+    setKindFilter('all');
+  }, [runId]);
+
+  useEffect(() => {
     if (runId === null) {
       setMessages([]);
       setStatus('idle');
