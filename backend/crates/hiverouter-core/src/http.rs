@@ -23,7 +23,9 @@ use crate::bus::EventBus;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
-use crate::execution::{node_kind, task_agent_tier, ProviderExecutor, RunEngine, UnconfiguredExecutor};
+use crate::execution::{
+    task_node_kind, ProviderExecutor, RunEngine, UnconfiguredExecutor,
+};
 use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
 use crate::prompts::{load_personas_embedded, Persona, TemplateRegistry};
@@ -785,7 +787,7 @@ pub(crate) fn history_graph_value(
             let role = task.map_or("", |task| task.role.as_str());
             let kind = task.map_or_else(
                 || node.kind.as_deref().unwrap_or("worker"),
-                |task| node_kind(task_agent_tier(task)),
+                |task| task_node_kind(task),
             );
             serde_json::json!({
                 "task_id": node.task_id.to_string(),
@@ -1141,7 +1143,7 @@ async fn agent_roster(
             let agents: Vec<serde_json::Value> = tasks
                 .iter()
                 .map(|task| {
-                    let kind = node_kind(task_agent_tier(task));
+                    let kind = task_node_kind(task);
                     let identity = state.engine.store.task_identity(task.id).ok().flatten();
                     serde_json::json!({
                         "task_id": task.id.to_string(),

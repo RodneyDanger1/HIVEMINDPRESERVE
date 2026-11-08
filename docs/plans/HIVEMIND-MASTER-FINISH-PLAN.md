@@ -288,3 +288,8 @@ Not delivered and must not be claimed:
 - `RunStore::task_identity` reads the triple; `/api/agents/runs/{id}/roster` exposes class/rank/profile alongside role/kind. The wire kind still comes from `AgentTier`, so Subagent still renders as worker until the additive kind delta lands.
 - New test: subagent alias resolves to class `subagent`, rank 4, profile `subagent`; unknown role remains unreported.
 - Not delivered: `TaskRecord` fields, engine authorization by persisted class, ownership columns, strict unknown-role admission, Subagent wire kind/card.
+### P3 additive subagent wire kind
+
+- `NODE_KIND_VOCABULARY` now includes `subagent` (server + web mirror already had it). `task_node_kind` derives `subagent` from the role for graph, roster, history, NODE_STATE/NODE_SPAWN, and recovery.
+- Authority remains the existing four tiers; Subagent is still Worker authority. `TaskRecord` does not yet carry class/profile fields.
+- New test proves a `sub-agent` task emits `subagent`, while a `worker` still emits `worker`.

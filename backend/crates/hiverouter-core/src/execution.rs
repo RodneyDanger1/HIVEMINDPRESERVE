@@ -142,6 +142,17 @@ pub(crate) fn is_subagent_role(role: &str) -> bool {
         == "subagent"
 }
 
+/// Contract node kind for one task: Subagents are visible as `subagent` while
+/// their authority tier remains `WorkerAgent`.
+#[must_use]
+pub(crate) fn task_node_kind(task: &TaskRecord) -> &'static str {
+    if is_subagent_role(&task.role) {
+        "subagent"
+    } else {
+        node_kind(task_agent_tier(task))
+    }
+}
+
 /// Enforces the hierarchical spawn policy before a child row is created.
 ///
 /// Hyper may spawn Super/Agent/Subagent; Super may spawn Agent/Subagent; Agent
@@ -753,11 +764,11 @@ impl RunEngine {
         };
         let superagents = tasks
             .iter()
-            .filter(|task| node_kind(task_agent_tier(task)) == "superagent")
+            .filter(|task| task_node_kind(task) == "superagent")
             .count();
         let workers = tasks
             .iter()
-            .filter(|task| node_kind(task_agent_tier(task)) == "worker")
+            .filter(|task| task_node_kind(task) == "worker")
             .count();
         let completed = tasks
             .iter()
@@ -847,7 +858,7 @@ impl RunEngine {
             .store
             .get_task(task_id)
             .ok()
-            .map(|task| node_kind(task_agent_tier(&task)).to_owned());
+            .map(|task| task_node_kind(&task).to_owned());
         self.publish(
             Event::NodeState(NodeEvent {
                 task_id,
@@ -870,7 +881,7 @@ impl RunEngine {
                 task_id: task.id,
                 state: AgentState::Queued,
                 rev: node.as_ref().map(|node| node.rev),
-                kind: Some(node_kind(task_agent_tier(task)).to_owned()),
+                kind: Some(task_node_kind(task).to_owned()),
                 parent_task_id: task.parent_task_id,
             }),
             Some(run_id),
@@ -1259,7 +1270,7 @@ impl RunEngine {
             self.graph.add_task(task.id, Some(parent_task_id))?;
             self.graph.set_metadata(
                 task.id,
-                node_kind(task_agent_tier(&task)),
+                task_node_kind(&task),
                 &task.role,
                 None,
             )?;
@@ -1582,7 +1593,7 @@ impl RunEngine {
             self.graph.add_task(record.id, Some(parent_id))?;
             self.graph.set_metadata(
                 record.id,
-                node_kind(task_agent_tier(&record)),
+                task_node_kind(&record),
                 &record.role,
                 None,
             )?;
@@ -3596,5 +3607,25 @@ mod prompt_context_tests {
             validate_spawn_role(AgentTier::WorkerAgent, "worker"),
             Err(Refusal::ToolNotAllowed)
         );
+    }
+
+    #[test]
+    fn subagent_wire_kind_is_distinct_from_worker() {
+        let task = TaskRecord {
+            id: TaskId::new(),
+            run_id: RunId::new(),
+            parent_task_id: None,
+            role: "sub-agent".to_owned(),
+            depth: 2,
+            spawn_seq: 1,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        assert_eq!(task_node_kind(&task), "subagent");
+        let worker = TaskRecord {
+            role: "worker".to_owned(),
+            ..task
+        };
+        assert_eq!(task_node_kind(&worker), "worker");
     }
 }

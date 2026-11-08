@@ -237,7 +237,7 @@ pub struct ReplyDone {
 /// its free-form role string (`planner`, `worker`, ...): an invented kind is
 /// worse than an absent one. `error` is a client-only broken-route state and is
 /// never produced by the server.
-pub const NODE_KIND_VOCABULARY: &[&str] = &["hyperagent", "superagent", "worker", "tool"];
+pub const NODE_KIND_VOCABULARY: &[&str] = &["hyperagent", "superagent", "subagent", "worker", "tool"];
 
 /// `NODE_SPAWN` / `NODE_DRAG` / `NODE_REWIRE` / `NODE_STATE` payload.
 ///
@@ -915,7 +915,7 @@ mod tests {
     fn node_kind_vocabulary_matches_the_web_mirror() {
         assert_eq!(
             NODE_KIND_VOCABULARY,
-            &["hyperagent", "superagent", "worker", "tool"]
+            &["hyperagent", "superagent", "subagent", "worker", "tool"]
         );
         assert!(
             !NODE_KIND_VOCABULARY.contains(&"error"),

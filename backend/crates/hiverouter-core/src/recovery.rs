@@ -420,7 +420,7 @@ fn settle_graph_node(
     }
     graph.set_metadata(
         task.id,
-        crate::execution::node_kind(crate::execution::task_agent_tier(task)),
+        crate::execution::task_node_kind(task),
         &task.role,
         None,
     )?;

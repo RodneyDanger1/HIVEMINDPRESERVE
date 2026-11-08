@@ -31,7 +31,7 @@ use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
 use crate::context::{ContextStore, ContextSwitchOutcome, ScopedContext};
 use crate::entities::TaskRecord;
-use crate::execution::{node_kind, task_agent_tier, validate_spawn_role};
+use crate::execution::{task_agent_tier, task_node_kind, validate_spawn_role};
 use crate::graph::{GraphAuthority, TaskNode};
 use crate::http::AppState;
 use crate::prompts::TemplateRegistry;
@@ -307,7 +307,7 @@ fn insert_template_dag(
         graph.add_task(task.id, Some(root.id))?;
         graph.set_metadata(
             task.id,
-            node_kind(task_agent_tier(&task)),
+            task_node_kind(&task),
             &task.role,
             None,
         )?;
@@ -771,7 +771,7 @@ async fn handle_client_text(
                         task.as_ref().map(|task| task.run_id),
                         Some(correlation),
                         task.as_ref()
-                            .map(|task| node_kind(task_agent_tier(task)).to_owned()),
+                            .map(|task| task_node_kind(task).to_owned()),
                     );
                 }
                 Err(refusal) => publish_error(state, refusal, Some(correlation)),
@@ -1053,7 +1053,7 @@ fn publish_node_spawn(bus: &EventBus, graph: &GraphAuthority, task: &TaskRecord)
         &node,
         Some(task.run_id),
         None,
-        Some(node_kind(task_agent_tier(task)).to_owned()),
+        Some(task_node_kind(task).to_owned()),
     );
 }
 
