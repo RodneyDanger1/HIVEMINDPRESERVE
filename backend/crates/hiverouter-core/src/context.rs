@@ -24,6 +24,9 @@ pub struct ScopedContext {
     pub facts: BTreeMap<String, String>,
     /// Tool ids this agent may use.
     pub allowed_tool_ids: Vec<String>,
+    /// Whether the allowlist came from a resolved persona (and is therefore
+    /// authoritative for tool authorization) rather than a bare tier.
+    pub persona_tool_scope: bool,
     /// Output schema id the child result must satisfy.
     pub output_schema_id: Option<String>,
 }
@@ -200,6 +203,7 @@ pub fn switch_context(
             parent_task_id: new_parent_task_id,
             facts,
             allowed_tool_ids: new_allowed_tool_ids,
+            persona_tool_scope: current.persona_tool_scope,
             output_schema_id: new_output_schema_id,
         },
         cleared_parent,

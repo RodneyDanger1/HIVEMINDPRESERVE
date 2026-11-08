@@ -3,7 +3,7 @@
  * Bootstrap connects to the local server; when the socket fails the UI shows
  * a named offline banner and blocks mutations — it never fakes a run.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createUiApi } from './api';
 import { createUiStore } from './state/store';
 import type { NavSection, TabId } from './state/store';
@@ -40,6 +40,7 @@ function AppFrame() {
   const apiKind = useUiStore((state) => state.apiKind);
   const run = useUiStore((state) => state.run);
   const reduced = useAppReducedMotion();
+  const suppressHashWrite = useRef(false);
 
   const applyHash = useCallback((): void => {
     const raw = window.location.hash.replace(/^#\/?/, '');
@@ -50,8 +51,14 @@ function AppFrame() {
     const nextTab = (TAB_IDS as readonly string[]).includes(nextTabRaw)
       ? (nextTabRaw as TabId)
       : null;
-    if (nextNav !== null) setNav(nextNav);
-    if (nextTab !== null) setTab(nextTab);
+    if (nextNav !== null) {
+      suppressHashWrite.current = true;
+      setNav(nextNav);
+    }
+    if (nextTab !== null) {
+      suppressHashWrite.current = true;
+      setTab(nextTab);
+    }
   }, [setNav, setTab]);
 
   useEffect(() => {
@@ -63,8 +70,12 @@ function AppFrame() {
 
   useEffect(() => {
     const next = `#/${nav}/${tab}`;
+    if (suppressHashWrite.current) {
+      suppressHashWrite.current = false;
+      return;
+    }
     if (window.location.hash === next) return;
-    window.history.replaceState(null, '', next);
+    window.history.pushState(null, '', next);
   }, [nav, tab]);
 
   useEffect(() => {

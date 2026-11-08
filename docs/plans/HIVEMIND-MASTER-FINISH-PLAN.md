@@ -61,6 +61,53 @@ HiveMind is a credible **single-run hierarchical HMAS**: typed planner DAG, spaw
 
 **R6 — Audit/release.** Independent audit, crash/load/security evidence, claim register, docs. Gate: all prior pass with quoted evidence; no scale/HMARS-complete claim before.
 
+## Interim triage corrections
+
+- M-01 header claim is fixed at render (`context.rs` trust label + newline neutralisation), but store/write guard and raw seed inbox are still open.
+- M-02 sibling-share is fixed by own-task write + parent read; ancestor/role/hive read-set and trust labels remain open.
+- M-03 `take(32)` is gone; root uses a 24k budget/omission marker and run-memory reads. It currently injects up to 32 raw rows labelled shared memory without trust labels.
+- M-12 rowid tie-break claim is stale: rowid ordering is present in current store queries.
+- A2A M-04/M-07/M-09 remain live: no answer/status/wake, no continuation inbox refresh, terminal recipients accepted, check-then-insert budget, approved cross-branch send skips args/grant binding.
+- Flat planner DAGs still complete without a root provider answer because root synthesis is gated on `has_aggregators`. This is an open product decision, not a bug.
+
+## Independent distance assessment
+
+Weighted code maturity ~5.2/10; verified-evidence maturity ~3.5/10. One solid vertical slice short of a v1 product; three subsystems (bank tree, A2A answer, remote/daemon) short of the full target.
+
+| Area | Grade | Blocker |
+|---|---:|---|
+| HyperAgent execution | 6 | hierarchical-only root, serial, single plan |
+| Hierarchy/roles | 5.5 | Subagent alias not tier; no daemon tier; autonomy modes absent |
+| Memory banks | 4 | flat scope table; no bank tree/trust/provenance |
+| A2A | 4.5 | one-way; no answer/wake/status/atomic budget |
+| Remote/daemon | 1 | design only |
+| UI/FigCraft | 6.5 | no pixel/live gate; gallery static |
+| Provider completeness | 7 | unwired Files/Search/etc; no context preflight |
+| Durability/crash | 7.5 | no resume; no fanout-8 crash drill |
+| Security/authority | 6.5 | no single trust boundary; API auth absent |
+| Scale/performance | 2.5 | serial dispatch, 1 active run, no scheduler |
+| Docs/audit | 6 | evidence drift; stale release registry |
+
+Highest-leverage sequence: **S0 prove current SHA** (freeze writer, compile/test/typecheck/build, one authorized smoke, regenerate status/trace), **S1 one agent-text trust boundary**, **S2 real role enum/spawn matrix/autonomy**, **S3 bank tree + A2A answer**, **S4 measured concurrency/scheduler**, **S5 daemon/remote R0-R2**, **S6 seal**. Remote/daemon is decision-gated and should not block v1 at 50-150 active.
+
+
+## Derived P0-P9 gate plan
+
+| Gate | Outcome | Key work | Exit |
+|---|---|---|---|
+| P0 | truth freeze | pin commit, re-triage findings, sign D1-D9, census/current truth | clean HEAD, test/typecheck/build pass, decisions signed |
+| P1 | memory banks | v12 bank tree, read sets, one agent_text guard, trust/provenance, scoped clear | leak matrix + migration/clear tests |
+| P2 | A2A answer | open/answered/expired, atomic budget, recipient validation, continuation refresh, approval binding | ask-answer-resume + negatives |
+| P3 | orchestration | root always or named flat refusal, SuperAgent hive, Subagent tier/decision, queue skeleton | root/flat/cancel/cap tests + hive summary |
+| P4 | UI parity | bank inspector, A2A status/answer, run detail, cards, a11y; gallery remains provenance | DOM/e2e/a11y + asset serving |
+| P5 | provider closure | support/refusal matrix, context preflight, 402/auth mapping, model controls | refusal matrix + one-key/model tests |
+| P6 | remote light-switch | v13 tree-free principal, device ACL, HA fixture, honest UI | no task rows; grant/idempotency/unknown-state tests |
+| P7 | supervisor/daemons | single lane, daemon records, watchdogs, crash reconciliation | one-job daemon/crash drill |
+| P8 | remote memory/remote_call | remote bank, grants, approval bridge | isolation + grant/approval tests |
+| P9 | scale/hardening | measured 50/150, network/sensitive devices only after sign-off | measured envelope, no unbounded queues |
+
+P0 is the only next executable gate. No HMARS/remote/universal-memory/300-600 claim before its gate.
+
 ## Must not claim yet
 
 - True HMARS or equivalent-to-donor code (ADAPTERS: no donor code copied).

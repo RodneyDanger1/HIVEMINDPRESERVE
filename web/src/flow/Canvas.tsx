@@ -631,6 +631,7 @@ function CanvasInner() {
       ) : null}
 
       <div
+        role="group"
         className="pointer-events-none absolute bottom-32 left-1/2 z-20 -translate-x-1/2 rounded-[var(--radius-pill)] border border-hairline bg-panel/95 px-3 py-1.5 shadow-[var(--shadow-e1)]"
         aria-label="Hierarchy legend"
       >
@@ -644,7 +645,11 @@ function CanvasInner() {
           <span className="flex items-center gap-1 text-signal">broken</span>
         </div>
       </div>
-      <div className="absolute bottom-32 left-3 flex flex-col gap-1" aria-label="Zoom controls">
+      <div
+        role="group"
+        className="absolute bottom-32 left-3 flex flex-col gap-1"
+        aria-label="Zoom controls"
+      >
 
         <button
           type="button"

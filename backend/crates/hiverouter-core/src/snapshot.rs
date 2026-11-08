@@ -8,6 +8,7 @@
 //! corrupt snapshot with `E_SNAPSHOT_CORRUPT` instead of resetting the workspace.
 
 use std::collections::HashSet;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -82,8 +83,21 @@ impl SnapshotStore {
         let path = directory.join(format!("{:010}.json", envelope.revision));
         let temporary = path.with_extension("json.tmp");
         let json = serde_json::to_string_pretty(envelope).map_err(|_| Refusal::SnapshotCorrupt)?;
-        std::fs::write(&temporary, json).map_err(|_| Refusal::SnapshotCorrupt)?;
+        // Durable atomic replace: write, fsync the file, rename, then fsync the
+        // directory where the platform exposes it. A power loss must not leave a
+        // boot-failing truncated newest revision.
+        {
+            let mut file =
+                std::fs::File::create(&temporary).map_err(|_| Refusal::SnapshotCorrupt)?;
+            file.write_all(json.as_bytes())
+                .map_err(|_| Refusal::SnapshotCorrupt)?;
+            file.sync_all().map_err(|_| Refusal::SnapshotCorrupt)?;
+        }
         std::fs::rename(&temporary, &path).map_err(|_| Refusal::SnapshotCorrupt)?;
+        #[cfg(unix)]
+        if let Ok(directory) = std::fs::File::open(&directory) {
+            let _ = directory.sync_all();
+        }
         self.db
             .with_connection(|connection| {
                 connection.execute(

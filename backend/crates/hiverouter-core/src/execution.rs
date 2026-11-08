@@ -896,6 +896,7 @@ impl RunEngine {
             .get(&task.role)
         {
             context.allowed_tool_ids = persona.allowed_tool_ids.clone();
+            context.persona_tool_scope = true;
             context.output_schema_id = persona.output_schema_id.clone();
         }
         if let Some(parent_task_id) = parent_task_id {
@@ -1046,24 +1047,23 @@ impl RunEngine {
     ) -> Result<AgentTier, Refusal> {
         let tier = task_agent_tier(task);
         tool_loop::validate_plan(&self.tool_registry, tier, plan)?;
-        if let Some(allowed) = self.scoped_persona_tools(task.id)? {
-            if !allowed.is_empty() && !allowed.iter().any(|tool| tool == &plan.tool) {
+        if let Some((persona_scoped, allowed)) = self.scoped_persona_tools(task.id)? {
+            if persona_scoped && !allowed.iter().any(|tool| tool == &plan.tool) {
                 return Err(Refusal::ToolNotAllowed);
             }
         }
         Ok(tier)
     }
 
-    /// The task's persona tool ids, when a scoped context carries them.
-    ///
-    /// The context owner copies the persona's `allowed_tool_ids` into the task's
-    /// scoped context on creation/rewire; an empty list means the context has
-    /// not narrowed the tier allowlist.
-    fn scoped_persona_tools(&self, task_id: TaskId) -> Result<Option<Vec<String>>, Refusal> {
-        Ok(self
-            .contexts
-            .get(task_id)?
-            .map(|context| context.allowed_tool_ids))
+    /// The task's persona tool scope, when a scoped context was seeded from a
+    /// persona. An empty allowlist on a persona scopes the agent to no tools.
+    fn scoped_persona_tools(
+        &self,
+        task_id: TaskId,
+    ) -> Result<Option<(bool, Vec<String>)>, Refusal> {
+        Ok(self.contexts.get(task_id)?.map(|context| {
+            (context.persona_tool_scope, context.allowed_tool_ids)
+        }))
     }
 
     /// Handles `SUBMIT_PROMPT`: validates, creates the run row, audit receipt,
@@ -1407,6 +1407,7 @@ impl RunEngine {
         self.graph.add_task(root.id, None)?;
         self.graph
             .set_metadata(root.id, "hyperagent", &root.role, Some("HyperAgent"))?;
+        self.graph.set_state(root.id, AgentState::Running)?;
         self.seed_task_context(&root, None)?;
         self.publish_node_spawn(run.id, &root);
 
