@@ -207,6 +207,8 @@ export class WsApiClient implements UiApi {
   private status: ConnectionStatus = 'idle';
   private lastSeq = 0;
   private manuallyClosed = false;
+  private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+  private recoveryInFlight = false;
   private opening: Promise<SessionInfo> | null = null;
   private readonly pending = new Map<string, PendingCommand>();
   private readonly eventListeners = new Set<
@@ -336,12 +338,14 @@ export class WsApiClient implements UiApi {
       });
       this.failPending(detail);
       this.setStatus('reconnecting', detail);
+      this.scheduleSessionRefresh();
     });
     transport.onError((message) => {
       const detail = clientRefusal('E_WS_DISCONNECTED', {
         message: message && message.length > 0 ? message : 'WebSocket transport error.',
       });
-      this.setStatus('error', detail);
+      this.setStatus('reconnecting', detail);
+      this.scheduleSessionRefresh();
     });
     transport.onMessage((data) => {
       if (typeof data !== 'string') {
@@ -368,6 +372,44 @@ export class WsApiClient implements UiApi {
         listener(event, envelope);
       }
     });
+  }
+
+  private scheduleSessionRefresh(): void {
+    if (this.manuallyClosed || this.recoveryTimer !== null) {
+      return;
+    }
+    this.recoveryTimer = setTimeout(() => {
+      this.recoveryTimer = null;
+      void this.refreshSessionAndOpen();
+    }, 1500);
+  }
+
+  /**
+   * A server restart mints a new session token. Reconnect by re-reading
+   * `/api/session`, not by endlessly re-helloing the dead token URL.
+   */
+  private async refreshSessionAndOpen(): Promise<void> {
+    if (this.manuallyClosed || this.recoveryInFlight) {
+      return;
+    }
+    this.recoveryInFlight = true;
+    try {
+      this.transport?.close();
+      this.transport = null;
+      this.session = null;
+      this.manuallyClosed = false;
+      await this.open();
+    } catch {
+      this.setStatus(
+        'reconnecting',
+        clientRefusal('E_WS_DISCONNECTED', {
+          message: 'Trying the local HiveMind session again.',
+        }),
+      );
+      this.scheduleSessionRefresh();
+    } finally {
+      this.recoveryInFlight = false;
+    }
   }
 
   private routePending(envelope: Envelope<unknown>, event: DecodedEvent): void {
@@ -559,6 +601,10 @@ export class WsApiClient implements UiApi {
 
   close(): void {
     this.manuallyClosed = true;
+    if (this.recoveryTimer !== null) {
+      clearTimeout(this.recoveryTimer);
+      this.recoveryTimer = null;
+    }
     this.failPending(clientRefusal('E_WS_DISCONNECTED'));
     this.transport?.close();
     this.transport = null;

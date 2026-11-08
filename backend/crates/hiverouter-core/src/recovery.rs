@@ -11,7 +11,7 @@
 //! new snapshot revision are kept equal; settlement never resurrects a task that
 //! was already terminal.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::sync::Arc;
 
 use hiverouter_contract::event::NodeEvent;
@@ -276,7 +276,15 @@ pub fn recover_on_boot_with_events(
             .map(|run| run.status)
             .unwrap_or(AgentState::Interrupted);
         let revision = next_revision(snapshots, run_id);
-        let envelope = match snapshot::capture(graph, run_id, revision, status) {
+        let allowed: HashSet<TaskId> = match store.tasks_for_run(run_id) {
+            Ok(tasks) => tasks.into_iter().map(|task| task.id).collect(),
+            Err(refusal) => {
+                tracing::error!(run = %run_id, code = refusal.code(), "recovery snapshot scope unavailable");
+                report.snapshot_write_failures.push(run_id);
+                continue;
+            }
+        };
+        let envelope = match snapshot::capture_scoped(graph, run_id, revision, status, &allowed) {
             Ok(envelope) => envelope,
             Err(refusal) => {
                 tracing::error!(run = %run_id, code = refusal.code(), "recovery snapshot capture refused");
