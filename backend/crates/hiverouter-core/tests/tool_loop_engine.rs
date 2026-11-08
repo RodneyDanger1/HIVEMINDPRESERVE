@@ -23,6 +23,7 @@ use hiverouter_core::execution::{
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
 use hiverouter_core::prompts::TemplateRegistry;
+use hiverouter_core::tool_loop::{MAX_CALLS_PER_RUN, MAX_TOOL_TURNS};
 use hiverouter_core::store::RunStore;
 use hiverouter_provider::tool_assembler::AssembledToolCall;
 use hiverouter_tools::WorkspaceJail;
@@ -453,7 +454,7 @@ async fn read_call_without_a_jail_is_refused_unavailable() {
 async fn per_run_call_budget_refuses_calls_beyond_the_cap() {
     let workspace = tempfile::tempdir().expect("workspace");
     std::fs::write(workspace.path().join("note.txt"), NOTE_TEXT.as_bytes()).expect("write note");
-    let calls: Vec<AssembledToolCall> = (0..17)
+    let calls: Vec<AssembledToolCall> = (0..=MAX_CALLS_PER_RUN)
         .map(|index| read_call(&format!("call_{index}"), "note.txt", index))
         .collect();
     let harness = harness(ScriptedExecutor::new(calls), Some(workspace.path()));
@@ -462,10 +463,10 @@ async fn per_run_call_budget_refuses_calls_beyond_the_cap() {
     assert_eq!(collected.final_status["status"], "completed");
     assert_eq!(
         collected.tool_calls.len(),
-        16,
+        MAX_CALLS_PER_RUN as usize,
         "only within-budget calls are announced"
     );
-    assert_eq!(collected.tool_results.len(), 17);
+    assert_eq!(collected.tool_results.len(), (MAX_CALLS_PER_RUN + 1) as usize);
     let executed = collected
         .tool_results
         .iter()
@@ -474,18 +475,22 @@ async fn per_run_call_budget_refuses_calls_beyond_the_cap() {
     let refused = collected
         .tool_results
         .iter()
-        .filter(|result| result["code"] == "E_BUDGET_EXCEEDED")
+        .filter(|result| result["code"] == "E_CALL_LIMIT")
         .count();
-    assert_eq!(executed, 16, "the cap allows exactly MAX_CALLS_PER_RUN reads");
+    assert_eq!(
+        executed,
+        MAX_CALLS_PER_RUN as usize,
+        "the cap allows exactly MAX_CALLS_PER_RUN reads"
+    );
     assert_eq!(refused, 1, "the over-budget call is refused by name");
     assert_eq!(
         harness.db.run_tool_counters(run.id).expect("counters"),
-        (1, 17),
+        (1, MAX_CALLS_PER_RUN + 1),
         "every attempted call is counted for the next turn"
     );
     assert_eq!(
         harness.db.tool_turns_for_run(run.id).expect("turns").len(),
-        17
+        (MAX_CALLS_PER_RUN + 1) as usize
     );
 }
 
@@ -565,7 +570,7 @@ async fn persisted_turn_cap_fails_honestly_instead_of_fake_completion() {
     let workspace = tempfile::tempdir().expect("workspace");
     std::fs::write(workspace.path().join("note.txt"), NOTE_TEXT.as_bytes()).expect("write note");
     let mut follow_ups = Vec::new();
-    for index in 0..4 {
+    for index in 0..MAX_TOOL_TURNS {
         follow_ups.push(tool_only_reply(vec![read_call(
             &format!("call_{}", index + 1),
             "note.txt",
@@ -584,18 +589,18 @@ async fn persisted_turn_cap_fails_honestly_instead_of_fake_completion() {
     assert_eq!(collected.final_status["status"], "failed");
     assert_eq!(
         collected.final_status["error_code"],
-        "E_BUDGET_EXCEEDED",
-        "the turn cap is a named refusal, never a fake completion"
+        "E_CALL_LIMIT",
+        "the turn cap is a named call refusal, never a fake completion or money refusal"
     );
     assert_eq!(
         harness.db.run_tool_counters(run.id).expect("counters"),
-        (4, 4),
-        "four completed tool turns"
+        (MAX_TOOL_TURNS, MAX_TOOL_TURNS),
+        "all completed tool turns"
     );
     assert_eq!(
         harness.db.tool_turns_for_run(run.id).expect("turns").len(),
-        5,
-        "four executed turns + the cap-refused call row"
+        (MAX_TOOL_TURNS + 1) as usize,
+        "completed turns + the cap-refused call row"
     );
     assert!(
         collected.reply_deltas.is_empty(),
@@ -638,7 +643,7 @@ async fn streaming_follow_up_does_not_duplicate_deltas() {
 async fn exhausted_call_budget_fails_with_call_limit() {
     let workspace = tempfile::tempdir().expect("workspace");
     std::fs::write(workspace.path().join("note.txt"), NOTE_TEXT.as_bytes()).expect("write note");
-    let initial_calls: Vec<AssembledToolCall> = (0..16)
+    let initial_calls: Vec<AssembledToolCall> = (0..MAX_CALLS_PER_RUN)
         .map(|index| read_call(&format!("call_{index}"), "note.txt", index))
         .collect();
     let harness = harness(
@@ -654,16 +659,16 @@ async fn exhausted_call_budget_fails_with_call_limit() {
     assert_eq!(
         collected.final_status["error_code"],
         "E_CALL_LIMIT",
-        "an all-budget-refused turn is a budget stop, not a malformed provider reply"
+        "an all-budget-refused turn is a call limit, not a malformed provider reply"
     );
     assert_eq!(
         harness.db.run_tool_counters(run.id).expect("counters"),
-        (2, 17),
-        "16 executed calls in turn 1 + the refused 17th attempt in turn 2"
+        (2, MAX_CALLS_PER_RUN + 1),
+        "all allowed calls in turn 1 + the refused extra attempt in turn 2"
     );
     assert_eq!(
         harness.db.tool_turns_for_run(run.id).expect("turns").len(),
-        17
+        (MAX_CALLS_PER_RUN + 1) as usize
     );
     let store = RunStore::new(harness.db.clone());
     assert_eq!(

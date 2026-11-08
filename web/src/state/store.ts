@@ -69,6 +69,8 @@ export interface TaskRecord {
   readonly parentId: string | null;
   readonly kind: NodeKindLabel;
   readonly label: string;
+  /** Server task role when the snapshot carries it; absent for legacy nodes. */
+  readonly role?: string | null;
   readonly state: AgentState;
   readonly progress: number | null;
   readonly errorCode: string | null;
@@ -103,6 +105,7 @@ export interface ApprovalRecord {
   readonly taskId: string | null;
   readonly toolCallId: string | null;
   readonly argsSha256: string | null;
+  readonly argsPreview?: string | null;
   readonly expiresAt: string | null;
 }
 
@@ -389,6 +392,15 @@ function initialFileTree(): FileTreeState {
   };
 }
 
+function initialChatVisible(): boolean {
+  try {
+    const raw = window.localStorage.getItem('hivemind.chat.visible.v1');
+    return raw === null ? true : raw !== 'false';
+  } catch {
+    return true;
+  }
+}
+
 function initialHistory(): HistoryState {
   return {
     latest: -1,
@@ -576,6 +588,9 @@ function recordsFromSnapshotGraph(graph: unknown): Readonly<Record<string, TaskR
   const parsed: Array<{
     id: string;
     parentId: string | null;
+    kind: NodeKindLabel;
+    role: string | null;
+    label: string | null;
     state: AgentState;
     rev: number;
   }> = [];
@@ -598,9 +613,14 @@ function recordsFromSnapshotGraph(graph: unknown): Readonly<Record<string, TaskR
       throw schemaRefusal(`A history snapshot contains task ${id} twice.`);
     }
     ids.add(id);
+    const rawKind = node?.kind;
+    const role = typeof node?.role === 'string' && node.role.length > 0 ? node.role : null;
     parsed.push({
       id,
       parentId: typeof node?.parent_task_id === 'string' ? node.parent_task_id : null,
+      kind: isNodeKind(rawKind) ? rawKind : 'worker',
+      role,
+      label: typeof node?.label === 'string' && node.label.trim().length > 0 ? node.label : null,
       state,
       rev,
     });
@@ -612,9 +632,9 @@ function recordsFromSnapshotGraph(graph: unknown): Readonly<Record<string, TaskR
       // The snapshot is the graph authority; a parent outside this snapshot
       // cannot be drawn as an edge, so it is re-rooted rather than dangling.
       parentId: node.parentId !== null && ids.has(node.parentId) ? node.parentId : null,
-      // `GraphSnapshot::TaskNode` carries no kind/label/progress: none is invented.
-      kind: 'worker',
-      label: fallbackTaskLabel(null, node.id),
+      kind: node.kind,
+      label: node.label ?? fallbackTaskLabel(node.kind, node.id),
+      role: node.role,
       state: node.state,
       progress: null,
       errorCode: null,
@@ -1585,6 +1605,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             taskId: event.payload.task_id ?? null,
             toolCallId: event.payload.tool_call_id ?? null,
             argsSha256: event.payload.args_sha256 ?? null,
+            argsPreview: event.payload.args_preview ?? null,
             expiresAt: event.payload.expires_at ?? null,
           };
           // Replay dedupe is id-based: replace-by-id keeps exactly one record; the
@@ -1762,7 +1783,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       pendingCommands: {},
       view: { nav: 'workspace', tab: 'workspace' },
       viewport: { x: 0, y: 0, zoom: 1 },
-      chat: { pinned: true, visible: true },
+      chat: { pinned: true, visible: initialChatVisible() },
       settings: initialSettings(),
       fileTree: initialFileTree(),
       project: baseProject(),
@@ -2177,6 +2198,11 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       },
 
       setChatVisible(visible: boolean): void {
+        try {
+          window.localStorage.setItem('hivemind.chat.visible.v1', visible ? 'true' : 'false');
+        } catch {
+          // A storage refusal must not make the chat impossible to restore in this session.
+        }
         set({ chat: { ...get().chat, visible } });
       },
 

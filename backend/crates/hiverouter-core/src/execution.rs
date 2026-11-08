@@ -1190,7 +1190,17 @@ impl RunEngine {
         let Some(store) = &self.snapshots else {
             return;
         };
-        match crate::snapshot::capture(&self.graph, run.id, revision, status) {
+        let allowed: std::collections::HashSet<_> = match self.store.tasks_for_run(run.id) {
+            Ok(tasks) => tasks.into_iter().map(|task| task.id).collect(),
+            Err(error) => {
+                tracing::error!(
+                    code = error.code(),
+                    "snapshot capture skipped: run task index unavailable"
+                );
+                return;
+            }
+        };
+        match crate::snapshot::capture_scoped(&self.graph, run.id, revision, status, &allowed) {
             Ok(envelope) => {
                 if let Err(error) = store.write(&envelope) {
                     tracing::error!(
@@ -2843,10 +2853,10 @@ impl RunEngine {
                 }
             };
             if turn.cap_reached {
-                // The persisted turn cap refused the calls; the loop cannot
-                // continue honestly, so the run fails by name (no fake reply).
+                // The persisted turn/call cap refused the calls; the loop cannot
+                // continue honestly. This is a call limit, not a money refusal.
                 self.fail_task(run, task, AgentState::Failed)?;
-                return Err(Refusal::BudgetExceeded);
+                return Err(Refusal::CallLimit);
             }
             if turn.executed.is_empty() {
                 if turn.budget_refused {

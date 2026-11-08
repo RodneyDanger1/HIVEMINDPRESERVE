@@ -8,6 +8,10 @@ export function Header() {
   const project = useUiStore((state) => state.project);
   const tasks = useUiStore((state) => state.tasks);
   const selectTask = useUiStore((state) => state.selectTask);
+  const chatVisible = useUiStore((state) => state.chat.visible);
+  const setChatVisible = useUiStore((state) => state.setChatVisible);
+  const replaying = useUiStore((state) => state.history.replayGraph !== null);
+  const exitHistoryReplay = useUiStore((state) => state.exitHistoryReplay);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -34,6 +38,33 @@ export function Header() {
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        {replaying ? (
+          <button
+            type="button"
+            className="type-mono-meta rounded-[var(--radius-pill)] border border-honey-500 bg-honey-100 px-2 py-1 text-ink-900 hover:bg-honey-200"
+            onClick={exitHistoryReplay}
+          >
+            Return live
+          </button>
+        ) : null}
+        <button
+          type="button"
+          aria-label={chatVisible ? 'Hide Hive chat' : 'Show Hive chat'}
+          aria-pressed={chatVisible}
+          className="type-mono-meta flex h-8 items-center gap-1 rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 text-ink-700 hover:bg-panel-alt hover:text-ink-900"
+          onClick={() => setChatVisible(!chatVisible)}
+        >
+          <svg width="13" height="13" viewBox="0 0 18 18" aria-hidden="true">
+            <path
+              d="M3 3.5h12v8.5H9l-3.2 2.4v-2.4H3Z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>{chatVisible ? 'Hide chat' : 'Show chat'}</span>
+        </button>
         <button
           type="button"
           aria-label="Search agents"

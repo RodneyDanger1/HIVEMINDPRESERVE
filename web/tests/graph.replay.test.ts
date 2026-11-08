@@ -23,12 +23,13 @@ describe('HISTORY_SNAPSHOT replay projection (S10)', () => {
     expect(replay['snap-2']).toMatchObject({ id: 'snap-2', parentId: 'snap-1', state: 'completed', rev: 4 });
     // Orphan parent is not in the snapshot: re-rooted, never a dangling reference.
     expect(replay['snap-orphan']).toMatchObject({ id: 'snap-orphan', parentId: null, state: 'healthy', rev: 5 });
-    // No role/progress is invented from a snapshot that carries none.
+    // No role/kind is invented when the snapshot carries neither.
     for (const task of Object.values(replay)) {
       expect(task.kind).toBe('worker');
+      expect(task.role).toBeNull();
       expect(task.progress).toBeNull();
       expect(task.errorCode).toBeNull();
-      expect(task.label.startsWith('task ')).toBe(true);
+      expect(task.label.startsWith('Agent ')).toBe(true);
     }
   });
 

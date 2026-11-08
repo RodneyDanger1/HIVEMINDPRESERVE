@@ -1,7 +1,7 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
-import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
+import { DOT_STATES, NODE_KIND_LABELS, isTerminal, visualFor } from '../state/agentState';
 import { StateDot } from '../flow/nodes';
 import { LAYOUT } from '../tokens/tokens';
 
@@ -37,7 +37,9 @@ export function LibraryPanel() {
   const selectTask = useUiStore((state) => state.selectTask);
   const tab = useUiStore((state) => state.view.tab);
   const setTab = useUiStore((state) => state.setTab);
-  const active = Object.values(tasks);
+  const active = Object.values(tasks).filter(
+    (task) => task.kind !== 'hyperagent' && !isTerminal(task.state),
+  );
 
   return (
     <aside

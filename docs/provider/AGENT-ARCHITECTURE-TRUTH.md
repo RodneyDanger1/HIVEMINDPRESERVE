@@ -15,11 +15,11 @@ sub-orchestrator in the chat box, per-hive memory banks, 300–600 concurrent ag
 | Concept | Is it real? | Where |
 |---|---|---|
 | HyperAgent | **Yes, as the root planner task** (`role: "planner"`, depth 0), mapped to `AgentTier::HyperAgent`. The fixed chat card is the UI surface for this root, not a separate graph node. | `backend/crates/hiverouter-core/src/execution.rs:97-163`, `:1321-1335`; `web/src/flow/graph.ts` filters the root and anchors it to the hive; `web/src/chat/ChatCore.tsx` |
-| SuperAgent | **Tier/policy exists**, and it may spawn workers/subagents and use file/ask/sibling tools. **No dedicated SuperAgent prompt template or persona exists** in the embedded assets. | `execution.rs:108-142`; `backend/crates/hiverouter-tools/src/tool.rs:391-430`; `backend/crates/hiverouter-core/assets/prompts/personas.json` (no `superagent`) |
+| SuperAgent | **Tier/policy/persona now exist.** The new `superagent` persona/template carries spawn/file/ask/sibling tools and max_children/max_depth. It may spawn workers/subagents; it is a real sub-orchestrator prompt. | `execution.rs:108-142`; `backend/crates/hiverouter-tools/src/tool.rs:391-430`; `assets/prompts/personas.json`; `assets/prompts/superagent.prompty` |
 | WorkerAgent | **Yes.** Four worker personas/templates ship: content-writer, data-analyst, code-reviewer, chatbot. They carry allowed tools/output schema. | `personas.json`; `execution.rs:860-886`; `tool.rs:408-421` |
-| Subagent | **Not a separate tier.** The spawn policy accepts role `"subagent"` under a Worker, but `task_agent_tier` maps unknown roles to `WorkerAgent`. There is no `Subagent` enum, prompt, persona, card, or memory type. | `execution.rs:108-142`, `:151-162`; `tool.rs:391-430` |
+| Subagent | **Role + persona now exist, but not a separate tier.** The spawn policy accepts role `"subagent"` under a Worker/Super, and the new `subagent` persona/template gives it a narrow worker prompt. `task_agent_tier` still maps it to `WorkerAgent`; there is no `Subagent` enum/card/memory type. | `execution.rs:108-142`, `:151-162`; `assets/prompts/subagent.prompty`; `tool.rs:391-430` |
 | ToolAgent | **Yes, as a tier/allowlist** (read/write/shell only, no spawning). | `execution.rs:103-105`; `tool.rs:422-430` |
-| Agent creation/templates | **Partially real.** Manifest/persona validation, import/delete, template catalog, `TEMPLATE_INSERT`, and tool allowlists exist. **Leaf execution uses the generic `TASK_SYSTEM` prompt plus role/depth, not the persona's `.prompty` body.** Only the planner template body is rendered. | `prompts.rs`; `execution.rs:860-886`; `provider_executor.rs:task_prompt` / `execute`; `ws.rs` TEMPLATE_INSERT |
+| Agent creation/templates | **Now real for leaf prompts.** Manifest/persona validation, import/delete, template catalog, `TEMPLATE_INSERT`, tool allowlists exist. The new `persona_system_prompts` map renders each persona's `.prompty` system body and the adapter uses it for leaf and tool-turn calls; generic `TASK_SYSTEM` remains the fallback. | `prompts.rs`; `http.rs:persona_system_prompts`; `provider_executor.rs:system_prompt_for` |
 | Chat box powered by API | **Yes.** ChatCore → `SUBMIT_PROMPT` WebSocket → engine → DeepSeek Chat Completions planner/leaf calls → `REPLY_DELTA` stream → ChatCore. | `web/src/chat/ChatCore.tsx`; `web/src/state/store.ts`; `backend/.../ws.rs`; `provider_executor.rs` |
 | Chat box is a SuperAgent | **No.** It is an operator UI, not an agent. The root HyperAgent/planner is the orchestrator; there is no conversational sub-orchestrator living in the chat surface. | `ChatCore.tsx`; `execution.rs` root/dispatch |
 | Agent-to-agent messages | **Yes, bounded.** `ask_parent` and `send_to_sibling` tools persist `agent_messages` and emit events. Cross-parent sibling sends are restricted; there is no global agent directory/pub-sub bus. | `execution.rs:721-780`, `:2433-2592`; `db.rs agent_messages` |
@@ -56,16 +56,15 @@ pins the request shape.
 
 ## 4. Agent/template design situation
 
-- FigCraft board 05 already contains **HyperAgent chat core, SuperAgent, WorkerAgent, ToolAgent and error** cards.
-- There is **no distinct Subagent design** because there is no distinct Subagent tier. Subagent is a
-  spawn role that lands in the WorkerAgent tier.
-- No **SuperAgent persona/template** ships, so the planner can emit a `superagent` task but the engine
-  has no super-specific prompt or persona allowlist for it.
-- The four worker persona templates are **read/validated/importable and shown in the Agents surface**,
-  but their prompt bodies are not applied to leaf model calls; leaf calls use `TASK_SYSTEM` plus role/depth.
+- FigCraft board 05 contains **HyperAgent chat core, SuperAgent, WorkerAgent, ToolAgent and error** cards.
+- There is still **no distinct Subagent card/tier**; Subagent is a spawn role with a narrow persona that
+  lands in the WorkerAgent capability tier.
+- A **SuperAgent persona/template** now ships (`superagent.prompty`), with spawn/file/ask/sibling tools
+  and max_children/max_depth. A **subagent persona/template** also ships (`subagent.prompty`).
+- Persona `.prompty` system bodies are now rendered into a role→prompt map and used by leaf/tool-turn
+  model calls; the generic `TASK_SYSTEM` is only the fallback.
 - Therefore you do **not** need to pull Figma designs for Hyper/Super/Worker: the FigCraft set is already
-  the design source. You **would** need to create a SuperAgent/Subagent design if you want distinct
-  visual/capability tiers.
+  the design source. A distinct Subagent visual tier remains a design/product decision.
 
 ## 5. DeepSeek API coverage
 
@@ -82,20 +81,17 @@ Evidence: `docs/trace/provider/01-deepseek-capability-matrix.md`,
 
 ## 6. What should be built next (honest solution ideas)
 
-1. **SuperAgent persona/template** — add a `superagent.prompty` + persona with spawn/file/sibling tools,
-   and apply persona prompt bodies to task execution (requires an executor prompt seam).
-2. **Subagent as a real tier** — add `AgentTier::Subagent`, its own allowlist/memory/prompt/card, or
-   explicitly document that Subagent is a Worker role. Do not add UI cards without a capability model.
-3. **Per-hive memory** — add a hive/branch key to `agent_memory` and a read policy for HyperAgent;
+1. **Subagent as a real tier** — promote `AgentTier::Subagent` with its own allowlist/memory/card, or
+   explicitly keep it as a Worker persona. The prompt/persona now exists; the tier and visual card do not.
+2. **Per-hive memory** — add a hive/branch key to `agent_memory` and a read policy for HyperAgent;
    persist a per-hive summary, not raw chain-of-thought.
-4. **Agent directory / A2A bus** — expose a bounded roster/topology to agents (not all global memory);
+3. **Agent directory / A2A bus** — expose a bounded roster/topology to agents (not all global memory);
    keep `ask_parent`/`send_to_sibling` as the write path.
-5. **Raise concurrency only with caps + cost** — 64 agents is current hard cap; 300–600 requires changing
+4. **Raise concurrency only with caps + cost** — 64 agents is current hard cap; 300–600 requires changing
    `MAX_AGENTS`, fan-out/depth, provider concurrency, budget, DB/event fan-out, UI virtualization, and
    a real scheduler. Rust speed is not the blocker.
-6. **UI** — show SuperAgent/Subagent distinctions only after 1/2; show tool results/approvals; add
-   per-hive memory/topology views.
-7. **DeepSeek Files/Search** — optional; Files is image-oriented, Search/Fetch are separately billed and
+5. **UI** — show Subagent/role distinctions after 1; add per-hive memory/topology and model/thinking controls.
+6. **DeepSeek Files/Search** — optional; Files is image-oriented, Search/Fetch are separately billed and
    need a money path. Do not wire them into a token-only budget silently.
 
 ## 7. Claims register
@@ -104,8 +100,10 @@ Evidence: `docs/trace/provider/01-deepseek-capability-matrix.md`,
 |---|---|---|
 | HyperAgent root exists as planner task | `execution.rs:1321-1335`, tier mapping | VERIFIED |
 | Chat box is not a SuperAgent | `ChatCore.tsx` + engine path | VERIFIED |
-| SuperAgent has no bundled persona/template | `personas.json` has 5 entries, no superagent | VERIFIED |
-| Subagent is not a separate tier | `AgentTier` enum + fallback mapping | VERIFIED |
+| SuperAgent has a bundled persona/template | `personas.json` + `superagent.prompty` | VERIFIED |
+| Leaf prompts use persona bodies | `http.rs persona_system_prompts` + `provider_executor.rs system_prompt_for` | VERIFIED (code); runtime UNVERIFIED |
+| Subagent has a persona/prompt | `subagent.prompty` + persona entry | VERIFIED |
+| Subagent is a separate tier/card | `AgentTier` enum + UI kind union | NOT CODED |
 | Memory is role-level, 8 rows | `execution.rs:880-884`, `store.agent_memory` | VERIFIED |
 | Per-hive memory absent | schema/context search | VERIFIED (not present) |
 | 64-agent cap | `caps.rs:9-15` | VERIFIED |

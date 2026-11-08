@@ -27,6 +27,7 @@ use hiverouter_core::execution::{ProviderExecutor, RunEngine};
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::prompts::TemplateRegistry;
 use hiverouter_core::provider_executor::ProviderExecutorAdapter;
+use hiverouter_core::tool_loop::MAX_TOOL_TURNS;
 use hiverouter_provider::client::{ClientConfig, DeepSeekClient};
 use hiverouter_provider::secret::ApiKey;
 use hiverouter_tools::WorkspaceJail;
@@ -427,10 +428,10 @@ async fn tool_loop_matrix_malformed_sse_is_named_refusal() {
 }
 
 #[tokio::test]
-async fn tool_loop_matrix_turn_cap_is_named_budget_refusal() {
+async fn tool_loop_matrix_turn_cap_is_named_call_refusal() {
     let workspace = workspace_with_note();
     let mut responses = vec![plan_response()];
-    for index in 0..5_u32 {
+    for index in 0..=MAX_TOOL_TURNS {
         let calls = format!("[{}]", read_call(0, &format!("call_cap_{index}")));
         responses.push(sse_response(tool_call_stream(&calls)));
     }
@@ -442,8 +443,8 @@ async fn tool_loop_matrix_turn_cap_is_named_budget_refusal() {
         "the turn cap must fail the run, never fabricate a final answer"
     );
     assert_eq!(
-        collected.final_status["error_code"], "E_BUDGET_EXCEEDED",
-        "the persisted turn cap is a named budget refusal"
+        collected.final_status["error_code"], "E_CALL_LIMIT",
+        "the persisted turn cap is a named call refusal, not a money refusal"
     );
     assert!(
         collected.reply_deltas.is_empty(),
@@ -451,7 +452,7 @@ async fn tool_loop_matrix_turn_cap_is_named_budget_refusal() {
     );
     assert_eq!(
         harness.db.run_tool_counters(run.id).expect("counters"),
-        (4, 4),
+        (MAX_TOOL_TURNS, MAX_TOOL_TURNS),
         "exactly MAX_TOOL_TURNS calls execute"
     );
     assert_eq!(
@@ -460,13 +461,13 @@ async fn tool_loop_matrix_turn_cap_is_named_budget_refusal() {
             .tool_turns_for_run(run.id)
             .expect("tool turns")
             .len(),
-        5,
-        "four executed turns plus the cap-refused call row"
+        (MAX_TOOL_TURNS + 1) as usize,
+        "executed turns plus the cap-refused call row"
     );
     let requests = harness.server.received_requests().await.expect("requests");
     assert_eq!(
         requests.len(),
-        6,
-        "plan + execute + four continuations; no further request after the cap"
+        (MAX_TOOL_TURNS + 2) as usize,
+        "plan + execute + continuations; no further request after the cap"
     );
 }

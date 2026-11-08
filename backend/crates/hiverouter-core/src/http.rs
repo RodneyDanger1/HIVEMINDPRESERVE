@@ -6,8 +6,9 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::extract::{ConnectInfo, Path, Query, State};
+use axum::extract::{ConnectInfo, Path, Query, Request, State};
 use axum::http::{header, HeaderMap, StatusCode};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
@@ -508,6 +509,7 @@ pub struct PromptAssetsHealth {
 /// Builds the server router.
 #[must_use]
 pub fn build_router(state: Arc<AppState>) -> Router {
+    let guard_state = Arc::clone(&state);
     Router::new()
         .route("/health", get(health))
         .route("/diagnose", get(diagnose))
@@ -528,7 +530,66 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/provider/balance", get(provider_balance))
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
+        .layer(middleware::from_fn_with_state(guard_state, host_guard))
         .with_state(state)
+}
+
+/// Rejects a request whose `Host` header is not this loopback server.
+///
+/// Origin checks do not stop DNS rebinding: a rebinding page can issue a
+/// same-origin request with a hostile `Host`. The Host header is therefore the
+/// server's own identity check, applied before any route runs.
+async fn host_guard(
+    State(state): State<Arc<AppState>>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let host = request
+        .headers()
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok());
+    if !host_allowed(&state.config.bind, host) {
+        return (
+            StatusCode::MISDIRECTED_REQUEST,
+            Json(serde_json::json!({
+                "code": Refusal::OriginRejected.code(),
+                "message": "the Host header is not this loopback HiveMind server",
+                "how_to_fix": "open HiveMind through its launcher on 127.0.0.1/localhost",
+            })),
+        )
+            .into_response();
+    }
+    next.run(request).await
+}
+
+/// Whether a `Host` header names this bound loopback server.
+///
+/// Production binds a fixed port and requires the exact loopback authority.
+/// Test harnesses bind port 0 and receive the real port only after binding, so
+/// they accept any loopback authority; they never accept a non-loopback host.
+fn host_allowed(bind: &SocketAddr, host: Option<&str>) -> bool {
+    let Some(host) = host.map(str::trim).filter(|host| !host.is_empty()) else {
+        return false;
+    };
+    if bind.port() == 0 {
+        return loopback_host(host);
+    }
+    let expected = [
+        format!("127.0.0.1:{}", bind.port()),
+        format!("localhost:{}", bind.port()),
+        format!("[::1]:{}", bind.port()),
+    ];
+    expected.iter().any(|allowed| host.eq_ignore_ascii_case(allowed))
+}
+
+fn loopback_host(host: &str) -> bool {
+    let lower = host.to_ascii_lowercase();
+    lower == "127.0.0.1"
+        || lower == "localhost"
+        || lower == "[::1]"
+        || lower.starts_with("127.0.0.1:")
+        || lower.starts_with("localhost:")
+        || lower.starts_with("[::1]:")
 }
 
 /// `GET /diagnose` â€” tools-owned derived diagnostics (no secrets).
@@ -613,21 +674,93 @@ async fn history_state(
         return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
     };
     match state.history.state_at(run_id, revision) {
-        Ok(snapshot) => (
-            StatusCode::OK,
-            Json(serde_json::json!({
-                "run_id": snapshot.run_id.to_string(),
-                "revision": snapshot.revision,
-                "schema_version": snapshot.schema_version,
-                "run_status": snapshot.run_status.map(|state| state.as_str()),
-                "graph": snapshot.graph,
-            })),
-        )
-            .into_response(),
+        Ok(snapshot) => {
+            let mut graph = snapshot.graph;
+            // Older snapshots predate run-scoped capture and contain the whole
+            // process graph. Filter at the read boundary as well as fixing new
+            // writes, otherwise replay can paint another run's tasks.
+            let run_tasks = state.engine.store.tasks_for_run(run_id).unwrap_or_default();
+            let allowed: std::collections::HashSet<_> =
+                run_tasks.iter().map(|task| task.id).collect();
+            if !allowed.is_empty() {
+                graph.nodes.retain(|node| allowed.contains(&node.task_id));
+                graph
+                    .edges
+                    .retain(|(parent, child)| allowed.contains(parent) && allowed.contains(child));
+                graph.toposort.retain(|task_id| allowed.contains(task_id));
+            }
+            // The immutable graph snapshot stores only topology. The task rows
+            // are the authority for role/kind, so enrich the read projection
+            // rather than flattening every historical node into "worker".
+            let nodes: Vec<serde_json::Value> = graph
+                .nodes
+                .iter()
+                .map(|node| {
+                    let task = run_tasks.iter().find(|task| task.id == node.task_id);
+                    let role = task.map_or("", |task| task.role.as_str());
+                    let kind = node_kind_for_role(role);
+                    serde_json::json!({
+                        "task_id": node.task_id.to_string(),
+                        "parent_task_id": node.parent_task_id.map(|id| id.to_string()),
+                        "state": node.state.as_str(),
+                        "rev": node.rev,
+                        "role": role,
+                        "kind": kind,
+                        "label": node_label_for(role, kind, &node.task_id.to_string()),
+                    })
+                })
+                .collect();
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "run_id": snapshot.run_id.to_string(),
+                    "revision": snapshot.revision,
+                    "schema_version": snapshot.schema_version,
+                    "run_status": snapshot.run_status.map(|state| state.as_str()),
+                    "graph": {
+                        "revision": graph.revision,
+                        "nodes": nodes,
+                        "edges": graph.edges.iter().map(|(parent, child)| {
+                            [parent.to_string(), child.to_string()]
+                        }).collect::<Vec<_>>(),
+                        "toposort": graph.toposort.iter().map(ToString::to_string).collect::<Vec<_>>(),
+                    },
+                })),
+            )
+                .into_response()
+        }
         Err(refusal) if refusal == hiverouter_contract::Refusal::HistoryGap => {
             refusal_response(StatusCode::NOT_FOUND, &refusal)
         }
         Err(refusal) => refusal_response(StatusCode::CONFLICT, &refusal),
+    }
+}
+
+fn node_kind_for_role(role: &str) -> &'static str {
+    match role.trim().to_ascii_lowercase().as_str() {
+        "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => "hyperagent",
+        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => "superagent",
+        "tool" | "toolagent" | "tool_agent" => "tool",
+        _ => "worker",
+    }
+}
+
+fn node_label_for(role: &str, kind: &str, task_id: &str) -> String {
+    let configured = role.trim();
+    let suffix = task_id
+        .chars()
+        .rev()
+        .take(8)
+        .collect::<String>()
+        .chars()
+        .rev()
+        .collect::<String>();
+    match kind {
+        "hyperagent" => format!("HyperAgent {suffix}"),
+        "superagent" => format!("SuperAgent {suffix}"),
+        "tool" => format!("ToolAgent {suffix}"),
+        _ if !configured.is_empty() => format!("{configured} {suffix}"),
+        _ => format!("Agent {suffix}"),
     }
 }
 

@@ -11,9 +11,9 @@ use hiverouter_provider::tool_assembler::AssembledToolCall;
 use hiverouter_tools::{AgentTier, PermissionClass, ToolId, ToolRegistry};
 
 /// Maximum model turns in one task before the run fails closed.
-pub const MAX_TOOL_TURNS: u32 = 4;
+pub const MAX_TOOL_TURNS: u32 = 12;
 /// Maximum tool calls across one run.
-pub const MAX_CALLS_PER_RUN: u32 = 16;
+pub const MAX_CALLS_PER_RUN: u32 = 40;
 /// Maximum tool result body retained in memory (events carry the hash/bytes only).
 pub const MAX_TOOL_RESULT_BYTES: usize = 65_536;
 /// Maximum committed approval waits per run; the next request is refused with
@@ -250,10 +250,10 @@ pub fn bounded_tool_text(text: &str) -> String {
 /// Returns the next turn after a completed one, or a named refusal at the cap.
 ///
 /// # Errors
-/// [`Refusal::BudgetExceeded`] when the cap is reached.
+/// [`Refusal::CallLimit`] when the cap is reached.
 pub fn next_turn(completed_turns: u32) -> Result<u32, Refusal> {
     if completed_turns >= MAX_TOOL_TURNS {
-        return Err(Refusal::BudgetExceeded);
+        return Err(Refusal::CallLimit);
     }
     Ok(completed_turns + 1)
 }
@@ -261,10 +261,10 @@ pub fn next_turn(completed_turns: u32) -> Result<u32, Refusal> {
 /// Checks the per-run call budget before executing a call.
 ///
 /// # Errors
-/// [`Refusal::BudgetExceeded`] when the run has exhausted its call budget.
+/// [`Refusal::CallLimit`] when the run has exhausted its call budget.
 pub fn check_call_budget(used_calls: u32) -> Result<(), Refusal> {
     if used_calls >= MAX_CALLS_PER_RUN {
-        return Err(Refusal::BudgetExceeded);
+        return Err(Refusal::CallLimit);
     }
     Ok(())
 }
@@ -337,11 +337,11 @@ mod tests {
     #[test]
     fn turn_and_call_caps_are_closed() {
         assert_eq!(next_turn(0), Ok(1));
-        assert_eq!(next_turn(MAX_TOOL_TURNS), Err(Refusal::BudgetExceeded));
+        assert_eq!(next_turn(MAX_TOOL_TURNS), Err(Refusal::CallLimit));
         assert_eq!(check_call_budget(0), Ok(()));
         assert_eq!(
             check_call_budget(MAX_CALLS_PER_RUN),
-            Err(Refusal::BudgetExceeded)
+            Err(Refusal::CallLimit)
         );
     }
 }

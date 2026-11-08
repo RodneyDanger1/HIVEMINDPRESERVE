@@ -7,6 +7,7 @@
 import dagre from '@dagrejs/dagre';
 import type { Edge, Node } from '@xyflow/react';
 import type { TaskRecord } from '../state/store';
+import { isNodeKind } from '../state/store';
 import { isAgentState, type NodeKindLabel } from '../state/agentState';
 import { LAYOUT } from '../tokens/tokens';
 
@@ -209,14 +210,25 @@ export function buildReplayTasks(graph: unknown): Record<string, TaskRecord> {
       parent_task_id?: unknown;
       state?: unknown;
       rev?: unknown;
+      kind?: unknown;
+      role?: unknown;
+      label?: unknown;
     };
     if (typeof node.task_id !== 'string' || !isAgentState(node.state)) continue;
     const parentId = typeof node.parent_task_id === 'string' ? node.parent_task_id : null;
+    const kind = isNodeKind(node.kind) ? node.kind : 'worker';
+    const role = typeof node.role === 'string' && node.role.length > 0 ? node.role : null;
     tasks[node.task_id] = {
       id: node.task_id,
       parentId,
-      kind: 'worker',
-      label: `task ${node.task_id.slice(0, 8)}`,
+      kind,
+      label:
+        typeof node.label === 'string' && node.label.trim().length > 0
+          ? node.label
+          : kind === 'worker'
+            ? `Agent ${node.task_id.slice(-8)}`
+            : `${kind} ${node.task_id.slice(-8)}`,
+      role,
       state: node.state,
       progress: null,
       errorCode: null,

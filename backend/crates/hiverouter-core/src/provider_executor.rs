@@ -80,8 +80,13 @@ impl ProviderExecutorAdapter {
     }
 
     fn system_prompt_for(&self, task: &TaskRecord) -> &str {
+        let raw = task.role.trim().to_ascii_lowercase();
         self.persona_prompts
-            .get(&task.role)
+            .get(&raw)
+            .or_else(|| {
+                let normalized = raw.replace(['-', ' '], "_");
+                self.persona_prompts.get(&normalized)
+            })
             .map(String::as_str)
             .unwrap_or(TASK_SYSTEM)
     }
@@ -367,7 +372,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
             return Err(Refusal::ProviderInvalidResponse);
         }
         let mut messages = vec![
-            ChatMessage::system(TASK_SYSTEM),
+            ChatMessage::system(self.system_prompt_for(task)),
             ChatMessage::user(task_prompt(prompt, task)),
         ];
         let mut replayed_turns = 0usize;

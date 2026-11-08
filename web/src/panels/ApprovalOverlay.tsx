@@ -26,6 +26,7 @@ export interface ApprovalView {
   readonly tool: string;
   readonly nonce: string | null;
   readonly argsSha256?: string | null;
+  readonly argsPreview?: string | null;
   readonly expiresAt?: string | null;
   readonly toolCallId?: string | null;
   readonly runId?: string | null;
@@ -256,6 +257,14 @@ export function ApprovalOverlay() {
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.fields.argsSha256}</dt>
                 <dd className="type-mono-code text-ink-900" title={view.argsSha256 ?? UNKNOWN_VALUE}>
                   {argsHash}
+                </dd>
+
+                <dt className="type-mono-meta text-meta">args_preview</dt>
+                <dd
+                  className="type-mono-code max-h-28 overflow-auto whitespace-pre-wrap break-words text-ink-900"
+                  title={view.argsPreview ?? UNKNOWN_VALUE}
+                >
+                  {view.argsPreview ?? UNKNOWN_VALUE}
                 </dd>
 
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.fields.runId}</dt>

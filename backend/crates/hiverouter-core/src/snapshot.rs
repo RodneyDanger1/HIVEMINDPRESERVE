@@ -7,10 +7,11 @@
 //! (temp file + rename). Loading validates the schema version and refuses a
 //! corrupt snapshot with `E_SNAPSHOT_CORRUPT` instead of resetting the workspace.
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use hiverouter_contract::{AgentState, Refusal, RunId, Timestamp};
+use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -249,6 +250,38 @@ pub fn migrate_v2_to_v1(mut value: Value) -> Result<Value, Refusal> {
     );
     object.remove("run_status");
     Ok(value)
+}
+
+/// Captures one run's committed graph, not the process-wide graph.
+///
+/// The graph authority is process-wide and deliberately retains completed
+/// runs for rewind; a run snapshot must retain only the tasks owned by that
+/// run. Edges and the topological order are filtered by the same allow-set so
+/// the persisted revision can never leak another run's nodes into replay.
+///
+/// # Errors
+/// Graph lock or task-index refusal.
+pub fn capture_scoped(
+    graph: &crate::graph::GraphAuthority,
+    run_id: RunId,
+    revision: u64,
+    run_status: AgentState,
+    allowed: &HashSet<TaskId>,
+) -> Result<SnapshotEnvelope, Refusal> {
+    let mut envelope = capture(graph, run_id, revision, run_status)?;
+    envelope
+        .graph
+        .nodes
+        .retain(|node| allowed.contains(&node.task_id));
+    envelope
+        .graph
+        .edges
+        .retain(|(parent, child)| allowed.contains(parent) && allowed.contains(child));
+    envelope
+        .graph
+        .toposort
+        .retain(|task_id| allowed.contains(task_id));
+    Ok(envelope)
 }
 
 /// Builds a snapshot envelope for a run from the current graph.

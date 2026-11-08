@@ -505,9 +505,16 @@ impl DeepSeekClient {
         );
         let code = status.as_u16();
         let error = match code {
-            401 | 402 => ProviderError::new(
+            401 => ProviderError::new(
                 Refusal::ProviderAuth,
                 format!("the provider rejected the credentials (HTTP {status}); not retried"),
+            ),
+            402 => ProviderError::new(
+                Refusal::ProviderAuth,
+                format!(
+                    "the provider account has insufficient balance (HTTP {status}); \
+                     top up or replace the key; not retried"
+                ),
             ),
             429 => ProviderError::new(
                 Refusal::ProviderRateLimit,
@@ -516,6 +523,10 @@ impl DeepSeekClient {
             500 | 502 | 503 | 504 => ProviderError::new(
                 Refusal::ProviderTimeout,
                 format!("the provider returned a transient HTTP {status}; retry is allowed"),
+            ),
+            400 | 422 => ProviderError::new(
+                Refusal::ProviderInvalidResponse,
+                format!("the provider rejected the request shape (HTTP {status}); not retried"),
             ),
             _ => ProviderError::new(
                 Refusal::ProviderInvalidResponse,

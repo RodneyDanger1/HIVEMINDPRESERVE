@@ -68,6 +68,8 @@ fn embedded_registry_loads_a_renderable_planner_template() {
             "content-writer".to_owned(),
             "data-analyst".to_owned(),
             "planner".to_owned(),
+            "subagent".to_owned(),
+            "superagent".to_owned(),
         ]
     );
     let template = registry.get("planner").expect("planner template");
@@ -107,6 +109,8 @@ fn production_constructor_loads_the_planner_template() {
             "content-writer".to_owned(),
             "data-analyst".to_owned(),
             "planner".to_owned(),
+            "subagent".to_owned(),
+            "superagent".to_owned(),
         ],
         "engine got the loaded planner registry (not an empty default)"
     );
@@ -133,6 +137,8 @@ fn boot_constructor_loads_the_planner_template() {
             "content-writer".to_owned(),
             "data-analyst".to_owned(),
             "planner".to_owned(),
+            "subagent".to_owned(),
+            "superagent".to_owned(),
         ],
         "binary boot path (with_graph) loads the planner template"
     );

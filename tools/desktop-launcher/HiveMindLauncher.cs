@@ -54,11 +54,12 @@ namespace HiveMindLauncher
                 }
                 if (!PortOpen(port))
                 {
+                    string workspaceRoot = ResolveWorkspaceRoot();
                     var start = new ProcessStartInfo
                     {
                         FileName = server,
-                        Arguments = "--bind " + Host + ":" + port + " --data-dir \"" + data + "\"",
-                        WorkingDirectory = Path.GetDirectoryName(server),
+                        Arguments = "--bind " + Host + ":" + port + " --data-dir \"" + data + "\" --workspace-root \"" + workspaceRoot + "\"",
+                        WorkingDirectory = workspaceRoot,
                         UseShellExecute = false,
                         CreateNoWindow = true,
                         RedirectStandardOutput = true,
@@ -157,6 +158,23 @@ namespace HiveMindLauncher
                 // Fall through to the environment fallback; never print key material.
             }
             return Environment.GetEnvironmentVariable("DEEPSEEK_API_KEY") ?? string.Empty;
+        }
+
+        private static string ResolveWorkspaceRoot()
+        {
+            string configured = Environment.GetEnvironmentVariable("HIVEMIND_WORKSPACE_ROOT");
+            if (!string.IsNullOrWhiteSpace(configured) && Directory.Exists(configured))
+            {
+                return configured;
+            }
+            // This checkout is the development workspace. A portable copy on a
+            // different machine has no such folder, so fall back to its own
+            // directory rather than silently analyzing the two-binary package.
+            if (Directory.Exists(DefaultRoot))
+            {
+                return DefaultRoot;
+            }
+            return Directory.GetCurrentDirectory();
         }
 
         private static string ResolveServer()
