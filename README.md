@@ -50,6 +50,24 @@ cargo build --release --locked
 - **Audit / release notes:** `audit/HIVEMIND-AUDIT-PAPER.md`; release notes `docs/RELEASE.md`; exact hash registry
   `docs/RELEASE-EVIDENCE.md` + `tools/release-manifest.json`.
 
+## Agent-native CLI (headless)
+
+`HiveMind-Agent.cmd` (or `tools/hivemind-cli.mjs`) is the same authority surface
+the UI uses, exposed for agents and orchestration systems:
+
+```powershell
+.\HiveMind-Agent.cmd start --json
+.\HiveMind-Agent.cmd health --json
+.\HiveMind-Agent.cmd commands --json
+.\HiveMind-Agent.cmd schema submit --json
+.\HiveMind-Agent.cmd stop --yes --json
+```
+
+stdout is JSON when piped; refusals carry `code`, `message`, `how_to_fix` and a
+stable exit code. It never reads or prints the provider key, and keyless
+provider commands refuse by name. Full command list: [`docs/AGENT-CLI.md`](docs/AGENT-CLI.md);
+agent skill: [`skills/hivemind/SKILL.md`](skills/hivemind/SKILL.md).
+
 <!-- docs-truth:historical:start -->
 ## Historical: HiveMind 1.0.0 (SUPERSEDED)
 

@@ -47,7 +47,7 @@ if (Test-Path $keyFile) {
 $stdout = Join-Path $DataDir 'server.stdout.log'
 $stderr = Join-Path $DataDir 'server.stderr.log'
 $process = Start-Process -FilePath $exe `
-    -ArgumentList '--bind', $Bind, '--data-dir', $DataDir `
+    -ArgumentList '--bind', $Bind, '--data-dir', $DataDir, '--workspace-root', $root `
     -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
 
 $deadline = (Get-Date).AddSeconds(20)

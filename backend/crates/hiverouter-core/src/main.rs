@@ -189,20 +189,22 @@ fn print_usage() {
         "hiverouter {version} — HiveMind v1 backend (contract schema {schema})
 
 USAGE:
-    hiverouter [--bind <ADDR>] [--data-dir <DIR>] [--db <FILE>]
+    hiverouter [--bind <ADDR>] [--data-dir <DIR>] [--db <FILE>] [--workspace-root <DIR>]
 
 OPTIONS:
-    --bind <ADDR>      loopback listen address (default {default_bind})
-    --data-dir <DIR>   data directory for SQLite and snapshots (default {default_data_dir})
-    --db <FILE>        SQLite database file (default <data-dir>/hiverouter.db)
-    -h, --help         show this help
-    -V, --version      show the version and contract schema
+    --bind <ADDR>           loopback listen address (default {default_bind})
+    --data-dir <DIR>        data directory for SQLite and snapshots (default {default_data_dir})
+    --db <FILE>             SQLite database file (default <data-dir>/hiverouter.db)
+    --workspace-root <DIR>  workspace jail for file tools (default: current directory)
+    -h, --help              show this help
+    -V, --version           show the version and contract schema
 
 ENVIRONMENT:
-    HIVEROUTER_BIND       same as --bind
-    HIVEROUTER_DATA_DIR   same as --data-dir
-    HIVEROUTER_DB         same as --db
-    RUST_LOG              tracing filter (default: info)
+    HIVEROUTER_BIND           same as --bind
+    HIVEROUTER_DATA_DIR       same as --data-dir
+    HIVEROUTER_DB             same as --db
+    HIVEROUTER_WORKSPACE_ROOT same as --workspace-root
+    RUST_LOG                  tracing filter (default: info)
 
 Only loopback bind addresses are accepted in v1; the server refuses anything else
 with E_ORIGIN_REJECTED.",
