@@ -839,15 +839,39 @@ impl RunStore {
         run_id: RunId,
         limit: usize,
     ) -> Result<Vec<AgentMemoryRecord>, Refusal> {
+        self.agent_memory_entries_scoped(run_id, None, limit)
+    }
+
+    /// Lists run memory rows, optionally limited to one hive/branch scope.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn agent_memory_entries_for_scope(
+        &self,
+        run_id: RunId,
+        scope_id: &str,
+        limit: usize,
+    ) -> Result<Vec<AgentMemoryRecord>, Refusal> {
+        self.agent_memory_entries_scoped(run_id, Some(scope_id), limit)
+    }
+
+    fn agent_memory_entries_scoped(
+        &self,
+        run_id: RunId,
+        scope_id: Option<&str>,
+        limit: usize,
+    ) -> Result<Vec<AgentMemoryRecord>, Refusal> {
         self.db
             .with_connection(|connection| {
+                let limit = i64::try_from(limit).unwrap_or(i64::MAX);
                 let mut statement = connection.prepare(
                     "SELECT run_id, scope_id, agent_key, key, value, task_id, created_at
-                     FROM agent_memory WHERE run_id = ?1
-                     ORDER BY created_at DESC, rowid DESC LIMIT ?2",
+                     FROM agent_memory
+                     WHERE run_id = ?1 AND (?2 IS NULL OR scope_id = ?2)
+                     ORDER BY created_at DESC, rowid DESC LIMIT ?3",
                 )?;
                 let rows = statement.query_map(
-                    params![run_id.to_string(), i64::try_from(limit).unwrap_or(i64::MAX)],
+                    params![run_id.to_string(), scope_id, limit],
                     |row| {
                         Ok(AgentMemoryRecord {
                             run_id: row.get(0)?,

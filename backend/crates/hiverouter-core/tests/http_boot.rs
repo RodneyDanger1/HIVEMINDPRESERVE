@@ -339,6 +339,16 @@ async fn run_scoped_memory_route_exposes_branch_rows() {
     assert!(scopes.contains(&"hive-a"));
     assert!(scopes.contains(&"hive-b"));
 
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/agents/runs/{}/memory?scope=hive-a", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "scoped memory route: {body}");
+    let scoped: Value = serde_json::from_str(&body).expect("scoped memory JSON");
+    assert_eq!(scoped["count"], 1);
+    assert_eq!(scoped["scope"], "hive-a");
+
     let (status, _) = http_get(
         server.addr,
         &format!(

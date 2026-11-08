@@ -1142,6 +1142,7 @@ async fn active_run(State(state): State<Arc<AppState>>) -> Response {
 async fn agent_memory_for_run(
     State(state): State<Arc<AppState>>,
     Path(run_id): Path<String>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
 ) -> Response {
     let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
         return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
@@ -1149,7 +1150,15 @@ async fn agent_memory_for_run(
     if let Err(refusal) = state.engine.store.get_run(run_id) {
         return refusal_response(StatusCode::NOT_FOUND, &refusal);
     }
-    match state.engine.store.agent_memory_entries_for_run(run_id, 200) {
+    let scope = query.get("scope").map(String::as_str);
+    if scope.is_some_and(|value| value.is_empty() || value.chars().count() > 128) {
+        return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+    }
+    let result = match scope {
+        Some(scope) => state.engine.store.agent_memory_entries_for_scope(run_id, scope, 200),
+        None => state.engine.store.agent_memory_entries_for_run(run_id, 200),
+    };
+    match result {
         Ok(entries) => {
             let rows: Vec<serde_json::Value> = entries
                 .into_iter()
@@ -1170,6 +1179,7 @@ async fn agent_memory_for_run(
                 [(header::CACHE_CONTROL, "no-store")],
                 Json(serde_json::json!({
                     "run_id": run_id.to_string(),
+                    "scope": scope,
                     "count": rows.len(),
                     "memories": rows,
                 })),

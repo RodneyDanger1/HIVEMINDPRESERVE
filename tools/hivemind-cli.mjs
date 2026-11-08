@@ -247,7 +247,10 @@ const COMMANDS = {
     summary: 'List durable role memory, or one run’s branch-scoped memory rows.',
     safety: 'read',
     transport: 'http',
-    args: [ARG('run', 'uuid', false, 'Optional run id for branch-scoped memory.')],
+    args: [
+      ARG('run', 'uuid', false, 'Optional run id for branch-scoped memory.'),
+      ARG('scope', 'string', false, 'Optional hive/branch scope id with --run.'),
+    ],
   },
   projects: {
     summary: 'List projects known to the local server.',
@@ -1534,9 +1537,17 @@ async function executeRead(command, options, baseUrl) {
       };
     }
     case 'memory':
-      return options.run
-        ? httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/memory`)
-        : httpJson(baseUrl, '/api/agents/memory');
+      if (!options.run) {
+        return httpJson(baseUrl, '/api/agents/memory');
+      }
+      {
+        const run = runIdOption(options);
+        const scope = options.scope ? String(options.scope) : null;
+        return httpJson(
+          baseUrl,
+          `/api/agents/runs/${run}/memory${scope ? `?scope=${encodeURIComponent(scope)}` : ''}`,
+        );
+      }
     case 'projects':
       return httpJson(baseUrl, '/api/projects');
     case 'models':
