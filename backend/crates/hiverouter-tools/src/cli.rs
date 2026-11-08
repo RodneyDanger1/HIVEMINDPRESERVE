@@ -36,6 +36,7 @@ use crate::census::{standard_census, PROMPT_CLAIMED_TOOL_IDS};
 use crate::cli_support::{
     fetch_json, node_floor, parse_version_triple, rust_msrv_floor, version_probe,
 };
+use crate::db_admin;
 use crate::tool::{AgentTier, ToolId, ToolRegistry};
 
 /// CLI envelope schema id.
@@ -168,6 +169,26 @@ pub const COMMANDS: &[CommandSpec] = &[
         mutating: false,
         positionals: &[],
         flags: &["--url", "--timeout"],
+    },
+    CommandSpec {
+        name: "db.backup",
+        resource: "db",
+        action: "backup",
+        summary: "Capture a consistent SQLite backup with a hash receipt.",
+        tier: 2,
+        mutating: true,
+        positionals: &[],
+        flags: &["--db", "--out"],
+    },
+    CommandSpec {
+        name: "db.restore",
+        resource: "db",
+        action: "restore",
+        summary: "Verify and restore a SQLite backup over the local database.",
+        tier: 2,
+        mutating: true,
+        positionals: &[],
+        flags: &["--db", "--from", "--force"],
     },
 ];
 
@@ -375,6 +396,8 @@ pub fn dispatch(argv: &[String]) -> CliOutcome {
         "provider.cost" => provider_cost_outcome(&parsed),
         "health" => http_outcome(&parsed, "health", "/health"),
         "diagnose" => http_outcome(&parsed, "diagnose", "/diagnose"),
+        "db.backup" => db_backup_outcome(&parsed),
+        "db.restore" => db_restore_outcome(&parsed),
         _ => CliOutcome::failure(
             &command,
             EXIT_USAGE,
@@ -772,6 +795,111 @@ fn provider_cost_outcome(parsed: &ParsedArgs) -> CliOutcome {
             )
         }
         Err(error) => named_refusal("provider.cost", error.refusal(), error.detail()),
+    }
+}
+
+fn flag_required<'a>(
+    parsed: &'a ParsedArgs,
+    command: &str,
+    flag: &str,
+) -> Result<&'a str, CliOutcome> {
+    parsed
+        .flags
+        .get(flag)
+        .map(String::as_str)
+        .ok_or_else(|| argv_error(command, format!("{command} requires {flag}=<path>")))
+}
+
+fn db_report_payload(report: &db_admin::DbReport, dry_run: bool) -> serde_json::Value {
+    serde_json::json!({
+        "dry_run": dry_run,
+        "path": report.path.to_string_lossy(),
+        "bytes": report.bytes,
+        "sha256": report.sha256,
+        "schema_version": report.schema_version,
+    })
+}
+
+fn db_backup_outcome(parsed: &ParsedArgs) -> CliOutcome {
+    let db = match flag_required(parsed, "db.backup", "--db") {
+        Ok(value) => value,
+        Err(outcome) => return outcome,
+    };
+    let out = match flag_required(parsed, "db.backup", "--out") {
+        Ok(value) => value,
+        Err(outcome) => return outcome,
+    };
+    if parsed.dry_run {
+        let report = db_admin::DbReport {
+            path: std::path::PathBuf::from(out),
+            bytes: 0,
+            sha256: "dry-run".to_owned(),
+            schema_version: 0,
+        };
+        return CliOutcome::success(
+            "db.backup",
+            db_report_payload(&report, true),
+            vec![format!("Would back up {db} to {out} (dry-run; nothing written).")],
+        );
+    }
+    match db_admin::backup(std::path::Path::new(db), std::path::Path::new(out)) {
+        Ok(report) => CliOutcome::success(
+            "db.backup",
+            db_report_payload(&report, false),
+            vec![format!(
+                "Backed up {} bytes (schema v{}) to {}; sha256 {}.",
+                report.bytes,
+                report.schema_version,
+                report.path.display(),
+                report.sha256
+            )],
+        ),
+        Err(refusal) => named_refusal("db.backup", refusal, format!("{db} -> {out}")),
+    }
+}
+
+fn db_restore_outcome(parsed: &ParsedArgs) -> CliOutcome {
+    let db = match flag_required(parsed, "db.restore", "--db") {
+        Ok(value) => value,
+        Err(outcome) => return outcome,
+    };
+    let from = match flag_required(parsed, "db.restore", "--from") {
+        Ok(value) => value,
+        Err(outcome) => return outcome,
+    };
+    let force = parsed
+        .flags
+        .get("--force")
+        .is_some_and(|value| matches!(value.as_str(), "true" | "1" | "yes"));
+    if parsed.dry_run {
+        let report = db_admin::DbReport {
+            path: std::path::PathBuf::from(db),
+            bytes: 0,
+            sha256: "dry-run".to_owned(),
+            schema_version: 0,
+        };
+        return CliOutcome::success(
+            "db.restore",
+            db_report_payload(&report, true),
+            vec![format!("Would restore {from} over {db} (dry-run; nothing written).")],
+        );
+    }
+    match db_admin::restore(std::path::Path::new(from), std::path::Path::new(db), force) {
+        Ok(report) => CliOutcome::success(
+            "db.restore",
+            db_report_payload(&report, false),
+            vec![format!(
+                "Restored {} bytes (schema v{}) from {from}; sha256 {}.",
+                report.bytes,
+                report.schema_version,
+                report.sha256
+            )],
+        ),
+        Err(refusal) => named_refusal(
+            "db.restore",
+            refusal,
+            format!("{from} -> {db}; pass --force=true to replace existing data"),
+        ),
     }
 }
 

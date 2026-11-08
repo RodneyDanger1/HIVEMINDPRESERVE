@@ -261,3 +261,8 @@ Each migration needs: newer-schema refusal, pre-migration backup + integrity che
 - Tool-turn caps are counted per task (`task_tool_turns`) while the call budget remains per run; DB test `task_turn_count_is_per_task_not_per_run`.
 - HTTP 402 is `E_PROVIDER_BALANCE` (not `E_PROVIDER_AUTH`); 401 remains auth. Provider/refusal/adapter tests updated; web parity is 67 codes.
 - No A2A status/answer/wake yet: the atomic budget is not the answer path.
+### P1 DB operator slice
+
+- `hiverouter-tools/src/db_admin.rs`: `backup` uses `VACUUM INTO` + integrity check; `restore` verifies, refuses schema > 11, copies the existing DB aside, removes stale `-wal`/`-shm`, and verifies the restored file.
+- CLI: `hiverouter-cli db backup --db=<file> --out=<file>` and `db restore --db=<file> --from=<file> --force=true`; both support `--dry-run` and return JSON receipts.
+- Tests: round-trip preserves rows; newer backup schema refused before copy; existing target requires force.

@@ -35,6 +35,7 @@ pub mod census;
 pub mod cli;
 pub mod cli_support;
 pub mod commands;
+pub mod db_admin;
 pub mod env_safety;
 pub mod error;
 pub mod executor;
