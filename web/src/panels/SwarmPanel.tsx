@@ -28,6 +28,7 @@ export function SwarmPanel() {
   const setNav = useUiStore((state) => state.setNav);
   const project = useUiStore((state) => state.project);
   const setTab = useUiStore((state) => state.setTab);
+  const run = useUiStore((state) => state.run);
   const [capacity, setCapacity] = useState<RuntimeCapacity | null>(null);
   const replayTasks = useMemo(
     () => (replayGraph === null ? null : buildReplayTasks(replayGraph.graph)),
@@ -38,42 +39,47 @@ export function SwarmPanel() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${apiBaseUrl()}/api/runtime`, { headers: { Accept: 'application/json' } })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`runtime HTTP ${response.status}`);
-        }
-        const body = (await response.json()) as Record<string, unknown>;
-        const caps =
-          typeof body.caps === 'object' && body.caps !== null
-            ? (body.caps as Record<string, unknown>)
-            : null;
-        if (
-          typeof body.status !== 'string' ||
-          caps === null ||
-          typeof caps.max_agents !== 'number' ||
-          typeof caps.max_calls !== 'number'
-        ) {
-          throw new Error('runtime payload missing capacity fields');
-        }
-        if (!cancelled) {
-          setCapacity({
-            state: body.status,
-            active: typeof body.active_task_count === 'number' ? body.active_task_count : 0,
-            maxAgents: caps.max_agents,
-            maxCalls: caps.max_calls,
-          });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCapacity(null);
-        }
-      });
+    const load = (): void => {
+      fetch(`${apiBaseUrl()}/api/runtime`, { headers: { Accept: 'application/json' } })
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`runtime HTTP ${response.status}`);
+          }
+          const body = (await response.json()) as Record<string, unknown>;
+          const caps =
+            typeof body.caps === 'object' && body.caps !== null
+              ? (body.caps as Record<string, unknown>)
+              : null;
+          if (
+            typeof body.status !== 'string' ||
+            caps === null ||
+            typeof caps.max_agents !== 'number' ||
+            typeof caps.max_calls !== 'number'
+          ) {
+            throw new Error('runtime payload missing capacity fields');
+          }
+          if (!cancelled) {
+            setCapacity({
+              state: body.status,
+              active: typeof body.active_task_count === 'number' ? body.active_task_count : 0,
+              maxAgents: caps.max_agents,
+              maxCalls: caps.max_calls,
+            });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setCapacity(null);
+          }
+        });
+    };
+    load();
+    const timer = window.setInterval(load, 15_000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [run?.id, run?.status]);
   const counts = {
     hyperagents: list.filter((task) => task.kind === 'hyperagent').length,
     superagents: list.filter((task) => task.kind === 'superagent').length,
