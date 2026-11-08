@@ -338,3 +338,9 @@ Not delivered and must not be claimed:
 - `spawn_sub_hive`, plan insertion, and TEMPLATE_INSERT now resolve `role_class` before tier fallback and refuse unknown roles with `E_PERSONA_UNKNOWN`; no unknown role becomes a 9-tool Worker.
 - New lifecycle test proves `researcher` is refused before any child row; existing aliases and class-matrix tests remain green.
 - Legacy/unresolved parent rows still fall back for reading class but cannot launder an unknown child.
+### P4 memory journal and trust promotion
+
+- v15 adds `memory_journal`; bank writes and operator trust changes append journal rows. Migration v14 notes get a backfill journal anchor.
+- `POST /api/memory/trust` is token-gated and accepts only `verified`/`authoritative`; the store updates one active entry and journals `trust_changed`. Model text has no path to this method.
+- Test: promote a branch claim, assert trust changed and journal row; missing entry returns false.
+- Not delivered: hash chaining, retention sweeps, snapshots, UI promotion control.

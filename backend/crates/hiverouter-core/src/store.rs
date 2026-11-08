@@ -1100,6 +1100,7 @@ impl RunStore {
                     "DELETE FROM memory_entries WHERE bank_id = ?1 AND entry_key = ?2 AND status = 'active'",
                     params![bank_id, key],
                 )?;
+                let entry_id = format!("entry:{}", Uuid::now_v7());
                 connection.execute(
                     "INSERT INTO memory_entries
                      (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
@@ -1107,12 +1108,25 @@ impl RunStore {
                      VALUES (?1, ?2, ?3, 'observation', ?4, 'agent_result', ?5, ?6,
                              'unverified', 'active', ?7, ?7)",
                     params![
-                        format!("entry:{}", Uuid::now_v7()),
+                        entry_id,
                         bank_id,
                         key,
                         value,
                         task_id.to_string(),
                         run_id.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                connection.execute(
+                    "INSERT INTO memory_journal
+                     (run_id, bank_id, entry_id, action, actor_kind, actor_id,
+                      detail_json, created_at)
+                     VALUES (?1, ?2, ?3, 'entry_written', 'agent', ?4, '{}', ?5)",
+                    params![
+                        run_id.to_string(),
+                        bank_id,
+                        entry_id,
+                        agent_key,
                         Timestamp::now().as_str()
                     ],
                 )?;
@@ -1360,6 +1374,89 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(())
+    }
+
+    /// Operator-only trust transition for one bank entry; model text can never
+    /// call this path. Only `verified`/`authoritative` targets are accepted.
+    ///
+    /// # Errors
+    /// Database refusal; returns `false` when the entry is not in that run/bank.
+    pub fn promote_memory_entry(
+        &self,
+        run_id: RunId,
+        bank_id: &str,
+        entry_id: &str,
+        trust: &str,
+        actor: &str,
+    ) -> Result<bool, Refusal> {
+        if !matches!(trust, "verified" | "authoritative") {
+            return Err(Refusal::SchemaInvalid);
+        }
+        self.db
+            .with_connection(|connection| {
+                let transaction = connection.transaction()?;
+                let changed = transaction.execute(
+                    "UPDATE memory_entries SET trust = ?4, updated_at = ?5
+                     WHERE id = ?1 AND bank_id = ?2 AND status = 'active'
+                       AND EXISTS (SELECT 1 FROM memory_banks b
+                                   WHERE b.id = ?2 AND b.run_id = ?3)",
+                    params![
+                        entry_id,
+                        bank_id,
+                        run_id.to_string(),
+                        trust,
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                if changed == 1 {
+                    transaction.execute(
+                        "INSERT INTO memory_journal
+                         (run_id, bank_id, entry_id, action, actor_kind, actor_id,
+                          detail_json, created_at)
+                         VALUES (?1, ?2, ?3, 'trust_changed', 'operator', ?4, ?5, ?6)",
+                        params![
+                            run_id.to_string(),
+                            bank_id,
+                            entry_id,
+                            actor,
+                            serde_json::json!({ "trust": trust }).to_string(),
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                }
+                transaction.commit()?;
+                Ok(changed == 1)
+            })
+            .map_err(map)
+    }
+
+    /// Lists recent memory-journal actions for one run.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_journal_for_run(
+        &self,
+        run_id: RunId,
+        limit: usize,
+    ) -> Result<Vec<(String, String, String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT action, bank_id, entry_id, created_at
+                     FROM memory_journal WHERE run_id = ?1
+                     ORDER BY seq DESC LIMIT ?2",
+                )?;
+                let rows = statement.query_map(
+                    params![run_id.to_string(), i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )?;
+                let mut journal = Vec::new();
+                for row in rows {
+                    journal.push(row?);
+                }
+                Ok(journal)
+            })
+            .map_err(map)
     }
 
     /// Reads the bounded bank set for one task: own branch, parent branch, and
@@ -2026,6 +2123,31 @@ mod tests {
             Err(Refusal::CallLimit)
         );
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
+    }
+
+    #[test]
+    fn memory_trust_promotion_is_journaled() {
+        let store = store();
+        let run = store
+            .create_run("p", "trust", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "claim", "value", run.id, task, &task.to_string())
+            .expect("memory");
+        let bank_id = format!("bank:branch:{task}");
+        let entries = store.memory_entries_for_bank(&bank_id, 10).expect("entries");
+        let entry_id = &entries[0].id;
+        assert!(store
+            .promote_memory_entry(run.id, &bank_id, entry_id, "verified", "operator")
+            .expect("promote"));
+        let entries = store.memory_entries_for_bank(&bank_id, 10).expect("entries");
+        assert_eq!(entries[0].trust.as_deref(), Some("verified"));
+        let journal = store.memory_journal_for_run(run.id, 10).expect("journal");
+        assert!(journal.iter().any(|(action, _, _, _)| action == "trust_changed"));
+        assert!(!store
+            .promote_memory_entry(run.id, &bank_id, "missing", "verified", "operator")
+            .expect("missing"));
     }
 
     #[test]

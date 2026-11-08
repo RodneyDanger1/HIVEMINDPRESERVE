@@ -40,7 +40,7 @@ fn chat_store_persists_user_and_assistant_messages_in_order() {
         _temp.path().display()
     )))
     .expect("reopen");
-    assert_eq!(reopened.schema_version().expect("version"), 14);
+    assert_eq!(reopened.schema_version().expect("version"), 15);
 }
 
 use std::path::Path;
@@ -134,7 +134,7 @@ fn command_receipts_make_mutations_idempotent() {
 fn migration_v2_down_and_up_roundtrip() {
     let temp = tempfile::tempdir().expect("temp dir");
     let db = Database::open(&temp.path().join("hiverouter.db")).expect("db");
-    assert_eq!(db.migrate().expect("migrate"), 14);
+    assert_eq!(db.migrate().expect("migrate"), 15);
     // Down to v2 keeps the run/task/chat tables (the v4 tool-turn table and v3
     // snapshot index are dropped).
     assert_eq!(db.migrate_down_to(2).expect("down v4+v3"), 2);
@@ -144,6 +144,6 @@ fn migration_v2_down_and_up_roundtrip() {
     assert_eq!(store.list_runs(10).expect("empty runs"), Vec::new());
     // Down to v0 drops every phase table, then the full migration chain re-applies.
     assert_eq!(db.migrate_down_to(0).expect("down all"), 0);
-    assert_eq!(db.migrate().expect("re-migrate"), 14);
+    assert_eq!(db.migrate().expect("re-migrate"), 15);
 }
 

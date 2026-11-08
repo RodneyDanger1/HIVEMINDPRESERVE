@@ -548,6 +548,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             get(memory_bank_entries),
         )
         .route("/api/memory/clear", post(clear_run_memory))
+        .route("/api/memory/trust", post(promote_memory))
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
@@ -1330,6 +1331,38 @@ async fn clear_run_memory(
         )
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `POST /api/memory/trust` — operator-only trust promotion with journal entry.
+async fn promote_memory(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let text = |key: &str| body.get(key).and_then(|value| value.as_str()).map(str::trim);
+    let (Some(run_raw), Some(bank_id), Some(entry_id), Some(trust)) =
+        (text("run_id"), text("bank_id"), text("entry_id"), text("trust"))
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = run_raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if bank_id.is_empty() || entry_id.is_empty() {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    match state
+        .engine
+        .store
+        .promote_memory_entry(run_id, bank_id, entry_id, trust, "operator")
+    {
+        Ok(true) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({ "updated": true, "trust": trust })),
+        )
+            .into_response(),
+        Ok(false) => refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound),
+        Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
     }
 }
 
