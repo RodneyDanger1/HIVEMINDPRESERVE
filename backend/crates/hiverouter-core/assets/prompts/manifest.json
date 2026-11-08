@@ -47,5 +47,12 @@
     "spdx": "MIT",
     "source_url": "authored in this repository (no external fetch)",
     "fetched_at": "2026-11-07"
+  },
+  {
+    "template_id": "agent",
+    "file": "agent.prompty",
+    "spdx": "MIT",
+    "source_url": "authored in this repository (no external fetch)",
+    "fetched_at": "2026-11-08"
   }
 ]

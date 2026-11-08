@@ -30,6 +30,7 @@ fn template_schema_roundtrip() {
     assert_eq!(
         registry.template_ids(),
         vec![
+            "agent".to_owned(),
             "chatbot".to_owned(),
             "code-reviewer".to_owned(),
             "content-writer".to_owned(),
@@ -83,7 +84,7 @@ fn template_schema_roundtrip() {
 fn prompt_schema_roundtrip() {
     let registry = TemplateRegistry::load(&assets()).expect("load templates");
     let personas = load_personas(&assets().join("personas.json"), &registry).expect("personas");
-    assert_eq!(personas.len(), 7);
+    assert_eq!(personas.len(), 8);
     let persona = &personas[0];
     assert_eq!(persona.tier, PersonaTier::Hyper);
     assert_eq!(persona.template_id, "planner");
@@ -128,7 +129,7 @@ fn prompt_schema_roundtrip() {
 fn embedded_personas_load_without_a_data_dir() {
     let registry = TemplateRegistry::load_embedded().expect("embedded templates");
     let personas = load_personas_embedded(&registry).expect("embedded personas");
-    assert_eq!(personas.len(), 7);
+    assert_eq!(personas.len(), 8);
     assert_eq!(personas[0].id, "planner");
     assert_eq!(personas[0].template_id, "planner");
     assert_eq!(personas[0].validate(&registry), Ok(()));

@@ -281,4 +281,4 @@ Not delivered and must not be claimed:
 
 - Subagent aliases (`subagent`, `sub_agent`, `sub-agent`, case variants) now share one admission policy; a worker can spawn any alias and cannot spawn a worker.
 - A too-shallow Subagent now returns `E_SPAWN_DEPTH` instead of the misleading `E_TOOL_NOT_ALLOWED` in plan, command, and model/template paths.
-- Persisted class/rank/profile and the `agent` profile remain unimplemented; this is only resolver/code-grounding.
+- Generic `agent` persona/template added (8 embedded profiles) with a 9-tool worker grant; persisted class/rank/profile and the full identity resolver remain unimplemented.

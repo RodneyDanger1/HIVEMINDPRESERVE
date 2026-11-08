@@ -63,6 +63,7 @@ fn embedded_registry_loads_a_renderable_planner_template() {
     assert_eq!(
         registry.template_ids(),
         vec![
+            "agent".to_owned(),
             "chatbot".to_owned(),
             "code-reviewer".to_owned(),
             "content-writer".to_owned(),
@@ -104,6 +105,7 @@ fn production_constructor_loads_the_planner_template() {
     assert_eq!(
         state.engine.templates.template_ids(),
         vec![
+            "agent".to_owned(),
             "chatbot".to_owned(),
             "code-reviewer".to_owned(),
             "content-writer".to_owned(),
@@ -132,6 +134,7 @@ fn boot_constructor_loads_the_planner_template() {
     assert_eq!(
         state.engine.templates.template_ids(),
         vec![
+            "agent".to_owned(),
             "chatbot".to_owned(),
             "code-reviewer".to_owned(),
             "content-writer".to_owned(),

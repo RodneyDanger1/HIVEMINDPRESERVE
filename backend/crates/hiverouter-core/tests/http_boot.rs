@@ -236,7 +236,7 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
     let (_, list) = http_get(server.addr, "/api/agents/profiles").await;
     let value: Value = serde_json::from_str(&list).expect("profiles JSON");
     let profiles = value["profiles"].as_array().expect("profiles");
-    assert_eq!(profiles.len(), 8, "seven embedded + one imported");
+    assert_eq!(profiles.len(), 9, "eight embedded + one imported");
     assert!(profiles.iter().any(|profile| profile["id"] == "custom-writer"));
     let custom = profiles
         .iter()
@@ -277,7 +277,7 @@ async fn agent_profiles_import_validates_persists_and_deletes() {
     let value: Value = serde_json::from_str(&list).expect("profiles JSON");
     assert_eq!(
         value["profiles"].as_array().expect("profiles").len(),
-        7,
+        8,
         "delete removes the imported profile"
     );
 }
@@ -595,7 +595,7 @@ async fn agent_profiles_route_returns_embedded_registry() {
     assert_eq!(status, 200, "profiles route: {body}");
     let value: Value = serde_json::from_str(&body).expect("profiles JSON");
     let profiles = value["profiles"].as_array().expect("profiles array");
-    assert_eq!(profiles.len(), 7, "embedded persona registry");
+    assert_eq!(profiles.len(), 8, "embedded persona registry");
     let ids: Vec<&str> = profiles
         .iter()
         .filter_map(|profile| profile["id"].as_str())

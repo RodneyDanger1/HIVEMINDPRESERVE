@@ -70,6 +70,10 @@ pub const EMBEDDED_TEMPLATE_FILES: &[(&str, &str)] = &[
         "chatbot.prompty",
         include_str!("../assets/prompts/chatbot.prompty"),
     ),
+    (
+        "agent.prompty",
+        include_str!("../assets/prompts/agent.prompty"),
+    ),
 ];
 
 /// Role marker in the prompt body / rendered message.

@@ -63,5 +63,14 @@
     "allowed_tool_ids": ["ask_parent", "send_to_sibling", "report_result", "finish"],
     "output_schema_id": null,
     "refusal_policy": "report"
+  },
+  {
+    "id": "agent",
+    "display_name": "HiveMind Agent",
+    "tier": "worker",
+    "template_id": "agent",
+    "allowed_tool_ids": ["file_read", "file_list", "file_write", "shell_exec", "ask_parent", "send_to_sibling", "spawn_agent", "report_result", "finish"],
+    "output_schema_id": null,
+    "refusal_policy": "strict"
   }
 ]
