@@ -109,7 +109,7 @@ function CanvasInner() {
   const viewport = useViewport();
   const [zoomLabel, setZoomLabel] = useState('100%');
   const [positionOverrides, setPositionOverrides] = useState<PositionMap>({});
-  const [hideFinished, setHideFinished] = useState(false);
+  const [hideFinished, setHideFinished] = useState(true);
   const [focusBranch, setFocusBranch] = useState(false);
   const [dragSourceId, setDragSourceId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
