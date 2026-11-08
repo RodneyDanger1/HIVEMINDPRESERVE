@@ -18,7 +18,7 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 | Surface | State | Scope | Score |
 |---|---|---|---|
 | `hiverouter-cli` (`backend/crates/hiverouter-tools/src/cli.rs`, artifact `hiverouter-cli.exe`) | shipped in 1.0/1.1 release lineage; 9 commands; no mutating command by design (`cli.rs:16–18`) | read-only diagnostics (`version`, `preflight`, `schema`, `tools.*`, `capabilities.census`, `provider.cost`, `health`, `diagnose`) | **19/28** — partially agent-native for the narrow surface |
-| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd|ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **13/28** — broad but contract-breaking in places |
+| `hivemind-cli` (`tools/hivemind-cli.mjs`, untracked; wrappers `tools/hivemind.cmd|ps1`; usage doc `docs/AGENT-CLI.md`) | in-flight candidate, changed repeatedly during this seat; not in `tools/release-manifest.json`; requires Node | broad: lifecycle, reads, mutations, approvals, templates, files, watch, skill | **15/28** — broad; latest snapshot aligns the envelope basics; contract gaps remain |
 | **target production CLI** | this document | one contract, one owner, full control plane | **28/28** |
 
 ---
@@ -28,9 +28,9 @@ Both are read-only recon, not runtime verification. Where this document says "ve
 **Current verdict: partially agent-native.** The repo does not lack a CLI. It lacks **one production CLI contract**. The shipped Rust CLI is a credible agent-native *diagnostic* surface, and the in-flight Node CLI is a credible *field prototype*, but neither is a production HiveMind control plane:
 
 - The Rust CLI cannot start/stop the server, cannot submit/cancel/approve, cannot stream events, has no typed argument schema, no lifecycle identity, and no idempotency beyond one server-side receipt.
-- The Node prototype covers most operations but violates the output contract (human output and help go to stdout), omits the top-level `schema`, has a second exit-code table incompatible with the shipped CLI, has no lock/instance identity, no idempotency, no resync, no tests, and is not in the release.
+- The Node prototype covers most operations and its latest snapshot now emits a top-level `schema`, human data output on stderr, and the shipped `0/2/3/4` exit classes. It still writes human help to stdout, collapses transport/timeout/safety into 2/3, has no lock/instance identity, no idempotency, no resync, no tests, and is not in the release.
 - The server side is missing the read routes and instance identity a lifecycle CLI needs: `/api/approvals`, `/api/templates`, `/api/workspace`, `/api/runs/active`; `/health` has no `pid`/`boot_id`/`data_dir`; `/api/*` is not token-authenticated; only `SUBMIT_PROMPT` is receipt-idempotent; no route shuts down the server.
-- The two surfaces ship **two incompatible exit tables** (Rust `0/2/3/4`; Node `0/1/2/3/4/5/6`). Agents keyed on one break on the other.
+- The two surfaces now **partly share** the `0/2/3/4` classes, but the Node aliases collapse distinct failures (`NOT_RUNNING`/`AUTH`/`TIMEOUT` → 3, `UNSAFE` → 2), and there is still no single owner. The production table in §6 adds semantic 5/6/7/8/9/130; agents keyed on the old Node `1/3/4/5/6` snapshot still break.
 
 **Recommendation.** Build one production CLI — `hivemind` — as a **Rust binary** (extend `hiverouter-cli`, or add a `hivemind` binary beside it), keep `hiverouter-cli` as a deprecated alias for one release, and keep the Node prototype as a **non-shipped behavioral reference** until parity. Do **not** ship the Node prototype as the release artifact unless Node >= 22.12 is explicitly declared a runtime prerequisite, bundled, and the Rust CLI's exit table is changed in the same release. Never ship two CLI contracts.
 
@@ -56,7 +56,7 @@ The contract is one CLI serving three readers simultaneously. The channel split 
 - Overrides: `--format json`, `--format jsonl`, `--format table`, `--format human`, `--json`, `--human`.
 - `--format table` is **explicit-only**; it prints an ASCII table to stdout (no pager, no color when `NO_COLOR`/not a TTY). It never auto-selects.
 - `NO_COLOR`, `TERM=dumb`, and `--no-color` disable ANSI. No pager is ever invoked; `PAGER` is ignored.
-- `--format human` under a non-TTY is allowed for humans redirecting stderr, but stdout stays empty. This is the opposite of the Node prototype's current `printHuman` (stdout) and `humanHelp` (stdout) behavior, which must be corrected.
+- `--format human` under a non-TTY is allowed for humans redirecting stderr, but stdout stays empty. The Node prototype's latest snapshot writes human data output to stderr (good), but its `humanHelp` still writes prose to stdout; `--help --json` must return an envelope, not prose.
 - All timestamps are UTC ISO-8601 with `Z`; all dates ISO-8601; decimal point `.`; no thousands separators; JSON is emitted with deterministic key order where practical. Internal subprocesses that can be locale-sensitive run with `LC_ALL=C` on Unix; Windows output is UTF-8 and does not depend on the console code page.
 
 ### 1.2 Trust is directional (P2)
@@ -104,7 +104,7 @@ The skill's loop is bootstrap → discovery → planning → execution → inter
 | 1. Discovery | top/resource help, `schema`, 9 commands | flat help, `commands`, `schema`, 32 commands | progressive `help`, `commands`, `schema`, `doctor`, `completion`, `skill` | no action-level typed help; Node help is prose on stdout; no typed schema |
 | 2. Planning | `--dry-run` on health/diagnose/provider.cost | `--dry-run` broadly, but `start --dry-run` can write state | every mutating command previews the transport payload/process plan with no side effect | dry-run is not side-effect-free; no `would_request` contract for WS |
 | 3. Execution | HTTP reads only | HTTP + manual WS client; not runtime-verified | one HTTP read client + one WS command/client; bounded waits; correlation filtering | WS client must set `Origin`; Node now does manually; no tests; no resync |
-| 4. Interpretation | `hiverouter.cli.v1` envelope with `schema` | envelope lacks top-level `schema`; `doctor` can be `ok:false` with no `error` | stable envelope, `meta`, `page`, `next`, error catalog | two envelopes; Node missing schema/error shape |
+| 4. Interpretation | `hiverouter.cli.v1` envelope with `schema` | latest snapshot has `schema`; `doctor` can still be `ok:false` with no `error`; help is prose | stable envelope, `meta`, `page`, `next`, error catalog | Node doctor error shape; human help; no `page`/`next` |
 | 5. Recovery | named `retryable`; no idempotency key | timeout/exit classes; no resync; no idempotency | exit table + `retryable` + `--idempotency-key` + resync policy | only `SUBMIT_PROMPT` server-idempotent; no resync; no lock/stale identity |
 
 **Acceptance for the loop:** an agent can go from `hivemind doctor` (or `start`) to `hivemind commands` → `hivemind schema runs.submit` → `hivemind runs submit --dry-run` → execute → parse `data`/`error` → recover with `runs show`/`watch`/`runs state`, without reading a README and without a second source of truth.
@@ -119,10 +119,10 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 
 | # | Criterion (principle) | Rust | Node | Target | Evidence / issue |
 |---|---|---:|---:|---:|---|
-| 1 | Three-audience support (P0) | 2 | 1 | 2 | Rust splits channels correctly for read-only; Node writes human output/help to stdout; no lifecycle parity |
-| 2 | Stdout contract (P1) | 2 | 1 | 2 | Rust JSON non-TTY and TTY override; Node `--help` prose, human mode stdout, `--format table` incomplete, no top-level `schema` |
-| 3 | Stderr separation (P1) | 2 | 0 | 2 | Node `printHuman` uses stdout; failures use stderr; violates the split |
-| 4 | Exit-code semantics (P1/P2) | 1 | 1 | 2 | Rust 0/2/3/4; Node 0/1/2/3/4/5/6; incompatible, no internal/protocol/partial; 3 conflates refusal and unreachable |
+| 1 | Three-audience support (P0) | 2 | 1 | 2 | Rust splits channels correctly for read-only; Node human data is stderr but help is stdout; no lifecycle parity |
+| 2 | Stdout contract (P1) | 2 | 1 | 2 | Rust JSON non-TTY and TTY override; Node `--help` prose, `--format table` incomplete, no `page`/`next` |
+| 3 | Stderr separation (P1) | 2 | 2 | 2 | Node `printHuman` now writes stderr; failures use stderr; help is the remaining stdout leak |
+| 4 | Exit-code semantics (P1/P2) | 1 | 1 | 2 | Rust 0/2/3/4; Node aliases to 0/2/3/4 but collapses transport/timeout/safety into 3/2; no 5/6/7/8/9 |
 | 5 | Self-description/help (P3) | 1 | 1 | 2 | Rust top/resource but no action-level flags; Node flat list, prose help; no progressive tree |
 | 6 | Schema introspection (P6) | 1 | 1 | 2 | Rust `schema` returns command specs + hand-written response placeholder; Node returns registry args but no typed JSON Schema/output/errors/examples |
 | 7 | Dry-run (P3/P4) | 1 | 1 | 2 | Rust only health/diagnose/provider.cost; Node broad but `start --dry-run` writes state, WS dry-run generic |
@@ -133,13 +133,13 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 | 12 | Auth delegation (P7) | 1 | 1 | 2 | Rust no token; Node fetches token internally/redacts; `/api/*` unauthenticated; no token env/file |
 | 13 | Error recoverability (P1) | 1 | 1 | 2 | Both code/message/how_to_fix/retryable; neither has category/exit/correlation/details; Node `ok:false` can lack `error` |
 | 14 | Trust boundary (P2) | 1 | 1 | 2 | Rust args runtime-only but no lifecycle; Node allows arbitrary `--exe`/`--browser`, loopback URL guard only |
-| | **Total** | **19** | **13** | **28** | Rust = 17–25 band (partially agent-native); Node below band; target = agent-native |
+| | **Total** | **19** | **15** | **28** | Rust = 17–25 band (partially agent-native); Node below band; target = agent-native |
 
 ### 3.2 Seven-principle review
 
 | Principle | Status | Evidence | Issue | Recommendation |
 |---|---|---|---|---|
-| P0 One CLI, three audiences | partial | Rust is human/agent/system for reads; Node is broad but human stdout | two surfaces, two contracts | one `hivemind` binary; Node prototype not shipped; one table |
+| P0 One CLI, three audiences | partial | Rust is human/agent/system for reads; Node is broad but help is stdout | two surfaces, one owner unresolved | one `hivemind` binary; Node prototype not shipped; one table |
 | P1 Structured output is the interface | partial | Rust `hiverouter.cli.v1` with `schema`; Node envelope lacks `schema` | two envelope shapes; human/help on stdout | keep `schema`, `ok`, `command`, `data|error`, `meta`; add `page`/`next`; never prose on stdout |
 | P2 Trust is directional | partial | loopback URL guard, no key args; Node `--exe`/`--browser` | agent can choose arbitrary executable/browser | operator-only `--exe`; require `--yes`/hash; `--browser` human-only |
 | P3 CLI describes itself | partial | `commands`/`schema`; Rust top/resource help | no action-level typed help; Node flat prose help | progressive `help` → resource → action → `schema`; top help < 500 tokens |
@@ -151,7 +151,7 @@ Scores are 0–2 per criterion (max 28). "Rust" is the shipped narrow CLI; "Node
 ### 3.3 What the scores mean
 
 - The shipped Rust CLI's 19/28 is **not** a claim that it is production-complete; it scores well on output discipline and poorly on control-plane scope.
-- The Node prototype's 13/28 is **not** a dismissal of its coverage; it is a refusal to call a surface agent-native while it writes human output to stdout and ships a second exit table.
+- The Node prototype's 15/28 is **not** a dismissal of its coverage; it is a refusal to call a surface agent-native while human help is prose on stdout, the exit table collapses distinct failure classes, and lifecycle/idempotency/resync are absent.
 - The target's 28/28 is conditional on the P0 backend changes in §13. Without them, the CLI can be at most a read-only wrapper (roughly 19–21/28).
 
 ---
@@ -328,7 +328,7 @@ hivemind
 
 Keep the established envelope id **`hiverouter.cli.v1`** for compatibility. The wire contract is `hiverouter.v1` (`schema.rs:20`). Add a semantic CLI version and schema version in `meta`; a new id (`hivemind.cli.v2`) is reserved for a breaking envelope change. This follows P6's "append-mostly" rule and avoids breaking agents cached on the shipped CLI.
 
-Every response carries a top-level `schema`; the Node prototype's omitting it is a defect (lifecycle-map §9.7).
+Every response carries a top-level `schema`; the Node prototype's latest snapshot added it, but earlier snapshots omitted it (lifecycle-map §9.7). Keep the field mandatory and tested.
 
 ### 5.2 Success
 
@@ -578,7 +578,7 @@ If `doctor` itself cannot run (unreadable state, invalid options), it returns `o
 
 ## 6. Exit-code table
 
-The production CLI must ship **one** table. This design preserves the shipped Rust classes `0/2/3/4` and adds semantic classes; the Node prototype's `1/3/4/5/6` table must be remapped in the same release. Never ship two tables (lifecycle-map §9.7).
+The production CLI must ship **one** table. This design preserves the shipped Rust classes `0/2/3/4` and adds semantic classes; the Node prototype's latest snapshot already aliases to `0/2/3/4`, but it collapses `NOT_RUNNING`/`AUTH`/`TIMEOUT` into 3 and `UNSAFE` into 2. Add 5/6/7/8/9/130 in the same release; never ship two tables (lifecycle-map §9.7).
 
 | Code | Class | Meaning | Typical `error.code` | Retryable |
 |---:|---|---|---|---|
@@ -599,7 +599,7 @@ The production CLI must ship **one** table. This design preserves the shipped Ru
 **Compatibility and migration:**
 
 - `hiverouter-cli` 1.x: `E_WS_DISCONNECTED` was exit 3; the new CLI maps it to 5. This is the only breaking remap. Publish it in the release notes and in `schema`; optionally honor `HIVEROUTER_CLI_LEGACY_EXIT=1` for one release, removed at 3.0.
-- Node prototype: `REFUSAL 1 → 3`, `NOT_RUNNING 3 → 5`, `AUTH 4 → 3` (with `category:"auth"`), `UNSAFE 6 → 7`; `TIMEOUT 5` stays 5. Do all of this in the same release that removes the prototype's exit table.
+- Node prototype: the latest snapshot already aliases to `0/2/3/4`; keep those, then add `NOT_RUNNING/TIMEOUT → 5`, `UNSAFE → 7`, conflict → 6, partial → 8, protocol → 9, interrupted → 130. Do all of this in the same release that removes the prototype as a shipped surface.
 - `retryable` is the server's field when present; CLI-local failure classes define it. An agent must use both the code and the flag, not the exit code alone.
 - Exit codes are documented in `schema`, `commands`, and `--help`; a test pins every class.
 
@@ -985,7 +985,7 @@ The gap is not "nothing exists"; it is "the existing pieces do not add up to one
 
 | # | Missing | Evidence | Impact | Required change | Priority |
 |---:|---|---|---|---|---|
-| 1 | One CLI owner and one exit/envelope contract | Rust `0/2/3/4` (`cli.rs:51–57`); Node `0/1/2/3/4/5/6` (`hivemind-cli.mjs` `EXIT`); Node envelope no top-level `schema` | agents keyed on either break on the other | choose one binary; unified table; deprecate the other | **P0** |
+| 1 | One CLI owner and one exit/envelope contract | Rust `0/2/3/4` (`cli.rs:51–57`); Node aliases to `0/2/3/4` but collapses transport/timeout/safety; both have top-level `schema` now | no single owner; semantic classes are lost; scripts keyed on old Node `1/3/4/5/6` still break | choose one binary; unified table; deprecate the other | **P0** |
 | 2 | Typed schema as source of truth | Rust `CommandSpec` has only flag names (`cli.rs:59–78,81–172`); `schema` emits a hand-written response placeholder (`cli.rs:558–591`); Node registry args are not JSON Schema | help/validation/schema drift; agents guess flags | `CommandSpec` + `ArgSpec`; derive help/schema/completion/skill; `since`/deprecated | **P0** |
 | 3 | Lifecycle lock, identity, stale-PID safety | no lock/PID/instance record in product (`lifecycle-map §6`); prototype state file is non-atomic, no creation time, no lock | two servers on one data dir; wrong-instance adoption; kill unrelated PID | `hivemind.lock` + `server.json`, atomic, PID creation time, exe hash, boot_id | **P0** |
 | 4 | Instance-identifying `/health` | `/health` has no `pid`/`boot_id`/`data_dir`/`workspace_root`/build (`http.rs:456–476`) | CLI cannot prove which server it talks to | add fields (or make `server.json` authoritative) | **P0** |
@@ -1010,10 +1010,9 @@ The gap is not "nothing exists"; it is "the existing pieces do not add up to one
 
 From the lifecycle snapshot (`lifecycle-map §11`) and this review; line numbers in the untracked Node file move, so function names are the stable anchors:
 
-- **Human output on stdout** — `printHuman`/`humanHelp` write to stdout; violates P1 and makes human mode unusable as a machine stream.
-- **No top-level `schema`** — `emitSuccess`/`emitFailure` emit `ok`/`command`/`data`/`meta` only; agents parsing `schema` break.
+- **Human help on stdout** — `humanHelp` still writes prose to stdout and ignores `--json`; human data output is now stderr (fixed), but help must return an envelope in JSON mode.
 - **`ok:false` without `error`** — `doctor` ready=false can return `ok:false` with only `data`; the envelope contract requires `error` on `ok:false`.
-- **Two exit tables** — Node `1/3/4/5/6` vs Rust `0/2/3/4`; must unify.
+- **Coarse exit table** — the latest snapshot aliases `NOT_RUNNING`/`AUTH`/`TIMEOUT` to 3 and `UNSAFE` to 2; it matches Rust but loses the semantic classes 5/6/7/8/9/130 that the design requires.
 - **No lock / non-atomic state** — `agent-cli-state.json` write is not atomic, no PID creation time, no boot_id, no exclusive lock; two starts can share a data dir.
 - **Stop cannot be graceful** — `taskkill /T` without `/F` no-ops on headless children; `stop` then times out; `restart` passes `yes:true` internally.
 - **`--dry-run` on `start` writes state** — it performs the already-running branch (`writeState`) before checking dry-run; dry-run must be side-effect-free.
@@ -1118,7 +1117,7 @@ Safe repairs only; dry-run; `--yes`; partial; never DB/key/runs. Acceptance: sta
 
 ## 14. Open decisions
 
-1. **Owner:** Rust `hivemind` (recommended: single binary, existing envelope/exit tests, no runtime dependency) vs Node prototype (faster, broad, but adds Node runtime and a second table). If Node, bundle Node >=22.12 and remove the Rust table in the same release.
+1. **Owner:** Rust `hivemind` (recommended: single binary, existing envelope/exit tests, no runtime dependency) vs Node prototype (faster, broad, but adds Node runtime and a coarse/duplicated table). If Node, bundle Node >=22.12 and remove the Rust table in the same release.
 2. **Default port:** 8080 (server/docs) vs 8099 (launchers). Recommend 8080 everywhere; explicit `--port 8099` for legacy. Change `start-hivemind.ps1`/launcher in the same release.
 3. **`/api/*` auth:** add token middleware (recommended) or accept loopback-only Host guard (not safe for mutations). The CLI design assumes token.
 4. **`stop --yes`:** require it always (safe, simpler) vs only when active run/unmanaged (lifecycle-map §9.5). This design requires it for any stop that can interrupt a run; document the exact policy.
