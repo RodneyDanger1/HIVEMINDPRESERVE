@@ -41,6 +41,7 @@ tools\hivemind.cmd revisions --run <run-id> --json
 tools\hivemind.cmd state --run <run-id> --json
 tools\hivemind.cmd messages --run <run-id> --json
 tools\hivemind.cmd agent-messages --run <run-id> --json
+tools\hivemind.cmd agent-messages --run <run-id> --task <task-id> --json
 tools\hivemind.cmd roster --run <run-id> --json
 tools\hivemind.cmd approvals --json
 tools\hivemind.cmd approvals --run <run-id> --json

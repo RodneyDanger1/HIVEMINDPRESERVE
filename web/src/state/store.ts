@@ -2256,8 +2256,14 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 `GET /api/history/runs/${shortId(runId)}/state`,
               ),
             );
+            if (projection.revision !== list.latest) {
+              throw schemaRefusal(
+                'The selected run state revision disagrees with the latest committed revision.',
+              );
+            }
           }
           let transcript: readonly ChatMessage[] = [];
+          let messagesUnavailable = false;
           try {
             transcript = decodeHistoryMessages(
               await historyFetch(
@@ -2267,7 +2273,11 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             );
           } catch {
             transcript = [];
+            messagesUnavailable = true;
           }
+          const incomplete: SnapshotIncomplete[] = [];
+          if (projection === null) incomplete.push('no-committed-revision');
+          if (messagesUnavailable) incomplete.push('messages-unavailable');
           set({
             run: { id: runId, status: summary.status, errorCode: summary.errorCode },
             tasks: projection?.tasks ?? {},
@@ -2284,12 +2294,12 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               refreshRefusal: null,
             },
             snapshot: {
-              status: projection === null ? 'degraded' : 'ready',
+              status: projection === null || messagesUnavailable ? 'degraded' : 'ready',
               source: 'manual',
               runId,
               revision: projection?.revision ?? null,
               revisionCount: list.revisions.length,
-              incomplete: projection === null ? ['no-committed-revision'] : [],
+              incomplete,
               refusal: null,
               attempts: get().snapshot.attempts,
               updatedAt: Date.now(),

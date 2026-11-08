@@ -835,6 +835,7 @@ async fn history_messages(
 async fn agent_messages(
     State(state): State<Arc<AppState>>,
     Path(run_id): Path<String>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
 ) -> Response {
     let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
         return refusal_response(StatusCode::NOT_FOUND, &hiverouter_contract::Refusal::RunNotFound);
@@ -842,11 +843,25 @@ async fn agent_messages(
     if let Err(refusal) = state.engine.store.get_run(run_id) {
         return refusal_response(StatusCode::NOT_FOUND, &refusal);
     }
-    match state.engine.store.agent_messages_for_run(run_id) {
+    let task_id = match query.get("task_id") {
+        Some(raw) => match raw.parse::<hiverouter_contract::TaskId>() {
+            Ok(task_id) => Some(task_id),
+            Err(_) => {
+                return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+            }
+        },
+        None => None,
+    };
+    let result = match task_id {
+        Some(task_id) => state.engine.store.agent_messages_for_task(run_id, task_id, 1_000),
+        None => state.engine.store.agent_messages_for_run(run_id),
+    };
+    match result {
         Ok(messages) => (
             StatusCode::OK,
             Json(serde_json::json!({
                 "run_id": run_id.to_string(),
+                "task_id": task_id.map(|id| id.to_string()),
                 "messages": messages.into_iter().map(|message| serde_json::json!({
                     "id": message.id,
                     "from_task_id": message.from_task_id,

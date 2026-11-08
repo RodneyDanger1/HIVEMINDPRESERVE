@@ -169,10 +169,13 @@ const COMMANDS = {
     ],
   },
   'agent-messages': {
-    summary: 'Read durable A2A messages for one run.',
+    summary: 'Read durable A2A messages for one run, optionally one recipient task.',
     safety: 'read',
     transport: 'http',
-    args: [ARG('run', 'uuid', true, 'Run id.')],
+    args: [
+      ARG('run', 'uuid', true, 'Run id.'),
+      ARG('task', 'uuid', false, 'Optional recipient task id.'),
+    ],
   },
   roster: {
     summary: 'Read the authoritative agent roster for one run.',
@@ -1489,8 +1492,16 @@ async function executeRead(command, options, baseUrl) {
       const limit = limitOption(options, 50, MAX_OUTPUT_ITEMS);
       return { ...body, messages: body.messages.slice(-limit), truncated: body.truncated || body.messages.length > limit };
     }
-    case 'agent-messages':
-      return httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/messages`);
+    case 'agent-messages': {
+      const run = runIdOption(options);
+      const task = options.task ? assertUuid(options.task, '--task') : null;
+      return httpJson(
+        baseUrl,
+        task
+          ? `/api/agents/runs/${run}/messages?task_id=${encodeURIComponent(task)}`
+          : `/api/agents/runs/${run}/messages`,
+      );
+    }
     case 'roster':
       return httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/roster`);
     case 'approvals': {
