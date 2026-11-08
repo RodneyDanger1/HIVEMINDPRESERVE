@@ -68,6 +68,7 @@ export function AgentMemoryPanel() {
   const [profiles, setProfiles] = useState<readonly MemoryProfile[]>([]);
   const [scopeStatus, setScopeStatus] = useState<Status>('idle');
   const [scoped, setScoped] = useState<readonly ScopedMemoryRow[]>([]);
+  const [scopeFilter, setScopeFilter] = useState('all');
 
   const refresh = useCallback(() => {
     setStatus('loading');
@@ -148,12 +149,21 @@ export function AgentMemoryPanel() {
     refreshScoped();
   }, [refreshScoped]);
 
+  useEffect(() => {
+    setScopeFilter('all');
+  }, [runId, replaying]);
+
   const scopedByBranch = new Map<string, ScopedMemoryRow[]>();
   for (const row of scoped) {
     const list = scopedByBranch.get(row.scopeId) ?? [];
     list.push(row);
     scopedByBranch.set(row.scopeId, list);
   }
+  const scopeIds = [...scopedByBranch.keys()].sort();
+  const visibleScopes =
+    scopeFilter === 'all'
+      ? [...scopedByBranch.entries()]
+      : [...scopedByBranch.entries()].filter(([scopeId]) => scopeId === scopeFilter);
 
   const clear = (agentKey: string): void => {
     fetch(`${apiBaseUrl()}/api/agents/memory/${encodeURIComponent(agentKey)}`, { method: 'DELETE' })
@@ -227,9 +237,26 @@ export function AgentMemoryPanel() {
             No branch-scoped memory for this run.
           </p>
         ) : null}
+        {scopeStatus === 'ok' && !replaying && scoped.length > 0 ? (
+          <label className="mt-2 block">
+            <span className="type-mono-meta block text-meta">Branch scope</span>
+            <select
+              className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+              value={scopeFilter}
+              onChange={(event) => setScopeFilter(event.target.value)}
+            >
+              <option value="all">All scopes</option>
+              {scopeIds.map((scopeId) => (
+                <option key={scopeId} value={scopeId}>
+                  {scopeId}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <ul className="mt-2 space-y-2">
           {scopeStatus === 'ok' && !replaying
-            ? [...scopedByBranch.entries()].map(([scopeId, rows]) => (
+            ? visibleScopes.map(([scopeId, rows]) => (
                 <li key={scopeId} className="surface-panel rounded-[var(--radius-sm)] p-2">
                   <div className="type-mono-meta text-ink-700">scope {scopeId}</div>
                   <ul className="mt-1 space-y-1">
