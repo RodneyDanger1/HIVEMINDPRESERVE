@@ -74,7 +74,7 @@ comes from `error.code`, not from extra process codes.
 | `revisions` | HTTP | `GET /api/history/runs/{run}/revisions`; `--run` |
 | `state` | HTTP | `GET /api/history/runs/{run}/state?revision=`; latest if omitted |
 | `messages` | HTTP | `GET /api/history/runs/{run}/messages`; newest window |
-| `agent-messages` | HTTP | `GET /api/agents/runs/{run}/messages`; optional `--task` filter |
+| `agent-messages` | HTTP | `GET /api/agents/runs/{run}/messages`; optional `--task`, `--from`, `--kind` filters |
 | `roster` | HTTP | `GET /api/agents/runs/{run}/roster` |
 | `approvals` | HTTP | `GET /api/approvals`; optional `--run` |
 | `templates` | HTTP | `GET /api/templates` |
@@ -135,7 +135,7 @@ Non-follow mode returns `{events, truncated, timed_out}`.
 | `GET /api/history/runs/{run}/revisions` | `revisions` |
 | `GET /api/history/runs/{run}/state` | `state` |
 | `GET /api/history/runs/{run}/messages` | `messages` |
-| `GET /api/agents/runs/{run}/messages` | `agent-messages [--task]` |
+| `GET /api/agents/runs/{run}/messages` | `agent-messages [--task] [--from] [--kind]` |
 | `GET /api/agents/runs/{run}/roster` | `roster` |
 | `GET /api/agents/runs/{run}/memory` | `memory --run [--scope]` |
 | `GET /api/approvals` | `approvals` |

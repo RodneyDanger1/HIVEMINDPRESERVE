@@ -862,27 +862,50 @@ async fn agent_messages(
             Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
         }
     }
+    let from_task_id = match query.get("from_task_id") {
+        Some(raw) => match raw.parse::<hiverouter_contract::TaskId>() {
+            Ok(task_id) => Some(task_id.to_string()),
+            Err(_) => {
+                return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+            }
+        },
+        None => None,
+    };
+    let kind = query.get("kind").map(String::as_str);
+    if kind.is_some_and(|value| value.is_empty() || value.chars().count() > 64) {
+        return refusal_response(StatusCode::BAD_REQUEST, &hiverouter_contract::Refusal::SchemaInvalid);
+    }
     let result = match task_id {
         Some(task_id) => state.engine.store.agent_messages_for_task(run_id, task_id, 1_000),
         None => state.engine.store.agent_messages_for_run(run_id),
     };
     match result {
-        Ok(messages) => (
-            StatusCode::OK,
-            Json(serde_json::json!({
-                "run_id": run_id.to_string(),
-                "task_id": task_id.map(|id| id.to_string()),
-                "messages": messages.into_iter().map(|message| serde_json::json!({
-                    "id": message.id,
-                    "from_task_id": message.from_task_id,
-                    "to_task_id": message.to_task_id,
-                    "kind": message.kind,
-                    "text": message.text,
-                    "created_at": message.created_at,
-                })).collect::<Vec<_>>(),
-            })),
-        )
-            .into_response(),
+        Ok(messages) => {
+            let messages: Vec<_> = messages
+                .into_iter()
+                .filter(|message| from_task_id.as_deref().is_none_or(|from| message.from_task_id.as_str() == from))
+                .filter(|message| kind.is_none_or(|kind| message.kind.as_str() == kind))
+                .collect();
+            (
+                StatusCode::OK,
+                [(header::CACHE_CONTROL, "no-store")],
+                Json(serde_json::json!({
+                    "run_id": run_id.to_string(),
+                    "task_id": task_id.map(|id| id.to_string()),
+                    "from_task_id": from_task_id,
+                    "kind": kind,
+                    "messages": messages.into_iter().map(|message| serde_json::json!({
+                        "id": message.id,
+                        "from_task_id": message.from_task_id,
+                        "to_task_id": message.to_task_id,
+                        "kind": message.kind,
+                        "text": message.text,
+                        "created_at": message.created_at,
+                    })).collect::<Vec<_>>(),
+                })),
+            )
+                .into_response()
+        }
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }

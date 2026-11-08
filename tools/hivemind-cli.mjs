@@ -181,6 +181,8 @@ const COMMANDS = {
     args: [
       ARG('run', 'uuid', true, 'Run id.'),
       ARG('task', 'uuid', false, 'Optional recipient task id.'),
+      ARG('from', 'uuid', false, 'Optional sender task id.'),
+      ARG('kind', 'string', false, 'Optional message kind.'),
     ],
   },
   roster: {
@@ -1505,13 +1507,12 @@ async function executeRead(command, options, baseUrl) {
     }
     case 'agent-messages': {
       const run = runIdOption(options);
-      const task = options.task ? assertUuid(options.task, '--task') : null;
-      return httpJson(
-        baseUrl,
-        task
-          ? `/api/agents/runs/${run}/messages?task_id=${encodeURIComponent(task)}`
-          : `/api/agents/runs/${run}/messages`,
-      );
+      const params = new URLSearchParams();
+      if (options.task) params.set('task_id', assertUuid(options.task, '--task'));
+      if (options.from) params.set('from_task_id', assertUuid(options.from, '--from'));
+      if (options.kind) params.set('kind', String(options.kind));
+      const query = params.toString();
+      return httpJson(baseUrl, `/api/agents/runs/${run}/messages${query ? `?${query}` : ''}`);
     }
     case 'roster':
       return httpJson(baseUrl, `/api/agents/runs/${runIdOption(options)}/roster`);
