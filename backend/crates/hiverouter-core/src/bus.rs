@@ -165,9 +165,18 @@ impl EventBus {
     }
 
     /// Current server sequence number (`0` before the first event).
+    ///
+    /// Reads the last retained event, not the sequence counter: a concurrent
+    /// publisher may have assigned `seq` but not yet inserted it into replay,
+    /// and a hello must never be told "current" for an event that is not yet
+    /// replayable.
     #[must_use]
     pub fn current_seq(&self) -> u64 {
-        self.seq.load(Ordering::SeqCst)
+        self.replay
+            .lock()
+            .ok()
+            .and_then(|replay| replay.back().map(|event| event.seq))
+            .unwrap_or(0)
     }
 
     /// Oldest sequence number still retained for replay, if any.

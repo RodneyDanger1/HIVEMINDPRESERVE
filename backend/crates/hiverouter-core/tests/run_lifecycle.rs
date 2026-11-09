@@ -833,6 +833,32 @@ async fn caps_refused_by_name() {
 }
 
 #[tokio::test]
+async fn provider_calls_are_counted_against_the_real_run_cap() {
+    let mut harness = test_engine(MockExecutor::new(leaf_plan(1, 1)));
+    // The planning call claims one; the first task call must then refuse.
+    Arc::get_mut(&mut harness.engine)
+        .expect("single owner before submit")
+        .caps
+        .max_calls = 1;
+    let mut receiver = harness.bus.subscribe();
+    let _run = harness
+        .engine
+        .submit_prompt("cap probe", "p", Uuid::now_v7())
+        .expect("submit");
+    let failed = wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] != "running"
+    })
+    .await;
+    assert_eq!(failed.envelope.payload["status"], "failed");
+    assert_eq!(
+        failed.envelope.payload["error_code"],
+        Refusal::CallLimit.code(),
+        "the cap must count planned + actual provider sends, not a literal 1"
+    );
+}
+
+#[tokio::test]
 async fn provider_error_preserves_partial_state() {
     let executor = MockExecutor::failing(leaf_plan(2, 1), 1);
     let harness = test_engine(executor);
