@@ -30,7 +30,7 @@ sub-orchestrator in the chat box, per-hive memory banks, 300–600 concurrent ag
 | Agents know about each other | **Only via explicit parent/sibling tools or the event/UI graph.** There is no shared agent directory in the model context. | `execution.rs` A2A tools; `graph.rs` |
 | Per-hive memory bank | **Not coded.** No table/context partition by SuperAgent hive. | `context.rs`, `db.rs` |
 | Persistent thought storage | **Not coded as a thought store.** Reasoning is used for tool-turn continuation when present, and messages are persisted; there is no separate CoT archive exposed to agents. | `provider_executor.rs`; `execution.rs` |
-| 300–600 agents, 50–150 running | **Impossible under current caps.** Hard caps: **64 agents/run, fan-out 8, depth 3, 40 provider calls/run**. The planner prompt now says 1..8 nodes. | `backend/crates/hiverouter-core/src/caps.rs:9-15`; `provider_executor.rs` planner prompt |
+| 300–600 agents, 50–150 running | **Impossible under current caps.** Hard caps: **64 agents/run, fan-out 8, depth 3, 64 provider calls/run**. The planner prompt now says 1..8 nodes. | `backend/crates/hiverouter-core/src/caps.rs:9-15`; `provider_executor.rs` planner prompt |
 
 ## 3. Actual orchestration path
 

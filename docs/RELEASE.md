@@ -26,7 +26,7 @@ released, built, or end-to-end verified.
 - **Reasoning controls.** `HIVEROUTER_MODEL`, `HIVEROUTER_THINKING`, `HIVEROUTER_LEAF_THINKING`,
   `HIVEROUTER_REASONING_EFFORT`, `HIVEROUTER_MAX_OUTPUT_TOKENS`, `HIVEROUTER_PLANNER_MAX_OUTPUT_TOKENS`,
   `HIVEROUTER_PROVIDER` (auto/disabled). Settings shows model, thinking, effort and key presence read-only.
-- **Budget.** Per-run `RunBudget` ($0.50 cap, 40 calls, 8 in-flight); absent usage is INCOMPLETE, never 0;
+- **Budget.** Per-run `RunBudget` ($0.50 cap, 64 provider calls, 8 in-flight); absent usage is INCOMPLETE, never 0;
   401/402 are not retried.
 - **Exact artifact hashes** are recorded only by the sealed 1.1.0 build in `docs/RELEASE-EVIDENCE.md` and the
   authoritative `tools/release-manifest.json` (`tools/build-release.ps1`). This document deliberately does not
