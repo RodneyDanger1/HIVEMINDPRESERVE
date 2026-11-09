@@ -282,11 +282,11 @@ try {
     $coreToml = Join-Path $script:Repo 'backend/crates/hiverouter-core/Cargo.toml'
     if (-not (Test-Path -LiteralPath $coreToml)) { Fail "E_RELEASE_VERSION" "backend/crates/hiverouter-core/Cargo.toml not found" 2 }
     if (-not $Version) {
-        $m = [regex]::Match((Get-Content -LiteralPath $coreToml -Raw), '(?m)^\s*version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+)"')
+        $m = [regex]::Match((Get-Content -LiteralPath $coreToml -Raw), '(?m)^\s*version\s*=\s*"([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?)"')
         if (-not $m.Success) { Fail "E_RELEASE_VERSION" "could not parse crate version from hiverouter-core/Cargo.toml" 2 }
         $Version = $m.Groups[1].Value
     }
-    [void]([version]$Version)
+    [void]([version]($Version -replace '-.*$', ''))
     if (-not $Tag) { $Tag = "hivemind-$Version" }
 
     # existing manifest (preserve recorded 1.0 hashes / drive drift policy)

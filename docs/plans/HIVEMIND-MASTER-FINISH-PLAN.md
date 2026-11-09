@@ -418,3 +418,8 @@ Not delivered and must not be claimed:
 - v19 adds a partial unique index on `tasks(run_id) WHERE ownership_mode='run'`; a second HyperAgent owner for a run is refused by the database.
 - Test inserts two planner tasks and proves the second insert fails.
 - GitNexus detect-changes reported schema/store symbols and affected flows; full gate is green, but no clean-risk claim is made.
+### Release preflight readiness
+
+- `tools/build-release.ps1` now parses the crate pre-release version `1.2.0-dev` and validates only its numeric core; previously it refused with `E_RELEASE_VERSION`.
+- Rehearsal reaches `E_RELEASE_TAG_MISSING` for `hivemind-1.2.0-dev`: no annotated tag exists, and tag creation is an owner action, so no release artifact was produced.
+- No server/UI/live call was made. Release remains unverified until a tag and sealed build exist.
