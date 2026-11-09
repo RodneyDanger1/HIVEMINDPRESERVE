@@ -19,7 +19,15 @@ import {
   type EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { buildEdges, buildNodes, buildReplayTasks, HIVE_ANCHOR_ID, type CanvasNode } from './graph';
+import {
+  buildEdges,
+  buildNodes,
+  buildReplayTasks,
+  filterVisibleTasks,
+  HIVE_ANCHOR_ID,
+  HIVE_ANCHOR_POSITION,
+  type CanvasNode,
+} from './graph';
 import { NODE_RENDERERS } from './nodes';
 import { BeeEdge } from './BeeEdge';
 import { handleCanvasShortcut } from '../a11y/keyboard';
@@ -28,7 +36,7 @@ import { HudBadge } from '../panels/HudBadge';
 import { HiveField } from './HiveField';
 import { RemoteLane } from './RemoteLane';
 import { LAYOUT } from '../tokens/tokens';
-import { isRunActive, isTerminal } from '../state/agentState';
+import { isRunActive } from '../state/agentState';
 import type { TaskRecord } from '../state/store';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { STRINGS } from '../state/strings';
@@ -158,41 +166,35 @@ function CanvasInner() {
     [getIntersectingNodes, tasks],
   );
 
-  const visibleTasks = useMemo<Readonly<Record<string, TaskRecord>>>(() => {
-    if (!hideFinished && !focusBranch) {
-      return tasks;
+  const visibleTasks = useMemo<Readonly<Record<string, TaskRecord>>>(
+    () => filterVisibleTasks(tasks, { hideFinished, focusBranch, selectedTaskId }),
+    [tasks, hideFinished, focusBranch, selectedTaskId],
+  );
+
+  // The base layout is recomputed only when the task projection changes. Drag
+  // overlays are applied in a second, cheap pass so a drag never re-runs the
+  // tree layout (and so a mid-drag re-render cannot snap the card back).
+  const baseNodes = useMemo<CanvasNode[]>(() => {
+    if (history.replayGraph) {
+      return [];
     }
-    const selected = selectedTaskId !== null ? tasks[selectedTaskId] : undefined;
-    if (focusBranch && selected !== undefined) {
-      const keep = new Set<string>();
-      let cursor: TaskRecord | undefined = selected;
-      while (cursor !== undefined) {
-        keep.add(cursor.id);
-        cursor = cursor.parentId !== null ? tasks[cursor.parentId] : undefined;
-      }
-      const walk = (parentId: string): void => {
-        for (const task of Object.values(tasks)) {
-          if (task.parentId === parentId && !keep.has(task.id)) {
-            keep.add(task.id);
-            walk(task.id);
-          }
-        }
-      };
-      walk(selected.id);
-      return Object.fromEntries(Object.entries(tasks).filter(([id]) => keep.has(id)));
-    }
-    return Object.fromEntries(
-      Object.entries(tasks).filter(([, task]) => !hideFinished || !isTerminal(task.state)),
-    );
-  }, [tasks, hideFinished, focusBranch, selectedTaskId]);
+    // A graph that is visible is arrangeable: dragging a card after a run
+    // finishes still persists its position. Server mutations stay gated by
+    // `interactiveGraph` in the drag/drop handlers.
+    return buildNodes(visibleTasks, selectedTaskId, handleSelect, runStatus !== null);
+  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, runStatus]);
 
   const nodes = useMemo<CanvasNode[]>(() => {
     if (history.replayGraph) {
       return [];
     }
-    const laidOut = buildNodes(visibleTasks, selectedTaskId, handleSelect, interactiveGraph);
-    return laidOut.map((node) => {
-      const override = positionOverrides[node.id];
+    return baseNodes.map((node) => {
+      // The HyperAgent centre is a fixed anchor: its position can never be
+      // overwritten by a stale drag overlay.
+      const override =
+        node.id === HIVE_ANCHOR_ID || node.data.task.kind === 'hyperagent'
+          ? undefined
+          : positionOverrides[node.id];
       const highlighted =
         node.id === dropTargetId
           ? {
@@ -205,7 +207,7 @@ function CanvasInner() {
           : node;
       return override ? { ...highlighted, position: override } : highlighted;
     });
-  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, interactiveGraph, positionOverrides, dropTargetId]);
+  }, [baseNodes, history.replayGraph, positionOverrides, dropTargetId]);
 
   const hasTasks = Object.keys(visibleTasks).length > 0;
   const taskCount = Object.keys(tasks).length;
@@ -226,7 +228,7 @@ function CanvasInner() {
       {
         id: HIVE_ANCHOR_ID,
         type: 'hiveanchor',
-        position: { x: -0.5, y: -0.5 },
+        position: HIVE_ANCHOR_POSITION,
         style: { width: 1, height: 1, opacity: 0, pointerEvents: 'none' },
         data: {},
         draggable: false,
@@ -235,7 +237,7 @@ function CanvasInner() {
         focusable: false,
       } as CanvasNode,
     ];
-  }, [nodes, tasks, visibleTasks, history.replayGraph]);
+  }, [nodes, tasks, history.replayGraph]);
 
   const handleNodeDrag = useCallback(
     (_: unknown, node: Node) => {
@@ -243,9 +245,16 @@ function CanvasInner() {
         return;
       }
       const source = tasks[node.id];
-      if (source === undefined || source.kind === 'hyperagent') {
+      if (source === undefined || source.kind === 'hyperagent' || node.id === HIVE_ANCHOR_ID) {
         return;
       }
+      // Persist the live drag position into the overlay. Without this, any
+      // re-render triggered mid-drag (drop-target highlight, selection) would
+      // re-apply the layout position and snap the card back under the cursor.
+      setPositionOverrides((previous) => ({
+        ...previous,
+        [node.id]: { x: node.position.x, y: node.position.y },
+      }));
       const target = findDropTarget(node);
       setDragSourceId(node.id);
       setDropTargetId(target?.id ?? null);
@@ -261,7 +270,12 @@ function CanvasInner() {
         return;
       }
       const source = tasks[node.id];
-      if (source === undefined || source.kind === 'hyperagent') {
+      if (source === undefined || source.kind === 'hyperagent' || node.id === HIVE_ANCHOR_ID) {
+        return;
+      }
+      // Reparenting is a server mutation; only offer it while the run is
+      // active. A finished graph can still be arranged (positions are local).
+      if (!interactiveGraph) {
         return;
       }
       const target = findDropTarget(node);
@@ -269,7 +283,7 @@ function CanvasInner() {
         setPendingReparent({ taskId: node.id, targetId: target.id });
       }
     },
-    [findDropTarget, history.replayGraph, tasks],
+    [findDropTarget, history.replayGraph, interactiveGraph, tasks],
   );
 
   const confirmReparent = useCallback(async (): Promise<void> => {
@@ -404,7 +418,7 @@ function CanvasInner() {
       {
         id: HIVE_ANCHOR_ID,
         type: 'hiveanchor',
-        position: { x: -0.5, y: -0.5 },
+        position: HIVE_ANCHOR_POSITION,
         style: { width: 1, height: 1, opacity: 0, pointerEvents: 'none' },
         data: {},
         draggable: false,

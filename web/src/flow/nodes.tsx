@@ -144,7 +144,7 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
       <div className="flex h-10 items-center justify-between gap-2 bg-honey-100 pl-[30px] pr-4">
         <button
           type="button"
-          className="min-w-0 truncate text-left text-[14.5px] font-semibold leading-[18.5px] text-ink-900"
+          className="nodrag min-w-0 truncate text-left text-[14.5px] font-semibold leading-[18.5px] text-ink-900"
           onClick={() => data.onSelect(data.task.id)}
           aria-label={`${data.task.label} — ${NODE_KIND_LABELS.superagent}, ${visualFor(data.task.state).label}`}
           aria-pressed={data.selected}
@@ -155,7 +155,7 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
           <span className="type-mono-meta text-[11px] text-ink-800">{visualFor(data.task.state).label}</span>
         </span>
       </div>
-      <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-2 text-left" onClick={() => data.onSelect(data.task.id)}>
+      <button type="button" className="nodrag flex min-h-0 flex-1 flex-col px-4 py-2 text-left" onClick={() => data.onSelect(data.task.id)}>
         <span className="type-mono-meta text-[11px] tracking-[0.12em] text-meta">{NODE_KIND_LABELS.superagent}</span>
         <span className="mt-0.5 line-clamp-1 text-[11.5px] leading-[16px] text-ink-700">
           {STRINGS.node.roleCaption}
@@ -175,7 +175,7 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
 export function WorkerAgentNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} radius={12}>
-      <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
+      <button type="button" className="nodrag flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
         <div className="flex items-center gap-2">
           <StateDot state={data.task.state} size={9} />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-[18px] text-ink-900">{data.task.label}</span>
@@ -198,7 +198,7 @@ export function SubagentNode({ data }: HiveNodeProps) {
     <Frame data={data} radius={12}>
       <button
         type="button"
-        className="flex min-h-0 flex-1 flex-col px-4 py-3 text-left"
+        className="nodrag flex min-h-0 flex-1 flex-col px-4 py-3 text-left"
         onClick={() => data.onSelect(data.task.id)}
         aria-label={`${data.task.label} — Subagent, ${visualFor(data.task.state).label}`}
         aria-pressed={data.selected}
@@ -221,7 +221,7 @@ export function SubagentNode({ data }: HiveNodeProps) {
 export function ToolAgentNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} radius={14}>
-      <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
+      <button type="button" className="nodrag flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[13.5px] font-semibold text-ink-900">{data.task.label}</span>
           <span className="type-mono-meta rounded-[var(--radius-pill)] bg-recessed px-2 py-0.5 text-ink-700">
@@ -251,7 +251,7 @@ export function ToolAgentNode({ data }: HiveNodeProps) {
 export function BrokenRouteNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} error radius={12}>
-      <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
+      <button type="button" className="nodrag flex min-h-0 flex-1 flex-col px-4 py-3 text-left" onClick={() => data.onSelect(data.task.id)}>
         <div className="flex items-center gap-2 text-signal">
           <span aria-hidden="true">▲</span>
           <span className="truncate text-[13px] font-semibold">{data.task.label}</span>
@@ -278,7 +278,7 @@ export function HyperAgentNode({ data }: HiveNodeProps) {
       />
       <button
         type="button"
-        className="relative z-10 rounded-[var(--radius-pill)] border border-honey-500 bg-panel/90 px-3 py-1 text-center"
+        className="nodrag relative z-10 rounded-[var(--radius-pill)] border border-honey-500 bg-panel/90 px-3 py-1 text-center"
         onClick={() => data.onSelect(data.task.id)}
         aria-label={`${data.task.label} — ${NODE_KIND_LABELS.hyperagent}, ${visualFor(data.task.state).label}`}
         aria-pressed={data.selected}
