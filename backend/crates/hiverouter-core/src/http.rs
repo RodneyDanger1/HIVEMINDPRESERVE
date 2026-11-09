@@ -2609,7 +2609,17 @@ async fn provider_profile_get(State(state): State<Arc<AppState>>) -> Response {
     let current = path
         .as_deref()
         .and_then(|path| std::fs::read_to_string(path).ok())
-        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .map(|value| {
+            // Never echo unknown fields from the file: the profile is defined as
+            // a non-secret endpoint record, not a general JSON store.
+            serde_json::json!({
+                "name": value.get("name").and_then(|item| item.as_str()),
+                "base_url": value.get("base_url").and_then(|item| item.as_str()),
+                "model": value.get("model").and_then(|item| item.as_str()),
+                "wire_model": value.get("wire_model").and_then(|item| item.as_str()),
+            })
+        });
     (
         StatusCode::OK,
         [(header::CACHE_CONTROL, "no-store")],
