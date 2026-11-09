@@ -94,6 +94,10 @@ fn append_memory_journal(
             hash
         ],
     )?;
+    connection.execute(
+        "UPDATE runs SET memory_journal_head = ?1 WHERE id = ?2",
+        params![hash, run_id],
+    )?;
     Ok(())
 }
 
@@ -1745,6 +1749,17 @@ impl RunStore {
                     previous = Some(event_hash);
                     checked += 1;
                 }
+                let head: Option<String> = connection
+                    .query_row(
+                        "SELECT memory_journal_head FROM runs WHERE id = ?1",
+                        params![run_id.to_string()],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .flatten();
+                if head != previous {
+                    valid = false;
+                }
                 Ok(JournalVerification {
                     valid,
                     checked,
@@ -2538,6 +2553,35 @@ mod tests {
             store.answer_agent_message(run.id, Uuid::now_v7(), "operator", "missing"),
             Err(Refusal::TaskNotFound)
         );
+    }
+
+    #[test]
+    fn journal_verification_detects_truncation() {
+        let store = store();
+        let run = store
+            .create_run("p", "truncate", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "one", "a", run.id, task, &task.to_string())
+            .expect("first");
+        store
+            .record_agent_memory_scoped("worker", "two", "b", run.id, task, &task.to_string())
+            .expect("second");
+        store
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "DELETE FROM memory_journal WHERE seq = (
+                        SELECT MAX(seq) FROM memory_journal WHERE run_id = ?1
+                     )",
+                    params![run.id.to_string()],
+                )?;
+                Ok(())
+            })
+            .expect("truncate");
+        let verification = store.verify_memory_journal(run.id).expect("verify");
+        assert!(!verification.valid, "a truncated chain must not verify");
     }
 
     #[test]

@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `7d282b2` (clean tree). Latest offline gate: `cargo test --workspace --locked` 550 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `7d282b2` (clean tree). Latest offline gate: `cargo test --workspace --locked` 551 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -434,8 +434,14 @@ Not delivered and must not be claimed:
 - GitNexus detect-changes reports `AgentsPanel` at **low** risk (tool exit 1 despite output); no broader clean claim.
 ### Round 77 audit
 
-- Full offline gate: cargo 550 passed / 0 failed / 2 ignored across 43 suites; web typecheck 0; web tests 189/189; build 0.
+- Full offline gate: cargo 551 passed / 0 failed / 2 ignored across 43 suites; web typecheck 0; web tests 189/189; build 0.
 - Stub sweep over 10 changed files: zero hits.
 - Release rehearsal still refuses with `E_RELEASE_TAG_MISSING` for `hivemind-1.2.0-dev`; tag creation is an owner action, so no sealed artifact exists.
 - Not claimed: full HMARS completion, remote/daemon, measured 50–150/300–600 scale, browser/e2e UI, live provider behavior, sealed release.
 - Receipt: `docs/evidence/audit-r77-offline.json`. Goal remains active.
+### P4 journal head anchor
+
+- v20 adds `runs.memory_journal_head`; every chained journal append updates it.
+- Verification compares the recomputed chain tail with the run head, so deleting the newest row now fails (`valid=false`) instead of passing.
+- Test deletes the max-seq row and proves truncation is detected.
+- GitNexus detect-changes again reports schema/store flows; full gate is green.
