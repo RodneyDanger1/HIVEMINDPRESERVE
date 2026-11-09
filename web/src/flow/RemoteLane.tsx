@@ -14,9 +14,17 @@ interface RemoteChip {
   readonly deviceCount: number;
 }
 
+interface DaemonChip {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: string;
+  readonly state: string;
+}
+
 export function RemoteLane() {
   const setNav = useUiStore((state) => state.setNav);
   const [remotes, setRemotes] = useState<readonly RemoteChip[]>([]);
+  const [daemons, setDaemons] = useState<readonly DaemonChip[]>([]);
   const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
@@ -61,6 +69,35 @@ export function RemoteLane() {
             setUnavailable(true);
           }
         });
+      fetch(`${apiBaseUrl()}/api/daemons`, { headers: { Accept: 'application/json' } })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`daemon lane HTTP ${response.status}`);
+          const body = (await response.json()) as { daemons?: unknown };
+          if (!Array.isArray(body.daemons)) throw new Error('daemon lane missing rows');
+          const decoded: DaemonChip[] = [];
+          for (const raw of body.daemons) {
+            if (typeof raw !== 'object' || raw === null) continue;
+            const item = raw as Record<string, unknown>;
+            if (
+              typeof item.daemon_id !== 'string' ||
+              typeof item.display_name !== 'string' ||
+              typeof item.kind !== 'string' ||
+              typeof item.state !== 'string'
+            ) {
+              continue;
+            }
+            decoded.push({
+              id: item.daemon_id,
+              name: item.display_name,
+              kind: item.kind,
+              state: item.state,
+            });
+          }
+          if (!cancelled) setDaemons(decoded);
+        })
+        .catch(() => {
+          if (!cancelled) setDaemons([]);
+        });
     };
     load();
     const timer = window.setInterval(load, 15_000);
@@ -81,7 +118,7 @@ export function RemoteLane() {
         onClick={() => setNav('remote')}
       >
         <span className="type-mono-meta text-[8px] tracking-[0.12em] text-meta">
-          REMOTE LANE · {remotes.length}
+          REMOTE {remotes.length} · DAEMON {daemons.length}
         </span>
         <span className="type-mono-meta text-[8px] text-ink-500">OPEN</span>
       </button>
@@ -112,6 +149,18 @@ export function RemoteLane() {
           ))}
         </ul>
       )}
+      {daemons.length > 0 ? (
+        <ul className="mt-1 space-y-1 border-t border-hairline pt-1">
+          {daemons.slice(0, 3).map((daemon) => (
+            <li key={daemon.id} className="flex items-center justify-between gap-1">
+              <span className="type-mono-meta truncate text-[8px] text-ink-800">
+                {daemon.kind} · {daemon.name}
+              </span>
+              <span className="type-mono-meta text-[8px] text-meta">{daemon.state}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }
