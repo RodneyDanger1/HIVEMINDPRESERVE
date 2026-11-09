@@ -66,7 +66,7 @@ function StateBar({ counts }: { readonly counts: Readonly<Record<string, number>
           />
         ))}
       </div>
-      <ul className="type-mono-meta mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] text-meta">
+      <ul className="type-mono-meta mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-meta">
         {entries.map(([state, count]) => (
           <li key={state} className="flex items-center gap-1">
             <span

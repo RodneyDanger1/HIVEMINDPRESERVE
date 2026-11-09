@@ -59,7 +59,7 @@ export function NavRail() {
           </span>
           <span
             className={
-              'text-[8px] font-medium leading-tight ' +
+              'text-[11px] font-medium leading-tight ' +
               (nav === item.id ? 'text-ink-900' : 'text-ink-500')
             }
           >

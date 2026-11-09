@@ -929,6 +929,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
     /* ------------------------------------------- server snapshot / resync wiring */
 
     let disposed = false;
+    let initGeneration = 0;
     let socketOpen = false;
     let reconnectPending = false;
     let resyncSerial = 0;
@@ -1545,6 +1546,25 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         case 'NODE_STATE': {
           const payload = event.payload;
           const existing = get().tasks[payload.task_id];
+          const incomingRev = readNodeRev(payload) ?? null;
+          // A replayed NODE_SPAWN must not regress a live/completed node. The
+          // server replay window can re-deliver the spawn after reconnect; the
+          // spawn is a creation fact, not a state transition.
+          if (
+            event.name === 'NODE_SPAWN' &&
+            existing !== undefined &&
+            (incomingRev === null || existing.rev === null || incomingRev <= existing.rev)
+          ) {
+            return;
+          }
+          if (
+            existing !== undefined &&
+            incomingRev !== null &&
+            existing.rev !== null &&
+            incomingRev <= existing.rev
+          ) {
+            return;
+          }
           const kind =
             payload.kind !== null && payload.kind !== undefined
               ? payload.kind
@@ -1881,6 +1901,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         if (get().initialized) {
           return;
         }
+        disposed = false;
+        const generation = ++initGeneration;
         set({ initialized: true, connection: 'connecting' });
         unsubscribes.push(
           api.subscribe((event, envelope) => applyEvent(event, envelope)),
@@ -1902,12 +1924,12 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         // fresh hello (`Replay::Current`), so the committed history read is the only
         // way a reload can show the active run and make CANCEL_RUN available.
         await performSnapshotRefresh('boot');
-        if (disposed) {
+        if (disposed || generation !== initGeneration) {
           return;
         }
         try {
           const session = await api.open();
-          if (disposed) {
+          if (disposed || generation !== initGeneration) {
             api.close();
             return;
           }
@@ -1927,6 +1949,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
 
       dispose(): void {
         disposed = true;
+        initGeneration += 1;
+        set({ initialized: false });
         for (const controller of inFlightAborts) {
           controller.abort();
         }

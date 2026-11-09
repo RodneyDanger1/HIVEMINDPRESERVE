@@ -69,7 +69,7 @@ export function ProjectsPanel({ currentProjectId }: { currentProjectId: string }
               }
             >
               <span className="type-mono-meta truncate text-[10px] text-ink-800">{project.name || project.id}</span>
-              <span className="type-mono-meta shrink-0 text-[8px] text-meta">
+              <span className="type-mono-meta shrink-0 text-[11px] text-meta">
                 {project.id === currentProjectId ? 'CURRENT' : 'committed'}
               </span>
             </li>

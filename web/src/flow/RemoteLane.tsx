@@ -117,15 +117,15 @@ export function RemoteLane() {
         className="flex w-full items-center justify-between gap-2 text-left"
         onClick={() => setNav('remote')}
       >
-        <span className="type-mono-meta text-[8px] tracking-[0.12em] text-meta">
+        <span className="type-mono-meta text-[11px] tracking-[0.12em] text-meta">
           REMOTE {remotes.length} · DAEMON {daemons.length}
         </span>
-        <span className="type-mono-meta text-[8px] text-ink-500">OPEN</span>
+        <span className="type-mono-meta text-[11px] text-ink-500">OPEN</span>
       </button>
       {unavailable ? (
-        <p className="type-mono-meta mt-1 text-[8px] text-signal">Remote lane unavailable.</p>
+        <p className="type-mono-meta mt-1 text-[11px] text-signal">Remote lane unavailable.</p>
       ) : remotes.length === 0 ? (
-        <p className="type-mono-meta mt-1 text-[8px] text-meta">{STRINGS.panels.remoteTitle}: none enrolled</p>
+        <p className="type-mono-meta mt-1 text-[11px] text-meta">{STRINGS.panels.remoteTitle}: none enrolled</p>
       ) : (
         <ul className="mt-1 space-y-1">
           {remotes.slice(0, 4).map((remote) => (
@@ -142,9 +142,9 @@ export function RemoteLane() {
                         : 'bg-honey-500')
                   }
                 />
-                <span className="type-mono-meta truncate text-[8px] text-ink-800">{remote.name}</span>
+                <span className="type-mono-meta truncate text-[11px] text-ink-800">{remote.name}</span>
               </span>
-              <span className="type-mono-meta text-[8px] text-meta">{remote.deviceCount}d</span>
+              <span className="type-mono-meta text-[11px] text-meta">{remote.deviceCount}d</span>
             </li>
           ))}
         </ul>
@@ -153,10 +153,10 @@ export function RemoteLane() {
         <ul className="mt-1 space-y-1 border-t border-hairline pt-1">
           {daemons.slice(0, 3).map((daemon) => (
             <li key={daemon.id} className="flex items-center justify-between gap-1">
-              <span className="type-mono-meta truncate text-[8px] text-ink-800">
+              <span className="type-mono-meta truncate text-[11px] text-ink-800">
                 {daemon.kind} · {daemon.name}
               </span>
-              <span className="type-mono-meta text-[8px] text-meta">{daemon.state}</span>
+              <span className="type-mono-meta text-[11px] text-meta">{daemon.state}</span>
             </li>
           ))}
         </ul>

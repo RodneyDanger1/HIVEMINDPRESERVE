@@ -223,7 +223,7 @@ export function ChatCore() {
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <span
-              className="type-mono-meta flex items-center gap-1 whitespace-nowrap px-1 text-[8px] text-honey-100/80"
+              className="type-mono-meta flex items-center gap-1 whitespace-nowrap px-1 text-[11px] text-honey-100/80"
               role="status"
               aria-live="polite"
             >
@@ -292,7 +292,7 @@ export function ChatCore() {
                   <path d="M23 13 32 18v10l-9 5-9-5V18Z" fill="var(--color-honey-100)" stroke="var(--color-honey-500)" strokeWidth="1" />
                   <circle cx="23" cy="22" r="3" fill="var(--color-honey-500)" />
                 </svg>
-                <span className="type-mono-meta text-[8px] tracking-[0.14em] text-meta">READY · NO RUN YET</span>
+                <span className="type-mono-meta text-[11px] tracking-[0.14em] text-meta">READY · NO RUN YET</span>
               </div>
             </div>
           ) : (
@@ -319,7 +319,7 @@ export function ChatCore() {
               aria-label="Tool activity in chat"
               className="mt-2 rounded-[8px] border border-hairline bg-panel px-2 py-1.5"
             >
-              <div className="type-mono-meta flex items-center justify-between text-[8px] text-meta">
+              <div className="type-mono-meta flex items-center justify-between text-[11px] text-meta">
                 <span>ACTIONS</span>
                 <span>{toolActivity.length}</span>
               </div>
@@ -328,7 +328,7 @@ export function ChatCore() {
                   .sort((a, b) => a.turn - b.turn || a.toolCallId.localeCompare(b.toolCallId))
                   .slice(-4)
                   .map((entry) => (
-                    <li key={entry.toolCallId} className="type-mono-meta flex items-center gap-1.5 text-[9px]">
+                    <li key={entry.toolCallId} className="type-mono-meta flex items-center gap-1.5 text-[11px]">
                       <span className="text-ink-800">{entry.tool}</span>
                       <span
                         className={

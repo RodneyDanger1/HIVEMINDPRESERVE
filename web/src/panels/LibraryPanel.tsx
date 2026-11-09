@@ -137,7 +137,7 @@ export function LibraryPanel() {
             tabIndex={tab === entry.id ? 0 : -1}
             onClick={() => setTab(entry.id)}
             className={
-              'type-label rounded-[var(--radius-sm)] border px-1 py-1 text-[9px] ' +
+              'type-label rounded-[var(--radius-sm)] border px-1 py-1 text-[11px] ' +
               (tab === entry.id
                 ? 'border-honey-400 bg-honey-100 text-ink-900'
                 : 'border-transparent text-ink-500 hover:bg-panel-alt')
@@ -173,7 +173,7 @@ export function LibraryPanel() {
                   >
                     <StateDot state={task.state} size={9} />
                   </span>
-                  <span className="type-mono-meta block w-12 truncate text-[8px] text-ink-700">
+                  <span className="type-mono-meta block w-12 truncate text-[11px] text-ink-700">
                     {agentChipLabel(task)}
                   </span>
                 </button>
@@ -181,7 +181,7 @@ export function LibraryPanel() {
             ))}
           </ul>
           {agents.length > 8 ? (
-            <p className="type-mono-meta mt-1 text-[8px] text-ink-500">
+            <p className="type-mono-meta mt-1 text-[11px] text-ink-500">
               +{agents.length - 8} more in this run
             </p>
           ) : null}

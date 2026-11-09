@@ -93,8 +93,8 @@ export function HistoryPanel() {
                       void setHistoryRevision(revision);
                     }}
                   >
-                    <span className="type-mono-meta text-[9px]">rev {revision}</span>
-                    <span className="type-mono-meta text-[8px] text-meta">
+                    <span className="type-mono-meta text-[11px]">rev {revision}</span>
+                    <span className="type-mono-meta text-[11px] text-meta">
                       {revision === history.latest ? 'LATEST' : 'COMMITTED'}
                     </span>
                   </button>

@@ -67,7 +67,8 @@ export const STRINGS = {
     none: 'The server has not reported provider/model yet (run SETTINGS_STATUS in Settings).',
     providerLabel: 'Provider',
     modelLabel: 'Model',
-    contractNote: 'Contract reference (FACT-REGISTER): deepseek-flash; deepseek-v4-pro is optional.',
+    contractNote:
+      'Provider, model, and account values are exactly what the server reports; the catalogue never implies wire support for an external endpoint.',
     notReported: 'Not reported',
   },
   gallery: {
@@ -314,7 +315,8 @@ export const STRINGS = {
   clientRefusals: {
     E_KEY_MISSING: {
       message: 'No provider key is configured on the local server.',
-      howToFix: 'Set DEEPSEEK_API_KEY in the server process environment, then restart the server.',
+      howToFix:
+        'Set the configured provider key in the server process environment (DEEPSEEK_API_KEY for DeepSeek), then restart the server.',
       retryable: true,
     },
     E_PROMPT_EMPTY: {
@@ -338,14 +340,38 @@ export const STRINGS = {
       retryable: false,
     },
     E_PROVIDER_BALANCE: {
-      message: 'The DeepSeek API account has insufficient balance.',
-      howToFix: 'Top up the DeepSeek account or use a funded key; this call is never retried.',
+      message: 'The configured provider API account has insufficient balance.',
+      howToFix: 'Top up the configured provider account or use a funded key; this call is never retried.',
       retryable: false,
     },
     E_SCHEMA_INVALID: {
       message: 'A frame did not match the frozen contract.',
       howToFix: 'Reload the UI; if it repeats, record the frame and restart the server.',
       retryable: true,
+    },
+    E_CALL_LIMIT: {
+      message: 'The run reached its bounded provider/tool call budget.',
+      howToFix:
+        'The work was stopped honestly. Start a smaller run or raise the documented call budget; do not retry blindly.',
+      retryable: false,
+    },
+    E_LLM_RATE_LIMIT: {
+      message: 'The provider rate limit was hit (HTTP 429).',
+      howToFix:
+        'Wait for the provider window to reset, then retry. The server already retried a bounded number of times; reduce parallel tasks for a low-rate endpoint.',
+      retryable: true,
+    },
+    E_PROVIDER_INVALID_RESPONSE: {
+      message: 'The provider returned a response the documented contract cannot accept.',
+      howToFix:
+        'Check the configured model/base URL and the server log for the provider detail; change nothing until the response shape is confirmed.',
+      retryable: false,
+    },
+    E_USAGE_INCOMPLETE: {
+      message: 'The provider did not report enough usage to settle cost.',
+      howToFix:
+        'The run is incomplete and its cost is not claimed. Check the provider usage fields; do not treat the run as settled.',
+      retryable: false,
     },
     E_COMMAND_UNKNOWN: {
       message: 'The server does not recognise this command.',

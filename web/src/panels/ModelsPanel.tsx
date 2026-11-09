@@ -28,14 +28,17 @@ interface ProviderBalance {
   readonly topped_up_balance?: string;
 }
 
-const WIRE_MODELS = new Set(['deepseek-flash', 'deepseek-v4-pro']);
-
+/**
+ * Provider metadata only. Wire support is the server's call: the UI must not
+ * claim or deny a model is accepted from a hardcoded provider list.
+ */
 async function providerFailure(response: Response): Promise<Error> {
   try {
-    const body = (await response.json()) as { code?: unknown; message?: unknown };
+    const body = (await response.json()) as { code?: unknown; message?: unknown; how_to_fix?: unknown };
     const code = typeof body.code === 'string' ? body.code : `HTTP ${response.status}`;
     const message = typeof body.message === 'string' ? body.message : 'Provider metadata unavailable.';
-    return new Error(`${code}: ${message}`);
+    const fix = typeof body.how_to_fix === 'string' ? ` — ${body.how_to_fix}` : '';
+    return new Error(`${code}: ${message}${fix}`);
   } catch {
     return new Error(`HTTP ${response.status}: provider metadata unavailable.`);
   }
@@ -55,6 +58,8 @@ export function ModelsPanel() {
   const [providerModels, setProviderModels] = useState<readonly ProviderModel[]>([]);
   const [providerBalances, setProviderBalances] = useState<readonly ProviderBalance[]>([]);
   const [providerAvailable, setProviderAvailable] = useState<boolean | null>(null);
+  const [providerBalanceSupported, setProviderBalanceSupported] = useState(true);
+  const [providerBalanceNote, setProviderBalanceNote] = useState<string | null>(null);
   const [providerError, setProviderError] = useState<string | null>(null);
   const [providerLoading, setProviderLoading] = useState(true);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -68,35 +73,89 @@ export function ModelsPanel() {
   useEffect(() => {
     let cancelled = false;
     setProviderLoading(true);
-    Promise.all([
-      fetch(`${apiBaseUrl()}/api/provider/models`, { headers: { Accept: 'application/json' } }),
-      fetch(`${apiBaseUrl()}/api/provider/balance`, { headers: { Accept: 'application/json' } }),
-    ])
-      .then(async ([modelsResponse, balanceResponse]) => {
+    setProviderError(null);
+
+    // Models and balance are independent: one failing endpoint must not hide
+    // the other's truthful result.
+    void fetch(`${apiBaseUrl()}/api/provider/models`, { headers: { Accept: 'application/json' } })
+      .then(async (modelsResponse) => {
         if (!modelsResponse.ok) {
           throw await providerFailure(modelsResponse);
         }
-        if (!balanceResponse.ok) {
-          throw await providerFailure(balanceResponse);
-        }
         const modelsBody = (await modelsResponse.json()) as { models?: unknown };
-        const balanceBody = (await balanceResponse.json()) as { balances?: unknown; is_available?: unknown };
         if (!cancelled) {
-          setProviderModels(Array.isArray(modelsBody.models) ? (modelsBody.models as ProviderModel[]) : []);
-          setProviderBalances(
-            Array.isArray(balanceBody.balances) ? (balanceBody.balances as ProviderBalance[]) : [],
+          setProviderModels(
+            Array.isArray(modelsBody.models) ? (modelsBody.models as ProviderModel[]) : [],
           );
-          setProviderAvailable(typeof balanceBody.is_available === 'boolean' ? balanceBody.is_available : null);
-          setProviderError(null);
-          setProviderLoading(false);
         }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          setProviderError(error instanceof Error ? error.message : 'Provider metadata unavailable.');
+          setProviderModels([]);
+          setProviderError(
+            error instanceof Error ? error.message : 'Provider metadata unavailable.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
           setProviderLoading(false);
         }
       });
+
+    void fetch(`${apiBaseUrl()}/api/provider/balance`, { headers: { Accept: 'application/json' } })
+      .then(async (balanceResponse) => {
+        if (!balanceResponse.ok) {
+          if (!cancelled) {
+            setProviderBalances([]);
+            setProviderAvailable(null);
+            setProviderBalanceSupported(false);
+            setProviderBalanceNote(
+              'This endpoint does not report an account balance; no balance or auth state is inferred.',
+            );
+          }
+          return;
+        }
+        const balanceBody = (await balanceResponse.json()) as {
+          balances?: unknown;
+          is_available?: unknown;
+          supported?: unknown;
+          reason?: unknown;
+        };
+        if (cancelled) {
+          return;
+        }
+        if (balanceBody.supported === false) {
+          setProviderBalances([]);
+          setProviderAvailable(null);
+          setProviderBalanceSupported(false);
+          setProviderBalanceNote(
+            typeof balanceBody.reason === 'string'
+              ? balanceBody.reason
+              : 'This endpoint does not report an account balance.',
+          );
+          return;
+        }
+        setProviderBalanceSupported(true);
+        setProviderBalanceNote(null);
+        setProviderBalances(
+          Array.isArray(balanceBody.balances) ? (balanceBody.balances as ProviderBalance[]) : [],
+        );
+        setProviderAvailable(
+          typeof balanceBody.is_available === 'boolean' ? balanceBody.is_available : null,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProviderBalances([]);
+          setProviderAvailable(null);
+          setProviderBalanceSupported(false);
+          setProviderBalanceNote(
+            'Balance status was not reported by the server; nothing is inferred.',
+          );
+        }
+      });
+
     return () => {
       cancelled = true;
     };
@@ -205,44 +264,52 @@ export function ModelsPanel() {
             Refresh
           </button>
         </div>
-        {providerLoading ? (
-          <p className="type-mono-meta mt-2 text-meta">Reading provider account…</p>
-        ) : providerError !== null ? (
-          <p className="type-mono-meta mt-2 text-signal" role="alert">
-            {providerError}
+        {providerError !== null || providerLoading ? (
+          <p className="type-mono-meta mt-2 text-signal" role={providerError === null ? undefined : 'alert'}>
+            {providerError === null ? 'Reading provider models…' : providerError}
           </p>
-        ) : (
-          <div className="mt-2 grid gap-3 md:grid-cols-2">
-            <div>
-              <div className="type-mono-meta text-meta">Balance</div>
-              {providerAvailable === false ? (
-                <p className="type-mono-meta mt-1 text-signal">Account balance is insufficient.</p>
-              ) : null}
-              {providerBalances.length === 0 ? (
-                <p className="type-mono-meta mt-1 text-meta">No balance rows reported.</p>
-              ) : (
-                <ul className="mt-1 space-y-1">
-                  {providerBalances.map((balance) => (
-                    <li key={balance.currency} className="flex items-baseline justify-between gap-2">
-                      <span className="type-mono-code text-ink-900">{balance.currency}</span>
-                      <span className="type-mono-code text-ink-900">{balance.total_balance}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        ) : null}
+        <div className="mt-2 grid gap-3 md:grid-cols-2">
+          <div>
+            <div className="type-mono-meta text-meta">Balance</div>
+            {!providerBalanceSupported ? (
+              <p className="type-mono-meta mt-1 text-meta">
+                {providerBalanceNote ?? 'This endpoint does not report an account balance.'}
+              </p>
+            ) : null}
+            {providerAvailable === false ? (
+              <p className="type-mono-meta mt-1 text-signal">Account balance is insufficient.</p>
+            ) : null}
+            {providerBalanceSupported && providerBalances.length === 0 ? (
+              <p className="type-mono-meta mt-1 text-meta">No balance rows reported.</p>
+            ) : null}
+            {providerBalanceSupported ? (
+              <ul className="mt-1 space-y-1">
+                {providerBalances.map((balance) => (
+                  <li key={balance.currency} className="flex items-baseline justify-between gap-2">
+                    <span className="type-mono-code text-ink-900">{balance.currency}</span>
+                    <span className="type-mono-code text-ink-900">{balance.total_balance}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          <div>
+            <div className="type-mono-meta text-meta">Available models</div>
+            <div className="type-mono-meta mt-1 text-meta">
+              Configured model: {settings.model ?? STRINGS.models.notReported}
             </div>
-            <div>
-              <div className="type-mono-meta text-meta">Available models</div>
+            {providerError === null ? (
               <ul className="mt-1 space-y-1">
                 {providerModels.map((model) => (
                   <li key={model.id} className="rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="type-mono-code text-ink-900">{model.id}</span>
-                      <span className="type-mono-meta text-[7.5px] text-meta">
-                        {WIRE_MODELS.has(model.id) ? 'WIRE-SUPPORTED' : 'NOT ACCEPTED'}
+                      <span className="type-mono-meta text-[11px] text-meta">
+                        {model.id === settings.model ? 'CONFIGURED' : 'CATALOG'}
                       </span>
                     </div>
-                    <div className="type-mono-meta text-[8px] text-meta">
+                    <div className="type-mono-meta text-[11px] text-meta">
                       {model.name ?? model.id}
                       {model.context_window === undefined ? '' : ` · ${model.context_window} ctx`}
                       {model.max_output_tokens === undefined ? '' : ` · ${model.max_output_tokens} max out`}
@@ -250,9 +317,13 @@ export function ModelsPanel() {
                   </li>
                 ))}
               </ul>
-            </div>
+            ) : (
+              <p className="type-mono-meta mt-1 text-meta">
+                Model list unavailable; no model is invented and balance above is still server-reported.
+              </p>
+            )}
           </div>
-        )}
+        </div>
       </section>
       <p className="type-mono-meta mt-3 text-meta">{STRINGS.models.contractNote}</p>
     </div>

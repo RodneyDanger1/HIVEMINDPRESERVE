@@ -176,13 +176,13 @@ export function DaemonPanel() {
     <section aria-label="Daemons and supervisor" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <div className="flex items-center justify-between gap-2">
         <h2 className="type-label text-ink-900">Daemons · {daemons.length}</h2>
-        <span className="type-mono-meta text-[9px] text-meta">
+        <span className="type-mono-meta text-[11px] text-meta">
           {supervisor?.last_tick_at ? `tick ${supervisor.last_tick_at}` : 'supervisor idle'}
           {supervisor && supervisor.backoff_ms > 0 ? ` · backoff ${supervisor.backoff_ms}ms` : ''}
           {supervisor?.last_error_code ? ` · ${supervisor.last_error_code}` : ''}
         </span>
       </div>
-      <p className="type-mono-meta mt-1 text-[9px] text-meta">
+      <p className="type-mono-meta mt-1 text-[11px] text-meta">
         Tree-free offices. No task row, no model call, no run cap.
       </p>
       {notice ? <p role="status" className="type-mono-meta mt-1 text-meta">{notice}</p> : null}
@@ -265,7 +265,7 @@ export function DaemonPanel() {
             {reports[daemon.daemon_id] ? (
               <ul className="mt-1 space-y-0.5">
                 {reports[daemon.daemon_id].slice(0, 5).map((report, index) => (
-                  <li key={`${report.created_at}-${index}`} className="type-mono-meta text-[9px] text-meta">
+                  <li key={`${report.created_at}-${index}`} className="type-mono-meta text-[11px] text-meta">
                     {report.created_at} · {report.outcome}
                   </li>
                 ))}

@@ -213,7 +213,11 @@ function CanvasInner() {
     if (history.replayGraph) {
       return [];
     }
-    const hasHiveParent = Object.values(visibleTasks).some((task) => task.kind === 'hyperagent');
+    // Keep the invisible anchor while a hive exists even if the hide-finished
+    // filter removes the HyperAgent node itself. Otherwise hyperagent child
+    // edges point at a source handle that is not mounted and React Flow drops
+    // the hierarchy edge.
+    const hasHiveParent = Object.values(tasks).some((task) => task.kind === 'hyperagent');
     if (!hasHiveParent) {
       return nodes;
     }
@@ -231,7 +235,7 @@ function CanvasInner() {
         focusable: false,
       } as CanvasNode,
     ];
-  }, [nodes, visibleTasks, history.replayGraph]);
+  }, [nodes, tasks, visibleTasks, history.replayGraph]);
 
   const handleNodeDrag = useCallback(
     (_: unknown, node: Node) => {
@@ -636,7 +640,7 @@ function CanvasInner() {
         className="pointer-events-none absolute bottom-32 left-1/2 z-20 -translate-x-1/2 rounded-[var(--radius-pill)] border border-hairline bg-panel/95 px-3 py-1.5 shadow-[var(--shadow-e1)]"
         aria-label="Hierarchy legend"
       >
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 type-mono-meta text-[8px] text-meta">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 type-mono-meta text-[11px] text-meta">
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-500" />HYPER</span>
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-400" />SUPER</span>
           <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-verify" />SUB</span>

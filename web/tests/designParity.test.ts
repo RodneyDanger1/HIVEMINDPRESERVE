@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LAYOUT } from '../src/tokens/tokens';
+import { STRINGS } from '../src/state/strings';
 
 const SOURCE = import.meta.glob('../src/**/*.{ts,tsx}', {
   query: '?raw',
@@ -80,5 +81,23 @@ describe('HiveMind spatial design parity pins', () => {
       expect(source, suffix).not.toMatch(/HiveRouter/);
       expect(source, suffix).not.toMatch(/Â·|â€”|â€™/);
     }
+  });
+
+  it('keeps operator text at or above the smallest token size', () => {
+    const offenders: string[] = [];
+    for (const [path, source] of Object.entries(SOURCE)) {
+      for (const match of source.matchAll(/text-\[(\d+(?:\.\d+)?)px\]/g)) {
+        if (Number(match[1]) < 10) {
+          offenders.push(`${path}:${match[1]}px`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('never claims DeepSeek for a provider the server did not report', () => {
+    expect(STRINGS.models.contractNote).not.toMatch(/deepseek/i);
+    expect(sourceOf('/panels/ModelsPanel.tsx')).not.toMatch(/deepseek/i);
+    expect(sourceOf('/panels/SettingsPanel.tsx')).not.toMatch(/DeepSeek is the documented/);
   });
 });

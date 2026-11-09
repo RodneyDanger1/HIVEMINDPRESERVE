@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
 import { useUiStore, useUiStoreApi } from '../state/context';
+import { refusalCopy } from '../state/strings';
 import { EmptyState } from './StatePack';
 
 interface PendingQuestion {
@@ -29,6 +30,29 @@ interface HistoryRow {
 }
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
+
+/** Server projections can repeat a row across hello/replay; identity wins once. */
+function dedupeById<T extends { readonly id: string }>(rows: readonly T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const row of rows) {
+    if (seen.has(row.id)) {
+      continue;
+    }
+    seen.add(row.id);
+    out.push(row);
+  }
+  return out;
+}
+
+function namedRefusal(error: unknown, fallback: string): string {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+  const code = error.message.split(':')[0]?.trim() ?? '';
+  const copy = refusalCopy(code);
+  return copy === null ? error.message : `${code}: ${copy.message} — ${copy.howToFix}`;
+}
 
 export function A2AInboxPanel() {
   const storeApi = useUiStoreApi();
@@ -81,7 +105,7 @@ export function A2AInboxPanel() {
           });
         }
         if (!cancelled) {
-          setQuestions(decoded);
+          setQuestions(dedupeById(decoded));
           setStatus('ok');
         }
       })
@@ -130,7 +154,7 @@ export function A2AInboxPanel() {
             to_task_id: item.to_task_id,
           });
         }
-        setHistory(rows.filter((row) => row.status !== 'open').slice(0, 8));
+        setHistory(dedupeById(rows).filter((row) => row.status !== 'open').slice(0, 8));
       })
       .catch(() => {
         if (!cancelled) setHistory([]);
@@ -172,12 +196,39 @@ export function A2AInboxPanel() {
         const body = (await response.json().catch(() => ({}))) as { code?: string };
         throw new Error(body.code ?? `answer HTTP ${response.status}`);
       }
-      setNotice('Answer accepted.');
-      setDrafts((current) => ({ ...current, [question.id]: '' }));
-      setQuestions((current) => current.filter((row) => row.id !== question.id));
+      // Acceptance is claimed only after the authoritative pending projection
+      // no longer lists this question; an accepted POST alone is not proof.
+      let confirmed = false;
+      try {
+        const pendingResponse = await fetch(`${apiBaseUrl()}/api/a2a/pending`, {
+          headers: { Accept: 'application/json' },
+        });
+        if (pendingResponse.ok) {
+          const pendingBody = (await pendingResponse.json()) as { messages?: unknown };
+          confirmed =
+            Array.isArray(pendingBody.messages) &&
+            !pendingBody.messages.some(
+              (raw) =>
+                typeof raw === 'object' &&
+                raw !== null &&
+                (raw as Record<string, unknown>).id === question.id,
+            );
+        }
+      } catch {
+        confirmed = false;
+      }
+      if (confirmed) {
+        setNotice('Answer accepted (confirmed by the server projection).');
+        setDrafts((current) => ({ ...current, [question.id]: '' }));
+        setQuestions((current) => current.filter((row) => row.id !== question.id));
+      } else {
+        setNotice(
+          'Answer submitted, but the server projection has not confirmed it yet; refresh before assuming success.',
+        );
+      }
       setVersion((value) => value + 1);
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'answer refused');
+      setNotice(namedRefusal(error, 'answer refused by the server; nothing was accepted'));
     } finally {
       setSendingId(null);
     }
@@ -252,7 +303,7 @@ export function A2AInboxPanel() {
           <h4 className="type-label text-ink-900">Recent answers · {history.length}</h4>
           <ul className="mt-1 space-y-0.5">
             {history.map((row) => (
-              <li key={row.id} className="type-mono-meta text-[9px] text-meta">
+              <li key={row.id} className="type-mono-meta text-[11px] text-meta">
                 {row.status} · {row.from_task_id.slice(0, 8)} → {row.to_task_id.slice(0, 8)}
                 {row.answer_actor ? ` · by ${row.answer_actor}` : ''}
                 {row.answer_text ? ` · ${row.answer_text.slice(0, 120)}` : ''}

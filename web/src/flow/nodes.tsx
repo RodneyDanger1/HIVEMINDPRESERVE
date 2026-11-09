@@ -152,11 +152,11 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
           {data.task.label}
         </button>
         <span className="flex h-[18px] w-[68px] shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-honey-300">
-          <span className="type-mono-meta text-[8.5px] text-ink-800">{visualFor(data.task.state).label}</span>
+          <span className="type-mono-meta text-[11px] text-ink-800">{visualFor(data.task.state).label}</span>
         </span>
       </div>
       <button type="button" className="flex min-h-0 flex-1 flex-col px-4 py-2 text-left" onClick={() => data.onSelect(data.task.id)}>
-        <span className="type-mono-meta text-[9.5px] tracking-[0.12em] text-meta">{NODE_KIND_LABELS.superagent}</span>
+        <span className="type-mono-meta text-[11px] tracking-[0.12em] text-meta">{NODE_KIND_LABELS.superagent}</span>
         <span className="mt-0.5 line-clamp-1 text-[11.5px] leading-[16px] text-ink-700">
           {STRINGS.node.roleCaption}
         </span>

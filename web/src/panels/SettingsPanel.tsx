@@ -46,7 +46,7 @@ function ShortcutCard() {
               {shortcut.keys.map((key) => (
                 <kbd
                   key={key}
-                  className="type-mono-meta rounded-[var(--radius-xs)] border border-hairline bg-panel-alt px-1.5 py-0.5 text-[9px] text-ink-800"
+                  className="type-mono-meta rounded-[var(--radius-xs)] border border-hairline bg-panel-alt px-1.5 py-0.5 text-[11px] text-ink-800"
                 >
                   {key}
                 </kbd>
@@ -297,14 +297,18 @@ export function SettingsPanel() {
             <>
               {keySection}
               <section className="surface-panel mt-3 rounded-[var(--radius-md)] p-3">
-                <div className="type-label text-ink-500">Documented provider boundary</div>
+                <div className="type-label text-ink-500">Configured provider boundary</div>
                 <p className="type-body-l mt-1 max-w-[640px] text-ink-500">
-                  DeepSeek is the only supported provider. Model and balance data live in the Models
-                  surface; this settings tab never writes a key or invents a capability.
+                  The server reports the configured provider; this panel never relabels it. An
+                  external OpenAI-compatible endpoint is shown as the provider the server names
+                  (for example a lab endpoint), never as DeepSeek, and never claims a balance or
+                  capability the endpoint did not report.
                 </p>
                 <dl className="mt-2 grid grid-cols-[140px_1fr] gap-y-1">
                   <dt className="type-mono-meta text-meta">provider</dt>
-                  <dd className="type-mono-code text-ink-900">deepseek</dd>
+                  <dd className="type-mono-code text-ink-900">
+                    {settings.provider ?? STRINGS.settings.notReported}
+                  </dd>
                   <dt className="type-mono-meta text-meta">model</dt>
                   <dd className="type-mono-code text-ink-900">{settings.model ?? STRINGS.settings.notReported}</dd>
                   <dt className="type-mono-meta text-meta">key</dt>
@@ -360,7 +364,7 @@ export function SettingsPanel() {
                         style={{ background: swatch.hex }}
                         aria-hidden="true"
                       />
-                      <span className="type-mono-meta mt-0.5 block truncate text-[8px] text-meta">
+                      <span className="type-mono-meta mt-0.5 block truncate text-[11px] text-meta">
                         {swatch.id}
                       </span>
                     </li>

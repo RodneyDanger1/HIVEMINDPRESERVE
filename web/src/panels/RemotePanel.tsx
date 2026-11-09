@@ -383,7 +383,7 @@ export function RemotePanel() {
               <div className="flex items-center justify-between gap-2">
                 <h2 className="type-label text-ink-900">Devices</h2>
                 {detail.remote.state === 'revoked' ? (
-                  <span className="type-mono-meta text-[9px] text-signal">revoked</span>
+                  <span className="type-mono-meta text-[11px] text-signal">revoked</span>
                 ) : (
                   <div className="flex items-center gap-1">
                     <button

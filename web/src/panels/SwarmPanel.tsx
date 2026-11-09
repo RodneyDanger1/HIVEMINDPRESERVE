@@ -94,7 +94,7 @@ export function SwarmPanel() {
     <div className="h-full min-h-0 overflow-y-auto bg-canvas p-4">
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3">
         <PanelTitle>{STRINGS.tabs.swarm}</PanelTitle>
-        <p className="type-mono-meta text-[9px] tracking-[0.08em] text-meta">
+        <p className="type-mono-meta text-[11px] tracking-[0.08em] text-meta">
           {capacity === null
             ? 'CAPACITY UNKNOWN'
             : `CAP ${capacity.maxAgents} AGENTS / ${capacity.maxCalls} CALLS · ${capacity.active === null ? 'ACTIVE UNKNOWN' : `${capacity.active} ACTIVE`} · ${capacity.state.toUpperCase()}`}
@@ -115,7 +115,7 @@ export function SwarmPanel() {
             ['ACTIVE', counts.active],
           ].map(([label, value]) => (
             <div key={label} className="surface-panel rounded-[var(--radius-md)] p-3">
-              <div className="type-mono-meta text-[8.5px] tracking-[0.12em] text-meta">{label}</div>
+              <div className="type-mono-meta text-[11px] tracking-[0.12em] text-meta">{label}</div>
               <div className="mt-1 font-display text-[26px] leading-none text-ink-900">{value}</div>
             </div>
           ))}
@@ -169,7 +169,7 @@ export function SwarmPanel() {
                 ['03', 'Inspect', 'This view mirrors the live hierarchy and census.'],
               ].map(([step, title, body]) => (
                 <div key={step} className="rounded-[var(--radius-button)] border border-hairline bg-panel-alt p-3">
-                  <div className="type-mono-meta text-[8px] text-meta">STEP {step}</div>
+                  <div className="type-mono-meta text-[11px] text-meta">STEP {step}</div>
                   <div className="mt-1 text-[12px] font-semibold text-ink-900">{title}</div>
                   <p className="mt-1 text-[11px] leading-[16px] text-ink-500">{body}</p>
                 </div>
@@ -207,7 +207,7 @@ export function SwarmPanel() {
               <dl className="mt-4 grid grid-cols-2 gap-2">
                 {list.slice(0, 6).map((task) => (
                   <div key={task.id} className="rounded-[var(--radius-sm)] border border-hairline bg-panel-alt p-2">
-                    <dt className="type-mono-meta text-[8px] text-meta">{NODE_KIND_LABELS[task.kind]}</dt>
+                    <dt className="type-mono-meta text-[11px] text-meta">{NODE_KIND_LABELS[task.kind]}</dt>
                     <dd className="mt-0.5 truncate text-[11.5px] font-medium text-ink-900">{task.label}</dd>
                   </div>
                 ))}

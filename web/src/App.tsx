@@ -119,7 +119,7 @@ function AppFrame() {
           ) : (
             <div className="flex h-full items-center justify-center p-6">
               <div className="surface-panel max-w-[420px] rounded-[var(--radius-lg)] p-5">
-                <div className="type-mono-meta text-[8px] tracking-[0.14em] text-meta">COMMITTED HISTORY</div>
+                <div className="type-mono-meta text-[11px] tracking-[0.14em] text-meta">COMMITTED HISTORY</div>
                 <h2 className="mt-1 font-display text-[26px] leading-tight text-ink-900">Nothing to replay yet</h2>
                 <p className="mt-2 text-[12.5px] leading-[18px] text-ink-500">
                   History is read-only and only appears after a run commits a revision. No graph is
