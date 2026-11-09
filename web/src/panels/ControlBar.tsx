@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { isRunActive, isTerminal } from '../state/agentState';
+import { spawnGate } from '../state/spawnMatrix';
 
 export function ControlBar() {
   const run = useUiStore((state) => state.run);
@@ -31,7 +32,20 @@ export function ControlBar() {
     (task) => (task.kind === 'superagent' || task.kind === 'hyperagent') && task.id !== selectedTaskId,
   );
 
-  const canSpawn = connected && runActive && !anyPending && !replaying;
+  // SPAWN is enabled only when the class matrix and every transport/run
+  // precondition allow the exact command; otherwise the reason is rendered.
+  const seedParent =
+    selected ??
+    Object.values(tasks).find((task) => task.kind === 'hyperagent') ??
+    null;
+  const gate = spawnGate({
+    parent: seedParent === null ? null : { id: seedParent.id, kind: seedParent.kind },
+    runStatus: run?.status ?? null,
+    connection,
+    replaying,
+    pending: anyPending,
+  });
+  const canSpawn = gate.plan !== null;
   const canRewire =
     connected && runActive && !anyPending && !replaying && selected !== null && selected.kind === 'worker' && target !== '';
   const canCancel = connected && runActive && !anyPending && !replaying;
@@ -60,13 +74,26 @@ export function ControlBar() {
         type="button"
         className="type-label h-10 rounded-[var(--radius-button)] border border-honey-500 bg-honey-300 px-4 font-semibold text-ink-900 hover:bg-honey-400 disabled:opacity-50"
         disabled={!canSpawn}
-        title={runActive ? STRINGS.controls.spawn : STRINGS.controls.disabledNoRun}
+        title={
+          canSpawn
+            ? `Spawn a ${gate.plan?.childKind ?? 'child'} under ${seedParent?.label ?? 'the selected task'}.`
+            : (gate.reason ?? 'Spawn is unavailable.')
+        }
         onClick={() => {
-          void spawnSubHive();
+          void spawnSubHive(seedParent?.id);
         }}
       >
         {STRINGS.controls.spawn}
       </button>
+      {canSpawn ? null : (
+        <span
+          className="type-mono-meta basis-full text-[11px] text-meta"
+          role="note"
+          aria-live="polite"
+        >
+          SPAWN disabled: {gate.reason ?? 'unavailable.'}
+        </span>
+      )}
 
       <select
         className="type-mono-meta h-9 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 text-ink-800"

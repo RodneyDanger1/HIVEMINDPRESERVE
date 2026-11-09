@@ -37,6 +37,7 @@ import { fetchHealth } from '../api/health';
 import { DEFAULT_HTTP_TIMEOUT_MS, fetchWithBoundTimeout } from '../api/http';
 import type { DecodedEvent } from '../api/contract';
 import { deriveHud } from './metrics';
+import { spawnGate } from './spawnMatrix';
 import { formatStateOf, STRINGS } from './strings';
 import {
   APPROVAL_ACK_SETTLE_CODE,
@@ -291,7 +292,13 @@ export interface UiState {
   init(): Promise<void>;
   dispose(): void;
   submitPrompt(text: string): Promise<void>;
-  spawnSubHive(): Promise<void>;
+  /**
+   * Send SPAWN_SUB_HIVE for the explicit parent when given, otherwise the
+   * selected task, otherwise the run's HyperAgent root. The class matrix is
+   * enforced here as well as on the server: an impossible parent raises
+   * E_TOOL_NOT_ALLOWED and sends nothing.
+   */
+  spawnSubHive(parentTaskId?: string): Promise<void>;
   rewireSelected(newParentId: string): Promise<void>;
   cancelRun(): Promise<void>;
   killWorker(): Promise<void>;
@@ -935,6 +942,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
     let resyncSerial = 0;
     let resyncFollowUp = false;
     let snapshotInFlight: Promise<void> | null = null;
+    let snapshotGeneration = -1;
     const inFlightAborts = new Set<AbortController>();
     let pendingRewire: {
       readonly taskId: string;
@@ -1069,12 +1077,17 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
      * `/messages` route (a failed read is reported as `messages-unavailable`).
      */
     const performSnapshotRefresh = (source: SnapshotSource): Promise<void> => {
+      const generation = initGeneration;
       if (disposed || api.kind === 'mock') {
         return Promise.resolve();
       }
-      if (snapshotInFlight !== null) {
+      // A refresh belongs to the generation that started it. After a StrictMode
+      // dispose/re-init the old read is aborted and must neither be reused nor
+      // allowed to write its result into the new generation's state.
+      if (snapshotInFlight !== null && snapshotGeneration === generation) {
         return snapshotInFlight;
       }
+      const stale = (): boolean => disposed || generation !== initGeneration;
       const attempt = (async (): Promise<void> => {
         const capturedSerial = resyncSerial;
         const priorSnapshot = get().snapshot;
@@ -1131,7 +1144,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               }
             }
           }
-          if (disposed) {
+          if (stale()) {
             return;
           }
 
@@ -1261,7 +1274,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             scheduleResyncFollowUp();
           }
         } catch (error) {
-          if (disposed) {
+          if (stale()) {
             return;
           }
           const failure = toRefusal(error);
@@ -1282,10 +1295,15 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           }
         }
       })();
-      snapshotInFlight = attempt.finally(() => {
-        snapshotInFlight = null;
+      const tracked = attempt.finally(() => {
+        if (snapshotInFlight === tracked) {
+          snapshotInFlight = null;
+          snapshotGeneration = -1;
+        }
       });
-      return snapshotInFlight;
+      snapshotInFlight = tracked;
+      snapshotGeneration = generation;
+      return tracked;
     };
 
     const scheduleResyncFollowUp = (): void => {
@@ -1583,7 +1601,12 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             parentId: payloadParent ?? intended?.newParentId ?? existing?.parentId ?? null,
             kind,
             label: payload.label ?? existing?.label ?? fallbackTaskLabel(payload.kind ?? null, payload.task_id),
-            state: payload.state,
+            // A spawn is a creation fact, never a state transition: replaying it
+            // after a terminal NODE_STATE must not reset a completed/killed node.
+            state:
+              event.name === 'NODE_SPAWN' && existing !== undefined
+                ? existing.state
+                : payload.state,
             progress:
               payload.progress !== null && payload.progress !== undefined
                 ? payload.progress
@@ -1854,8 +1877,14 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
 
     const guardActiveRun = (): RunRecord | null => {
       const current = get().run;
-      if (!current || !isRunActive(current.status)) {
+      if (!current) {
         pushRefusal(clientRefusal('E_RUN_NOT_FOUND'));
+        return null;
+      }
+      if (!isRunActive(current.status)) {
+        // The run exists but is over: E_RUN_TERMINAL is the server's own code
+        // for "no child can be spawned into a terminal run".
+        pushRefusal(clientRefusal('E_RUN_TERMINAL'));
         return null;
       }
       return current;
@@ -1930,7 +1959,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         try {
           const session = await api.open();
           if (disposed || generation !== initGeneration) {
-            api.close();
+            // The shared API now belongs to the newer generation; closing it here
+            // would kill that live socket. dispose() already closed the old one.
             return;
           }
           socketOpen = true;
@@ -1940,6 +1970,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             lastSeq: session.last_seq,
           });
         } catch (error) {
+          if (disposed || generation !== initGeneration) {
+            return;
+          }
           const refusal =
             error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
           set({ connection: 'error', connectionRefusal: refusal });
@@ -1950,6 +1983,13 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       dispose(): void {
         disposed = true;
         initGeneration += 1;
+        // A disposed store has no socket and no owned snapshot read. Dropping the
+        // in-flight handle here lets a StrictMode re-init hydrate immediately
+        // instead of awaiting the previous generation's aborted boot.
+        socketOpen = false;
+        reconnectPending = false;
+        snapshotInFlight = null;
+        snapshotGeneration = -1;
         set({ initialized: false });
         for (const controller of inFlightAborts) {
           controller.abort();
@@ -1982,28 +2022,51 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         await run('SUBMIT_PROMPT', { text, project_id: get().project.id });
       },
 
-      async spawnSubHive(): Promise<void> {
+      async spawnSubHive(parentTaskId?: string): Promise<void> {
         const current = guardActiveRun();
         if (!current) {
           return;
         }
         const tasks = get().tasks;
         const selected = get().selectedTaskId;
-        const parentTask =
-          (selected !== null ? tasks[selected] : undefined) ??
-          Object.values(tasks).find((task) => task.kind === 'hyperagent') ??
-          Object.values(tasks)[0];
-        if (parentTask === undefined) {
-          pushRefusal(clientRefusal('E_TASK_NOT_FOUND'));
+        // An explicit card click wins; otherwise the selected card; otherwise
+        // the run's HyperAgent root. Never fall back to an arbitrary task.
+        const candidateId =
+          parentTaskId ??
+          selected ??
+          Object.values(tasks).find((task) => task.kind === 'hyperagent')?.id ??
+          null;
+        const parentTask = candidateId === null ? null : (tasks[candidateId] ?? null);
+        const gate = spawnGate({
+          parent:
+            parentTask === null
+              ? null
+              : { id: parentTask.id, kind: parentTask.kind },
+          runStatus: current.status,
+          connection: get().connection,
+          replaying: get().history.replayGraph !== null,
+          pending: Object.keys(get().pendingCommands).length > 0,
+        });
+        if (gate.plan === null) {
+          const refusal =
+            parentTaskId !== undefined && parentTask === null
+              ? clientRefusal('E_TASK_NOT_FOUND', {
+                  message: `Task ${shortId(parentTaskId)} is not in the current projection; no spawn was sent.`,
+                  how_to_fix: 'Refresh the run projection, then select the parent card again.',
+                })
+              : clientRefusal('E_TOOL_NOT_ALLOWED', {
+                  message: `${gate.reason ?? 'This parent cannot spawn.'} No SPAWN_SUB_HIVE was sent.`,
+                  how_to_fix:
+                    'Send SPAWN_SUB_HIVE from a HyperAgent, a SuperAgent, or an Agent (worker) parent only.',
+                });
+          pushRefusal(refusal);
           return;
         }
-        const role =
-          parentTask.kind === 'hyperagent'
-            ? STRINGS.node.superAgent
-            : parentTask.kind === 'superagent'
-              ? STRINGS.node.workerAgent
-              : 'Subagent';
-        await run('SPAWN_SUB_HIVE', { parent_task_id: parentTask.id, role });
+        // The exact frozen payload: selected parent + the matrix's wire role.
+        await run('SPAWN_SUB_HIVE', {
+          parent_task_id: gate.plan.parentId,
+          role: gate.plan.role,
+        });
       },
 
       async rewireSelected(newParentId: string): Promise<void> {

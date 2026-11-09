@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS, isTerminal } from '../state/agentState';
+import { spawnGate } from '../state/spawnMatrix';
 import { buildReplayTasks } from '../flow/graph';
 import { apiBaseUrl } from '../api/client';
 import { STRINGS } from '../state/strings';
@@ -29,6 +30,9 @@ export function SwarmPanel() {
   const project = useUiStore((state) => state.project);
   const setTab = useUiStore((state) => state.setTab);
   const run = useUiStore((state) => state.run);
+  const spawnSubHive = useUiStore((state) => state.spawnSubHive);
+  const connection = useUiStore((state) => state.connection);
+  const pendingCommands = useUiStore((state) => state.pendingCommands);
   const [capacity, setCapacity] = useState<RuntimeCapacity | null>(null);
   const replayTasks = useMemo(
     () => (replayGraph === null ? null : buildReplayTasks(replayGraph.graph)),
@@ -180,7 +184,23 @@ export function SwarmPanel() {
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
             <section className="surface-panel rounded-[var(--radius-card)] p-3" aria-label="Agent hierarchy">
               <div className="type-label mb-2 text-ink-500">Hierarchy / workspace-jailed</div>
-              <AgentHierarchy tasks={sourceTasks} selectedTaskId={selectedTaskId} selectTask={selectTask} />
+              <AgentHierarchy
+                tasks={sourceTasks}
+                selectedTaskId={selectedTaskId}
+                selectTask={selectTask}
+                spawnTask={
+                  replayGraph === null ? (taskId) => void spawnSubHive(taskId) : undefined
+                }
+                spawnReason={(task) =>
+                  spawnGate({
+                    parent: { id: task.id, kind: task.kind },
+                    runStatus: run?.status ?? null,
+                    connection,
+                    replaying: replayGraph !== null,
+                    pending: Object.keys(pendingCommands).length > 0,
+                  }).reason
+                }
+              />
             </section>
             <section className="surface-panel rounded-[var(--radius-card)] p-3" aria-label="Swarm controls">
               <div className="type-label mb-2 text-ink-500">Surfaces</div>

@@ -31,6 +31,8 @@ export function AgentMessagesPanel() {
   const [answeringId, setAnsweringId] = useState<string | null>(null);
   const [answerDraft, setAnswerDraft] = useState('');
   const [answerError, setAnswerError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
   const visibleMessages =
     kindFilter === 'all' ? messages : messages.filter((message) => message.kind === kindFilter);
 
@@ -98,7 +100,7 @@ export function AgentMessagesPanel() {
     return () => {
       cancelled = true;
     };
-  }, [runId, messageVersion]);
+  }, [runId, messageVersion, version]);
 
   const answer = async (messageId: string): Promise<void> => {
     const text = answerDraft.trim();
@@ -129,14 +131,41 @@ export function AgentMessagesPanel() {
         const body = (await response.json().catch(() => ({}))) as { code?: string };
         throw new Error(body.code ?? `answer HTTP ${response.status}`);
       }
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === messageId
-            ? { ...message, status: 'answered', answer_text: text, answer_actor: 'operator' }
-            : message,
-        ),
-      );
-      setAnswerDraft('');
+      const ack = (await response.json().catch(() => null)) as { status?: unknown } | null;
+      if (ack?.status !== 'answered') {
+        throw new Error('answer ACK did not report status=answered');
+      }
+      // An OK POST is not proof the mailbox projection changed. Confirm against
+      // the durable GET before claiming success; never patch the row locally.
+      let confirmed = false;
+      try {
+        const projection = await fetch(
+          `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/messages`,
+          { headers: { Accept: 'application/json' } },
+        );
+        if (projection.ok) {
+          const body = (await projection.json()) as { messages?: unknown };
+          if (Array.isArray(body.messages)) {
+            const row = body.messages.find(
+              (raw): raw is Record<string, unknown> =>
+                typeof raw === 'object' && raw !== null && (raw as Record<string, unknown>).id === messageId,
+            );
+            confirmed =
+              row !== undefined && typeof row.status === 'string' && row.status !== 'open';
+          }
+        }
+      } catch {
+        confirmed = false;
+      }
+      if (confirmed) {
+        setNotice('Answer accepted (confirmed by the server projection).');
+        setAnswerDraft('');
+      } else {
+        setNotice(
+          'Answer submitted, but the server projection has not confirmed it yet; refresh before assuming success.',
+        );
+      }
+      setVersion((value) => value + 1);
     } catch (error: unknown) {
       setAnswerError(error instanceof Error ? error.message : 'answer refused');
     } finally {
@@ -147,6 +176,11 @@ export function AgentMessagesPanel() {
   return (
     <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <h3 className="type-label text-ink-900">Agent messages</h3>
+      {notice ? (
+        <p role="status" className="type-mono-meta mt-1 text-meta">
+          {notice}
+        </p>
+      ) : null}
       {status === 'ok' && messages.length > 0 ? (
         <label className="mt-2 block">
           <span className="type-mono-meta block text-meta">Kind</span>
@@ -201,10 +235,11 @@ export function AgentMessagesPanel() {
                 <button
                   type="button"
                   className="h-8 rounded-[var(--radius-sm)] border border-hairline px-2 type-mono-meta"
-                  disabled={answeringId === message.id}
+                  disabled={answeringId !== null}
+                  aria-busy={answeringId === message.id}
                   onClick={() => void answer(message.id)}
                 >
-                  Answer
+                  {answeringId === message.id ? 'Sending…' : 'Answer'}
                 </button>
               </div>
             ) : null}

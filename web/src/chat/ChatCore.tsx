@@ -11,6 +11,7 @@ import { isTerminal } from '../state/agentState';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
 import { clientRefusal } from '../api/refusals';
+import { CONTROL_INTENTS } from '../state/chatIntents';
 import type { ChatMessage, ToastRefusal } from '../state/store';
 import { MessageBody, TypingDots, WorkingBee } from './ChatMotion';
 
@@ -358,6 +359,31 @@ export function ChatCore() {
             </div>
           ) : null}
         </div>
+
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          <span className="type-mono-meta text-[10px] tracking-[0.12em] text-meta">ROOT CONTROL</span>
+          {CONTROL_INTENTS.map((intent) => (
+            <button
+              key={intent.id}
+              type="button"
+              className="type-label rounded-[8px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 hover:bg-honey-100 disabled:opacity-50"
+              data-control-intent={intent.id}
+              disabled={connection !== 'open' || replaying}
+              title={`Fill the composer with a SUBMIT_PROMPT asking the HyperAgent root control for ${intent.label.toLowerCase()}. The server decides; no spawn is claimed here.`}
+              onClick={() => {
+                setDraft(intent.prompt);
+                composerRef.current?.focus();
+              }}
+            >
+              {intent.label}
+            </button>
+          ))}
+        </div>
+        <p className="type-mono-meta mt-0.5 text-[10px] leading-[14px] text-meta">
+          These fill a prompt, not a command. The server&apos;s bounded HyperAgent root-control
+          turn (when enabled) decides whether to call spawn_remote_agent / spawn_daemon; success
+          is shown only by the server projection.
+        </p>
 
         <form className="mt-2 flex h-14 items-center gap-2 rounded-[12px] border border-hairline bg-panel px-3" onSubmit={onSubmit}>
           <label className="sr-only" htmlFor="composer">
