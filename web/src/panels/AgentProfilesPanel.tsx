@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { failureText, httpFailure, refusalFromBody } from '../api/failure';
+import { failureText, httpFailure, refusalFromBody , schemaFailure} from '../api/failure';
 import { useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -60,7 +60,7 @@ export function AgentProfilesPanel() {
       }
       const body = (await response.json()) as { profiles?: unknown };
       if (!Array.isArray(body.profiles)) {
-        throw new Error('profiles payload has no profiles array');
+        throw schemaFailure('profiles payload has no profiles array');
       }
       const decoded: AgentProfileRow[] = [];
       for (const entry of body.profiles) {

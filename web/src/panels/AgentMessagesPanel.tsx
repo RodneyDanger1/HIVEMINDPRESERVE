@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { failureText, httpFailure } from '../api/failure';
+import { failureText, httpFailure , schemaFailure} from '../api/failure';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -58,7 +58,7 @@ export function AgentMessagesPanel() {
         }
         const body = (await response.json()) as { messages?: unknown };
         if (!Array.isArray(body.messages)) {
-          throw new Error('agent messages payload has no messages array');
+          throw schemaFailure('agent messages payload has no messages array');
         }
         const decoded: AgentMessageEntry[] = [];
         for (const entry of body.messages) {

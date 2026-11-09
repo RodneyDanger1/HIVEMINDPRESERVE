@@ -52,6 +52,11 @@ export async function httpFailure(response: Response, label: string): Promise<Re
   return refusalFromBody(body, response.status, label);
 }
 
+/** A malformed successful response is a contract failure, never empty state. */
+export function schemaFailure(message: string): RefusalError {
+  return new RefusalError(clientRefusal('E_SCHEMA_INVALID', { message }));
+}
+
 /** One line for an inline error surface: code, message, and the fix. */
 export function failureText(error: unknown, fallback: string): string {
   if (error instanceof RefusalError) {

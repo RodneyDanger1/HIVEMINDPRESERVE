@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { failureText, httpFailure, refusalFromBody } from '../api/failure';
+import { failureText, httpFailure, refusalFromBody , schemaFailure} from '../api/failure';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -202,7 +202,7 @@ export function MemoryBanksPanel() {
         }
         const body = (await response.json()) as { banks?: unknown };
         if (!Array.isArray(body.banks)) {
-          throw new Error('memory banks payload has no banks');
+          throw schemaFailure('memory banks payload has no banks');
         }
         const decoded: BankRow[] = [];
         for (const raw of body.banks) {
@@ -259,7 +259,7 @@ export function MemoryBanksPanel() {
         }
         const body = (await response.json()) as { entries?: unknown };
         if (!Array.isArray(body.entries)) {
-          throw new Error('memory entries payload has no entries');
+          throw schemaFailure('memory entries payload has no entries');
         }
         const decoded: EntryRow[] = [];
         for (const raw of body.entries) {

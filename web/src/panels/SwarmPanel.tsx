@@ -9,7 +9,7 @@ import { NODE_KIND_LABELS, isTerminal } from '../state/agentState';
 import { spawnGate } from '../state/spawnMatrix';
 import { buildReplayTasks } from '../flow/graph';
 import { apiBaseUrl } from '../api/client';
-import { failureText, httpFailure } from '../api/failure';
+import { failureText, httpFailure , schemaFailure} from '../api/failure';
 import { STRINGS } from '../state/strings';
 import { AgentHierarchy } from './AgentHierarchy';
 import { PanelTitle } from './StatePack';
@@ -62,7 +62,7 @@ export function SwarmPanel() {
             typeof caps.max_agents !== 'number' ||
             typeof caps.max_calls !== 'number'
           ) {
-            throw new Error('runtime payload missing capacity fields');
+            throw schemaFailure('runtime payload missing capacity fields');
           }
           if (!cancelled) {
             setCapacity({

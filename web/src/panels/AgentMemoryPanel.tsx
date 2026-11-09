@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
-import { failureText, httpFailure } from '../api/failure';
+import { failureText, httpFailure , schemaFailure} from '../api/failure';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -29,11 +29,11 @@ type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 function decodeScopedMemory(body: unknown): readonly ScopedMemoryRow[] {
   if (typeof body !== 'object' || body === null) {
-    throw new Error('memory payload is not an object');
+    throw schemaFailure('memory payload is not an object');
   }
   const rows = (body as { memories?: unknown }).memories;
   if (!Array.isArray(rows)) {
-    throw new Error('memory payload has no memories array');
+    throw schemaFailure('memory payload has no memories array');
   }
   const decoded: ScopedMemoryRow[] = [];
   for (const entry of rows) {
@@ -84,7 +84,7 @@ export function AgentMemoryPanel() {
         }
         const body = (await response.json()) as { profiles?: unknown };
         if (!Array.isArray(body.profiles)) {
-          throw new Error('memory payload has no profiles array');
+          throw schemaFailure('memory payload has no profiles array');
         }
         const decoded: MemoryProfile[] = [];
         for (const entry of body.profiles) {
