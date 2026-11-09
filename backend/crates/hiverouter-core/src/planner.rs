@@ -64,6 +64,9 @@ impl Plan {
             if node.role.trim().is_empty() || node.depth == 0 {
                 return Err(Refusal::SchemaInvalid);
             }
+            if node.depth > 3 {
+                return Err(Refusal::SpawnDepth);
+            }
             for dep in &node.deps {
                 if !known.contains(dep) {
                     return Err(Refusal::SchemaInvalid);

@@ -191,10 +191,25 @@ async fn rewire_ack_and_node_event_fan_out_to_both_clients() {
         .engine
         .store
         .insert_task(&hiverouter_core::entities::TaskRecord {
+            id: root_b,
+            run_id: run.id,
+            parent_task_id: None,
+            role: "planner".to_owned(),
+            depth: 0,
+            spawn_seq: 0,
+            state: AgentState::Running,
+            rev: 0,
+        })
+        .expect("root b row");
+    server
+        .state
+        .engine
+        .store
+        .insert_task(&hiverouter_core::entities::TaskRecord {
             id: task,
             run_id: run.id,
             parent_task_id: Some(root_a),
-            role: "worker".to_owned(),
+            role: "super".to_owned(),
             depth: 1,
             spawn_seq: 2,
             state: AgentState::Running,
@@ -224,7 +239,7 @@ async fn rewire_ack_and_node_event_fan_out_to_both_clients() {
     let node_event = recv_until(&mut watcher, |value| frame_name(value) == "NODE_REWIRE").await;
     assert_eq!(node_event["payload"]["task_id"], task.to_string());
     assert_eq!(
-        node_event["payload"]["kind"], "worker",
+        node_event["payload"]["kind"], "superagent",
         "NODE_REWIRE must carry the authoritative task kind"
     );
     assert_eq!(

@@ -331,7 +331,38 @@ async fn memory_bank_routes_return_real_banks_and_entries() {
         .store
         .create_run("p", "banks", hiverouter_contract::AgentState::Running)
         .expect("run");
-    let task = hiverouter_contract::TaskId::new();
+    let root_task = hiverouter_core::entities::TaskRecord {
+        id: hiverouter_contract::TaskId::new(),
+        run_id: run.id,
+        parent_task_id: None,
+        role: "planner".to_owned(),
+        depth: 0,
+        spawn_seq: 0,
+        state: hiverouter_contract::AgentState::Running,
+        rev: 0,
+    };
+    server
+        .state
+        .engine
+        .store
+        .insert_task(&root_task)
+        .expect("root task");
+    let task = hiverouter_core::entities::TaskRecord {
+        id: hiverouter_contract::TaskId::new(),
+        run_id: run.id,
+        parent_task_id: Some(root_task.id),
+        role: "worker".to_owned(),
+        depth: 1,
+        spawn_seq: 1,
+        state: hiverouter_contract::AgentState::Running,
+        rev: 0,
+    };
+    server
+        .state
+        .engine
+        .store
+        .insert_task(&task)
+        .expect("worker task");
     server
         .state
         .engine
@@ -341,8 +372,8 @@ async fn memory_bank_routes_return_real_banks_and_entries() {
             "note",
             "banked value",
             run.id,
-            task,
-            &task.to_string(),
+            task.id,
+            &task.id.to_string(),
         )
         .expect("memory");
     server
@@ -354,7 +385,7 @@ async fn memory_bank_routes_return_real_banks_and_entries() {
             "run-note",
             "summary value",
             run.id,
-            task,
+            root_task.id,
             "run",
         )
         .expect("run memory");
@@ -663,7 +694,7 @@ async fn agent_read_surfaces_are_mounted_and_truthful() {
     let runtime: Value = serde_json::from_str(&body).expect("runtime JSON");
     assert_eq!(runtime["status"], "idle");
     assert_eq!(runtime["caps"]["max_agents"], 64);
-    assert_eq!(runtime["caps"]["max_calls"], 40);
+    assert_eq!(runtime["caps"]["max_calls"], 64);
 
     let (status, body) = http_get(server.addr, "/api/templates").await;
     assert_eq!(status, 200, "templates route: {body}");

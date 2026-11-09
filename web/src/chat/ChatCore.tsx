@@ -118,7 +118,10 @@ export function ChatCore() {
   useEffect(() => {
     const node = listRef.current;
     if (node) {
-      node.scrollTop = node.scrollHeight;
+      // An empty thread must show its starters from the top. Scrolling an
+      // empty log to its measured height hid the first starter under the
+      // header once the root-control block was added.
+      node.scrollTop = messages.length === 0 ? 0 : node.scrollHeight;
     }
   }, [messages]);
 
@@ -204,7 +207,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
+        className="chat-core pointer-events-auto surface-panel flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
