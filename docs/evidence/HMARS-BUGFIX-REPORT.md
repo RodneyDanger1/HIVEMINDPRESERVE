@@ -5,7 +5,7 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `fef47c7`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `9AD5118C3A547EBF8BA98FF5CCF065F69326160D1A14D0D837B288D4E7920D1B`
+Release binary: `target/release/hiverouter.exe` SHA-256 `CE4856A4D5E95EE8C51D7744E8AD0D49731B3265E8EE34049608A588622E9D00`
 
 ## 1. What HiveMind is supposed to be
 
@@ -127,7 +127,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 9AD5118C3A547EBF8BA98FF5CCF065F69326160D1A14D0D837B288D4E7920D1B
+  target/release/hiverouter.exe SHA-256 CE4856A4D5E95EE8C51D7744E8AD0D49731B3265E8EE34049608A588622E9D00
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
