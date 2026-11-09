@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `4b28a5f` (clean tree). Latest offline gate: `cargo test --workspace --locked` 551 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `3f5ec41` (clean tree). Latest offline gate: `cargo test --workspace --locked` 552 passed / 0 failed / 2 ignored across 43 suites, web typecheck 0, web 191/191, build 0, CLI 0. Evidence: `docs/evidence/gate-3f5ec41a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -452,3 +452,11 @@ Not delivered and must not be claimed:
 - Release rehearsal still blocks at `E_RELEASE_TAG_MISSING` (`hivemind-1.2.0-dev`); no sealed artifact.
 - **Completion is false.** Not met: scheduler/50–150/300–600 scale, remote/daemon, A2A answer-attempt/parent answer, hive/ancestor summaries, read/session auth and provider context preflight, browser/e2e UI, sealed release.
 - Receipt: `docs/evidence/audit-r79-offline.json`. Goal remains active.
+### UI/UX + living-hive pass
+
+- FigCraft/HiveMind audit and exhaustive missing-work pseudocode: `docs/ui/HIVEMIND-UI-GAP-AUDIT.md`.
+- Settings is now tabbed (Overview/Provider/Appearance/Diagnostics/FigCraft) with a real persisted ambient-motion slider, 20-swatch palette, keyboard tablist and honey/ink theme.
+- Added the dead-endpoint surfaces: global A2A inbox with answer CAS, diagnostics + workspace + active-run projection, historical transcript, dynamic insertable template catalog.
+- Added token-styled confirm dialog for destructive memory actions; fixed off-token radii across operator surfaces.
+- Chat now has a live status chip, honeycomb texture, streaming surface and visible send/stop semantics; the HiveField has figure-eight ambient bees (2/3/4px), stronger sheen, and BeeEdge travels source→target with reduced-motion/offset-path fallback.
+- Gate at `3f5ec41`: 552 backend / 191 web / build 0. GitNexus `detect-changes` flagged high risk and 8 affected flows; full gate is green. Browser/pixel fidelity still unverified; no FigCraft generator exists in the workspace.
