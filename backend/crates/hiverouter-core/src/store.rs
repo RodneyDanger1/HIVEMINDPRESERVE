@@ -127,6 +127,17 @@ pub struct MemoryBankRecord {
     pub closed_at: Option<String>,
 }
 
+/// Persisted ownership projection for one task.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TaskOwnership {
+    /// run/branch/none/...
+    pub mode: String,
+    /// Opaque ownership scope.
+    pub scope: Option<String>,
+    /// Owning task.
+    pub owner_task_id: Option<String>,
+}
+
 /// Persisted task identity derived at admission by the v13 task trigger.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TaskIdentity {
@@ -891,6 +902,32 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(u64::try_from(count).unwrap_or(0))
+    }
+
+    /// Reads a task's persisted ownership projection.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn task_ownership(&self, task_id: TaskId) -> Result<Option<TaskOwnership>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let row: Option<(Option<String>, Option<String>, Option<String>)> = connection
+                    .query_row(
+                        "SELECT ownership_mode, ownership_scope, owner_task_id
+                         FROM tasks WHERE id = ?1",
+                        params![task_id.to_string()],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                Ok(row.and_then(|(mode, scope, owner)| {
+                    Some(TaskOwnership {
+                        mode: mode?,
+                        scope,
+                        owner_task_id: owner,
+                    })
+                }))
+            })
+            .map_err(map)
     }
 
     /// Reads a task's persisted class/rank/profile, when the v13 trigger
@@ -2274,6 +2311,65 @@ mod tests {
         assert_eq!(
             store.answer_agent_message(run.id, Uuid::now_v7(), "operator", "missing"),
             Err(Refusal::TaskNotFound)
+        );
+    }
+
+    #[test]
+    fn task_ownership_is_persisted_by_class() {
+        let store = store();
+        let run = store
+            .create_run("p", "ownership", AgentState::Running)
+            .expect("run");
+        let root = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "planner".to_owned(),
+            depth: 0,
+            spawn_seq: 0,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        let super_agent = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: Some(root.id),
+            role: "superagent".to_owned(),
+            depth: 1,
+            spawn_seq: 1,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        let agent = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: Some(super_agent.id),
+            role: "agent".to_owned(),
+            depth: 2,
+            spawn_seq: 2,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        for task in [&root, &super_agent, &agent] {
+            store.insert_task(task).expect("insert");
+        }
+        let root_ownership = store.task_ownership(root.id).expect("root").expect("row");
+        assert_eq!(root_ownership.mode, "run");
+        let expected_scope = format!("run:{}", run.id);
+        assert_eq!(root_ownership.scope.as_deref(), Some(expected_scope.as_str()));
+        let super_ownership = store
+            .task_ownership(super_agent.id)
+            .expect("super")
+            .expect("row");
+        assert_eq!(super_ownership.mode, "branch");
+        let expected_owner = super_agent.id.to_string();
+        assert_eq!(
+            super_ownership.owner_task_id.as_deref(),
+            Some(expected_owner.as_str())
+        );
+        assert_eq!(
+            store.task_ownership(agent.id).expect("agent").expect("row").mode,
+            "none"
         );
     }
 

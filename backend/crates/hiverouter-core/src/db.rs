@@ -563,6 +563,59 @@ Migration {
         DROP TABLE IF EXISTS memory_context_snapshots;
     "#,
 },
+Migration {
+    version: 17,
+    name: "task_ownership",
+    up: r#"
+        ALTER TABLE tasks ADD COLUMN ownership_mode TEXT;
+        ALTER TABLE tasks ADD COLUMN ownership_scope TEXT;
+        ALTER TABLE tasks ADD COLUMN owner_task_id TEXT;
+        UPDATE tasks SET ownership_mode = 'run',
+            ownership_scope = 'run:'||run_id, owner_task_id = id
+        WHERE class = 'hyper';
+        UPDATE tasks SET ownership_mode = 'branch',
+            ownership_scope = 'hive:'||id, owner_task_id = id
+        WHERE class = 'super';
+        UPDATE tasks SET ownership_mode = 'none'
+        WHERE class IN ('agent','subagent') AND ownership_mode IS NULL;
+        CREATE TRIGGER IF NOT EXISTS tasks_ownership_after_insert
+        AFTER INSERT ON tasks
+        WHEN NEW.ownership_mode IS NULL
+        BEGIN
+            UPDATE tasks SET
+                ownership_mode = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'run'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN 'branch'
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('agent','worker','workeragent','worker-agent','content-writer',
+                         'data-analyst','code-reviewer','chatbot','subagent','sub-agent') THEN 'none'
+                    ELSE NULL END,
+                ownership_scope = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator') THEN 'run:'||NEW.run_id
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN 'hive:'||NEW.id
+                    ELSE NULL END,
+                owner_task_id = CASE
+                    WHEN replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('planner','hyper','hyperagent','hyper-agent','orchestrator')
+                     OR replace(replace(lower(trim(NEW.role)),'_','-'),' ','-') IN
+                        ('super','superagent','super-agent','sub-hive','subhive') THEN NEW.id
+                    ELSE NULL END
+            WHERE id = NEW.id;
+        END;
+        CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(run_id, owner_task_id);
+    "#,
+    down: r#"
+        DROP INDEX IF EXISTS idx_tasks_owner;
+        DROP TRIGGER IF EXISTS tasks_ownership_after_insert;
+        ALTER TABLE tasks DROP COLUMN owner_task_id;
+        ALTER TABLE tasks DROP COLUMN ownership_scope;
+        ALTER TABLE tasks DROP COLUMN ownership_mode;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -1177,10 +1230,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 16);
-        assert_eq!(database.migrate().expect("second migrate"), 16);
+        assert_eq!(database.migrate().expect("first migrate"), 17);
+        assert_eq!(database.migrate().expect("second migrate"), 17);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 16);
+        assert_eq!(applied.len(), 17);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1217,7 +1270,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 16);
+        assert_eq!(database.migrate().expect("re-migrate"), 17);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1233,7 +1286,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 16);
+        assert_eq!(reopened.schema_version().expect("version"), 17);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1388,7 +1441,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 16);
+        assert_eq!(database.migrate().expect("migrate"), 17);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1423,7 +1476,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 16);
+        assert_eq!(database.migrate().expect("re-migrate"), 17);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1447,7 +1500,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (17, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (18, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1457,12 +1510,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 17,
-                latest: 16
+                current: 18,
+                latest: 17
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 17);
+        assert_eq!(database.schema_version().expect("version"), 18);
     }
 
     #[test]

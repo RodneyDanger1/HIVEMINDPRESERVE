@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `a4de0b0` (clean tree). Latest offline gate: `cargo test --workspace --locked` 543 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `a4de0b0` (clean tree). Latest offline gate: `cargo test --workspace --locked` 544 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -370,3 +370,9 @@ Not delivered and must not be claimed:
 - v16 adds `memory_context_snapshots`; every execution-time bank read-set render records task/run, bank ids, entry ids, rendered chars, truncation, and SHA-256 of the rendered memory block. No second copy of memory text is stored.
 - Test covers snapshot write/read; read-set entries now carry durable `entry_id`.
 - Not delivered: UI snapshot viewer, retention pruning, hash-chain linking to the journal.
+### P3 ownership projection
+
+- v17 adds `tasks.ownership_mode/ownership_scope/owner_task_id`; root HyperAgent is `run:<run_id>`, SuperAgent is `branch:hive:<task_id>`, Agent/Subagent are `none`. Insert trigger derives ownership from the role, so it does not depend on trigger order with v13 class.
+- `RunStore::task_ownership` reads the triple; roster exposes mode/scope/owner.
+- Test covers root/super/agent ownership.
+- Not delivered: exclusive owner enforcement, offices, ownership switch UI, ownership in snapshots.

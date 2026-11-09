@@ -1155,6 +1155,7 @@ async fn agent_roster(
                 .map(|task| {
                     let kind = task_node_kind(task);
                     let identity = state.engine.store.task_identity(task.id).ok().flatten();
+                    let ownership = state.engine.store.task_ownership(task.id).ok().flatten();
                     serde_json::json!({
                         "task_id": task.id.to_string(),
                         "parent_task_id": task.parent_task_id.map(|id| id.to_string()),
@@ -1162,6 +1163,9 @@ async fn agent_roster(
                         "class": identity.as_ref().map(|identity| identity.class.as_str()),
                         "rank": identity.as_ref().map(|identity| identity.rank),
                         "profile_id": identity.as_ref().map(|identity| identity.profile_id.as_str()),
+                        "ownership_mode": ownership.as_ref().map(|ownership| ownership.mode.as_str()),
+                        "ownership_scope": ownership.as_ref().and_then(|ownership| ownership.scope.as_deref()),
+                        "owner_task_id": ownership.as_ref().and_then(|ownership| ownership.owner_task_id.as_deref()),
                         "kind": kind,
                         "label": node_label_for(&task.role, kind, &task.id.to_string()),
                         "state": task.state.as_str(),
