@@ -751,6 +751,20 @@ async fn remote_fixture_light_and_garage_actions_are_audited() {
     assert_eq!(status, 201, "remote create: {body}");
     let remote: Value = serde_json::from_str(&body).expect("remote JSON");
     let remote_id = remote["remote_id"].as_str().expect("remote id").to_owned();
+    assert_eq!(remote["state"], "enrolled", "creation must not claim online");
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/remotes/{remote_id}/heartbeat"),
+        Some("{}"),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "heartbeat: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("heartbeat JSON")["state"],
+        "online"
+    );
 
     let (status, body) = http_json(
         server.addr,

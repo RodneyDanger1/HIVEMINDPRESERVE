@@ -56,7 +56,7 @@ use hiverouter_core::bus::{EventBus, SequencedEvent};
 use hiverouter_core::db::Database;
 use hiverouter_core::entities::{Run, TaskRecord};
 use hiverouter_core::execution::{
-    DeltaSink, ProviderExecutor, RunEngine, StreamedReply, ToolTurnTranscript,
+    DeltaSink, EscalationAnswer, ProviderExecutor, RunEngine, StreamedReply, ToolTurnTranscript,
 };
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
@@ -96,6 +96,7 @@ fn leaf_plan() -> Plan {
 struct ScriptedExecutor {
     plan: Plan,
     replies: Mutex<VecDeque<StreamedReply>>,
+    escalation: Mutex<Option<EscalationAnswer>>,
 }
 
 impl ScriptedExecutor {
@@ -103,6 +104,7 @@ impl ScriptedExecutor {
         Arc::new(Self {
             plan: leaf_plan(),
             replies: Mutex::new(replies.into()),
+            escalation: Mutex::new(None),
         })
     }
 
@@ -110,6 +112,7 @@ impl ScriptedExecutor {
         Arc::new(Self {
             plan,
             replies: Mutex::new(replies.into()),
+            escalation: Mutex::new(None),
         })
     }
 }
@@ -164,6 +167,30 @@ impl ProviderExecutor for ScriptedExecutor {
             on_delta(delta);
         }
         Ok(reply)
+    }
+
+    async fn answer_escalation(
+        &self,
+        _run_id: RunId,
+        _parent: &TaskRecord,
+        _run_prompt: &str,
+        _question: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<EscalationAnswer, Refusal> {
+        self.escalation
+            .lock()
+            .expect("escalation lock")
+            .clone()
+            .ok_or(Refusal::ProviderInvalidResponse)
+    }
+}
+
+fn ask_parent_call(tool_call_id: &str, text: &str, index: u32) -> AssembledToolCall {
+    AssembledToolCall {
+        index,
+        id: tool_call_id.to_owned(),
+        name: "ask_parent".to_owned(),
+        arguments: serde_json::json!({ "text": text }),
     }
 }
 
@@ -1077,4 +1104,54 @@ async fn no_bridge_engine_keeps_the_read_only_refusal() {
     assert_eq!(collected.codes(), vec!["E_TOOL_NOT_ALLOWED".to_owned()]);
     assert_no_side_effect(&harness, WRITE_PATH);
     assert_eq!(harness.run(run.id).error_code, None);
+}
+
+#[tokio::test]
+async fn inline_parent_answer_is_persisted_without_operator_approval() {
+    let parent = TaskId::new();
+    let child = TaskId::new();
+    let plan = Plan::new(vec![
+        PlanNode {
+            node_id: parent,
+            role: "super".to_owned(),
+            deps: Vec::new(),
+            depth: 1,
+            parent: None,
+        },
+        PlanNode {
+            node_id: child,
+            role: "worker".to_owned(),
+            deps: Vec::new(),
+            depth: 2,
+            parent: Some(parent),
+        },
+    ]);
+    let executor = ScriptedExecutor::with_plan(
+        plan,
+        vec![
+            tool_only_reply(vec![ask_parent_call("ask-1", "which branch?", 0)]),
+            final_answer(),
+            final_answer(),
+        ],
+    );
+    *executor.escalation.lock().expect("escalation lock") = Some(EscalationAnswer {
+        text: "use the honey branch".to_owned(),
+        needs_operator: false,
+        usage: Usage::default(),
+    });
+    let harness = harness(executor, false, 120);
+    let (run, collected) = drive_terminal(&harness, "parent answer").await;
+    assert_eq!(collected.final_run_status.as_deref(), Some("completed"));
+    let messages = harness
+        .engine
+        .store
+        .agent_messages_for_run(run.id)
+        .expect("messages");
+    assert_eq!(messages.len(), 1);
+    assert_eq!(messages[0].status, "answered");
+    assert_eq!(messages[0].answer_text.as_deref(), Some("use the honey branch"));
+    assert_eq!(
+        messages[0].answer_actor.as_deref(),
+        Some(format!("parent:{parent}").as_str())
+    );
 }

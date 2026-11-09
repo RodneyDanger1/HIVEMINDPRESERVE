@@ -334,7 +334,7 @@ impl RemoteStore {
                       state, generation, rev, last_seen_at, lease_expires_at,
                       created_by, created_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,
-                             'online', 1, 0, ?10, NULL, ?11, ?10)",
+                             'enrolled', 1, 0, NULL, NULL, ?11, ?10)",
                     params![
                         remote_id,
                         input.display_name.trim(),
@@ -624,6 +624,55 @@ impl RemoteStore {
             .map_err(map)
     }
 
+    /// Records one real fixture heartbeat and promotes the remote to `online`.
+    /// A remote is never created online; this is the only transition that
+    /// supplies a lease.
+    ///
+    /// # Errors
+    /// `E_REMOTE_UNKNOWN` for a missing/revoked/retired remote; database refusal.
+    pub fn heartbeat(&self, remote_id: &str) -> Result<RemoteAgent, Refusal> {
+        let now_secs = Timestamp::now()
+            .unix_secs()
+            .map_err(|_| Refusal::InternalError)?;
+        let last_seen = Timestamp::from_unix_secs(now_secs).as_str().to_owned();
+        let lease = Timestamp::from_unix_secs(now_secs.saturating_add(120))
+            .as_str()
+            .to_owned();
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                let changed = connection.execute(
+                    "UPDATE remote_agents
+                     SET state = 'online', last_seen_at = ?2, lease_expires_at = ?3,
+                         generation = generation + 1, rev = rev + 1
+                     WHERE remote_id = ?1 AND revoked_at IS NULL AND state <> 'retired'",
+                    params![remote_id, last_seen, lease],
+                )?;
+                if changed == 1 {
+                    audit(
+                        connection,
+                        "operator",
+                        "operator",
+                        Some(remote_id),
+                        None,
+                        "remote_heartbeat",
+                        None,
+                        None,
+                        None,
+                        "ok",
+                        None,
+                        "{}",
+                    )?;
+                }
+                Ok(changed)
+            })
+            .map_err(map)?;
+        if changed == 0 {
+            return Err(Refusal::RemoteUnknown);
+        }
+        self.get_remote(remote_id)?.ok_or(Refusal::RemoteUnknown)
+    }
+
     /// Requests a device action. A reversible fixture action executes now; a
     /// critical action waits for an explicit nonce-bound approval.
     ///
@@ -679,7 +728,8 @@ impl RemoteStore {
         let refused = self
             .db
             .with_connection(|connection| {
-                let grant: Option<i64> = connection
+                let tx = connection.transaction()?;
+                let grant: Option<i64> = tx
                     .query_row(
                         "SELECT COUNT(*) FROM remote_grants
                          WHERE remote_id = ?1 AND device_id = ?2 AND capability_id = ?3
@@ -695,7 +745,7 @@ impl RemoteStore {
                         |row| row.get(0),
                     )
                     .optional()?;
-                let in_flight: i64 = connection.query_row(
+                let in_flight: i64 = tx.query_row(
                     "SELECT COUNT(*) FROM device_actions
                      WHERE device_id = ?1 AND status IN ('requested','awaiting_approval','executing')",
                     params![device_id],
@@ -734,7 +784,7 @@ impl RemoteStore {
                 } else {
                     None
                 };
-                connection.execute(
+                tx.execute(
                     "INSERT INTO device_actions
                      (action_id, remote_id, device_id, capability_id, action, params_json,
                       params_sha256, expected_json, request_id, idempotency_key,
@@ -765,14 +815,14 @@ impl RemoteStore {
                     ],
                 )?;
                 if let Some(after) = state_after {
-                    connection.execute(
+                    tx.execute(
                         "UPDATE devices SET state_json = ?2, state_version = state_version + 1,
                          last_seen_at = ?3 WHERE device_id = ?1",
                         params![device_id, after, Timestamp::now().as_str()],
                     )?;
                 }
                 audit(
-                    connection,
+                    &tx,
                     requested_by_kind,
                     requested_by_id,
                     Some(&device.remote_id),
@@ -785,6 +835,7 @@ impl RemoteStore {
                     None,
                     "{}",
                 )?;
+                tx.commit()?;
                 Ok(Ok(status))
             })
             .map_err(map)?;
@@ -845,6 +896,7 @@ impl RemoteStore {
             .ok_or(Refusal::DeviceUnknown)?;
         let refused = self.db
             .with_connection(|connection| {
+                let tx = connection.transaction()?;
                 let status = if approve { "confirmed" } else { "denied" };
                 let state_after = if approve {
                     let Ok(after) = fixture_apply(&device.class, &action.action, &device.state_json) else {
@@ -854,7 +906,7 @@ impl RemoteStore {
                 } else {
                     device.state_json.clone()
                 };
-                connection.execute(
+                let changed = tx.execute(
                     "UPDATE device_actions SET status = ?2, approval_nonce = NULL,
                      state_after_hash = ?3, ended_at = ?4
                      WHERE action_id = ?1 AND status = 'awaiting_approval'",
@@ -865,15 +917,18 @@ impl RemoteStore {
                         Timestamp::now().as_str()
                     ],
                 )?;
+                if changed != 1 {
+                    return Ok(Err(Refusal::DeviceApprovalInvalid));
+                }
                 if approve {
-                    connection.execute(
+                    tx.execute(
                         "UPDATE devices SET state_json = ?2, state_version = state_version + 1,
                          last_seen_at = ?3 WHERE device_id = ?1",
                         params![action.device_id, state_after, Timestamp::now().as_str()],
                     )?;
                 }
                 audit(
-                    connection,
+                    &tx,
                     "operator",
                     actor,
                     Some(&action.remote_id),
@@ -886,6 +941,7 @@ impl RemoteStore {
                     None,
                     "{}",
                 )?;
+                tx.commit()?;
                 Ok(Ok(()))
             })
             .map_err(map)?;
@@ -1023,8 +1079,7 @@ mod tests {
             })
             .expect("remote");
         let device = store
-            .create_device(NewDevice {
-                remote_id: remote.remote_id.clone(),
+            .create_device(NewDevice {                remote_id: remote.remote_id.clone(),
                 class: "light".to_owned(),
                 name: "Study light".to_owned(),
                 room: Some("study".to_owned()),
@@ -1043,6 +1098,9 @@ mod tests {
                 expires_at: None,
             })
             .expect("grant");
+        store
+            .heartbeat(&remote.remote_id)
+            .expect("fixture heartbeat");
         (remote, device)
     }
 

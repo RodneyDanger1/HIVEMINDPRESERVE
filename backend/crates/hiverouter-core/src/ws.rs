@@ -253,7 +253,18 @@ fn insert_template_dag(
         .flatten()
         .map(|identity| identity.class)
         .or_else(|| role_class(&root.role).map(str::to_owned));
-    let mut needs_super_branch = false;
+    let dag_has_super = dag
+        .nodes
+        .iter()
+        .any(|node| role_class(&node.role) == Some("super"));
+    let dag_has_agent = dag
+        .nodes
+        .iter()
+        .any(|node| role_class(&node.role) == Some("agent"));
+    // The wrapper decision is DAG-level, not per-node: one template DAG must
+    // never get two implicit branch leads.
+    let needs_super_branch =
+        parent_class.as_deref() == Some("hyper") && !dag_has_super && dag_has_agent;
     for node in &dag.nodes {
         // A template id is a persona/profile name, not necessarily a spawn
         // class. Library templates are worker profiles; authority-looking ids
@@ -272,12 +283,6 @@ fn insert_template_dag(
         let child_class = role_class(&node.role)
             .or_else(|| role_class(requested_class))
             .ok_or(Refusal::PersonaUnknown)?;
-        // A library Agent template inserted while the active run has only the
-        // HyperAgent root gets an explicit SuperAgent branch lead, preserving
-        // the strict Hyper -> Super -> Agent -> Subagent hierarchy.
-        if parent_class.as_deref() == Some("hyper") && child_class == "agent" {
-            needs_super_branch = true;
-        }
         let effective_parent_class = if needs_super_branch && child_class == "agent" {
             Some("super")
         } else {
@@ -288,7 +293,7 @@ fn insert_template_dag(
                 return Err(Refusal::ToolNotAllowed);
             }
         }
-        if needs_super_branch {
+        if needs_super_branch && child_class == "agent" {
             validate_spawn_role(AgentTier::SuperAgent, requested_class)?;
         } else {
             validate_spawn_role(parent_tier, requested_class)?;

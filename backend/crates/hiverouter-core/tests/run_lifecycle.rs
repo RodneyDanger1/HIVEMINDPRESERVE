@@ -161,12 +161,14 @@ impl ProviderExecutor for MockExecutor {
 }
 
 struct RootRemoteExecutor {
+    orchestrations: AtomicUsize,
     finalizes: AtomicUsize,
 }
 
 impl RootRemoteExecutor {
     fn new() -> Arc<Self> {
         Arc::new(Self {
+            orchestrations: AtomicUsize::new(0),
             finalizes: AtomicUsize::new(0),
         })
     }
@@ -201,15 +203,15 @@ impl ProviderExecutor for RootRemoteExecutor {
         })
     }
 
-    async fn finalize_root(
+    async fn orchestrate_root(
         &self,
         _run_id: RunId,
         _task: &TaskRecord,
         _prompt: &str,
         _cancel: &CancellationToken,
-        on_delta: &DeltaSink,
+        _on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
-        if self.finalizes.fetch_add(1, Ordering::SeqCst) == 0 {
+        if self.orchestrations.fetch_add(1, Ordering::SeqCst) == 0 {
             return Ok(StreamedReply {
                 deltas: Vec::new(),
                 usage: Usage::default(),
@@ -225,7 +227,115 @@ impl ProviderExecutor for RootRemoteExecutor {
                 reasoning: String::new(),
             });
         }
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: vec![AssembledToolCall {
+                index: 0,
+                id: "call-finish".to_owned(),
+                name: "finish".to_owned(),
+                arguments: json!({}),
+            }],
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        self.finalizes.fetch_add(1, Ordering::SeqCst);
         let text = "root answer with detached relay";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
+struct RootSuperExecutor {
+    orchestrations: AtomicUsize,
+}
+
+impl RootSuperExecutor {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            orchestrations: AtomicUsize::new(0),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for RootSuperExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(1, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = format!("branch {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn orchestrate_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let name = if self.orchestrations.fetch_add(1, Ordering::SeqCst) == 0 {
+            "spawn_superagent"
+        } else {
+            "finish"
+        };
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: vec![AssembledToolCall {
+                index: 0,
+                id: format!("call-{name}"),
+                name: name.to_owned(),
+                arguments: json!({}),
+            }],
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "root answer";
         on_delta(text);
         Ok(StreamedReply {
             deltas: vec![text.to_owned()],
@@ -266,7 +376,8 @@ fn test_engine_with_personas(
             Arc::new(TemplateRegistry::default()),
         )
         .with_personas(personas)
-        .with_remote_store(remote.clone()),
+        .with_remote_store(remote.clone())
+        .with_root_orchestrator(),
     );
     TestEngine {
         engine,
@@ -378,6 +489,98 @@ async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     assert_eq!(tasks.len(), 3, "root plus two branch tasks");
     assert!(tasks.iter().all(|task| task.id.to_string() != remotes[0].remote_id));
+}
+
+#[tokio::test]
+async fn hyperagent_checkpoint_can_add_a_superagent_branch() {
+    let harness = test_engine(RootSuperExecutor::new());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("add a branch", "p", Uuid::now_v7())
+        .expect("submit");
+    let completed = wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    assert_eq!(completed.envelope.payload["status"], "completed");
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    assert_eq!(tasks.len(), 3, "root + planned super + checkpoint super");
+    let root = tasks
+        .iter()
+        .find(|task| task.parent_task_id.is_none())
+        .expect("root task");
+    assert_eq!(root.role, "planner");
+    let supers: Vec<_> = tasks
+        .iter()
+        .filter(|task| task.role == "super")
+        .collect();
+    assert_eq!(supers.len(), 2, "both branch leads must be persisted");
+    assert!(
+        supers
+            .iter()
+            .all(|task| task.parent_task_id == Some(root.id)),
+        "both branch leads must be strict HyperAgent children"
+    );
+}
+
+#[tokio::test]
+async fn superagent_hive_bank_and_branch_read_set_are_real() {
+    let harness = test_engine(MockExecutor::new(tree_plan()));
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("hive memory", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    let super_task = tasks
+        .iter()
+        .find(|task| task.role == "super")
+        .expect("super");
+    let worker = tasks
+        .iter()
+        .find(|task| task.role == "worker")
+        .expect("worker");
+    let subagent = tasks
+        .iter()
+        .find(|task| task.role == "subagent")
+        .expect("subagent");
+    let banks = harness.store.memory_banks_for_run(run.id).expect("banks");
+    assert!(
+        banks
+            .iter()
+            .any(|bank| bank.kind == "hive" && bank.owner_task_id.as_deref() == Some(&super_task.id.to_string())),
+        "the SuperAgent must own a hive bank: {banks:?}"
+    );
+    assert!(
+        banks
+            .iter()
+            .any(|bank| bank.kind == "branch" && bank.owner_task_id.as_deref() == Some(&worker.id.to_string())),
+        "the Agent must own a branch bank: {banks:?}"
+    );
+
+    harness
+        .store
+        .record_agent_memory_scoped("super", "hive-key", "hive-value", run.id, super_task.id, "run")
+        .expect("hive memory");
+    harness
+        .store
+        .record_agent_memory_scoped("worker", "worker-key", "worker-value", run.id, worker.id, "run")
+        .expect("branch memory");
+    let read = harness
+        .store
+        .memory_read_set(run.id, subagent.id, Some(worker.id), 16)
+        .expect("read set");
+    let keys: Vec<&str> = read.iter().map(|entry| entry.key.as_str()).collect();
+    assert!(keys.contains(&"hive-key"), "child must read its hive: {keys:?}");
+    assert!(keys.contains(&"worker-key"), "child must read its parent branch: {keys:?}");
 }
 
 #[tokio::test]

@@ -304,7 +304,8 @@ fn build_engine(
         .with_personas(personas)
         .with_snapshot_store(snapshots)
         .with_tools(tools)
-        .with_remote_store(remote);
+        .with_remote_store(remote)
+        .with_root_orchestrator();
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
             Ok(jail) => engine = engine.with_tool_workspace(jail),
@@ -569,6 +570,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/remotes", get(remote_list).post(remote_create))
         .route("/api/remotes/{remote_id}", get(remote_detail))
         .route("/api/remotes/{remote_id}/revoke", post(remote_revoke))
+        .route(
+            "/api/remotes/{remote_id}/heartbeat",
+            post(remote_heartbeat),
+        )
         .route(
             "/api/remotes/{remote_id}/devices",
             post(remote_device_create),
@@ -1695,6 +1700,21 @@ async fn remote_revoke(
         Ok(()) => (
             [(header::CACHE_CONTROL, "no-store")],
             Json(serde_json::json!({ "remote_id": remote_id, "state": "revoked" })),
+        )
+            .into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `POST /api/remotes/{remote_id}/heartbeat` — record a real fixture heartbeat.
+async fn remote_heartbeat(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+) -> Response {
+    match state.remote.heartbeat(&remote_id) {
+        Ok(remote) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(remote_json(&remote)),
         )
             .into_response(),
         Err(refusal) => remote_refusal_response(&refusal),

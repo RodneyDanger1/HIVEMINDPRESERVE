@@ -295,6 +295,24 @@ export function RemotePanel() {
     }
   };
 
+  const heartbeatRemote = async (): Promise<void> => {
+    if (busy || selectedId === null) return;
+    setBusy(true);
+    try {
+      const remote = await write(
+        `/api/remotes/${encodeURIComponent(selectedId)}/heartbeat`,
+        {},
+      );
+      setNotice(`Heartbeat accepted; state ${String(remote.state)}.`);
+      await loadRemotes();
+      await loadDetail(selectedId);
+    } catch (error: unknown) {
+      setNotice(error instanceof Error ? error.message : 'heartbeat refused');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="h-full min-h-0 overflow-y-auto p-4">
       <div className="mx-auto max-w-[1120px]">
@@ -366,14 +384,24 @@ export function RemotePanel() {
                 {detail.remote.state === 'revoked' ? (
                   <span className="type-mono-meta text-[9px] text-signal">revoked</span>
                 ) : (
-                  <button
-                    type="button"
-                    className="type-label h-8 rounded-[var(--radius-button)] border border-signal px-3 text-signal hover:bg-recessed disabled:opacity-50"
-                    disabled={busy}
-                    onClick={() => setConfirmRevoke(true)}
-                  >
-                    Revoke remote
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className="type-label h-8 rounded-[var(--radius-button)] border border-hairline px-3 text-ink-800 hover:bg-honey-100 disabled:opacity-50"
+                      disabled={busy}
+                      onClick={() => void heartbeatRemote()}
+                    >
+                      Heartbeat
+                    </button>
+                    <button
+                      type="button"
+                      className="type-label h-8 rounded-[var(--radius-button)] border border-signal px-3 text-signal hover:bg-recessed disabled:opacity-50"
+                      disabled={busy}
+                      onClick={() => setConfirmRevoke(true)}
+                    >
+                      Revoke remote
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="mt-2 flex flex-wrap gap-2">

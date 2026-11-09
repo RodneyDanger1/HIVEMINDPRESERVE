@@ -487,6 +487,7 @@ impl RunStore {
                         i64::try_from(task.rev).unwrap_or(i64::MAX),
                     ],
                 )?;
+                ensure_bank_for_inserted_task(connection, task)?;
                 Ok(())
             })
             .map_err(map)
@@ -1164,6 +1165,16 @@ impl RunStore {
         task_id: TaskId,
         scope_id: &str,
     ) -> Result<(), Refusal> {
+        let class = self
+            .task_identity(task_id)?
+            .map(|identity| identity.class)
+            .unwrap_or_default();
+        let bank_id = match class.as_str() {
+            "super" => format!("bank:hive:{task_id}"),
+            "agent" | "subagent" => format!("bank:branch:{task_id}"),
+            _ if scope_id != "run" && scope_id != "legacy" => format!("bank:branch:{task_id}"),
+            _ => format!("bank:run:{run_id}"),
+        };
         self.db
             .with_connection(|connection| {
                 connection.execute(
@@ -1185,26 +1196,73 @@ impl RunStore {
                 )?;
                 // Dual-write the bank view. The flat table remains the legacy
                 // read path until the P4 read-set migration lands.
-                let bank_id = if scope_id == "run" || scope_id == "legacy" {
-                    let bank_id = format!("bank:run:{}", run_id);
+                connection.execute(
+                    "INSERT OR IGNORE INTO memory_banks
+                     (id, kind, scope_id, run_id, parent_bank_id, display_name,
+                      rev, created_at, closed_at)
+                     VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
+                    params![
+                        format!("bank:run:{run_id}"),
+                        run_id.to_string(),
+                        format!("Run {run_id}"),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                if bank_id.starts_with("bank:run:") {
                     connection.execute(
                         "INSERT OR IGNORE INTO memory_banks
                          (id, kind, scope_id, run_id, parent_bank_id, display_name,
                           rev, created_at, closed_at)
                          VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
-                        params![bank_id, run_id.to_string(), format!("Run {run_id}"), Timestamp::now().as_str()],
+                        params![
+                            bank_id,
+                            run_id.to_string(),
+                            format!("Run {run_id}"),
+                            Timestamp::now().as_str()
+                        ],
                     )?;
-                    bank_id
+                } else if bank_id.starts_with("bank:hive:") {
+                    connection.execute(
+                        "INSERT OR IGNORE INTO memory_banks
+                         (id, kind, scope_id, run_id, parent_bank_id, display_name,
+                          rev, created_at, closed_at)
+                         VALUES (?1, 'run', ?2, ?3, 'bank:global:default', ?4, 0, ?5, NULL)",
+                        params![
+                            format!("bank:run:{run_id}"),
+                            run_id.to_string(),
+                            run_id.to_string(),
+                            format!("Run {run_id}"),
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                    connection.execute(
+                        "INSERT OR IGNORE INTO memory_banks
+                         (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+                          display_name, rev, created_at, closed_at)
+                         VALUES (?1, 'hive', ?2, ?3, ?2, ?4, ?5, 0, ?6, NULL)",
+                        params![
+                            bank_id,
+                            task_id.to_string(),
+                            run_id.to_string(),
+                            format!("bank:run:{run_id}"),
+                            format!("Hive {task_id}"),
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
                 } else {
-                    let run_bank = format!("bank:run:{run_id}");
                     connection.execute(
                         "INSERT OR IGNORE INTO memory_banks
                          (id, kind, scope_id, run_id, parent_bank_id, display_name,
                           rev, created_at, closed_at)
-                         VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
-                        params![run_bank, run_id.to_string(), format!("Run {run_id}"), Timestamp::now().as_str()],
+                         VALUES (?1, 'run', ?2, ?3, 'bank:global:default', ?4, 0, ?5, NULL)",
+                        params![
+                            format!("bank:run:{run_id}"),
+                            run_id.to_string(),
+                            run_id.to_string(),
+                            format!("Run {run_id}"),
+                            Timestamp::now().as_str()
+                        ],
                     )?;
-                    let bank_id = format!("bank:branch:{task_id}");
                     connection.execute(
                         "INSERT OR IGNORE INTO memory_banks
                          (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
@@ -1214,13 +1272,12 @@ impl RunStore {
                             bank_id,
                             task_id.to_string(),
                             run_id.to_string(),
-                            run_bank,
+                            format!("bank:run:{run_id}"),
                             format!("Task {task_id}"),
                             Timestamp::now().as_str()
                         ],
                     )?;
-                    bank_id
-                };
+                }
                 connection.execute(
                     "DELETE FROM memory_entries WHERE bank_id = ?1 AND entry_key = ?2 AND status = 'active'",
                     params![bank_id, key],
@@ -1831,19 +1888,22 @@ impl RunStore {
         let run_bank = format!("bank:run:{run_id}");
         self.db
             .with_connection(|connection| {
+                let hive_bank = nearest_hive_bank(connection, Some(task_id))?
+                    .unwrap_or_else(|| "bank:hive:none".to_owned());
                 let mut statement = connection.prepare(
                     "SELECT id, bank_id, entry_key, value FROM memory_entries
                      WHERE status = 'active'
                        AND (trust IN ('unverified','verified','authoritative')
                             OR (trust IS NULL AND kind = 'note'))
-                       AND bank_id IN (?1, ?2, ?3)
-                     ORDER BY created_at DESC, id DESC LIMIT ?4",
+                       AND bank_id IN (?1, ?2, ?3, ?4)
+                     ORDER BY created_at DESC, id DESC LIMIT ?5",
                 )?;
                 let rows = statement.query_map(
                     params![
                         run_bank,
                         parent_bank,
                         task_bank,
+                        hive_bank,
                         i64::try_from(limit).unwrap_or(i64::MAX)
                     ],
                     |row| {
@@ -1861,6 +1921,22 @@ impl RunStore {
                 }
                 Ok(entries)
             })
+            .map_err(map)
+    }
+
+    /// Returns the bounded run/hive summary set used by the HyperAgent control
+    /// turn. Values are intentionally returned for summaries; callers must
+    /// truncate them and never expose sibling branch raw entries.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_hyper_summary(
+        &self,
+        run_id: RunId,
+        limit: usize,
+    ) -> Result<Vec<MemoryReadEntry>, Refusal> {
+        self.db
+            .with_connection(|connection| hyper_summary_rows(connection, run_id, limit))
             .map_err(map)
     }
 
@@ -2248,6 +2324,137 @@ impl RunStore {
         }
         Ok(run_id.parse().ok())
     }
+}
+
+/// Creates the run/hive/branch bank row for a task inside its insert
+/// transaction. The v13 identity trigger has already filled `class`; a missing
+/// identity is left alone rather than guessed.
+fn ensure_bank_for_inserted_task(
+    connection: &rusqlite::Connection,
+    task: &TaskRecord,
+) -> rusqlite::Result<()> {
+    let class: Option<String> = connection
+        .query_row(
+            "SELECT class FROM tasks WHERE id = ?1",
+            params![task.id.to_string()],
+            |row| row.get(0),
+        )
+        .optional()?
+        .flatten();
+    let Some(class) = class else {
+        return Ok(());
+    };
+    let run_bank = format!("bank:run:{}", task.run_id);
+    let now = Timestamp::now().as_str().to_owned();
+    connection.execute(
+        "INSERT OR IGNORE INTO memory_banks
+         (id, kind, scope_id, run_id, parent_bank_id, display_name, rev, created_at, closed_at)
+         VALUES (?1, 'run', ?2, ?2, 'bank:global:default', ?3, 0, ?4, NULL)",
+        params![run_bank, task.run_id.to_string(), format!("Run {}", task.run_id), now],
+    )?;
+    match class.as_str() {
+        "super" => {
+            connection.execute(
+                "INSERT OR IGNORE INTO memory_banks
+                 (id, kind, scope_id, run_id, owner_task_id, parent_bank_id, display_name,
+                  rev, created_at, closed_at)
+                 VALUES (?1, 'hive', ?2, ?3, ?2, ?4, ?5, 0, ?6, NULL)",
+                params![
+                    format!("bank:hive:{}", task.id),
+                    task.id.to_string(),
+                    task.run_id.to_string(),
+                    run_bank,
+                    format!("Hive {}", task.id),
+                    now
+                ],
+            )?;
+        }
+        "agent" | "subagent" => {
+            let parent_bank = nearest_hive_bank(connection, task.parent_task_id)?
+                .unwrap_or_else(|| run_bank.clone());
+            connection.execute(
+                "INSERT OR IGNORE INTO memory_banks
+                 (id, kind, scope_id, run_id, owner_task_id, parent_bank_id, display_name,
+                  rev, created_at, closed_at)
+                 VALUES (?1, 'branch', ?2, ?3, ?2, ?4, ?5, 0, ?6, NULL)",
+                params![
+                    format!("bank:branch:{}", task.id),
+                    task.id.to_string(),
+                    task.run_id.to_string(),
+                    parent_bank,
+                    format!("Task {}", task.id),
+                    now
+                ],
+            )?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Finds the nearest ancestor SuperAgent hive bank for an Agent/Subagent.
+fn nearest_hive_bank(
+    connection: &rusqlite::Connection,
+    mut cursor: Option<TaskId>,
+) -> rusqlite::Result<Option<String>> {
+    for _ in 0..=8u8 {
+        let Some(task_id) = cursor else {
+            return Ok(None);
+        };
+        let row: Option<(Option<String>, Option<String>)> = connection
+            .query_row(
+                "SELECT class, parent_task_id FROM tasks WHERE id = ?1",
+                params![task_id.to_string()],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        let Some((class, parent)) = row else {
+            return Ok(None);
+        };
+        if class.as_deref() == Some("super") {
+            return Ok(Some(format!("bank:hive:{task_id}")));
+        }
+        if class.as_deref() == Some("hyper") {
+            return Ok(None);
+        }
+        cursor = parent.and_then(|parent| parent.parse::<TaskId>().ok());
+    }
+    Ok(None)
+}
+
+/// The engine's bounded HyperAgent summary projection: run/hive entries only,
+/// newest first, never a raw sibling bank.
+fn hyper_summary_rows(
+    connection: &rusqlite::Connection,
+    run_id: RunId,
+    limit: usize,
+) -> rusqlite::Result<Vec<MemoryReadEntry>> {
+    let mut statement = connection.prepare(
+        "SELECT e.id, e.bank_id, e.entry_key, e.value
+         FROM memory_entries e
+         JOIN memory_banks b ON b.id = e.bank_id
+         WHERE b.run_id = ?1 AND b.kind IN ('run','hive')
+           AND e.status = 'active'
+           AND (e.trust IN ('unverified','verified','authoritative')
+                OR (e.trust IS NULL AND e.kind = 'note'))
+         ORDER BY e.created_at DESC, e.id DESC LIMIT ?2",
+    )?;
+    let rows = statement.query_map(
+        params![run_id.to_string(), i64::try_from(limit).unwrap_or(i64::MAX)],
+        |row| {
+            Ok(MemoryReadEntry {
+                entry_id: row.get(0)?,
+                bank_id: row.get(1)?,
+                key: row.get(2)?,
+                value: row.get(3)?,
+            })
+        },
+    )?;
+    let mut entries = Vec::new();
+    for row in rows {
+        entries.push(row?);
+    }
+    Ok(entries)
 }
 
 fn row_to_run(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {

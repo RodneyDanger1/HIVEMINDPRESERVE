@@ -76,6 +76,8 @@ pub enum AgentTier {
     SuperAgent,
     /// Executes one task.
     WorkerAgent,
+    /// Temporary bounded child; may not spawn or mutate the workspace.
+    Subagent,
     /// Invokes approved tools for a task.
     ToolAgent,
 }
@@ -88,6 +90,7 @@ impl AgentTier {
             AgentTier::HyperAgent => "hyper_agent",
             AgentTier::SuperAgent => "super_agent",
             AgentTier::WorkerAgent => "worker_agent",
+            AgentTier::Subagent => "subagent",
             AgentTier::ToolAgent => "tool_agent",
         }
     }
@@ -422,6 +425,16 @@ impl ToolRegistry {
             ],
         );
         allowlists.insert(
+            AgentTier::Subagent,
+            vec![
+                ToolId::AskParent,
+                ToolId::ReportResult,
+                ToolId::Finish,
+                ToolId::FileRead,
+                ToolId::FileList,
+            ],
+        );
+        allowlists.insert(
             AgentTier::ToolAgent,
             vec![
                 ToolId::FileRead,
@@ -573,6 +586,11 @@ mod tests {
         assert!(!registry.is_allowed(AgentTier::HyperAgent, ToolId::FileWrite));
         assert!(registry.is_allowed(AgentTier::WorkerAgent, ToolId::ShellExec));
         assert!(!registry.is_allowed(AgentTier::ToolAgent, ToolId::SpawnAgent));
+        assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::SpawnAgent));
+        assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::FileWrite));
+        assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::ShellExec));
+        assert!(registry.is_allowed(AgentTier::Subagent, ToolId::AskParent));
+        assert!(registry.is_allowed(AgentTier::Subagent, ToolId::FileRead));
 
         let error = registry
             .resolve(AgentTier::HyperAgent, ToolId::ShellExec)
