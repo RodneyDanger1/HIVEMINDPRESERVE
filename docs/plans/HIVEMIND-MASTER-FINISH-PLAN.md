@@ -432,3 +432,10 @@ Not delivered and must not be claimed:
 - `AgentRosterPanel` reads `/api/agents/runs/{run_id}/roster` and displays task id, class, rank, role, profile, ownership mode and scope; no client inference.
 - Mounted in the Agents panel; typecheck/build pass.
 - GitNexus detect-changes reports `AgentsPanel` at **low** risk (tool exit 1 despite output); no broader clean claim.
+### Round 77 audit
+
+- Full offline gate: cargo 550 passed / 0 failed / 2 ignored across 43 suites; web typecheck 0; web tests 189/189; build 0.
+- Stub sweep over 10 changed files: zero hits.
+- Release rehearsal still refuses with `E_RELEASE_TAG_MISSING` for `hivemind-1.2.0-dev`; tag creation is an owner action, so no sealed artifact exists.
+- Not claimed: full HMARS completion, remote/daemon, measured 50–150/300–600 scale, browser/e2e UI, live provider behavior, sealed release.
+- Receipt: `docs/evidence/audit-r77-offline.json`. Goal remains active.

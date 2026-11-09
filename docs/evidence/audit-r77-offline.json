@@ -1,0 +1,37 @@
+﻿{
+    "round":  77,
+    "commit":  "8dac4d432b7ec6cdd344970c620e45bce5719718",
+    "captured_at":  "2026-11-08T19:43:24.8942841-06:00",
+    "cargo":  {
+                  "ignored":  2,
+                  "suites":  43,
+                  "exit":  0,
+                  "failed":  0,
+                  "passed":  550
+              },
+    "web":  {
+                "tests":  189,
+                "build":  0,
+                "typecheck":  0
+            },
+    "stub_sweep":  {
+                       "hits":  0,
+                       "files":  10
+                   },
+    "release":  {
+                    "blocker":  "E_RELEASE_TAG_MISSING",
+                    "command":  "tools/build-release.ps1 -DryRun",
+                    "note":  "tag creation is owner action; no artifact produced",
+                    "tag":  "hivemind-1.2.0-dev",
+                    "exit":  2
+                },
+    "not_claimed":  [
+                        "full HMARS completion",
+                        "remote/daemon",
+                        "measured 50-150/300-600 scale",
+                        "browser/e2e UI",
+                        "live provider behavior",
+                        "sealed release"
+                    ],
+    "goal_status":  "active"
+}
