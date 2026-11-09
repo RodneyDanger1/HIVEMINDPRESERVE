@@ -593,6 +593,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/daemons/{daemon_id}", get(daemon_detail))
         .route("/api/daemons/{daemon_id}/switch", post(daemon_switch))
         .route("/api/daemons/{daemon_id}/retire", post(daemon_retire))
+        .route("/api/daemons/{daemon_id}/reports", get(daemon_reports))
         .route("/api/supervisor", get(supervisor_status))
         .route("/api/devices/{device_id}", get(remote_device_get))
         .route("/api/devices/{device_id}/actions", post(remote_action_create))
@@ -2060,6 +2061,30 @@ async fn daemon_retire(
         )
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
+}
+
+async fn daemon_reports(
+    State(state): State<Arc<AppState>>,
+    Path(daemon_id): Path<String>,
+) -> Response {
+    match state.daemons.reports(&daemon_id, 50) {
+        Ok(reports) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "daemon_id": daemon_id,
+                "count": reports.len(),
+                "reports": reports.into_iter().map(|report| serde_json::json!({
+                    "report_id": report.report_id,
+                    "outcome": report.outcome,
+                    "detail": serde_json::from_str::<serde_json::Value>(&report.detail_json)
+                        .unwrap_or(serde_json::Value::Null),
+                    "created_at": report.created_at,
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }
 

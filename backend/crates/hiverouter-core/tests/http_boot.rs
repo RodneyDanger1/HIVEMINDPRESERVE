@@ -983,6 +983,15 @@ async fn daemon_lifecycle_is_durable_and_not_a_task() {
         serde_json::from_str::<Value>(&body).expect("switched")["state"],
         "running"
     );
+    let ticked = server.state.daemons.tick_due(8).expect("daemon tick");
+    assert_eq!(ticked, 1);
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/daemons/{daemon_id}/reports"),
+    )
+    .await;
+    assert_eq!(status, 200, "reports: {body}");
+    assert_eq!(serde_json::from_str::<Value>(&body).expect("reports JSON")["count"], 1);
     let (status, body) = http_get(server.addr, "/api/daemons").await;
     assert_eq!(status, 200, "daemon list: {body}");
     assert_eq!(serde_json::from_str::<Value>(&body).expect("list")["count"], 1);

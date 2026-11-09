@@ -40,6 +40,7 @@ export function DaemonPanel() {
   const [interval, setInterval] = useState('60');
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [reports, setReports] = useState<Readonly<Record<string, readonly { outcome: string; created_at: string }[]>>>({});
 
   const load = useCallback(async (): Promise<void> => {
     setStatus('loading');
@@ -142,6 +143,35 @@ export function DaemonPanel() {
     }
   };
 
+  const loadReports = async (daemon: DaemonRow): Promise<void> => {
+    if (reports[daemon.daemon_id]) {
+      setReports((current) => {
+        const next = { ...current };
+        delete next[daemon.daemon_id];
+        return next;
+      });
+      return;
+    }
+    try {
+      const response = await fetch(
+        `${apiBaseUrl()}/api/daemons/${encodeURIComponent(daemon.daemon_id)}/reports`,
+        { headers: { Accept: 'application/json' } },
+      );
+      if (!response.ok) throw new Error(`reports HTTP ${response.status}`);
+      const body = (await response.json()) as { reports?: unknown };
+      const rows = Array.isArray(body.reports)
+        ? body.reports.filter((raw): raw is { outcome: string; created_at: string } => {
+            if (typeof raw !== 'object' || raw === null) return false;
+            const item = raw as Record<string, unknown>;
+            return typeof item.outcome === 'string' && typeof item.created_at === 'string';
+          })
+        : [];
+      setReports((current) => ({ ...current, [daemon.daemon_id]: rows }));
+    } catch (error: unknown) {
+      setNotice(error instanceof Error ? error.message : 'reports unavailable');
+    }
+  };
+
   return (
     <section aria-label="Daemons and supervisor" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <div className="flex items-center justify-between gap-2">
@@ -217,6 +247,14 @@ export function DaemonPanel() {
               </button>
               <button
                 type="button"
+                className="type-label h-8 rounded-[var(--radius-button)] border border-hairline px-3 text-ink-800 hover:bg-honey-100 disabled:opacity-50"
+                disabled={busy}
+                onClick={() => void loadReports(daemon)}
+              >
+                Reports
+              </button>
+              <button
+                type="button"
                 className="type-label h-8 rounded-[var(--radius-button)] border border-signal px-3 text-signal hover:bg-recessed disabled:opacity-50"
                 disabled={busy}
                 onClick={() => void retire(daemon)}
@@ -224,6 +262,15 @@ export function DaemonPanel() {
                 Retire
               </button>
             </div>
+            {reports[daemon.daemon_id] ? (
+              <ul className="mt-1 space-y-0.5">
+                {reports[daemon.daemon_id].slice(0, 5).map((report, index) => (
+                  <li key={`${report.created_at}-${index}`} className="type-mono-meta text-[9px] text-meta">
+                    {report.created_at} · {report.outcome}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </li>
         ))}
       </ul>
