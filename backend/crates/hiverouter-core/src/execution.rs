@@ -3837,7 +3837,14 @@ impl RunEngine {
                             owner_kind: "hive".to_owned(),
                             owner_id: root.id.to_string(),
                             kind: kind.to_owned(),
-                            job_json: "{}".to_owned(),
+                            // The only implemented daemon job is a real DB health
+                            // check. Unknown kinds stay declarative and will report
+                            // degraded rather than fake success.
+                            job_json: if kind == "watchdog" {
+                                r#"{"check":"db"}"#.to_owned()
+                            } else {
+                                "{}".to_owned()
+                            },
                             interval_secs: interval,
                             created_by: format!("hyper:{}", root.id),
                         })?;

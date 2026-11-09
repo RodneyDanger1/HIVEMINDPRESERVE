@@ -245,7 +245,68 @@ impl DaemonStore {
                         ids.push(row?);
                     }
                 }
-                for (daemon_id, _interval, job_json) in &ids {
+                for (daemon_id, interval, job_json) in &ids {
+                    let next = Timestamp::from_unix_secs(
+                        now_secs.saturating_add(u64::try_from(*interval).unwrap_or(5)),
+                    )
+                    .as_str()
+                    .to_owned();
+                    let job: serde_json::Value =
+                        serde_json::from_str(job_json).unwrap_or(serde_json::Value::Null);
+                    let db_check = job.get("check").and_then(|value| value.as_str()) == Some("db");
+                    if db_check {
+                        let result: Result<i64, _> =
+                            tx.query_row("SELECT 1", [], |row| row.get(0));
+                        match result {
+                            Ok(_) => {
+                                tx.execute(
+                                    "UPDATE daemons SET last_tick_at = ?2, last_report_at = ?2,
+                                        next_tick_at = ?3, last_error_code = NULL
+                                     WHERE daemon_id = ?1 AND state = 'running'",
+                                    params![daemon_id, now, next],
+                                )?;
+                                tx.execute(
+                                    "INSERT INTO daemon_reports
+                                     (report_id, daemon_id, outcome, detail_json, created_at)
+                                     VALUES (?1, ?2, 'ok', ?3, ?4)",
+                                    params![
+                                        format!("report:{}", Uuid::now_v7()),
+                                        daemon_id,
+                                        serde_json::json!({"executed": true, "check": "db"})
+                                            .to_string(),
+                                        now
+                                    ],
+                                )?;
+                                continue;
+                            }
+                            Err(error) => {
+                                tx.execute(
+                                    "UPDATE daemons SET state = 'degraded', last_tick_at = ?2,
+                                        last_report_at = ?2, next_tick_at = NULL,
+                                        last_error_code = 'E_DAEMON_DB_CHECK'
+                                     WHERE daemon_id = ?1 AND state = 'running'",
+                                    params![daemon_id, now],
+                                )?;
+                                tx.execute(
+                                    "INSERT INTO daemon_reports
+                                     (report_id, daemon_id, outcome, detail_json, created_at)
+                                     VALUES (?1, ?2, 'failed', ?3, ?4)",
+                                    params![
+                                        format!("report:{}", Uuid::now_v7()),
+                                        daemon_id,
+                                        serde_json::json!({
+                                            "executed": true,
+                                            "check": "db",
+                                            "error": error.to_string(),
+                                        })
+                                        .to_string(),
+                                        now
+                                    ],
+                                )?;
+                                continue;
+                            }
+                        }
+                    }
                     let reason = if job_json.trim().is_empty() || job_json.trim() == "{}" {
                         "daemon has no executable job"
                     } else {
@@ -365,6 +426,35 @@ mod tests {
             })
             .expect("task count");
         assert_eq!(tasks, 0, "a daemon must never become a task");
+    }
+
+    #[test]
+    fn a_db_check_daemon_executes_and_reports_ok() {
+        let (store, _db) = fixture();
+        let daemon = store
+            .create(NewDaemon {
+                display_name: "Db watchdog".to_owned(),
+                owner_kind: "operator".to_owned(),
+                owner_id: "operator".to_owned(),
+                kind: "watchdog".to_owned(),
+                job_json: r#"{"check":"db"}"#.to_owned(),
+                interval_secs: 60,
+                created_by: "operator".to_owned(),
+            })
+            .expect("create");
+        store.set_enabled(&daemon.daemon_id, true).expect("start");
+        assert_eq!(store.tick_due(10).expect("tick"), 1);
+        assert_eq!(store.tick_due(10).expect("not yet due"), 0);
+        let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].outcome, "ok");
+        assert!(reports[0].detail_json.contains("\"executed\":true"));
+        let fresh = store
+            .get(&daemon.daemon_id)
+            .expect("query")
+            .expect("daemon");
+        assert_eq!(fresh.state, "running");
+        assert_eq!(fresh.last_error_code, None);
     }
 
     #[test]
