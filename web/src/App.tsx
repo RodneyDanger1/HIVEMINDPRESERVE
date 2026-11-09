@@ -21,13 +21,14 @@ import { DataPanel } from './panels/DataPanel';
 import { AgentsPanel } from './panels/AgentsPanel';
 import { ModelsPanel } from './panels/ModelsPanel';
 import { RoutingPanel } from './panels/RoutingPanel';
+import { RemotePanel } from './panels/RemotePanel';
 import { ApprovalOverlay } from './panels/ApprovalOverlay';
 import { SwarmPanel } from './panels/SwarmPanel';
 import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
 
-const NAV_SECTIONS = ['workspace', 'agents', 'data', 'models', 'routing', 'settings'] as const;
+const NAV_SECTIONS = ['workspace', 'agents', 'data', 'models', 'routing', 'remote', 'settings'] as const;
 const TAB_IDS = ['workspace', 'swarm', 'routing', 'history'] as const;
 
 function AppFrame() {
@@ -152,6 +153,8 @@ function AppFrame() {
       <ModelsPanel />
     ) : nav === 'routing' ? (
       <RoutingPanel />
+    ) : nav === 'remote' ? (
+      <RemotePanel />
     ) : nav === 'settings' ? (
       <SettingsPanel />
     ) : (

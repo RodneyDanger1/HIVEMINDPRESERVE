@@ -26,6 +26,7 @@ import { handleCanvasShortcut } from '../a11y/keyboard';
 import { useUiStore } from '../state/context';
 import { HudBadge } from '../panels/HudBadge';
 import { HiveField } from './HiveField';
+import { RemoteLane } from './RemoteLane';
 import { LAYOUT } from '../tokens/tokens';
 import { isRunActive, isTerminal } from '../state/agentState';
 import type { TaskRecord } from '../state/store';
@@ -711,6 +712,8 @@ function CanvasInner() {
           </p>
         </div>
       ) : null}
+
+      <RemoteLane />
 
       <div aria-live="polite" className="sr-only">
         {selected ? `${selected.label}: ${selected.state}` : ''}

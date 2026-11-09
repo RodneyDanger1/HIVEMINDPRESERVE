@@ -656,6 +656,138 @@ Migration {
         ALTER TABLE runs DROP COLUMN memory_journal_head;
     "#,
 },
+Migration {
+    version: 21,
+    name: "remote_control_plane",
+    up: r#"
+        CREATE TABLE remote_agents (
+            remote_id         TEXT PRIMARY KEY NOT NULL,
+            display_name      TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 120),
+            owner_kind        TEXT NOT NULL CHECK (owner_kind IN ('operator','hive','office')),
+            owner_id          TEXT NOT NULL,
+            transport_kind    TEXT NOT NULL CHECK (transport_kind IN ('in_process','lan_http','mqtt_tls','outbound_ws')),
+            adapter_kind      TEXT NOT NULL,
+            endpoint_ref      TEXT NOT NULL,
+            credential_ref    TEXT,
+            capabilities_json TEXT NOT NULL DEFAULT '[]',
+            state             TEXT NOT NULL DEFAULT 'enrolled'
+                              CHECK (state IN ('enrolled','online','degraded','offline','quarantined','revoked','retired')),
+            generation        INTEGER NOT NULL DEFAULT 1,
+            rev               INTEGER NOT NULL DEFAULT 0,
+            restart_attempts  INTEGER NOT NULL DEFAULT 0,
+            restart_window_at TEXT,
+            last_seen_at      TEXT,
+            lease_expires_at  TEXT,
+            quarantined_at    TEXT,
+            revoked_at        TEXT,
+            created_by        TEXT NOT NULL,
+            created_at        TEXT NOT NULL
+        );
+        CREATE INDEX idx_remote_state ON remote_agents(state, last_seen_at);
+        CREATE UNIQUE INDEX ux_remote_name ON remote_agents(display_name) WHERE revoked_at IS NULL;
+
+        CREATE TABLE devices (
+            device_id         TEXT PRIMARY KEY NOT NULL,
+            remote_id         TEXT NOT NULL REFERENCES remote_agents(remote_id),
+            class             TEXT NOT NULL CHECK (class IN ('light','switch','camera','cover','lock','sensor','other')),
+            name              TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+            room              TEXT,
+            adapter_ref       TEXT NOT NULL,
+            capabilities_json TEXT NOT NULL,
+            state_json        TEXT NOT NULL DEFAULT '{}',
+            state_version     INTEGER NOT NULL DEFAULT 0,
+            last_seen_at      TEXT,
+            safety_class      TEXT NOT NULL CHECK (safety_class IN ('read_only','reversible','critical')),
+            revoked_at        TEXT,
+            created_at        TEXT NOT NULL
+        );
+        CREATE INDEX idx_devices_remote ON devices(remote_id, class);
+        CREATE UNIQUE INDEX ux_device_remote_ref ON devices(remote_id, adapter_ref) WHERE revoked_at IS NULL;
+
+        CREATE TABLE remote_grants (
+            grant_id         TEXT PRIMARY KEY NOT NULL,
+            remote_id        TEXT NOT NULL REFERENCES remote_agents(remote_id),
+            device_id        TEXT NOT NULL REFERENCES devices(device_id),
+            capability_id    TEXT NOT NULL,
+            action           TEXT NOT NULL,
+            constraints_json TEXT NOT NULL DEFAULT '{}',
+            granted_by       TEXT NOT NULL,
+            granted_at       TEXT NOT NULL,
+            expires_at       TEXT,
+            revoked_at       TEXT,
+            rev              INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE UNIQUE INDEX ux_remote_grant ON remote_grants(remote_id, device_id, capability_id, action)
+            WHERE revoked_at IS NULL;
+
+        CREATE TABLE device_actions (
+            action_id          TEXT PRIMARY KEY NOT NULL,
+            remote_id          TEXT NOT NULL REFERENCES remote_agents(remote_id),
+            device_id          TEXT NOT NULL REFERENCES devices(device_id),
+            capability_id      TEXT NOT NULL,
+            action             TEXT NOT NULL,
+            params_json        TEXT NOT NULL,
+            params_sha256      TEXT NOT NULL,
+            expected_json      TEXT,
+            request_id         TEXT NOT NULL,
+            idempotency_key    TEXT NOT NULL,
+            requested_by_kind  TEXT NOT NULL CHECK (requested_by_kind IN ('operator','task','remote')),
+            requested_by_id    TEXT NOT NULL,
+            approval_nonce     TEXT,
+            approval_expires_at TEXT,
+            status             TEXT NOT NULL CHECK (status IN ('requested','awaiting_approval','approved','denied','executing','confirmed','failed','timeout','unknown','cancelled','interrupted')),
+            state_before_hash  TEXT,
+            state_after_hash   TEXT,
+            error_code         TEXT,
+            created_at         TEXT NOT NULL,
+            started_at         TEXT,
+            ended_at           TEXT,
+            UNIQUE(remote_id, device_id, idempotency_key)
+        );
+        CREATE INDEX idx_device_actions_status ON device_actions(status, created_at);
+        CREATE INDEX idx_device_actions_device ON device_actions(device_id, created_at);
+
+        CREATE TABLE remote_audit (
+            audit_id        TEXT PRIMARY KEY NOT NULL,
+            at              TEXT NOT NULL,
+            actor_kind      TEXT NOT NULL CHECK (actor_kind IN ('operator','system','remote')),
+            actor_id        TEXT NOT NULL,
+            remote_id       TEXT,
+            device_id       TEXT,
+            action          TEXT NOT NULL,
+            request_id      TEXT,
+            idempotency_key TEXT,
+            params_sha256   TEXT,
+            outcome         TEXT NOT NULL,
+            refusal_code    TEXT,
+            detail_json     TEXT NOT NULL DEFAULT '{}',
+            created_at      TEXT NOT NULL
+        );
+        CREATE INDEX idx_remote_audit_remote ON remote_audit(remote_id, at);
+        CREATE INDEX idx_remote_audit_device ON remote_audit(device_id, at);
+
+        CREATE TABLE remote_supervisor_state (
+            id              INTEGER PRIMARY KEY CHECK (id = 1),
+            lane_started_at TEXT,
+            last_tick_at    TEXT,
+            next_due_at     TEXT,
+            backoff_ms      INTEGER NOT NULL DEFAULT 0,
+            last_error_code TEXT,
+            updated_at      TEXT NOT NULL
+        );
+        INSERT INTO remote_supervisor_state
+            (id, lane_started_at, last_tick_at, next_due_at, backoff_ms, last_error_code, updated_at)
+        VALUES (1, NULL, NULL, NULL, 0, NULL, '1970-01-01T00:00:00Z');
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS remote_supervisor_state;
+        DROP TABLE IF EXISTS remote_audit;
+        DROP TABLE IF EXISTS device_actions;
+        DROP TABLE IF EXISTS remote_grants;
+        DROP TABLE IF EXISTS devices;
+        DROP TABLE IF EXISTS remote_agents;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -1270,10 +1402,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 20);
-        assert_eq!(database.migrate().expect("second migrate"), 20);
+        assert_eq!(database.migrate().expect("first migrate"), 21);
+        assert_eq!(database.migrate().expect("second migrate"), 21);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 20);
+        assert_eq!(applied.len(), 21);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1310,7 +1442,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 20);
+        assert_eq!(database.migrate().expect("re-migrate"), 21);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1326,7 +1458,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 20);
+        assert_eq!(reopened.schema_version().expect("version"), 21);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1481,7 +1613,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 20);
+        assert_eq!(database.migrate().expect("migrate"), 21);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1516,7 +1648,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 20);
+        assert_eq!(database.migrate().expect("re-migrate"), 21);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1540,7 +1672,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (21, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (22, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1550,12 +1682,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 21,
-                latest: 20
+                current: 22,
+                latest: 21
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 21);
+        assert_eq!(database.schema_version().expect("version"), 22);
     }
 
     #[test]

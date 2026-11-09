@@ -12,6 +12,7 @@ const ITEMS: ReadonlyArray<{ id: NavSection; label: string }> = [
   { id: 'data', label: STRINGS.nav.data },
   { id: 'models', label: STRINGS.nav.models },
   { id: 'routing', label: STRINGS.nav.routing },
+  { id: 'remote', label: STRINGS.nav.remote },
   { id: 'settings', label: STRINGS.nav.settings },
 ];
 

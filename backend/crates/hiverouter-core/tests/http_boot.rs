@@ -583,7 +583,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
-    assert_eq!(health["database"]["schema_version"], 20);
+    assert_eq!(health["database"]["schema_version"], 21);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -729,6 +729,178 @@ async fn run_scoped_memory_route_exposes_branch_rows() {
     )
     .await;
     assert_eq!(status, 400, "unknown message kind must be rejected");
+}
+
+#[tokio::test]
+async fn remote_fixture_light_and_garage_actions_are_audited() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let token = server.state.session.token();
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        "/api/remotes",
+        Some(&serde_json::json!({
+            "display_name": "Fixture remote",
+            "transport_kind": "in_process"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "remote create: {body}");
+    let remote: Value = serde_json::from_str(&body).expect("remote JSON");
+    let remote_id = remote["remote_id"].as_str().expect("remote id").to_owned();
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/remotes/{remote_id}/devices"),
+        Some(&serde_json::json!({
+            "class": "light",
+            "name": "Study light",
+            "safety_class": "reversible"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "device create: {body}");
+    let device: Value = serde_json::from_str(&body).expect("device JSON");
+    let light_id = device["device_id"].as_str().expect("device id").to_owned();
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/remotes/{remote_id}/grants"),
+        Some(&serde_json::json!({
+            "device_id": light_id,
+            "capability_id": "power",
+            "action": "toggle"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "grant create: {body}");
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/devices/{light_id}/actions"),
+        Some(&serde_json::json!({
+            "capability_id": "power",
+            "action": "toggle",
+            "idempotency_key": "fixture-light-1"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "light action: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("action JSON")["status"],
+        "confirmed"
+    );
+    let (status, body) = http_get(server.addr, &format!("/api/devices/{light_id}")).await;
+    assert_eq!(status, 200, "device get: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("device JSON")["state"]["power"],
+        "on"
+    );
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/remotes/{remote_id}/devices"),
+        Some(&serde_json::json!({
+            "class": "cover",
+            "name": "Garage",
+            "safety_class": "critical"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "garage create: {body}");
+    let garage_id = serde_json::from_str::<Value>(&body).expect("garage JSON")["device_id"]
+        .as_str()
+        .expect("garage id")
+        .to_owned();
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/remotes/{remote_id}/grants"),
+        Some(&serde_json::json!({
+            "device_id": garage_id,
+            "capability_id": "power",
+            "action": "open"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "garage grant: {body}");
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/devices/{garage_id}/actions"),
+        Some(&serde_json::json!({
+            "capability_id": "power",
+            "action": "open",
+            "idempotency_key": "fixture-garage-1"
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "garage action: {body}");
+    let pending: Value = serde_json::from_str(&body).expect("garage action JSON");
+    assert_eq!(pending["status"], "awaiting_approval");
+    let action_id = pending["action_id"].as_str().expect("action id").to_owned();
+    let nonce = pending["approval_nonce"].as_str().expect("nonce").to_owned();
+
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/device-actions/{action_id}/resolve"),
+        Some(&serde_json::json!({ "nonce": nonce, "decision": "approve" }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "resolve: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("resolved JSON")["status"],
+        "confirmed"
+    );
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/device-actions/{action_id}/resolve"),
+        Some(&serde_json::json!({ "nonce": nonce, "decision": "approve" }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 409, "replay must be refused: {body}");
+    assert!(body.contains("E_DEVICE_APPROVAL_INVALID"), "{body}");
+
+    let (status, body) = http_get(server.addr, "/api/remotes").await;
+    assert_eq!(status, 200, "remote list: {body}");
+    assert_eq!(serde_json::from_str::<Value>(&body).expect("list JSON")["count"], 1);
+    let (status, body) = http_get(server.addr, &format!("/api/remotes/{remote_id}")).await;
+    assert_eq!(status, 200, "remote detail: {body}");
+    let detail: Value = serde_json::from_str(&body).expect("detail JSON");
+    assert_eq!(detail["devices"].as_array().expect("devices").len(), 2);
+    assert!(detail["audit"].as_array().expect("audit").len() >= 4);
+}
+
+#[tokio::test]
+async fn remote_create_without_token_is_refused() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        "/api/remotes",
+        Some(&serde_json::json!({"display_name": "No token"}).to_string()),
+        None,
+    )
+    .await;
+    assert_eq!(status, 401, "tokenless create: {body}");
 }
 
 #[tokio::test]

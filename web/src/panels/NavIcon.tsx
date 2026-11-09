@@ -21,6 +21,9 @@ export function NavIcon({ id, active }: { readonly id: NavSection; readonly acti
       {id === 'routing' ? (
         <path {...common} d="M6 4v5a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v5 M6 20v-3 M18 4v3 M4 2l2 2-2 2 M16 18l2 2 2-2" />
       ) : null}
+      {id === 'remote' ? (
+        <path {...common} d="M12 4v16 M5 17a7 7 0 0 1 14 0 M3 20h18 M8 7a5 5 0 0 1 8 0" />
+      ) : null}
       {id === 'settings' ? (
         <path {...common} d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Z M12 2.8v2.4 M12 18.8v2.4 M4.5 4.5l1.7 1.7 M17.8 17.8l1.7 1.7 M2.8 12h2.4 M18.8 12h2.4 M4.5 19.5l1.7-1.7 M17.8 6.2l1.7-1.7" />
       ) : null}

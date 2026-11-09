@@ -41,6 +41,8 @@ describe('HiveMind spatial design parity pins', () => {
       '/panels/AgentRosterPanel.tsx',
       '/panels/MemoryBanksPanel.tsx',
       '/panels/ConfirmDialog.tsx',
+      '/panels/RemotePanel.tsx',
+      '/flow/RemoteLane.tsx',
     ]) {
       const source = sourceOf(suffix);
       expect(source, suffix).toMatch(/surface-panel|border-hairline/);
@@ -60,6 +62,7 @@ describe('HiveMind spatial design parity pins', () => {
     expect(hive).toContain('honeycomb-ripple');
     expect(settings).toContain('SHORTCUTS');
     expect(sourceOf('/panels/RunDetailPanel.tsx')).toContain('StateBar');
+    expect(sourceOf('/panels/NavRail.tsx')).toContain("id: 'remote'");
   });
 
   it('has no user-facing HiveRouter or mojibake in the UI source', () => {

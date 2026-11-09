@@ -30,6 +30,9 @@ use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
 use crate::prompts::{load_personas_embedded, Persona, TemplateRegistry};
 use crate::provider_executor::ProviderExecutorAdapter;
+use crate::remote::{
+    Device, DeviceAction, NewDevice, NewGrant, NewRemote, RemoteAgent, RemoteAudit, RemoteGrant,
+};
 use crate::snapshot::SnapshotStore;
 use crate::tools_bridge::ToolsBridge;
 use crate::ws::{refusal_response, SessionAuth, ws_handler};
@@ -55,6 +58,8 @@ pub struct AppState {
     pub session: Arc<SessionAuth>,
     /// Run lifecycle engine.
     pub engine: Arc<RunEngine>,
+    /// Remote control plane (tree-free principals, devices, actions).
+    pub remote: Arc<crate::remote::RemoteStore>,
     /// History / time-travel read model.
     pub history: Arc<HistoryReadModel>,
     /// Wired tools capabilities (settings, jailed files, approvals, diagnose).
@@ -355,6 +360,7 @@ impl AppState {
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -366,6 +372,7 @@ impl AppState {
             graph,
             session,
             engine,
+            remote,
             history,
             tools,
             prompt_assets_error,
@@ -400,6 +407,7 @@ impl AppState {
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -411,6 +419,7 @@ impl AppState {
             graph,
             session,
             engine,
+            remote,
             history,
             tools,
             prompt_assets_error,
@@ -437,6 +446,7 @@ impl AppState {
         let tools = build_tools(&db, &config);
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), Vec::new(), snapshots.clone(), tools.clone(), false);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
+        let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         Self {
             db,
             checks,
@@ -447,6 +457,7 @@ impl AppState {
             graph,
             session,
             engine,
+            remote,
             history,
             tools,
             prompt_assets_error: None,
@@ -553,6 +564,21 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/memory/journal", get(memory_journal))
         .route("/api/memory/journal/verify", get(verify_memory_journal))
         .route("/api/a2a/pending", get(a2a_pending))
+        .route("/api/remotes", get(remote_list).post(remote_create))
+        .route("/api/remotes/{remote_id}", get(remote_detail))
+        .route("/api/remotes/{remote_id}/revoke", post(remote_revoke))
+        .route(
+            "/api/remotes/{remote_id}/devices",
+            post(remote_device_create),
+        )
+        .route("/api/remotes/{remote_id}/grants", post(remote_grant_create))
+        .route("/api/remotes/{remote_id}/audit", get(remote_audit_list))
+        .route("/api/devices/{device_id}", get(remote_device_get))
+        .route("/api/devices/{device_id}/actions", post(remote_action_create))
+        .route(
+            "/api/device-actions/{action_id}/resolve",
+            post(remote_action_resolve),
+        )
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
         .route("/api/workspace", get(workspace))
@@ -1486,6 +1512,390 @@ async fn verify_memory_journal(
         )
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+fn remote_json(remote: &RemoteAgent) -> serde_json::Value {
+    serde_json::json!({
+        "remote_id": remote.remote_id,
+        "display_name": remote.display_name,
+        "owner_kind": remote.owner_kind,
+        "owner_id": remote.owner_id,
+        "transport_kind": remote.transport_kind,
+        "adapter_kind": remote.adapter_kind,
+        "state": remote.state,
+        "rev": remote.rev,
+        "last_seen_at": remote.last_seen_at,
+        "lease_expires_at": remote.lease_expires_at,
+        "revoked_at": remote.revoked_at,
+        "created_at": remote.created_at,
+    })
+}
+
+fn device_json(device: &Device) -> serde_json::Value {
+    let state: serde_json::Value =
+        serde_json::from_str(&device.state_json).unwrap_or(serde_json::Value::Null);
+    serde_json::json!({
+        "device_id": device.device_id,
+        "remote_id": device.remote_id,
+        "class": device.class,
+        "name": device.name,
+        "room": device.room,
+        "capabilities": serde_json::from_str::<serde_json::Value>(&device.capabilities_json)
+            .unwrap_or(serde_json::Value::Null),
+        "state": state,
+        "state_version": device.state_version,
+        "last_seen_at": device.last_seen_at,
+        "safety_class": device.safety_class,
+        "revoked_at": device.revoked_at,
+    })
+}
+
+fn grant_json(grant: &RemoteGrant) -> serde_json::Value {
+    serde_json::json!({
+        "grant_id": grant.grant_id,
+        "remote_id": grant.remote_id,
+        "device_id": grant.device_id,
+        "capability_id": grant.capability_id,
+        "action": grant.action,
+        "granted_at": grant.granted_at,
+        "expires_at": grant.expires_at,
+        "revoked_at": grant.revoked_at,
+    })
+}
+
+fn action_json(action: &DeviceAction) -> serde_json::Value {
+    serde_json::json!({
+        "action_id": action.action_id,
+        "remote_id": action.remote_id,
+        "device_id": action.device_id,
+        "capability_id": action.capability_id,
+        "action": action.action,
+        "status": action.status,
+        "requested_by_kind": action.requested_by_kind,
+        "approval_nonce": action.approval_nonce,
+        "approval_expires_at": action.approval_expires_at,
+        "error_code": action.error_code,
+        "created_at": action.created_at,
+        "started_at": action.started_at,
+        "ended_at": action.ended_at,
+    })
+}
+
+fn audit_json(audit: &RemoteAudit) -> serde_json::Value {
+    serde_json::json!({
+        "at": audit.at,
+        "actor_kind": audit.actor_kind,
+        "actor_id": audit.actor_id,
+        "remote_id": audit.remote_id,
+        "device_id": audit.device_id,
+        "action": audit.action,
+        "request_id": audit.request_id,
+        "outcome": audit.outcome,
+        "refusal_code": audit.refusal_code,
+    })
+}
+
+fn remote_refusal_response(refusal: &Refusal) -> Response {
+    let status = match refusal {
+        Refusal::RemoteUnknown | Refusal::DeviceUnknown => StatusCode::NOT_FOUND,
+        Refusal::RemoteCapability => StatusCode::FORBIDDEN,
+        Refusal::RemoteOffline
+        | Refusal::DeviceStateStale
+        | Refusal::DeviceActionInFlight
+        | Refusal::DeviceApprovalRequired
+        | Refusal::DeviceApprovalInvalid => StatusCode::CONFLICT,
+        Refusal::SchemaInvalid | Refusal::RemoteTransport => StatusCode::BAD_REQUEST,
+        _ => StatusCode::SERVICE_UNAVAILABLE,
+    };
+    refusal_response(status, refusal)
+}
+
+/// `GET /api/remotes` — remote roster with device counts and latest health.
+async fn remote_list(State(state): State<Arc<AppState>>) -> Response {
+    let remotes = match state.remote.list_remotes() {
+        Ok(remotes) => remotes,
+        Err(refusal) => return remote_refusal_response(&refusal),
+    };
+    let mut cards = Vec::with_capacity(remotes.len());
+    for remote in remotes {
+        let devices = state.remote.list_devices(&remote.remote_id).unwrap_or_default();
+        let grants = state.remote.list_grants(&remote.remote_id).unwrap_or_default();
+        let audit = state.remote.list_audit(Some(&remote.remote_id), 1).unwrap_or_default();
+        cards.push(serde_json::json!({
+            "remote": remote_json(&remote),
+            "device_count": devices.len(),
+            "grant_count": grants.len(),
+            "last_audit": audit.first().map(audit_json),
+        }));
+    }
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({ "remotes": cards, "count": cards.len() })),
+    )
+        .into_response()
+}
+
+/// `POST /api/remotes` — create a tree-free fixture principal.
+async fn remote_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(display_name) = body.get("display_name").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(display_name) = (!display_name.trim().is_empty()).then_some(display_name) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let owner_kind = body
+        .get("owner_kind")
+        .and_then(|value| value.as_str())
+        .unwrap_or("operator");
+    let owner_id = body
+        .get("owner_id")
+        .and_then(|value| value.as_str())
+        .unwrap_or("operator");
+    let transport_kind = body
+        .get("transport_kind")
+        .and_then(|value| value.as_str())
+        .unwrap_or("in_process");
+    let adapter_kind = body
+        .get("adapter_kind")
+        .and_then(|value| value.as_str())
+        .unwrap_or("fixture");
+    let endpoint_ref = body
+        .get("endpoint_ref")
+        .and_then(|value| value.as_str())
+        .unwrap_or("fixture");
+    match state.remote.create_remote(NewRemote {
+        display_name: display_name.to_owned(),
+        owner_kind: owner_kind.to_owned(),
+        owner_id: owner_id.to_owned(),
+        transport_kind: transport_kind.to_owned(),
+        adapter_kind: adapter_kind.to_owned(),
+        endpoint_ref: endpoint_ref.to_owned(),
+        credential_ref: None,
+        capabilities_json: "[]".to_owned(),
+    }) {
+        Ok(remote) => (StatusCode::CREATED, Json(remote_json(&remote))).into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `POST /api/remotes/{remote_id}/revoke` — revoke a remote principal.
+async fn remote_revoke(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+) -> Response {
+    match state.remote.revoke_remote(&remote_id) {
+        Ok(()) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({ "remote_id": remote_id, "state": "revoked" })),
+        )
+            .into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `GET /api/remotes/{remote_id}` — remote, devices, grants and audit.
+async fn remote_detail(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+) -> Response {
+    let remote = match state.remote.get_remote(&remote_id) {
+        Ok(Some(remote)) => remote,
+        Ok(None) => return refusal_response(StatusCode::NOT_FOUND, &Refusal::RemoteUnknown),
+        Err(refusal) => return remote_refusal_response(&refusal),
+    };
+    let devices = state.remote.list_devices(&remote_id).unwrap_or_default();
+    let grants = state.remote.list_grants(&remote_id).unwrap_or_default();
+    let audit = state.remote.list_audit(Some(&remote_id), 50).unwrap_or_default();
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "remote": remote_json(&remote),
+            "devices": devices.iter().map(device_json).collect::<Vec<_>>(),
+            "grants": grants.iter().map(grant_json).collect::<Vec<_>>(),
+            "audit": audit.iter().map(audit_json).collect::<Vec<_>>(),
+        })),
+    )
+        .into_response()
+}
+
+/// `POST /api/remotes/{remote_id}/devices` — register a fixture device.
+async fn remote_device_create(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(class) = body.get("class").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(name) = body.get("name").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let adapter_ref = body
+        .get("adapter_ref")
+        .and_then(|value| value.as_str())
+        .unwrap_or(name);
+    let capabilities = body
+        .get("capabilities")
+        .and_then(|value| value.as_str())
+        .unwrap_or(
+            r#"[{"capability_id":"power","actions":["on","off","toggle"]}]"#,
+        );
+    let safety_class = body
+        .get("safety_class")
+        .and_then(|value| value.as_str())
+        .unwrap_or_else(|| {
+            if class == "light" || class == "switch" {
+                "reversible"
+            } else {
+                "critical"
+            }
+        });
+    match state.remote.create_device(NewDevice {
+        remote_id,
+        class: class.to_owned(),
+        name: name.to_owned(),
+        room: body
+            .get("room")
+            .and_then(|value| value.as_str())
+            .map(str::to_owned),
+        adapter_ref: adapter_ref.to_owned(),
+        capabilities_json: capabilities.to_owned(),
+        safety_class: safety_class.to_owned(),
+    }) {
+        Ok(device) => (StatusCode::CREATED, Json(device_json(&device))).into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `POST /api/remotes/{remote_id}/grants` — explicit operator grant.
+async fn remote_grant_create(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(device_id) = body.get("device_id").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(capability_id) = body.get("capability_id").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(action) = body.get("action").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    match state.remote.create_grant(NewGrant {
+        remote_id,
+        device_id: device_id.to_owned(),
+        capability_id: capability_id.to_owned(),
+        action: action.to_owned(),
+        constraints_json: "{}".to_owned(),
+        expires_at: body
+            .get("expires_at")
+            .and_then(|value| value.as_str())
+            .map(str::to_owned),
+    }) {
+        Ok(grant) => (StatusCode::CREATED, Json(grant_json(&grant))).into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `GET /api/devices/{device_id}` — current normalized device state.
+async fn remote_device_get(
+    State(state): State<Arc<AppState>>,
+    Path(device_id): Path<String>,
+) -> Response {
+    match state.remote.get_device(&device_id) {
+        Ok(Some(device)) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(device_json(&device)),
+        )
+            .into_response(),
+        Ok(None) => refusal_response(StatusCode::NOT_FOUND, &Refusal::DeviceUnknown),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `POST /api/devices/{device_id}/actions` — request one fixture action.
+async fn remote_action_create(
+    State(state): State<Arc<AppState>>,
+    Path(device_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let capability_id = body
+        .get("capability_id")
+        .and_then(|value| value.as_str())
+        .unwrap_or("power");
+    let Some(action) = body.get("action").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let idempotency_key = body
+        .get("idempotency_key")
+        .and_then(|value| value.as_str())
+        .filter(|value| !value.is_empty())
+        .map_or_else(|| format!("action:{}", Uuid::now_v7()), str::to_owned);
+    match state.remote.request_action(
+        &device_id,
+        capability_id,
+        action,
+        body.get("params").unwrap_or(&serde_json::Value::Null),
+        body.get("expected"),
+        &idempotency_key,
+        "operator",
+        "operator",
+    ) {
+        Ok(action) => (StatusCode::OK, Json(action_json(&action))).into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `POST /api/device-actions/{action_id}/resolve` — approve/deny a critical action.
+async fn remote_action_resolve(
+    State(state): State<Arc<AppState>>,
+    Path(action_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(nonce) = body.get("nonce").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::DeviceApprovalInvalid);
+    };
+    let Some(decision) = body.get("decision").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::DeviceApprovalInvalid);
+    };
+    if decision != "approve" && decision != "deny" {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::DeviceApprovalInvalid);
+    }
+    match state
+        .remote
+        .resolve_action(&action_id, nonce, decision == "approve", "operator")
+    {
+        Ok(action) => (StatusCode::OK, Json(action_json(&action))).into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+/// `GET /api/remotes/{remote_id}/audit` — redacted remote audit.
+async fn remote_audit_list(
+    State(state): State<Arc<AppState>>,
+    Path(remote_id): Path<String>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let limit = query
+        .get("limit")
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(100)
+        .clamp(1, 200);
+    match state.remote.list_audit(Some(&remote_id), limit) {
+        Ok(audit) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "remote_id": remote_id,
+                "audit": audit.iter().map(audit_json).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => remote_refusal_response(&refusal),
     }
 }
 

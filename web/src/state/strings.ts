@@ -25,6 +25,7 @@ export const STRINGS = {
     data: 'Data',
     models: 'Models',
     routing: 'Routing',
+    remote: 'Remote',
     settings: 'Settings',
   },
   tabs: {
@@ -207,6 +208,7 @@ export const STRINGS = {
     routingEmpty: 'No edges in the current graph.',
     historyTitle: 'History',
     historyEmpty: 'No revisions yet.',
+    remoteTitle: 'Remote',
   },
   /**
    * W12 tool activity (S15/S16). Consumed by `ToolActivityPanel` (heading, empty,
@@ -398,6 +400,51 @@ export const STRINGS = {
     E_KILL_DENIED: {
       message: 'The worker cannot be killed from its current state.',
       howToFix: 'Only running workers can be killed; refresh the worker state.',
+      retryable: false,
+    },
+    E_REMOTE_UNKNOWN: {
+      message: 'The remote principal does not exist or has been retired.',
+      howToFix: 'Refresh the Remote lane and choose an enrolled fixture remote.',
+      retryable: false,
+    },
+    E_REMOTE_OFFLINE: {
+      message: 'The remote is not online; the action was not dispatched.',
+      howToFix: 'Wait for a heartbeat, then retry the action.',
+      retryable: true,
+    },
+    E_REMOTE_CAPABILITY: {
+      message: 'No grant covers this remote, device, capability and action.',
+      howToFix: 'Grant the exact action to this remote before actuating.',
+      retryable: false,
+    },
+    E_DEVICE_UNKNOWN: {
+      message: 'The device is not registered to this remote.',
+      howToFix: 'Refresh the remote device inventory.',
+      retryable: false,
+    },
+    E_DEVICE_STATE_STALE: {
+      message: 'The device state is stale or unknown.',
+      howToFix: 'Refresh the device state before acting; stale actions are refused.',
+      retryable: true,
+    },
+    E_DEVICE_ACTION_IN_FLIGHT: {
+      message: 'Another action for this device is already in flight.',
+      howToFix: 'Wait for the current result; devices are single-flight.',
+      retryable: true,
+    },
+    E_DEVICE_APPROVAL_REQUIRED: {
+      message: 'This critical device action requires operator approval.',
+      howToFix: 'Resolve the pending approval with its nonce.',
+      retryable: false,
+    },
+    E_DEVICE_APPROVAL_INVALID: {
+      message: 'The device approval is expired, replayed or mismatched.',
+      howToFix: 'Refresh the pending approval and resolve the current nonce once.',
+      retryable: false,
+    },
+    E_REMOTE_TRANSPORT: {
+      message: 'That remote transport is unavailable in this build.',
+      howToFix: 'Use the in-process fixture adapter; network adapters are not enabled.',
       retryable: false,
     },
   },

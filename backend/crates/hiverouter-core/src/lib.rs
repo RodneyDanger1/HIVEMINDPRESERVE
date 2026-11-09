@@ -1,4 +1,4 @@
-﻿//! HiveMind v1 backend core: localhost axum server, environment checks, SQLite
+//! HiveMind v1 backend core: localhost axum server, environment checks, SQLite
 //! bootstrap. Phase 1 surface only; later phases add transport, graph and stores
 //! without duplicating these owners.
 
@@ -22,6 +22,7 @@ pub mod planner;
 pub mod prompts;
 pub mod provider_executor;
 pub mod recovery;
+pub mod remote;
 pub mod run_state;
 pub mod snapshot;
 pub mod static_ui;
@@ -49,6 +50,9 @@ pub use planner::{Plan, PlanNode};
 pub use prompts::{Persona, TemplateRegistry};
 pub use provider_executor::ProviderExecutorAdapter;
 pub use recovery::{recover_on_boot, RecoveryReport};
+pub use remote::{
+    Device, DeviceAction, RemoteAgent, RemoteAudit, RemoteGrant, RemoteStore,
+};
 pub use run_state::{
     apply_run, apply_task, can_apply_run, can_apply_task, Effect, RunStateError, RunTransition,
     Scope, StateEvent, TaskTransition,
