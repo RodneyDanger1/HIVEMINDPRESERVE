@@ -423,3 +423,7 @@ Not delivered and must not be claimed:
 - `tools/build-release.ps1` now parses the crate pre-release version `1.2.0-dev` and validates only its numeric core; previously it refused with `E_RELEASE_VERSION`.
 - Rehearsal reaches `E_RELEASE_TAG_MISSING` for `hivemind-1.2.0-dev`: no annotated tag exists, and tag creation is an owner action, so no release artifact was produced.
 - No server/UI/live call was made. Release remains unverified until a tag and sealed build exist.
+### P4 prune UI
+
+- Bank inspector adds `Prune inactive`: dry-run first, then a confirmation only when inactive rows exist; receipt reports the removed count and refreshes the journal view.
+- Full gate remains 550/189; GitNexus found no symbol overlap but explicitly “not a clean tree”; no clean-impact claim.

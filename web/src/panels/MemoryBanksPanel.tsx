@@ -287,8 +287,60 @@ export function MemoryBanksPanel() {
     }
   };
 
-  const promote = async (entry: EntryRow): Promise<void> => {
-    if (!runId || !selected || !entry.trust || entry.trust === 'verified' || entry.trust === 'authoritative') {
+  const prune = async (): Promise<void> => {
+    if (!runId) {
+      return;
+    }
+    const token = storeApi.getState().session?.token;
+    if (!token) {
+      setClearReceipt('Session token unavailable; nothing pruned.');
+      return;
+    }
+    try {
+      const dry = await fetch(`${apiBaseUrl()}/api/memory/prune`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'x-hivemind-token': token,
+        },
+        body: JSON.stringify({ run_id: runId, confirm: true, dry_run: true }),
+      });
+      if (!dry.ok) {
+        const body = (await dry.json().catch(() => ({}))) as { code?: string };
+        throw new Error(body.code ?? `prune HTTP ${dry.status}`);
+      }
+      const preview = (await dry.json()) as { removed?: number };
+      const count = preview.removed ?? 0;
+      if (count === 0) {
+        setClearReceipt('No inactive entries to prune.');
+        return;
+      }
+      if (!window.confirm(`Prune ${count} inactive memory entries? Active entries are kept.`)) {
+        return;
+      }
+      const applied = await fetch(`${apiBaseUrl()}/api/memory/prune`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'x-hivemind-token': token,
+        },
+        body: JSON.stringify({ run_id: runId, confirm: true, dry_run: false }),
+      });
+      if (!applied.ok) {
+        const body = (await applied.json().catch(() => ({}))) as { code?: string };
+        throw new Error(body.code ?? `prune HTTP ${applied.status}`);
+      }
+      const receipt = (await applied.json()) as { removed?: number };
+      setClearReceipt(`Pruned ${receipt.removed ?? 0} inactive entries.`);
+      setJournalVersion((version) => version + 1);
+    } catch (error: unknown) {
+      setClearReceipt(error instanceof Error ? error.message : 'prune refused');
+    }
+  };
+
+  const promote = async (entry: EntryRow): Promise<void> => {    if (!runId || !selected || !entry.trust || entry.trust === 'verified' || entry.trust === 'authoritative') {
       return;
     }
     const token = storeApi.getState().session?.token;
@@ -328,14 +380,24 @@ export function MemoryBanksPanel() {
     <section aria-label="Memory banks" className="surface-panel mt-3 rounded-[14px] p-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="type-label text-ink-900">Memory banks</h3>
-        <button
-          type="button"
-          className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta text-signal"
-          disabled={runId === null}
-          onClick={() => void clear()}
-        >
-          Clear run memory
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta"
+            disabled={runId === null}
+            onClick={() => void prune()}
+          >
+            Prune inactive
+          </button>
+          <button
+            type="button"
+            className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta text-signal"
+            disabled={runId === null}
+            onClick={() => void clear()}
+          >
+            Clear run memory
+          </button>
+        </div>
       </div>
       {clearReceipt ? <p className="type-mono-meta mt-1 text-meta">{clearReceipt}</p> : null}
       {runId === null ? <EmptyState message="No active run to inspect." /> : null}
