@@ -1695,6 +1695,15 @@ impl RunEngine {
         self.persist_run_usage(run.id);
         self.executor.finish_run(run.id).await;
         self.clear_provider_calls(run.id);
+        if let Ok(mut metrics) = self.metrics_last.lock() {
+            metrics.remove(&run.id);
+        }
+        if let Ok(mut delivered) = self.a2a_delivered.lock() {
+            delivered.clear();
+        }
+        if let Ok(mut queue) = self.spawn_queue.lock() {
+            queue.clear();
+        }
     }
 
     async fn dispatch_inner(self: &Arc<Self>, run: &Run, token: &CancellationToken) -> Result<(), Refusal> {
