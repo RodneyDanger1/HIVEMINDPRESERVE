@@ -26,6 +26,9 @@ use tokio_util::sync::CancellationToken;
 struct ScaleExecutor {
     plan: Plan,
     calls: AtomicUsize,
+    active: AtomicUsize,
+    max_active: AtomicUsize,
+    delay_ms: u64,
 }
 
 #[async_trait]
@@ -48,6 +51,12 @@ impl ProviderExecutor for ScaleExecutor {
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         self.calls.fetch_add(1, Ordering::SeqCst);
+        let active = self.active.fetch_add(1, Ordering::SeqCst) + 1;
+        self.max_active.fetch_max(active, Ordering::SeqCst);
+        if self.delay_ms > 0 {
+            tokio::time::sleep(Duration::from_millis(self.delay_ms)).await;
+        }
+        self.active.fetch_sub(1, Ordering::SeqCst);
         let text = format!("result {}", task.id);
         on_delta(&text);
         Ok(StreamedReply {
@@ -89,6 +98,54 @@ fn plan() -> Plan {
 }
 
 #[tokio::test]
+async fn s1_parallel_baseline_measures_41_tasks_at_bound_32() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let db = Arc::new(Database::open(&temp.path().join("scale-s1p.db")).expect("db"));
+    db.migrate().expect("migrate");
+    let executor = Arc::new(ScaleExecutor {
+        plan: plan(),
+        calls: AtomicUsize::new(0),
+        active: AtomicUsize::new(0),
+        max_active: AtomicUsize::new(0),
+        delay_ms: 10,
+    });
+    let engine = Arc::new(
+        RunEngine::new(
+            db.clone(),
+            Arc::new(EventBus::new()),
+            Arc::new(GraphAuthority::new()),
+            executor.clone(),
+            Arc::new(TemplateRegistry::default()),
+        )
+        .with_parallel_dispatch(32),
+    );
+    let store = RunStore::new(db);
+    let started = Instant::now();
+    let run = engine
+        .submit_prompt("S1 parallel baseline", "scale", uuid::Uuid::now_v7())
+        .expect("submit");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    loop {
+        let current = store.get_run(run.id).expect("run");
+        if current.status.is_terminal() {
+            let elapsed = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+            let tasks = store.tasks_for_run(run.id).expect("tasks").len();
+            let calls = executor.calls.load(Ordering::SeqCst);
+            let max_active = executor.max_active.load(Ordering::SeqCst);
+            println!("S1 parallel tasks={tasks} provider_calls={calls} max_active={max_active} wall_ms={elapsed}");
+            assert_eq!(current.status.as_str(), "completed");
+            assert_eq!(tasks, 41);
+            assert_eq!(calls, tasks);
+            assert!(max_active > 1, "bounded parallel dispatch must overlap provider calls");
+            assert!(elapsed < 60_000);
+            return;
+        }
+        assert!(Instant::now() < deadline, "S1 parallel baseline timed out");
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+}
+
+#[tokio::test]
 async fn s1_serial_baseline_measures_41_tasks() {
     let temp = tempfile::tempdir().expect("temp dir");
     let db = Arc::new(Database::open(&temp.path().join("scale-s1.db")).expect("db"));
@@ -96,6 +153,9 @@ async fn s1_serial_baseline_measures_41_tasks() {
     let executor = Arc::new(ScaleExecutor {
         plan: plan(),
         calls: AtomicUsize::new(0),
+        active: AtomicUsize::new(0),
+        max_active: AtomicUsize::new(0),
+        delay_ms: 10,
     });
     let engine = Arc::new(RunEngine::new(
         db.clone(),

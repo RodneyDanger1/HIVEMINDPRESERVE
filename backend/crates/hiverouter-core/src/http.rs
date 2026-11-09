@@ -319,6 +319,10 @@ fn build_engine(
                 );
             }
         }
+        // Production bounded pool for independently-ready tasks. Test services
+        // keep the historical serial path so scripted event sequences remain
+        // deterministic.
+        engine = engine.with_parallel_dispatch(32);
     }
     Arc::new(engine)
 }

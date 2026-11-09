@@ -590,6 +590,10 @@ pub struct RunEngine {
     /// test doubles opt in explicitly so a scripted provider call sequence is
     /// never silently shifted by an extra root request.
     root_orchestrator: bool,
+    /// Maximum independently-ready tasks dispatched concurrently. `1` keeps the
+    /// historical serial scheduler; production uses a bounded pool so provider
+    /// permits, DB locks and the graph remain the single source of truth.
+    parallel_dispatch: usize,
     /// In-process approval waiters (one server process; no cross-process wait).
     waiters: Arc<ApprovalWaiters>,
     /// In-process A2A answer waiters keyed by message id. A crash loses the
@@ -655,6 +659,7 @@ impl RunEngine {
             tools: None,
             remote: None,
             root_orchestrator: false,
+            parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             a2a_delivered: Mutex::new(HashSet::new()),
@@ -708,6 +713,13 @@ impl RunEngine {
     #[must_use]
     pub fn with_root_orchestrator(mut self) -> Self {
         self.root_orchestrator = true;
+        self
+    }
+
+    /// Sets the bounded concurrent task pool. `1` is the historical serial path.
+    #[must_use]
+    pub fn with_parallel_dispatch(mut self, max_parallel: usize) -> Self {
+        self.parallel_dispatch = max_parallel.clamp(1, 64);
         self
     }
 
@@ -840,6 +852,7 @@ impl RunEngine {
             tools: None,
             remote: None,
             root_orchestrator: false,
+            parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             a2a_delivered: Mutex::new(HashSet::new()),
@@ -1617,7 +1630,7 @@ impl RunEngine {
         self.executor.finish_run(run.id).await;
     }
 
-    async fn dispatch_inner(&self, run: &Run, token: &CancellationToken) -> Result<(), Refusal> {
+    async fn dispatch_inner(self: &Arc<Self>, run: &Run, token: &CancellationToken) -> Result<(), Refusal> {
         self.store.set_run_status(run.id, AgentState::Planning, None)?;
 
         // Exactly one planning call per plan.
@@ -1785,6 +1798,10 @@ impl RunEngine {
             }
             map
         };
+        if self.parallel_dispatch > 1 {
+            self.dispatch_parallel(run, &plan, &tasks, &children_by_parent, token)
+                .await?;
+        } else {
         let mut completed: HashSet<TaskId> = HashSet::new();
         while completed.len() < plan.nodes.len() {
             if token.is_cancelled() {
@@ -1882,6 +1899,7 @@ impl RunEngine {
                 }
             }
         }
+        }
         let has_aggregators = !plan.aggregation_order()?.is_empty();
         // Tasks created after planning (operator SPAWN_SUB_HIVE or a model
         // spawn_agent that was not already joined inline) are executed to a
@@ -1978,6 +1996,146 @@ impl RunEngine {
     /// the child row existed; the queue consumer re-reads the row so a task
     /// killed/removed before dispatch is never run. A per-task kill settles that
     /// one child and the loop continues with the next queued task.
+    /// Bounded concurrent dispatch for independent ready nodes. The provider,
+    /// DB and graph remain the single authorities; tasks only run together when
+    /// deps and direct children are already complete.
+    async fn dispatch_parallel(
+        self: &Arc<Self>,
+        run: &Run,
+        plan: &Plan,
+        tasks: &HashMap<TaskId, TaskRecord>,
+        children_by_parent: &HashMap<TaskId, Vec<TaskId>>,
+        token: &CancellationToken,
+    ) -> Result<(), Refusal> {
+        let mut completed: HashSet<TaskId> = HashSet::new();
+        while completed.len() < plan.nodes.len() {
+            if token.is_cancelled() {
+                return Err(Refusal::ToolCancelled);
+            }
+            let batch: Vec<&crate::planner::PlanNode> = plan
+                .nodes
+                .iter()
+                .filter(|node| {
+                    !completed.contains(&node.node_id)
+                        && node.deps.iter().all(|dep| completed.contains(dep))
+                        && children_by_parent
+                            .get(&node.node_id)
+                            .is_none_or(|children| children.iter().all(|child| completed.contains(child)))
+                })
+                .take(self.parallel_dispatch)
+                .collect();
+            if batch.is_empty() {
+                return Err(Refusal::SchemaInvalid);
+            }
+            let mut set = tokio::task::JoinSet::new();
+            for node in batch {
+                let Some(task) = tasks.get(&node.node_id).cloned() else {
+                    return Err(Refusal::InternalError);
+                };
+                let prompt = self.build_task_prompt(run, &task, node, tasks, children_by_parent)?;
+                let engine = self.clone();
+                let run = run.clone();
+                let token = token.clone();
+                let task_id = task.id;
+                set.spawn(async move {
+                    let result = engine
+                        .execute_task_with_prompt(&run, &task, &token, &prompt)
+                        .await;
+                    (task_id, result)
+                });
+            }
+            while let Some(joined) = set.join_next().await {
+                let (task_id, result) = joined.map_err(|_| Refusal::InternalError)?;
+                let status = self
+                    .store
+                    .get_run(run.id)
+                    .map(|current| current.status)
+                    .unwrap_or(AgentState::Running);
+                self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+                match result {
+                    Ok(_) => {
+                        completed.insert(task_id);
+                    }
+                    Err(refusal) => {
+                        if !token.is_cancelled()
+                            && matches!(refusal, Refusal::ToolCancelled | Refusal::TaskTerminal)
+                        {
+                            let fresh = self.store.get_task(task_id)?;
+                            if is_terminal_task_state(fresh.state) {
+                                completed.insert(task_id);
+                                continue;
+                            }
+                        }
+                        set.abort_all();
+                        while set.join_next().await.is_some() {}
+                        return Err(refusal);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build_task_prompt(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan_node: &crate::planner::PlanNode,
+        tasks: &HashMap<TaskId, TaskRecord>,
+        children_by_parent: &HashMap<TaskId, Vec<TaskId>>,
+    ) -> Result<String, Refusal> {
+        let mut prompt = run.prompt.clone();
+        let mut related: Vec<TaskId> = Vec::new();
+        for dep in plan_node.deps.iter() {
+            related.push(*dep);
+        }
+        if let Some(children) = children_by_parent.get(&task.id) {
+            for child in children {
+                if !related.contains(child) {
+                    related.push(*child);
+                }
+            }
+        }
+        let mut has_children = false;
+        for related_id in related {
+            let Some(related_task) = tasks.get(&related_id) else {
+                continue;
+            };
+            let is_child = related_task.parent_task_id == Some(task.id);
+            if is_child {
+                has_children = true;
+            }
+            match self.store.task_result(related_id)? {
+                Some(text) if !text.trim().is_empty() => {
+                    prompt.push_str(if is_child {
+                        "\nCompleted child "
+                    } else {
+                        "\nCompleted dependency "
+                    });
+                    prompt.push_str(&related_id.to_string());
+                    prompt.push_str(" (role ");
+                    prompt.push_str(&related_task.role);
+                    prompt.push_str("):\n");
+                    prompt.push_str(&tool_loop::bounded_tool_text(&text));
+                    prompt.push('\n');
+                }
+                Some(_) | None => {
+                    prompt.push_str("\nCompleted input ");
+                    prompt.push_str(&related_id.to_string());
+                    prompt.push_str(" has no recorded result.\n");
+                }
+            }
+        }
+        if has_children {
+            prompt.push_str(
+                "\nAggregate the completed child results below into this task's final answer. \
+                 Do not invent results for children that have none.\n",
+            );
+        }
+        Ok(prompt)
+    }
+
     async fn dispatch_spawned_tasks(
         &self,
         run: &Run,
