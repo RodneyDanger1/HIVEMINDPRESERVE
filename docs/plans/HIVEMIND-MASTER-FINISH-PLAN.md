@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `478a9bb` (clean tree). Latest offline gate: `cargo test --workspace --locked` 547 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `cbcbf37` (clean tree). Latest offline gate: `cargo test --workspace --locked` 547 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
