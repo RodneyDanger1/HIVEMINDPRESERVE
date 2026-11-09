@@ -149,6 +149,39 @@ async fn memory_journal_route_returns_actions_without_values() {
 }
 
 #[tokio::test]
+async fn run_detail_route_returns_tasks_and_counts() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "detail", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let task = hiverouter_core::entities::TaskRecord {
+        id: hiverouter_contract::TaskId::new(),
+        run_id: run.id,
+        parent_task_id: None,
+        role: "planner".to_owned(),
+        depth: 0,
+        spawn_seq: 0,
+        state: hiverouter_contract::AgentState::Running,
+        rev: 0,
+    };
+    server
+        .state
+        .engine
+        .store
+        .insert_task(&task)
+        .expect("task");
+    let (status, body) = http_get(server.addr, &format!("/api/runs/{}/detail", run.id)).await;
+    assert_eq!(status, 200, "detail: {body}");
+    let value: Value = serde_json::from_str(&body).expect("detail JSON");
+    assert_eq!(value["task_count"], 1);
+    assert_eq!(value["tasks"][0]["class"], "hyper");
+}
+
+#[tokio::test]
 async fn a2a_pending_route_lists_open_questions() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

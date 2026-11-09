@@ -561,6 +561,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/memory", get(agent_memory_list))
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
+        .route("/api/runs/{run_id}/detail", get(run_detail))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
         .route("/api/provider/balance", get(provider_balance))
@@ -1585,6 +1586,68 @@ async fn clear_agent_memory(
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+/// `GET /api/runs/{run_id}/detail` — run summary, task classes/states, usage.
+async fn run_detail(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let run = match state.engine.store.get_run(run_id) {
+        Ok(run) => run,
+        Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+    };
+    let tasks = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let mut counts: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
+    let mut rows = Vec::with_capacity(tasks.len());
+    for task in &tasks {
+        *counts.entry(task.state.as_str()).or_insert(0) += 1;
+        let identity = state.engine.store.task_identity(task.id).ok().flatten();
+        rows.push(serde_json::json!({
+            "task_id": task.id.to_string(),
+            "parent_task_id": task.parent_task_id.map(|id| id.to_string()),
+            "role": task.role,
+            "class": identity.as_ref().map(|identity| identity.class.as_str()),
+            "profile_id": identity.as_ref().map(|identity| identity.profile_id.as_str()),
+            "state": task.state.as_str(),
+            "depth": task.depth,
+            "rev": task.rev,
+        }));
+    }
+    let usage = state.engine.store.run_usage(run_id).ok().flatten();
+    let banks = state
+        .engine
+        .store
+        .memory_banks_for_run(run_id)
+        .map(|banks| banks.len())
+        .unwrap_or(0);
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "run_id": run.id.to_string(),
+            "project_id": run.project_id,
+            "status": run.status.as_str(),
+            "error_code": run.error_code,
+            "created_at": run.created_at.as_str(),
+            "updated_at": run.updated_at.as_str(),
+            "task_count": tasks.len(),
+            "state_counts": counts,
+            "tasks": rows,
+            "usage": usage.map(|usage| serde_json::json!({
+                "prompt_tokens": usage.prompt_tokens,
+                "completion_tokens": usage.completion_tokens,
+                "total_tokens": usage.total_tokens,
+            })),
+            "memory_banks": banks,
+        })),
+    )
+        .into_response()
 }
 
 async fn run_usage(

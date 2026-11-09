@@ -6,6 +6,7 @@ import { useUiStore } from '../state/context';
 import { isRunActive } from '../state/agentState';
 import { STRINGS } from '../state/strings';
 import { EmptyState, PanelTitle } from './StatePack';
+import { RunDetailPanel } from './RunDetailPanel';
 
 export function HistoryPanel() {
   const history = useUiStore((state) => state.history);
@@ -110,6 +111,7 @@ export function HistoryPanel() {
           </button>
         </>
       )}
+      <RunDetailPanel />
     </aside>
   );
 }

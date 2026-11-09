@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `fa3b0a8` (clean tree). Latest offline gate: `cargo test --workspace --locked` 541 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `fa3b0a8` (clean tree). Latest offline gate: `cargo test --workspace --locked` 542 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -359,3 +359,9 @@ Not delivered and must not be claimed:
 - `ProviderExecutor::continue_with_tools_with_updates` accepts a bounded A2A delta; production adapter appends it as a data-only user message after the replayed transcript.
 - Engine builds the delta from the recipient task\'s latest durable messages (kind, status, sender, bounded text) before each continuation; test doubles keep their old behavior via the default method.
 - Still missing: exact per-turn cursor/deduplication, answer-attempt cap, parent-model answer.
+### UI run-detail surface
+
+- `GET /api/runs/{run_id}/detail` returns run status/error, task count/state counts, per-task class/profile/role/state/depth, usage, and bank count; `no-store`.
+- History panel mounts `RunDetailPanel`; it renders only server fields and explicit empty/error states.
+- Test covers a real run/task detail response and hyper class.
+- Not delivered: artifact/diff review, tool ledger drill-down, virtualized task table.
