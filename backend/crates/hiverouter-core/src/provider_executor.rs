@@ -75,8 +75,16 @@ impl ProviderExecutorAdapter {
     /// Returns the provider error when the key is absent, so the server can
     /// fall back to the honest unconfigured executor instead of panicking.
     pub fn from_env(settings: ProviderSettings) -> Result<Self, hiverouter_provider::ProviderError> {
-        let client = DeepSeekClient::from_env(ClientConfig::default())?;
+        let config = ClientConfig::default().with_base_url(settings.base_url.clone());
+        let client = DeepSeekClient::from_env(config)?;
         Ok(Self::new(client, settings))
+    }
+
+    /// Builds a request with the documented accounting model and optional wire
+    /// model override (for OpenAI-compatible local/free endpoints).
+    fn chat_request(&self, messages: Vec<ChatMessage>) -> ChatRequest {
+        ChatRequest::new(self.settings.model, messages)
+            .with_wire_model(self.settings.wire_model.as_deref())
     }
 
     /// Builds the adapter over an explicit client (tests inject wiremock).
@@ -318,8 +326,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<Plan, Refusal> {
-        let request = ChatRequest::new(
-            self.settings.model,
+        let request = self.chat_request(
             vec![
                 ChatMessage::system(PLANNER_SYSTEM),
                 ChatMessage::user(format!(
@@ -351,8 +358,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
     ) -> Result<StreamedReply, Refusal> {
         let registry = ToolRegistry::standard();
         let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
-        let mut request = ChatRequest::new(
-            self.settings.model,
+        let mut request = self.chat_request(
             vec![
                 ChatMessage::system(self.system_prompt_for(task)),
                 ChatMessage::user(task_prompt(prompt, task)),
@@ -387,8 +393,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         question: &str,
         cancel: &CancellationToken,
     ) -> Result<crate::execution::EscalationAnswer, Refusal> {
-        let request = ChatRequest::new(
-            self.settings.model,
+        let request = self.chat_request(
             vec![
                 ChatMessage::system(format!(
                     "{}\n\nYou are answering a child task's bounded question. \
@@ -446,8 +451,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
-        let request = ChatRequest::new(
-            self.settings.model,
+        let request = self.chat_request(
             vec![
                 ChatMessage::system(ROOT_CONTROL_SYSTEM),
                 ChatMessage::user(prompt.to_owned()),
@@ -536,8 +540,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
-        let request = ChatRequest::new(
-            self.settings.model,
+        let request = self.chat_request(
             vec![
                 ChatMessage::system(ROOT_SYSTEM),
                 ChatMessage::user(prompt.to_owned()),
@@ -637,7 +640,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         }
         let registry = ToolRegistry::standard();
         let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
-        let request = ChatRequest::new(self.settings.model, messages)
+        let request = self.chat_request(messages)
             .with_thinking(self.settings.leaf_thinking)
             .with_max_tokens(self.settings.leaf_max_tokens)
             .with_tools(tools)

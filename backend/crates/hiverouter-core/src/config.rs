@@ -33,6 +33,11 @@ pub const REASONING_EFFORT_ENV: &str = "HIVEROUTER_REASONING_EFFORT";
 pub const MAX_OUTPUT_TOKENS_ENV: &str = "HIVEROUTER_MAX_OUTPUT_TOKENS";
 /// Planner output cap.
 pub const PLANNER_MAX_OUTPUT_TOKENS_ENV: &str = "HIVEROUTER_PLANNER_MAX_OUTPUT_TOKENS";
+/// Optional OpenAI-compatible base URL (for example AMD Token Lab's `/v1`).
+pub const BASE_URL_ENV: &str = "HIVEROUTER_BASE_URL";
+/// Optional wire model id when the endpoint's catalog name differs from the
+/// documented DeepSeek id used for local pricing/accounting.
+pub const WIRE_MODEL_ENV: &str = "HIVEROUTER_WIRE_MODEL";
 
 /// Provider behaviour resolved from the environment at boot.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,6 +56,10 @@ pub struct ProviderSettings {
     pub planner_max_tokens: u32,
     /// Leaf max output tokens.
     pub leaf_max_tokens: u32,
+    /// OpenAI-compatible base URL; `None` means the documented DeepSeek URL.
+    pub base_url: String,
+    /// Wire model id override; accounting still uses `model`.
+    pub wire_model: Option<String>,
 }
 
 impl Default for ProviderSettings {
@@ -63,6 +72,8 @@ impl Default for ProviderSettings {
             planner_reasoning_effort: ReasoningEffort::High,
             planner_max_tokens: DEFAULT_PLANNER_MAX_TOKENS,
             leaf_max_tokens: DEFAULT_LEAF_MAX_TOKENS,
+            base_url: hiverouter_provider::DEFAULT_BASE_URL.to_owned(),
+            wire_model: None,
         }
     }
 }
@@ -119,6 +130,30 @@ impl ProviderSettings {
             Ok(value) => parse_max_tokens(&value, MAX_OUTPUT_TOKENS_ENV)?,
             Err(_) => default.leaf_max_tokens,
         };
+        let base_url = match std::env::var(BASE_URL_ENV) {
+            Ok(value) => {
+                let trimmed = value.trim().trim_end_matches('/').to_owned();
+                if trimmed.is_empty() || !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
+                    return Err(ConfigError::ProviderSetting(format!(
+                        "{BASE_URL_ENV} must be an http(s) URL"
+                    )));
+                }
+                trimmed
+            }
+            Err(_) => default.base_url,
+        };
+        let wire_model = match std::env::var(WIRE_MODEL_ENV) {
+            Ok(value) => {
+                let trimmed = value.trim();
+                if trimmed.is_empty() {
+                    return Err(ConfigError::ProviderSetting(format!(
+                        "{WIRE_MODEL_ENV} is present but empty"
+                    )));
+                }
+                Some(trimmed.to_owned())
+            }
+            Err(_) => None,
+        };
         Ok(Self {
             enabled,
             model,
@@ -127,6 +162,8 @@ impl ProviderSettings {
             planner_reasoning_effort,
             planner_max_tokens,
             leaf_max_tokens,
+            base_url,
+            wire_model,
         })
     }
 }

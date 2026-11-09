@@ -391,7 +391,7 @@ impl DeepSeekClient {
                 Ok((response, status)) => {
                     let usage = response.contract_usage();
                     if let Some(active_budget) = budget.as_deref_mut() {
-                        active_budget.record_call(request.model, usage.as_ref(), at_unix_secs)?;
+                        active_budget.record_call(request.accounting_model, usage.as_ref(), at_unix_secs)?;
                     }
                     return Ok(Completion {
                         response,

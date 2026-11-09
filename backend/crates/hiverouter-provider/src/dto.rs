@@ -394,8 +394,11 @@ impl ToolSpec {
 /// A chat completions request (documented subset of F1).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ChatRequest {
-    /// Model id.
-    pub model: Model,
+    /// Wire model id.
+    pub model: String,
+    /// Accounting model used for local pricing; never serialised.
+    #[serde(skip)]
+    pub accounting_model: Model,
     /// Conversation.
     pub messages: Vec<ChatMessage>,
     /// Stream flag (documented SSE streaming).
@@ -426,7 +429,8 @@ impl ChatRequest {
     #[must_use]
     pub fn new(model: Model, messages: Vec<ChatMessage>) -> Self {
         Self {
-            model,
+            model: model.id().to_owned(),
+            accounting_model: model,
             messages,
             stream: None,
             max_tokens: None,
@@ -436,6 +440,15 @@ impl ChatRequest {
             tool_choice: None,
             response_format: None,
         }
+    }
+
+    /// Overrides the wire model id while keeping the documented accounting model.
+    #[must_use]
+    pub fn with_wire_model(mut self, wire_model: Option<&str>) -> Self {
+        if let Some(wire_model) = wire_model {
+            self.model = wire_model.to_owned();
+        }
+        self
     }
 
     /// Marks the request as streaming or non-streaming.
