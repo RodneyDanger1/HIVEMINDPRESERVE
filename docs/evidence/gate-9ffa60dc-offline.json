@@ -1,0 +1,29 @@
+﻿{
+    "commit":  "9ffa60dce3e330040e6cb8b47cbbb078f4c27208",
+    "captured_at":  "2026-11-08T23:47:52.7565076-06:00",
+    "cargo":  {
+                  "passed":  569,
+                  "failed":  0,
+                  "ignored":  2,
+                  "command":  "cargo test --workspace --locked",
+                  "suites":  43,
+                  "exit":  0
+              },
+    "web_typecheck":  {
+                          "exit":  0,
+                          "command":  "npm run typecheck"
+                      },
+    "web_tests":  {
+                      "passed":  191,
+                      "command":  "npm test",
+                      "failed":  0,
+                      "exit":  0
+                  },
+    "web_build":  {
+                      "exit":  0,
+                      "command":  "npm run build"
+                  },
+    "schema_version":  22,
+    "key_present":  false,
+    "live_run":  false
+}
