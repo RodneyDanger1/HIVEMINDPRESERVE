@@ -2619,6 +2619,34 @@ mod tests {
     }
 
     #[test]
+    fn journal_verification_detects_a_mutated_hash() {
+        let store = store();
+        let run = store
+            .create_run("p", "tamper", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "one", "a", run.id, task, &task.to_string())
+            .expect("first");
+        store
+            .record_agent_memory_scoped("worker", "two", "b", run.id, task, &task.to_string())
+            .expect("second");
+        store
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE memory_journal SET event_hash = 'tampered'
+                     WHERE seq = (SELECT MIN(seq) FROM memory_journal WHERE run_id = ?1)",
+                    params![run.id.to_string()],
+                )?;
+                Ok(())
+            })
+            .expect("tamper");
+        let verification = store.verify_memory_journal(run.id).expect("verify");
+        assert!(!verification.valid);
+    }
+
+    #[test]
     fn memory_context_snapshot_records_bank_set() {
         let store = store();
         let run = store

@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `25e33e0` (clean tree). Latest offline gate: `cargo test --workspace --locked` 545 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `25e33e0` (clean tree). Latest offline gate: `cargo test --workspace --locked` 546 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -392,3 +392,8 @@ Not delivered and must not be claimed:
 - `GET /api/memory/journal/verify?run_id=` recomputes the chain and returns `valid`, `checked`, and `unchained`; legacy rows are counted separately.
 - Store test asserts a two-entry chain verifies clean.
 - GitNexus detect-changes again reported critical/26 flows for this store/http diff; the full workspace gate is green. Index output names unrelated symbols, so it is treated as a warning, not proof of impact.
+### P4 journal tamper/CUI
+
+- Negative test mutates the first event hash and proves verification returns `valid=false`.
+- Bank inspector fetches `/api/memory/journal/verify` and displays `Chain: valid/BROKEN · N checked · M unchained`.
+- GitNexus detect-changes found no indexed-symbol hunk overlap but explicitly said "not a clean tree"; full workspace gate is green.

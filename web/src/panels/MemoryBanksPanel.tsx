@@ -48,6 +48,41 @@ export function MemoryBanksPanel() {
   const [clearReceipt, setClearReceipt] = useState<string | null>(null);
   const [journal, setJournal] = useState<readonly JournalRow[]>([]);
   const [journalVersion, setJournalVersion] = useState(0);
+  const [journalIntegrity, setJournalIntegrity] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (runId === null) {
+      setJournalIntegrity(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${apiBaseUrl()}/api/memory/journal/verify?run_id=${encodeURIComponent(runId)}`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`journal verify HTTP ${response.status}`);
+        }
+        const body = (await response.json()) as {
+          valid?: boolean;
+          checked?: number;
+          unchained?: number;
+        };
+        if (!cancelled) {
+          setJournalIntegrity(
+            `${body.valid ? 'valid' : 'BROKEN'} · ${body.checked ?? 0} checked · ${body.unchained ?? 0} unchained`,
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setJournalIntegrity('unavailable');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId, journalVersion]);
 
   useEffect(() => {
     if (runId === null) {
@@ -372,6 +407,9 @@ export function MemoryBanksPanel() {
       {journal.length > 0 ? (
         <div className="mt-2 border-t border-hairline pt-2">
           <div className="type-mono-meta text-meta">Recent journal</div>
+          {journalIntegrity ? (
+            <div className="type-mono-meta text-meta">Chain: {journalIntegrity}</div>
+          ) : null}
           <ul className="mt-1 space-y-0.5">
             {journal.map((row, index) => (
               <li key={`${row.action}-${row.created_at}-${index}`} className="type-mono-meta text-meta">
