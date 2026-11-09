@@ -345,6 +345,28 @@ async fn memory_bank_routes_return_real_banks_and_entries() {
             &task.to_string(),
         )
         .expect("memory");
+    server
+        .state
+        .engine
+        .store
+        .record_agent_memory_scoped(
+            "engine",
+            "run-note",
+            "summary value",
+            run.id,
+            task,
+            "run",
+        )
+        .expect("run memory");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/memory/summary?run_id={}", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "summary: {body}");
+    let summary: Value = serde_json::from_str(&body).expect("summary JSON");
+    assert_eq!(summary["raw_access"], false);
+    assert_eq!(summary["summaries"][0]["value"], "summary value");
     let (status, body) = http_get(
         server.addr,
         &format!("/api/memory/banks?run_id={}", run.id),

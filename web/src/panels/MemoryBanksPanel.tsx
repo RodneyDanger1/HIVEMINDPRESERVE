@@ -35,6 +35,12 @@ interface JournalRow {
   readonly created_at: string;
 }
 
+interface HyperSummaryRow {
+  readonly bank_id: string;
+  readonly key: string;
+  readonly value: string;
+}
+
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function MemoryBanksPanel() {
@@ -53,6 +59,7 @@ export function MemoryBanksPanel() {
   const [journal, setJournal] = useState<readonly JournalRow[]>([]);
   const [journalVersion, setJournalVersion] = useState(0);
   const [journalIntegrity, setJournalIntegrity] = useState<string | null>(null);
+  const [hyperSummary, setHyperSummary] = useState<readonly HyperSummaryRow[]>([]);
 
   useEffect(() => {
     if (runId === null) {
@@ -131,6 +138,42 @@ export function MemoryBanksPanel() {
       cancelled = true;
     };
   }, [runId, journalVersion]);
+
+  useEffect(() => {
+    if (runId === null) {
+      setHyperSummary([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${apiBaseUrl()}/api/memory/summary?run_id=${encodeURIComponent(runId)}`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`memory summary HTTP ${response.status}`);
+        const body = (await response.json()) as { summaries?: unknown };
+        if (!Array.isArray(body.summaries) || cancelled) return;
+        const decoded: HyperSummaryRow[] = [];
+        for (const raw of body.summaries) {
+          if (typeof raw !== 'object' || raw === null) continue;
+          const item = raw as Record<string, unknown>;
+          if (
+            typeof item.bank_id !== 'string' ||
+            typeof item.key !== 'string' ||
+            typeof item.value !== 'string'
+          ) {
+            continue;
+          }
+          decoded.push({ bank_id: item.bank_id, key: item.key, value: item.value });
+        }
+        setHyperSummary(decoded);
+      })
+      .catch(() => {
+        if (!cancelled) setHyperSummary([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId]);
 
   useEffect(() => {
     if (runId === null) {
@@ -429,7 +472,23 @@ export function MemoryBanksPanel() {
           </button>
         </div>
       </div>
-      {clearReceipt ? <p className="type-mono-meta mt-1 text-meta">{clearReceipt}</p> : null}
+      <div className="mt-2 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt p-2">
+        <div className="type-label text-ink-900">HyperAgent summaries · raw access disabled</div>
+        <div className="type-mono-meta mt-1 text-meta">
+          Only run/hive summaries are projected; no sibling branch raw entries.
+        </div>
+        {hyperSummary.length === 0 ? (
+          <div className="type-mono-meta mt-1 text-meta">No summaries recorded.</div>
+        ) : (
+          <ul className="mt-1 space-y-0.5">
+            {hyperSummary.map((row) => (
+              <li key={`${row.bank_id}-${row.key}`} className="type-mono-meta text-meta">
+                {row.bank_id} · {row.key} · {row.value}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>      {clearReceipt ? <p className="type-mono-meta mt-1 text-meta">{clearReceipt}</p> : null}
       {runId === null ? <EmptyState message="No active run to inspect." /> : null}
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading memory banks…</p>

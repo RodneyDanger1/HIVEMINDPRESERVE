@@ -565,6 +565,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/runs/{run_id}/roster", get(agent_roster))
         .route("/api/agents/runs/{run_id}/memory", get(agent_memory_for_run))
         .route("/api/memory/banks", get(memory_banks))
+        .route("/api/memory/summary", get(memory_summary))
         .route(
             "/api/memory/banks/{bank_id}/entries",
             get(memory_bank_entries),
@@ -2132,6 +2133,39 @@ async fn memory_banks(
                     "rev": bank.rev,
                     "created_at": bank.created_at,
                     "closed_at": bank.closed_at,
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn memory_summary(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Some(raw) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    match state.engine.store.memory_hyper_summary(run_id, 8) {
+        Ok(entries) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "raw_access": false,
+                "count": entries.len(),
+                "summaries": entries.into_iter().map(|entry| serde_json::json!({
+                    "entry_id": entry.entry_id,
+                    "bank_id": entry.bank_id,
+                    "key": entry.key,
+                    "value": entry.value.chars().take(512).collect::<String>(),
                 })).collect::<Vec<_>>(),
             })),
         )
