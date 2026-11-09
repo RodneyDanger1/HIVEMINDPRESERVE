@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `fef47c7`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `CE4856A4D5E95EE8C51D7744E8AD0D49731B3265E8EE34049608A588622E9D00`
+Final repair HEAD at report write: `8c84193`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `248C5E0D58F4171CB352622F29ED0C11466F2F718B2F15F167689B0DDE0381F7`
 
 ## 1. What HiveMind is supposed to be
 
@@ -108,6 +108,7 @@ TRUTH:
 | `0ecb419` | Core | memory bank HTTP reads are run-scoped; terminal run transitions cannot be resurrected |
 | `ad01fdf` | Provider settings | saved non-secret provider profile API + Settings provider editor; external profile applies on restart |
 | `fef47c7` | Core | replay-consistent `current_seq` and a proven real provider-call cap test |
+| `8c84193` | Core | a failed serialization no longer consumes a replay sequence or leaves a permanent gap |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -127,7 +128,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 CE4856A4D5E95EE8C51D7744E8AD0D49731B3265E8EE34049608A588622E9D00
+  target/release/hiverouter.exe SHA-256 248C5E0D58F4171CB352622F29ED0C11466F2F718B2F15F167689B0DDE0381F7
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
