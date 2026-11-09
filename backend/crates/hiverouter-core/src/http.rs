@@ -563,6 +563,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
         .route("/api/runs/{run_id}/detail", get(run_detail))
+        .route("/api/memory/context/{task_id}", get(task_memory_context))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
         .route("/api/provider/balance", get(provider_balance))
@@ -1679,6 +1680,39 @@ async fn run_detail(
         })),
     )
         .into_response()
+}
+
+/// `GET /api/memory/context/{task_id}` — latest snapshot metadata for one task.
+async fn task_memory_context(
+    State(state): State<Arc<AppState>>,
+    Path(task_id): Path<String>,
+) -> Response {
+    let Ok(task_id) = task_id.parse::<hiverouter_contract::TaskId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound);
+    };
+    match state.engine.store.memory_context_snapshot(task_id) {
+        Ok(Some((banks, entry_ids, rendered_chars, truncated, prompt_sha256, created_at))) => {
+            let banks: serde_json::Value =
+                serde_json::from_str(&banks).unwrap_or(serde_json::Value::Null);
+            let entry_ids: serde_json::Value =
+                serde_json::from_str(&entry_ids).unwrap_or(serde_json::Value::Null);
+            (
+                [(header::CACHE_CONTROL, "no-store")],
+                Json(serde_json::json!({
+                    "task_id": task_id.to_string(),
+                    "banks": banks,
+                    "entry_ids": entry_ids,
+                    "rendered_chars": rendered_chars,
+                    "truncated": truncated,
+                    "prompt_sha256": prompt_sha256,
+                    "created_at": created_at,
+                })),
+            )
+                .into_response()
+        }
+        Ok(None) => refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
 }
 
 async fn run_usage(

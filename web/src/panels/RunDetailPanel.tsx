@@ -31,6 +31,43 @@ export function RunDetailPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
   const [status, setStatus] = useState<Status>('idle');
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [snapshot, setSnapshot] = useState<string | null>(null);
+  const [snapshotStatus, setSnapshotStatus] = useState<Status>('idle');
+
+  const inspectSnapshot = async (taskId: string): Promise<void> => {
+    if (!taskId) {
+      setSnapshot(null);
+      setSnapshotStatus('idle');
+      return;
+    }
+    setSnapshotStatus('loading');
+    try {
+      const response = await fetch(
+        `${apiBaseUrl()}/api/memory/context/${encodeURIComponent(taskId)}`,
+        { headers: { Accept: 'application/json' } },
+      );
+      if (!response.ok) {
+        throw new Error(`context snapshot HTTP ${response.status}`);
+      }
+      const body = (await response.json()) as {
+        banks?: string[];
+        entry_ids?: string[];
+        rendered_chars?: number;
+        truncated?: boolean;
+        prompt_sha256?: string;
+        created_at?: string;
+      };
+      setSnapshot(
+        `${(body.banks ?? []).length} banks · ${(body.entry_ids ?? []).length} entries · ` +
+          `${body.rendered_chars ?? 0} chars · truncated ${body.truncated ? 'yes' : 'no'} · ` +
+          `sha ${(body.prompt_sha256 ?? '').slice(0, 12)} · ${body.created_at ?? ''}`,
+      );
+      setSnapshotStatus('ok');
+    } catch {
+      setSnapshot(null);
+      setSnapshotStatus('error');
+    }
+  };
 
   useEffect(() => {
     if (runId === null) {
@@ -93,6 +130,29 @@ export function RunDetailPanel() {
               </li>
             ))}
           </ul>
+          <select
+            className="h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-meta text-ink-900"
+            defaultValue=""
+            onChange={(event) => {
+              void inspectSnapshot(event.target.value);
+            }}
+          >
+            <option value="">Inspect task memory snapshot…</option>
+            {detail.tasks.map((task) => (
+              <option key={task.task_id} value={task.task_id}>
+                {task.task_id.slice(0, 8)} · {task.class ?? 'unreported'} · {task.state}
+              </option>
+            ))}
+          </select>
+          {snapshotStatus === 'loading' ? (
+            <p className="type-mono-meta text-meta">Loading snapshot…</p>
+          ) : null}
+          {snapshotStatus === 'error' ? (
+            <p className="type-mono-meta text-signal">Snapshot unavailable for that task.</p>
+          ) : null}
+          {snapshotStatus === 'ok' && snapshot ? (
+            <p className="type-mono-meta text-meta">{snapshot}</p>
+          ) : null}
         </div>
       ) : null}
     </section>

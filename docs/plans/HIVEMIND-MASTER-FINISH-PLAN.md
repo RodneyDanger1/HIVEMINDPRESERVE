@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `478a9bb` (clean tree). Latest offline gate: `cargo test --workspace --locked` 546 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `478a9bb` (clean tree). Latest offline gate: `cargo test --workspace --locked` 547 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -397,3 +397,8 @@ Not delivered and must not be claimed:
 - Negative test mutates the first event hash and proves verification returns `valid=false`.
 - Bank inspector fetches `/api/memory/journal/verify` and displays `Chain: valid/BROKEN · N checked · M unchained`.
 - GitNexus detect-changes found no indexed-symbol hunk overlap but explicitly said "not a clean tree"; full workspace gate is green.
+### UI snapshot viewer
+
+- `GET /api/memory/context/{task_id}` returns bank ids, entry ids, rendered chars, truncation, prompt hash, and creation time; no memory text.
+- Run-detail panel adds a task selector and shows snapshot metadata; missing snapshot is an explicit error, not a fabricated row.
+- HTTP test covers snapshot metadata. GitNexus detect-changes returned changed symbols and exit 1; no clean-impact claim is made.

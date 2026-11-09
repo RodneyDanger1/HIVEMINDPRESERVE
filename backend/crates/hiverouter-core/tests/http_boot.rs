@@ -149,6 +149,39 @@ async fn memory_journal_route_returns_actions_without_values() {
 }
 
 #[tokio::test]
+async fn task_memory_context_route_returns_snapshot_metadata() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let run = server
+        .state
+        .engine
+        .store
+        .create_run("p", "snapshot", hiverouter_contract::AgentState::Running)
+        .expect("run");
+    let task = hiverouter_contract::TaskId::new();
+    server
+        .state
+        .engine
+        .store
+        .record_memory_context_snapshot(
+            task,
+            run.id,
+            &["bank:run:1".to_owned()],
+            &["entry:1".to_owned()],
+            42,
+            false,
+            "abc",
+        )
+        .expect("snapshot");
+    let (status, body) =
+        http_get(server.addr, &format!("/api/memory/context/{task}")).await;
+    assert_eq!(status, 200, "context: {body}");
+    let value: Value = serde_json::from_str(&body).expect("context JSON");
+    assert_eq!(value["rendered_chars"], 42);
+    assert_eq!(value["prompt_sha256"], "abc");
+}
+
+#[tokio::test]
 async fn run_detail_route_returns_tasks_and_counts() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;
