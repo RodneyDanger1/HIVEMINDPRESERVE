@@ -1,0 +1,30 @@
+﻿{
+    "commit":  "25e33e08a783ede33b2c8e0e320fec8d0725fcfa",
+    "captured_at":  "2026-11-08T19:04:35.2437301-06:00",
+    "cargo":  {
+                  "passed":  545,
+                  "failed":  0,
+                  "ignored":  2,
+                  "command":  "cargo test --workspace --locked",
+                  "suites":  42,
+                  "exit":  0
+              },
+    "web_typecheck":  {
+                          "exit":  0,
+                          "command":  "npm run typecheck"
+                      },
+    "web_tests":  {
+                      "passed":  189,
+                      "command":  "npm test",
+                      "failed":  0,
+                      "exit":  0
+                  },
+    "web_build":  {
+                      "exit":  0,
+                      "command":  "npm run build"
+                  },
+    "cli":  {
+                "exit":  0,
+                "command":  "node --check tools/hivemind-cli.mjs"
+            }
+}
