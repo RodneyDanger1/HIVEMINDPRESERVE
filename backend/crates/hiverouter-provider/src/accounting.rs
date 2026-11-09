@@ -36,6 +36,9 @@ pub enum Provenance {
     Assumed,
     /// Not known.
     Unknown,
+    /// Deliberately not priced: an external endpoint bills in points, so no
+    /// DeepSeek USD settlement exists for this amount (always zero).
+    Unpriced,
 }
 
 impl Provenance {
@@ -47,7 +50,38 @@ impl Provenance {
             Provenance::Derived => "derived",
             Provenance::Assumed => "assumed",
             Provenance::Unknown => "unknown",
+            Provenance::Unpriced => "unpriced",
         }
+    }
+}
+
+/// How a run's recorded usage is turned into money.
+///
+/// DeepSeek is the only documented USD-priced account provider. An explicitly
+/// configured OpenAI-compatible external endpoint reports *points*, not
+/// DeepSeek USD, so its usage is measured but never settled as USD.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CostMode {
+    /// Default endpoint: usage is priced with the documented DeepSeek table.
+    DeepSeekUsd,
+    /// External endpoint: usage is measured, no USD price is ever produced.
+    ExternalUnpriced,
+}
+
+impl CostMode {
+    /// Stable label for reports and logs.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            CostMode::DeepSeekUsd => "deepseek_usd",
+            CostMode::ExternalUnpriced => "external_unpriced",
+        }
+    }
+
+    /// Whether this mode settles a USD cost at all.
+    #[must_use]
+    pub fn prices_usd(self) -> bool {
+        matches!(self, CostMode::DeepSeekUsd)
     }
 }
 
@@ -59,6 +93,9 @@ pub enum CostStatus {
     /// At least one call was missing usage; the run is INCOMPLETE and no cost
     /// may be exported.
     Incomplete,
+    /// Usage was measured but the endpoint has no USD price (external
+    /// OpenAI-compatible endpoint); `settled_usd` is null by design.
+    Unpriced,
 }
 
 impl CostStatus {
@@ -68,6 +105,7 @@ impl CostStatus {
         match self {
             CostStatus::Complete => "COMPLETE",
             CostStatus::Incomplete => "INCOMPLETE",
+            CostStatus::Unpriced => "UNPRICED",
         }
     }
 }
@@ -119,25 +157,53 @@ pub struct CostReport {
 #[derive(Debug, Clone)]
 pub struct RunAccounting {
     table: PricingTable,
+    mode: CostMode,
     usage: Usage,
     calls: u32,
     settled_usd: Decimal,
     has_settled: bool,
     incomplete_reason: Option<Refusal>,
+    /// A stream failed in transport: spend for that attempt is unknown, so the
+    /// report stays INCOMPLETE, but this is *not* a usage-integrity failure and
+    /// does not poison later sends (see [`RunBudget::preflight`]).
+    transport_failure: Option<Refusal>,
 }
 
 impl RunAccounting {
-    /// New empty accounting for one run.
+    /// New empty accounting for one run on the documented USD-priced endpoint.
     #[must_use]
     pub fn new(table: PricingTable) -> Self {
+        Self::with_mode(table, CostMode::DeepSeekUsd)
+    }
+
+    /// New empty accounting with an explicit cost mode.
+    ///
+    /// [`CostMode::ExternalUnpriced`] measures usage but never derives a
+    /// DeepSeek USD amount (the endpoint bills in points).
+    #[must_use]
+    pub fn with_mode(table: PricingTable, mode: CostMode) -> Self {
         Self {
             table,
+            mode,
             usage: Usage::default(),
             calls: 0,
             settled_usd: Decimal::ZERO,
             has_settled: false,
             incomplete_reason: None,
+            transport_failure: None,
         }
+    }
+
+    /// New empty accounting for an external (non-USD-priced) endpoint.
+    #[must_use]
+    pub fn external(table: PricingTable) -> Self {
+        Self::with_mode(table, CostMode::ExternalUnpriced)
+    }
+
+    /// Cost mode of this run.
+    #[must_use]
+    pub fn mode(&self) -> CostMode {
+        self.mode
     }
 
     /// The pricing table owned by this run.
@@ -161,15 +227,11 @@ impl RunAccounting {
     /// Current status.
     #[must_use]
     pub fn status(&self) -> CostStatus {
-        if self.incomplete_reason.is_some() || !self.has_settled && self.calls > 0 && self.settled_usd.is_zero()
-        {
-            // The second arm only catches a contradictory state (calls without
-            // settlement); a fresh run with no calls is still COMPLETE at zero
-            // spend because no cost is claimed.
-            if self.incomplete_reason.is_none() {
-                return CostStatus::Complete;
-            }
+        if self.incomplete_reason.is_some() || self.transport_failure.is_some() {
             CostStatus::Incomplete
+        } else if !self.mode.prices_usd() {
+            // Usage may be measured, but no USD settlement is claimed.
+            CostStatus::Unpriced
         } else {
             CostStatus::Complete
         }
@@ -185,12 +247,36 @@ impl RunAccounting {
     ///
     /// # Errors
     /// [`Refusal::UsageIncomplete`] when the run is INCOMPLETE — a null usage
-    /// can never be exported as a settled figure.
+    /// can never be exported as a settled figure. [`Refusal::PriceUnsourced`]
+    /// when the run is UNPRICED (external endpoint): there is deliberately no
+    /// DeepSeek USD settlement to return.
     pub fn settled_usd(&self) -> Result<Decimal, Refusal> {
         match self.incomplete_reason {
             Some(refusal) => Err(refusal),
+            None if self.transport_failure.is_some() => Err(Refusal::UsageIncomplete),
+            None if !self.mode.prices_usd() => Err(Refusal::PriceUnsourced),
             None => Ok(self.settled_usd),
         }
+    }
+
+    /// Records a stream that failed in transport after it may have been billed.
+    ///
+    /// The spend cannot be verified, so the report stays INCOMPLETE and no USD
+    /// figure is exported. Unlike a missing-usage record, this is *not* a
+    /// usage-integrity failure: [`RunBudget::preflight`] still allows later
+    /// sends, because one transient transport failure must not poison every
+    /// sibling task that shares the run budget. The run keeps the measured
+    /// usage of its completed calls so those totals remain honest.
+    pub fn record_transport_failure(&mut self, refusal: Refusal) {
+        if self.transport_failure.is_none() {
+            self.transport_failure = Some(refusal);
+        }
+    }
+
+    /// The transport failure recorded for this run, if any.
+    #[must_use]
+    pub fn transport_failure(&self) -> Option<Refusal> {
+        self.transport_failure
     }
 
     /// Records one provider call's usage and returns its Decimal cost.
@@ -216,6 +302,22 @@ impl RunAccounting {
             ));
         }
 
+        if !self.mode.prices_usd() {
+            // External endpoint: record the measured counters exactly as
+            // reported (absent stays absent) and never derive a USD amount.
+            // The cache split is a DeepSeek pricing input; requiring it here
+            // would mark an honest external run INCOMPLETE for no benefit.
+            self.usage = self.usage.checked_add(&usage);
+            return Ok(CallCost {
+                model,
+                peak: peak_at_unix(at_unix_secs),
+                usage,
+                amount_usd: Decimal::ZERO,
+                usage_provenance: Provenance::Measured,
+                amount_provenance: Provenance::Unpriced,
+            });
+        }
+
         let completion_tokens = usage.completion_tokens.ok_or_else(|| {
             ProviderError::new(
                 Refusal::UsageIncomplete,
@@ -230,22 +332,24 @@ impl RunAccounting {
             }
         };
 
-        let (cache_hit, cache_miss) =
-            match (usage.prompt_cache_hit_tokens, usage.prompt_cache_miss_tokens) {
-                (Some(hit), Some(miss)) => (hit, miss),
-                (None, None) => {
-                    return Err(self.mark_incomplete(
-                        "provider usage has no prompt cache hit/miss split; prompt cost cannot be \
+        let (cache_hit, cache_miss) = match (
+            usage.prompt_cache_hit_tokens,
+            usage.prompt_cache_miss_tokens,
+        ) {
+            (Some(hit), Some(miss)) => (hit, miss),
+            (None, None) => {
+                return Err(self.mark_incomplete(
+                    "provider usage has no prompt cache hit/miss split; prompt cost cannot be \
                          settled (prompt_tokens alone is never coerced into a price)",
-                    ));
-                }
-                _ => {
-                    return Err(self.mark_incomplete(
-                        "provider usage has only one side of the prompt cache split; refusing to \
+                ));
+            }
+            _ => {
+                return Err(self.mark_incomplete(
+                    "provider usage has only one side of the prompt cache split; refusing to \
                          guess the missing side",
-                    ));
-                }
-            };
+                ));
+            }
+        };
 
         if let Some(prompt_tokens) = usage.prompt_tokens {
             let split = cache_hit.saturating_add(cache_miss);
@@ -299,14 +403,11 @@ impl RunAccounting {
         ProviderError::new(Refusal::UsageIncomplete, detail)
     }
 
-    /// Exported report; a null settled cost stays null (V2/V6).
+    /// Exported report; a null settled cost stays null (V2/V6), and an
+    /// external (unpriced) run always reports `settled_usd: null`.
     #[must_use]
     pub fn report(&self) -> CostReport {
-        let status = if self.incomplete_reason.is_some() {
-            CostStatus::Incomplete
-        } else {
-            CostStatus::Complete
-        };
+        let status = self.status();
         CostReport {
             status: status.label(),
             settled_usd: if status == CostStatus::Complete {
@@ -319,9 +420,16 @@ impl RunAccounting {
             completion_tokens: self.usage.completion_tokens,
             total_tokens: self.usage.total_tokens,
             reasoning_tokens: self.usage.reasoning_tokens,
-            incomplete_reason: self.incomplete_reason.map(|refusal| refusal.code()),
+            incomplete_reason: self
+                .incomplete_reason
+                .or(self.transport_failure)
+                .map(|refusal| refusal.code()),
             usage_provenance: Provenance::Measured.label(),
-            amount_provenance: Provenance::Derived.label(),
+            amount_provenance: if self.mode.prices_usd() {
+                Provenance::Derived.label()
+            } else {
+                Provenance::Unpriced.label()
+            },
         }
     }
 }
@@ -363,23 +471,51 @@ mod tests {
         // 1M hit + 1M miss + 1M output at 1M tokens each is exactly the row's
         // three per-million prices summed.
         let cases = [
-            (Model::Flash, "2026-11-06T00:00:00Z", "0.753", "2026-11-06T01:00:00Z", "1.506"),
-            (Model::Pro, "2026-11-06T00:00:00Z", "2.662", "2026-11-06T01:00:00Z", "5.324"),
+            (
+                Model::Flash,
+                "2026-11-06T00:00:00Z",
+                "0.753",
+                "2026-11-06T01:00:00Z",
+                "1.506",
+            ),
+            (
+                Model::Pro,
+                "2026-11-06T00:00:00Z",
+                "2.662",
+                "2026-11-06T01:00:00Z",
+                "5.324",
+            ),
         ];
         for (model, off_peak_at, off_expected, peak_at, peak_expected) in cases {
             let mut accounting = RunAccounting::new(PricingTable::documented());
             let off = accounting
-                .record(model, Some(&usage(1_000_000, 1_000_000, 1_000_000)), unix(off_peak_at))
+                .record(
+                    model,
+                    Some(&usage(1_000_000, 1_000_000, 1_000_000)),
+                    unix(off_peak_at),
+                )
                 .expect("off-peak settles");
             assert_eq!(off.peak, Peak::OffPeak);
-            assert_eq!(off.amount_usd, Decimal::from_str(off_expected).expect("decimal"), "{model:?} off-peak");
+            assert_eq!(
+                off.amount_usd,
+                Decimal::from_str(off_expected).expect("decimal"),
+                "{model:?} off-peak"
+            );
 
             let mut accounting = RunAccounting::new(PricingTable::documented());
             let peak = accounting
-                .record(model, Some(&usage(1_000_000, 1_000_000, 1_000_000)), unix(peak_at))
+                .record(
+                    model,
+                    Some(&usage(1_000_000, 1_000_000, 1_000_000)),
+                    unix(peak_at),
+                )
                 .expect("peak settles");
             assert_eq!(peak.peak, Peak::Peak);
-            assert_eq!(peak.amount_usd, Decimal::from_str(peak_expected).expect("decimal"), "{model:?} peak");
+            assert_eq!(
+                peak.amount_usd,
+                Decimal::from_str(peak_expected).expect("decimal"),
+                "{model:?} peak"
+            );
         }
     }
 
@@ -413,9 +549,20 @@ mod tests {
         // INCOMPLETE; the earlier figure is not exported either.
         let mut accounting = RunAccounting::new(PricingTable::documented());
         accounting
-            .record(Model::Flash, Some(&Usage { completion_tokens: Some(10), prompt_cache_hit_tokens: Some(1), prompt_cache_miss_tokens: Some(1), ..Usage::default() }), 0)
+            .record(
+                Model::Flash,
+                Some(&Usage {
+                    completion_tokens: Some(10),
+                    prompt_cache_hit_tokens: Some(1),
+                    prompt_cache_miss_tokens: Some(1),
+                    ..Usage::default()
+                }),
+                0,
+            )
             .expect("first settles");
-        accounting.record(Model::Flash, None, 0).expect_err("second incomplete");
+        accounting
+            .record(Model::Flash, None, 0)
+            .expect_err("second incomplete");
         assert_eq!(accounting.report().settled_usd, None);
         assert!(accounting.settled_usd().is_err());
     }
@@ -458,7 +605,11 @@ mod tests {
             .expect("settles");
         let value = serde_json::to_value(accounting.report()).expect("serialises");
         assert_eq!(value["status"], "COMPLETE");
-        assert_eq!(value["reasoning_tokens"], serde_json::Value::Null, "absent stays null");
+        assert_eq!(
+            value["reasoning_tokens"],
+            serde_json::Value::Null,
+            "absent stays null"
+        );
         assert!(value["settled_usd"].is_string());
         // 40 hit × 0.003/1M + 60 miss × 0.15/1M + 50 out × 0.6/1M
         assert_eq!(

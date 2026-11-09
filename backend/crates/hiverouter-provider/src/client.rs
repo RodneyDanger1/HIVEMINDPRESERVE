@@ -25,8 +25,8 @@ use tokio::sync::mpsc;
 use zeroize::Zeroizing;
 
 use crate::budget::{
-    retry_after_from_header_value, BudgetLimits, CallEstimate, InFlightLimiter, RetryPolicy,
-    RunBudget,
+    retry_after_from_header_value, BudgetLimits, CallEstimate, InFlightLimiter, RateLimitPolicy,
+    RequestRateGovernor, RetryPolicy, RunBudget,
 };
 use crate::dto::{
     BalanceResponse, ChatRequest, ChatResponse, Delta, ModelsResponse, StreamChunk,
@@ -52,6 +52,9 @@ pub struct ClientConfig {
     pub retry: RetryPolicy,
     /// Local in-flight limiter shared by all calls of this client.
     pub in_flight: Arc<InFlightLimiter>,
+    /// Shared request-rate governor applied to every HTTP attempt (including
+    /// retries). Default: unlimited (documented DeepSeek behavior unchanged).
+    pub rate_limit: Arc<RequestRateGovernor>,
 }
 
 impl Default for ClientConfig {
@@ -63,16 +66,36 @@ impl Default for ClientConfig {
             stream_idle_timeout: Duration::from_secs(600),
             retry: RetryPolicy::default(),
             in_flight: Arc::new(InFlightLimiter::new(crate::budget::IN_FLIGHT_LIMIT)),
+            rate_limit: Arc::new(RequestRateGovernor::new(RateLimitPolicy::unlimited())),
         }
     }
 }
 
 impl ClientConfig {
-    /// Overrides the base URL (localhost mock server in tests; documented
-    /// production value otherwise).
+    /// Overrides the base URL. A URL other than the documented DeepSeek base is
+    /// an external OpenAI-compatible endpoint, so the documented external
+    /// request-rate policy (20 requests/minute) is applied automatically when
+    /// no explicit rate policy was set. DeepSeek (`DEFAULT_BASE_URL`) keeps the
+    /// unchanged unlimited behavior. Call [`Self::with_rate_limit`] afterwards
+    /// to override either choice.
     #[must_use]
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
+        if self.base_url.trim_end_matches('/') != DEFAULT_BASE_URL.trim_end_matches('/')
+            && self.rate_limit.policy().is_unlimited()
+        {
+            self.rate_limit = Arc::new(RequestRateGovernor::new(
+                RateLimitPolicy::external_endpoint(),
+            ));
+        }
+        self
+    }
+
+    /// Overrides the request-rate policy (applies to every attempt, retries
+    /// included).
+    #[must_use]
+    pub fn with_rate_limit(mut self, policy: RateLimitPolicy) -> Self {
+        self.rate_limit = Arc::new(RequestRateGovernor::new(policy));
         self
     }
 
@@ -290,12 +313,20 @@ impl DeepSeekClient {
             .send()
             .await
             .map_err(|error| {
-                map_transport_error(&error, self.config.request_timeout, "reading account metadata")
+                map_transport_error(
+                    &error,
+                    self.config.request_timeout,
+                    "reading account metadata",
+                )
             })?;
         let response = self.classify_status(response)?;
         let status = response.status().as_u16();
         let body = response.text().await.map_err(|error| {
-            map_transport_error(&error, self.config.request_timeout, "reading account metadata body")
+            map_transport_error(
+                &error,
+                self.config.request_timeout,
+                "reading account metadata body",
+            )
         })?;
         serde_json::from_str(&body).map_err(|error| {
             ProviderError::new(
@@ -315,7 +346,10 @@ impl DeepSeekClient {
     /// The documented model ids this client may call.
     #[must_use]
     pub fn model_ids(&self) -> Vec<&'static str> {
-        crate::dto::Model::ALL.iter().map(|model| model.id()).collect()
+        crate::dto::Model::ALL
+            .iter()
+            .map(|model| model.id())
+            .collect()
     }
 
     fn endpoint(&self) -> String {
@@ -384,6 +418,12 @@ impl DeepSeekClient {
             attempt = attempt.saturating_add(1);
             if let Some(active_budget) = budget.as_deref_mut() {
                 active_budget.preflight(estimate)?;
+            }
+            // Request-rate permit for this HTTP attempt (retries included).
+            // It is taken before record_attempt so a governor refusal is not
+            // counted as a provider send.
+            self.config.rate_limit.acquire().await?;
+            if let Some(active_budget) = budget.as_deref_mut() {
                 active_budget.record_attempt();
             }
             let result = self.send_once(request).await;
@@ -391,7 +431,11 @@ impl DeepSeekClient {
                 Ok((response, status)) => {
                     let usage = response.contract_usage();
                     if let Some(active_budget) = budget.as_deref_mut() {
-                        active_budget.record_call(request.accounting_model, usage.as_ref(), at_unix_secs)?;
+                        active_budget.record_call(
+                            request.accounting_model,
+                            usage.as_ref(),
+                            at_unix_secs,
+                        )?;
                     }
                     return Ok(Completion {
                         response,
@@ -405,10 +449,7 @@ impl DeepSeekClient {
                     if !error.retryable() || !retry_budget_left {
                         return Err(self.final_error(error));
                     }
-                    let delay = self
-                        .config
-                        .retry
-                        .delay_for(attempt, error.retry_after());
+                    let delay = self.config.retry.delay_for(attempt, error.retry_after());
                     tracing::warn!(
                         code = error.code(),
                         attempt,
@@ -444,7 +485,11 @@ impl DeepSeekClient {
         let response = self.open(&self.http, request).await?;
         let status = response.status().as_u16();
         let body = response.text().await.map_err(|error| {
-            map_transport_error(&error, self.config.request_timeout, "reading the response body")
+            map_transport_error(
+                &error,
+                self.config.request_timeout,
+                "reading the response body",
+            )
         })?;
         let parsed: ChatResponse = serde_json::from_str(&body).map_err(|error| {
             ProviderError::new(
@@ -586,6 +631,10 @@ impl DeepSeekClient {
             attempt = attempt.saturating_add(1);
             if let Some(active_budget) = budget.as_deref_mut() {
                 active_budget.preflight(estimate)?;
+            }
+            // Request-rate permit for every open attempt (retries included).
+            self.config.rate_limit.acquire().await?;
+            if let Some(active_budget) = budget.as_deref_mut() {
                 active_budget.record_attempt();
             }
             let opened = self.open_stream(&stream_request).await;
@@ -689,10 +738,7 @@ async fn pump_stream(
                             if let Some(chunk_usage) = chunk.usage {
                                 let mapped = chunk_usage.to_usage();
                                 if !mapped.is_empty() {
-                                    usage = Some(match usage {
-                                        Some(existing) => existing.checked_add(&mapped),
-                                        None => mapped,
-                                    });
+                                    usage = Some(merge_stream_usage(usage, mapped));
                                 }
                             }
                             for choice in &chunk.choices {
@@ -735,6 +781,53 @@ async fn pump_stream(
             finish_reason,
         }))
         .await;
+}
+
+/// Merges one streamed usage object into the running total.
+///
+/// OpenAI-compatible streams that set `stream_options.include_usage` report a
+/// *cumulative* usage snapshot, and a provider may repeat that snapshot in more
+/// than one chunk. Summing blindly double counts it. A later snapshot whose
+/// measured counters are all greater than or equal to the previous ones is
+/// therefore treated as cumulative (replace); a lower counter means the chunks
+/// are incremental fragments, which are still added.
+fn merge_stream_usage(existing: Option<Usage>, next: Usage) -> Usage {
+    let Some(previous) = existing else {
+        return next;
+    };
+    if is_cumulative_snapshot(&previous, &next) {
+        next
+    } else {
+        previous.checked_add(&next)
+    }
+}
+
+/// Whether `next` looks like a cumulative snapshot of `previous`.
+fn is_cumulative_snapshot(previous: &Usage, next: &Usage) -> bool {
+    let same = previous == next;
+    let mut grew = false;
+    for (before, after) in [
+        (previous.prompt_tokens, next.prompt_tokens),
+        (previous.completion_tokens, next.completion_tokens),
+        (previous.total_tokens, next.total_tokens),
+        (
+            previous.prompt_cache_hit_tokens,
+            next.prompt_cache_hit_tokens,
+        ),
+        (
+            previous.prompt_cache_miss_tokens,
+            next.prompt_cache_miss_tokens,
+        ),
+        (previous.reasoning_tokens, next.reasoning_tokens),
+    ] {
+        match (before, after) {
+            (Some(before), Some(after)) if after >= before => grew |= after > before,
+            (Some(_), Some(_)) => return false,
+            (None, Some(_)) => grew = true,
+            _ => {}
+        }
+    }
+    same || grew
 }
 
 /// Parses every documented delta field into ordered stream events.
@@ -839,7 +932,10 @@ mod tests {
 
     #[test]
     fn sse_lines_are_parsed_as_documented() {
-        assert_eq!(parse_sse_line(": keep-alive").expect("ignored"), SseLine::Ignored);
+        assert_eq!(
+            parse_sse_line(": keep-alive").expect("ignored"),
+            SseLine::Ignored
+        );
         assert_eq!(parse_sse_line("").expect("ignored"), SseLine::Ignored);
         assert_eq!(parse_sse_line("data: [DONE]").expect("done"), SseLine::Done);
         let chunk = parse_sse_line(
@@ -847,7 +943,9 @@ mod tests {
         )
         .expect("chunk");
         match chunk {
-            SseLine::Chunk(chunk) => assert_eq!(chunk.choices[0].delta.content.as_deref(), Some("Hi")),
+            SseLine::Chunk(chunk) => {
+                assert_eq!(chunk.choices[0].delta.content.as_deref(), Some("Hi"))
+            }
             other => panic!("expected chunk, got {other:?}"),
         }
         let malformed = parse_sse_line("data: {not json}").expect_err("malformed");
@@ -859,7 +957,10 @@ mod tests {
         let key = ApiKey::from_secret("sk-debug-test-value").expect("key");
         let client = DeepSeekClient::new(ClientConfig::default(), key).expect("client");
         let debug = format!("{client:?}");
-        assert!(!debug.contains("sk-debug-test-value"), "key must not appear in Debug");
+        assert!(
+            !debug.contains("sk-debug-test-value"),
+            "key must not appear in Debug"
+        );
         assert!(debug.contains("https://api.deepseek.com"));
         assert_eq!(
             client.endpoint(),

@@ -8,7 +8,8 @@
 //! Retries are bounded per call (≤3 attempts, jittered, Retry-After capped at
 //! 60 s, no retry on 401/402 — the client honours this policy).
 
-use std::sync::Arc;
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use hiverouter_contract::{Refusal, Usage};
@@ -16,7 +17,7 @@ use rust_decimal::Decimal;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use uuid::Uuid;
 
-use crate::accounting::{CallCost, CostReport, CostStatus, RunAccounting};
+use crate::accounting::{CallCost, CostMode, CostReport, CostStatus, RunAccounting};
 use crate::dto::Model;
 use crate::error::ProviderError;
 use crate::pricing::PricingTable;
@@ -68,6 +69,9 @@ pub struct BudgetLimits {
     pub call_cap: u32,
     /// B8: attempts per call.
     pub max_attempts: u32,
+    /// How usage becomes money: DeepSeek USD, or measured-but-unpriced for an
+    /// external OpenAI-compatible endpoint.
+    pub cost_mode: CostMode,
 }
 
 impl Default for BudgetLimits {
@@ -77,6 +81,24 @@ impl Default for BudgetLimits {
             token_budget_combined: TOKEN_BUDGET_COMBINED,
             call_cap: CALL_CAP,
             max_attempts: MAX_ATTEMPTS,
+            cost_mode: CostMode::DeepSeekUsd,
+        }
+    }
+}
+
+impl BudgetLimits {
+    /// Limits for an explicitly configured OpenAI-compatible endpoint.
+    ///
+    /// Such an endpoint may bill in points rather than DeepSeek USD, so the
+    /// DeepSeek dollar cap is not a truthful stop condition. Token and call
+    /// caps still apply, and [`CostMode::ExternalUnpriced`] guarantees the run
+    /// never reports a settled DeepSeek USD amount.
+    #[must_use]
+    pub fn external_endpoint() -> Self {
+        Self {
+            run_cost_cap_usd: Decimal::from(u64::MAX),
+            cost_mode: CostMode::ExternalUnpriced,
+            ..Self::default()
         }
     }
 }
@@ -122,23 +144,36 @@ impl RunBudget {
     /// New budget for one run using the documented pricing table.
     #[must_use]
     pub fn new(limits: BudgetLimits) -> Self {
+        Self::with_pricing(limits, PricingTable::documented())
+    }
+
+    /// New budget over an explicit pricing table (tests / future price updates).
+    ///
+    /// The cost mode follows `limits.cost_mode`, so
+    /// `RunBudget::new(BudgetLimits::external_endpoint())` never settles USD.
+    #[must_use]
+    pub fn with_pricing(limits: BudgetLimits, table: PricingTable) -> Self {
+        let mode = limits.cost_mode;
         Self {
             limits,
-            accounting: RunAccounting::new(PricingTable::documented()),
+            accounting: RunAccounting::with_mode(table, mode),
             attempts: 0,
             retries: 0,
         }
     }
 
-    /// New budget over an explicit pricing table (tests / future price updates).
+    /// New budget for an external endpoint (measured usage, no USD settlement).
     #[must_use]
-    pub fn with_pricing(limits: BudgetLimits, table: PricingTable) -> Self {
-        Self {
-            limits,
-            accounting: RunAccounting::new(table),
-            attempts: 0,
-            retries: 0,
-        }
+    pub fn external(limits: BudgetLimits) -> Self {
+        let mut limits = limits;
+        limits.cost_mode = CostMode::ExternalUnpriced;
+        Self::new(limits)
+    }
+
+    /// Cost mode of this run.
+    #[must_use]
+    pub fn cost_mode(&self) -> CostMode {
+        self.accounting.mode()
     }
 
     /// Configured limits.
@@ -174,19 +209,13 @@ impl RunBudget {
     /// Spent cost in USD (Decimal only).
     #[must_use]
     pub fn spent_usd(&self) -> Decimal {
-        self.accounting
-            .settled_usd()
-            .unwrap_or(Decimal::ZERO)
+        self.accounting.settled_usd().unwrap_or(Decimal::ZERO)
     }
 
     /// Remaining run cost budget (never negative).
     #[must_use]
     pub fn remaining_usd(&self) -> Decimal {
-        match self
-            .limits
-            .run_cost_cap_usd
-            .checked_sub(self.spent_usd())
-        {
+        match self.limits.run_cost_cap_usd.checked_sub(self.spent_usd()) {
             Some(remaining) if remaining > Decimal::ZERO => remaining,
             _ => Decimal::ZERO,
         }
@@ -197,12 +226,14 @@ impl RunBudget {
     #[must_use]
     pub fn combined_tokens(&self) -> Option<u64> {
         let usage = self.accounting.usage();
-        let prompt = usage.prompt_tokens.or_else(|| match (
-            usage.prompt_cache_hit_tokens,
-            usage.prompt_cache_miss_tokens,
-        ) {
-            (Some(hit), Some(miss)) => Some(hit.saturating_add(miss)),
-            _ => None,
+        let prompt = usage.prompt_tokens.or_else(|| {
+            match (
+                usage.prompt_cache_hit_tokens,
+                usage.prompt_cache_miss_tokens,
+            ) {
+                (Some(hit), Some(miss)) => Some(hit.saturating_add(miss)),
+                _ => None,
+            }
         })?;
         let completion = usage.completion_tokens?;
         Some(prompt.saturating_add(completion))
@@ -226,14 +257,17 @@ impl RunBudget {
     /// caller sends nothing.
     ///
     /// # Errors
-    /// - [`Refusal::UsageIncomplete`] when a previous call left the run cost
-    ///   incomplete (the token/cost totals cannot be verified).
+    /// - [`Refusal::UsageIncomplete`] when a previous call left the run
+    ///   incomplete because its usage counters were missing or inconsistent
+    ///   (the token/cost totals cannot be verified). A transport failure is
+    ///   recorded separately via [`Self::record_transport_failure`] and does
+    ///   not poison later sends.
     /// - [`Refusal::CallLimit`] when the call cap is reached.
     /// - [`Refusal::BudgetExceeded`] when the run cost cap is reached.
     /// - [`Refusal::TokenBudgetExceeded`] when known spend + the estimate
     ///   exceeds the combined token budget.
     pub fn preflight(&self, estimate: &CallEstimate) -> Result<BudgetPermit, ProviderError> {
-        if self.accounting.incomplete_reason().is_some() {
+        if self.accounting.incomplete_reason() == Some(Refusal::UsageIncomplete) {
             return Err(ProviderError::new(
                 Refusal::UsageIncomplete,
                 "a previous call left the run INCOMPLETE; refusing another send because the \
@@ -250,7 +284,9 @@ impl RunBudget {
             ));
         }
         let spent = self.spent_usd();
-        if spent >= self.limits.run_cost_cap_usd {
+        // An external endpoint has no USD price; the dollar cap is not a
+        // truthful stop condition there, so only the token/call caps gate it.
+        if self.cost_mode().prices_usd() && spent >= self.limits.run_cost_cap_usd {
             return Err(ProviderError::new(
                 Refusal::BudgetExceeded,
                 format!(
@@ -295,6 +331,24 @@ impl RunBudget {
         at_unix_secs: u64,
     ) -> Result<CallCost, ProviderError> {
         self.accounting.record(model, usage, at_unix_secs)
+    }
+
+    /// Records a stream attempt that failed in transport after it may have been
+    /// billed.
+    ///
+    /// The run report stays INCOMPLETE (spend unknown, `settled_usd` null) but
+    /// later sends are **not** poisoned: a transient transport failure must not
+    /// fail every sibling task sharing the run budget. The caller must surface
+    /// the original transport refusal to its own task and must not substitute
+    /// this for [`Self::record_call`] on a stream that completed.
+    pub fn record_transport_failure(&mut self, refusal: Refusal) {
+        self.accounting.record_transport_failure(refusal);
+    }
+
+    /// The transport failure recorded for this run, if any.
+    #[must_use]
+    pub fn transport_failure(&self) -> Option<Refusal> {
+        self.accounting.transport_failure()
     }
 
     /// Records one retry attempt (diagnostics; the per-call cap is enforced by
@@ -366,6 +420,236 @@ fn jitter_within(max: Duration) -> Duration {
 pub fn retry_after_from_header_value(value: Option<&str>) -> Option<Duration> {
     let seconds: u64 = value?.trim().parse().ok()?;
     Some(Duration::from_secs(seconds).min(RETRY_AFTER_CAP))
+}
+
+/// Default DeepSeek request-rate policy: no local request-rate governor exists
+/// for the documented account endpoint (its documented limiter is
+/// concurrency, enforced by [`InFlightLimiter`]). Keeping 0 here means the
+/// default endpoint behaves exactly as before.
+pub const DEEPSEEK_REQUESTS_PER_MINUTE: u32 = 0;
+
+/// Documented request-rate limit of the external OpenAI-compatible endpoint
+/// (AMD Token Lab: 20 requests/minute).
+pub const EXTERNAL_ENDPOINT_REQUESTS_PER_MINUTE: u32 = 20;
+
+/// Default window for request-rate accounting.
+pub const RATE_WINDOW: Duration = Duration::from_secs(60);
+
+/// Default ceiling on how long one HTTP attempt may wait for a rate permit
+/// before the call is refused by name instead of queueing indefinitely.
+pub const RATE_MAX_WAIT: Duration = Duration::from_secs(10);
+
+/// Request-rate policy for one endpoint.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RateLimitPolicy {
+    /// Permits per `window`; `0` disables the governor (DeepSeek default).
+    pub requests_per_minute: u32,
+    /// Sliding window length (normally 60 s; short only in tests).
+    pub window: Duration,
+    /// Longest wait an attempt will accept before refusing.
+    pub max_wait: Duration,
+}
+
+impl RateLimitPolicy {
+    /// No request-rate governor (documented DeepSeek default behavior).
+    #[must_use]
+    pub fn unlimited() -> Self {
+        Self {
+            requests_per_minute: DEEPSEEK_REQUESTS_PER_MINUTE,
+            window: RATE_WINDOW,
+            max_wait: Duration::ZERO,
+        }
+    }
+
+    /// `requests_per_minute` permits per 60 s window.
+    #[must_use]
+    pub fn per_minute(requests_per_minute: u32) -> Self {
+        Self {
+            requests_per_minute,
+            window: RATE_WINDOW,
+            max_wait: RATE_MAX_WAIT,
+        }
+    }
+
+    /// Documented external endpoint policy (20 requests/minute).
+    #[must_use]
+    pub fn external_endpoint() -> Self {
+        Self::per_minute(EXTERNAL_ENDPOINT_REQUESTS_PER_MINUTE)
+    }
+
+    /// Same policy over a different window (tests use short windows).
+    #[must_use]
+    pub fn with_window(mut self, window: Duration) -> Self {
+        self.window = window;
+        self
+    }
+
+    /// Same policy with a different maximum wait.
+    #[must_use]
+    pub fn with_max_wait(mut self, max_wait: Duration) -> Self {
+        self.max_wait = max_wait;
+        self
+    }
+
+    /// Whether the governor is disabled.
+    #[must_use]
+    pub fn is_unlimited(&self) -> bool {
+        self.requests_per_minute == 0
+    }
+}
+
+impl Default for RateLimitPolicy {
+    fn default() -> Self {
+        Self::unlimited()
+    }
+}
+
+/// Proof that one HTTP attempt holds a request-rate permit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RatePermit {
+    /// Grant instant measured from the governor's start.
+    pub granted_at: Duration,
+}
+
+/// The wait until the next permit would become available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RateWait {
+    /// Time until the oldest in-window grant leaves the window.
+    pub wait: Duration,
+}
+
+/// Shared sliding-window request-rate governor for provider HTTP attempts.
+///
+/// Every attempt (including retries) must take a permit before it is sent.
+/// The governor keeps at most `requests_per_minute` grant instants; a caller
+/// that would have to wait longer than `max_wait` is refused with
+/// [`Refusal::LlmRateLimit`] instead of queueing without a bound. It never
+/// busy-loops: [`Self::acquire`] sleeps exactly until the next permit.
+///
+/// Determinism: [`Self::try_acquire_at`] takes the current instant as an
+/// argument, so tests can inject a clock and assert spacing/permit accounting
+/// without sleeping for a real minute.
+#[derive(Debug)]
+pub struct RequestRateGovernor {
+    policy: RateLimitPolicy,
+    epoch: std::time::Instant,
+    state: Mutex<VecDeque<Duration>>,
+    granted_total: std::sync::atomic::AtomicU64,
+}
+
+impl RequestRateGovernor {
+    /// Builds a governor from a policy.
+    #[must_use]
+    pub fn new(policy: RateLimitPolicy) -> Self {
+        Self {
+            policy,
+            epoch: std::time::Instant::now(),
+            state: Mutex::new(VecDeque::new()),
+            granted_total: std::sync::atomic::AtomicU64::new(0),
+        }
+    }
+
+    /// Configured policy.
+    #[must_use]
+    pub fn policy(&self) -> &RateLimitPolicy {
+        &self.policy
+    }
+
+    /// Total permits granted since construction (diagnostics and tests).
+    #[must_use]
+    pub fn granted_total(&self) -> u64 {
+        self.granted_total
+            .load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    fn lock_state(&self) -> std::sync::MutexGuard<'_, VecDeque<Duration>> {
+        // The critical section never panics; recover rather than poison.
+        match self.state.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        }
+    }
+
+    /// Tries to take a permit at an explicitly supplied instant.
+    ///
+    /// `at` must be monotonic. Returns the wait until the window frees a slot
+    /// when no permit is available; it never sleeps.
+    ///
+    /// # Errors
+    /// Never errors; a too-long wait is reported as [`RateWait`] so the caller
+    /// can name the refusal.
+    pub fn try_acquire_at(&self, at: Duration) -> Result<RatePermit, RateWait> {
+        if self.policy.is_unlimited() {
+            self.granted_total
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return Ok(RatePermit { granted_at: at });
+        }
+        let mut grants = self.lock_state();
+        while let Some(oldest) = grants.front() {
+            if at.saturating_sub(*oldest) < self.policy.window {
+                break;
+            }
+            grants.pop_front();
+        }
+        let limit = usize::try_from(self.policy.requests_per_minute).unwrap_or(usize::MAX);
+        if grants.len() < limit {
+            grants.push_back(at);
+            drop(grants);
+            self.granted_total
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return Ok(RatePermit { granted_at: at });
+        }
+        let oldest = grants.front().copied().unwrap_or(at);
+        let wait = oldest.saturating_add(self.policy.window).saturating_sub(at);
+        Err(RateWait { wait })
+    }
+
+    /// Waits for (or refuses) a permit for one HTTP attempt.
+    ///
+    /// # Errors
+    /// [`Refusal::LlmRateLimit`] when the next permit is further away than
+    /// `policy.max_wait`; the wait is bounded by `max_wait`, and the retry loop
+    /// is bounded to two sleeps, so this can never spin.
+    pub async fn acquire(&self) -> Result<RatePermit, ProviderError> {
+        if self.policy.is_unlimited() {
+            return self
+                .try_acquire_at(Duration::ZERO)
+                .map_err(|wait| self.too_far(wait.wait));
+        }
+        let mut sleeps = 0u32;
+        loop {
+            match self.try_acquire_at(self.epoch.elapsed()) {
+                Ok(permit) => return Ok(permit),
+                Err(wait) if wait.wait > self.policy.max_wait => {
+                    return Err(self.too_far(wait.wait));
+                }
+                Err(wait) => {
+                    sleeps = sleeps.saturating_add(1);
+                    if sleeps > 2 {
+                        return Err(self.too_far(wait.wait));
+                    }
+                    // Sleep exactly until the window frees the slot (plus 1 ms
+                    // so the boundary is inclusive on the next check).
+                    tokio::time::sleep(wait.wait.saturating_add(Duration::from_millis(1))).await;
+                }
+            }
+        }
+    }
+
+    fn too_far(&self, wait: Duration) -> ProviderError {
+        ProviderError::new(
+            Refusal::LlmRateLimit,
+            format!(
+                "request-rate governor: next request permit is {} ms away, beyond the {} ms \
+                 maximum wait ({} requests per {}); refusing instead of queueing",
+                u64::try_from(wait.as_millis()).unwrap_or(u64::MAX),
+                u64::try_from(self.policy.max_wait.as_millis()).unwrap_or(u64::MAX),
+                self.policy.requests_per_minute,
+                u64::try_from(self.policy.window.as_secs()).unwrap_or(u64::MAX),
+            ),
+        )
+        .with_status(429)
+    }
 }
 
 /// Local in-flight concurrency limiter (B7; provider concurrency is
@@ -469,7 +753,10 @@ impl RunCaps {
         if child_depth > self.max_depth {
             return Err(ProviderError::new(
                 Refusal::SpawnDepth,
-                format!("spawn depth {child_depth} exceeds the maximum {}", self.max_depth),
+                format!(
+                    "spawn depth {child_depth} exceeds the maximum {}",
+                    self.max_depth
+                ),
             ));
         }
         if current_children >= self.max_fanout {
@@ -484,10 +771,7 @@ impl RunCaps {
         if current_agents.saturating_add(1) > self.max_agents {
             return Err(ProviderError::new(
                 Refusal::AgentLimit,
-                format!(
-                    "spawn would exceed the {} agent cap",
-                    self.max_agents
-                ),
+                format!("spawn would exceed the {} agent cap", self.max_agents),
             ));
         }
         Ok(())
@@ -583,7 +867,10 @@ mod tests {
         let mut budget = RunBudget::new(limits);
         budget.record_attempt();
         assert_eq!(
-            budget.preflight(&CallEstimate::default()).expect_err("cap").code(),
+            budget
+                .preflight(&CallEstimate::default())
+                .expect_err("cap")
+                .code(),
             "E_CALL_LIMIT"
         );
 
@@ -599,7 +886,10 @@ mod tests {
         budget.record_attempt();
         budget.record_attempt();
         assert_eq!(
-            budget.preflight(&CallEstimate::default()).expect_err("cap").code(),
+            budget
+                .preflight(&CallEstimate::default())
+                .expect_err("cap")
+                .code(),
             "E_CALL_LIMIT"
         );
 
@@ -623,7 +913,10 @@ mod tests {
             .record_call(Model::Flash, None, 0)
             .expect_err("null usage is incomplete");
         assert_eq!(
-            budget.preflight(&CallEstimate::default()).expect_err("incomplete").code(),
+            budget
+                .preflight(&CallEstimate::default())
+                .expect_err("incomplete")
+                .code(),
             "E_USAGE_INCOMPLETE"
         );
     }
@@ -638,7 +931,10 @@ mod tests {
             retry_after_from_header_value(Some("7")),
             Some(Duration::from_secs(7))
         );
-        assert_eq!(retry_after_from_header_value(Some("Wed, 21 Oct 2026 07:28:00 GMT")), None);
+        assert_eq!(
+            retry_after_from_header_value(Some("Wed, 21 Oct 2026 07:28:00 GMT")),
+            None
+        );
         assert_eq!(retry_after_from_header_value(None), None);
 
         let policy = RetryPolicy::default();
@@ -650,14 +946,20 @@ mod tests {
         for attempt in 1..=5 {
             let delay = policy.delay_for(attempt, None);
             assert!(delay >= policy.base_delay, "backoff has a floor");
-            assert!(delay <= policy.max_delay.max(policy.base_delay), "backoff is bounded");
+            assert!(
+                delay <= policy.max_delay.max(policy.base_delay),
+                "backoff is bounded"
+            );
         }
     }
 
     #[test]
     fn one_key_rule_refuses_by_name() {
         assert!(enforce_single_key(1).is_ok());
-        assert_eq!(enforce_single_key(0).expect_err("none").code(), "E_KEY_MISSING");
+        assert_eq!(
+            enforce_single_key(0).expect_err("none").code(),
+            "E_KEY_MISSING"
+        );
         assert_eq!(
             enforce_single_key(2).expect_err("multi").code(),
             "E_MULTIKEY_FORBIDDEN"

@@ -422,6 +422,16 @@ pub struct ChatRequest {
     /// JSON mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response_format: Option<ResponseFormat>,
+    /// OpenAI-compatible streaming usage option.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_options: Option<StreamOptions>,
+}
+
+/// Documented OpenAI-compatible stream options.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StreamOptions {
+    /// Request final usage counters in the stream.
+    pub include_usage: bool,
 }
 
 impl ChatRequest {
@@ -439,6 +449,7 @@ impl ChatRequest {
             tools: None,
             tool_choice: None,
             response_format: None,
+            stream_options: None,
         }
     }
 
@@ -560,7 +571,9 @@ impl ChatRequest {
             if max_tokens == 0 || max_tokens > MAX_OUTPUT_TOKENS {
                 return Err(crate::error::ProviderError::new(
                     Refusal::SchemaInvalid,
-                    format!("max_tokens {max_tokens} is outside the documented 1..={MAX_OUTPUT_TOKENS}"),
+                    format!(
+                        "max_tokens {max_tokens} is outside the documented 1..={MAX_OUTPUT_TOKENS}"
+                    ),
                 ));
             }
         }
@@ -612,6 +625,17 @@ pub struct UsageDto {
     /// Completion breakdown.
     #[serde(default)]
     pub completion_tokens_details: Option<CompletionTokensDetails>,
+    /// OpenAI-compatible prompt token breakdown.
+    #[serde(default)]
+    pub prompt_tokens_details: Option<PromptTokensDetails>,
+}
+
+/// OpenAI-compatible prompt token breakdown.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+pub struct PromptTokensDetails {
+    /// Tokens served from the provider cache.
+    #[serde(default)]
+    pub cached_tokens: Option<u64>,
 }
 
 impl UsageDto {
@@ -619,12 +643,32 @@ impl UsageDto {
     /// values stay absent (V1-V6) and never become zero.
     #[must_use]
     pub fn to_usage(&self) -> Usage {
+        // DeepSeek reports a cache hit/miss split directly. OpenAI-compatible
+        // endpoints (for example AMD Token Lab) report prompt_tokens plus
+        // prompt_tokens_details.cached_tokens; derive the miss side from those
+        // measured counters rather than coercing a missing side to zero.
+        let (hit, miss) = match (self.prompt_cache_hit_tokens, self.prompt_cache_miss_tokens) {
+            (Some(hit), Some(miss)) => (Some(hit), Some(miss)),
+            (None, None) => {
+                if let (Some(prompt), Some(cached)) = (
+                    self.prompt_tokens,
+                    self.prompt_tokens_details
+                        .and_then(|details| details.cached_tokens)
+                        .or(self.cached_tokens),
+                ) {
+                    (Some(cached), Some(prompt.saturating_sub(cached)))
+                } else {
+                    (None, None)
+                }
+            }
+            (hit, miss) => (hit, miss),
+        };
         Usage {
             prompt_tokens: self.prompt_tokens,
             completion_tokens: self.completion_tokens,
             total_tokens: self.total_tokens,
-            prompt_cache_hit_tokens: self.prompt_cache_hit_tokens,
-            prompt_cache_miss_tokens: self.prompt_cache_miss_tokens,
+            prompt_cache_hit_tokens: hit,
+            prompt_cache_miss_tokens: miss,
             reasoning_tokens: self
                 .completion_tokens_details
                 .and_then(|details| details.reasoning_tokens),
@@ -784,7 +828,11 @@ mod tests {
     fn model_ids_are_the_documented_ids() {
         assert_eq!(Model::Flash.id(), "deepseek-flash");
         assert_eq!(Model::Pro.id(), "deepseek-v4-pro");
-        assert_eq!(Model::from_id("deepseek-v4-flash"), None, "legacy id refused");
+        assert_eq!(
+            Model::from_id("deepseek-v4-flash"),
+            None,
+            "legacy id refused"
+        );
         for model in Model::ALL {
             assert_eq!(Model::from_id(model.id()), Some(*model));
         }
@@ -799,7 +847,10 @@ mod tests {
         assert_eq!(value["model"], "deepseek-flash");
         assert_eq!(value["max_tokens"], 1024);
         assert_eq!(value["thinking"]["type"], "disabled");
-        assert!(value.get("temperature").is_none(), "undocumented field not sent");
+        assert!(
+            value.get("temperature").is_none(),
+            "undocumented field not sent"
+        );
         assert!(value.get("frequency_penalty").is_none());
         assert_eq!(value["messages"][0]["role"], "user");
     }
@@ -834,6 +885,33 @@ mod tests {
             .with_max_tokens(393_216)
             .validate()
             .is_ok());
+    }
+
+    #[test]
+    fn openai_prompt_token_details_derives_the_cache_split() {
+        let parsed: UsageDto = serde_json::from_str(
+            r#"{"prompt_tokens":8,"completion_tokens":3,"total_tokens":11,
+                "prompt_tokens_details":{"cached_tokens":2}}"#,
+        )
+        .expect("deserialises");
+        let usage = parsed.to_usage();
+        assert_eq!(usage.prompt_tokens, Some(8));
+        assert_eq!(usage.completion_tokens, Some(3));
+        assert_eq!(usage.prompt_cache_hit_tokens, Some(2));
+        assert_eq!(usage.prompt_cache_miss_tokens, Some(6));
+    }
+
+    #[test]
+    fn deepseek_cache_split_still_wins_over_openai_details() {
+        let parsed: UsageDto = serde_json::from_str(
+            r#"{"prompt_tokens":8,"completion_tokens":3,"total_tokens":11,
+                "prompt_cache_hit_tokens":3,"prompt_cache_miss_tokens":5,
+                "prompt_tokens_details":{"cached_tokens":2}}"#,
+        )
+        .expect("deserialises");
+        let usage = parsed.to_usage();
+        assert_eq!(usage.prompt_cache_hit_tokens, Some(3));
+        assert_eq!(usage.prompt_cache_miss_tokens, Some(5));
     }
 
     #[test]
@@ -881,7 +959,11 @@ mod tests {
         )
         .expect("unknown fields ignored");
         assert_eq!(chunk.choices[0].delta.content.as_deref(), Some("He"));
-        let tool_delta = &chunk.choices[0].delta.tool_calls.as_ref().expect("tool delta")[0];
+        let tool_delta = &chunk.choices[0]
+            .delta
+            .tool_calls
+            .as_ref()
+            .expect("tool delta")[0];
         assert_eq!(tool_delta.index, 0);
         assert_eq!(tool_delta.id.as_deref(), Some("call_1"));
         assert_eq!(
