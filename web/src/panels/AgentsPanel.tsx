@@ -18,6 +18,7 @@ import { AgentProfilesPanel } from './AgentProfilesPanel';
 import { AgentMemoryPanel } from './AgentMemoryPanel';
 import { MemoryBanksPanel } from './MemoryBanksPanel';
 import { AgentHierarchy } from './AgentHierarchy';
+import { AgentRosterPanel } from './AgentRosterPanel';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -72,6 +73,7 @@ export function AgentsPanel() {
         <ToolActivityPanel entries={toolActivity} />
       </div>
       <AgentProfilesPanel />
+      <AgentRosterPanel />
       <AgentMemoryPanel />
       <MemoryBanksPanel />
       <AgentMessagesPanel />

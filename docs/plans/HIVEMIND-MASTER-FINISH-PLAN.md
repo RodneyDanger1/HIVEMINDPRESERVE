@@ -427,3 +427,8 @@ Not delivered and must not be claimed:
 
 - Bank inspector adds `Prune inactive`: dry-run first, then a confirmation only when inactive rows exist; receipt reports the removed count and refreshes the journal view.
 - Full gate remains 550/189; GitNexus found no symbol overlap but explicitly “not a clean tree”; no clean-impact claim.
+### UI roster/ownership surface
+
+- `AgentRosterPanel` reads `/api/agents/runs/{run_id}/roster` and displays task id, class, rank, role, profile, ownership mode and scope; no client inference.
+- Mounted in the Agents panel; typecheck/build pass.
+- GitNexus detect-changes reports `AgentsPanel` at **low** risk (tool exit 1 despite output); no broader clean claim.
