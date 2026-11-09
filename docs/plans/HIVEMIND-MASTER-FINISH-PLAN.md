@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `cbcbf37` (clean tree). Latest offline gate: `cargo test --workspace --locked` 547 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `cbcbf37` (clean tree). Latest offline gate: `cargo test --workspace --locked` 548 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -402,3 +402,8 @@ Not delivered and must not be claimed:
 - `GET /api/memory/context/{task_id}` returns bank ids, entry ids, rendered chars, truncation, prompt hash, and creation time; no memory text.
 - Run-detail panel adds a task selector and shows snapshot metadata; missing snapshot is an explicit error, not a fabricated row.
 - HTTP test covers snapshot metadata. GitNexus detect-changes returned changed symbols and exit 1; no clean-impact claim is made.
+### Scale S0 probe (honest baseline)
+
+- `tests/scale_s0.rs` measures wall time with an instant provider double: 2 planned nodes (3 tasks/3 serial calls) = 20 ms; 8 planned nodes (9 tasks/9 serial calls) = 46 ms on this host.
+- The probe also proves the current hard ceiling: MAX_FANOUT=8 rejects larger root plans, so S0 cannot reach 50–150 agents. No S1/S2/S3 concurrency or 300–600 scale is claimed.
+- Plan-level scale remains blocked on a scheduler/worker-pool change, not on this probe.
