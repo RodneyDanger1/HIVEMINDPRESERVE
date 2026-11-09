@@ -1,0 +1,36 @@
+﻿{
+    "commit":  "b94eb773c1fb955318e37c28e5534ce65a3f1928",
+    "captured_at":  "2026-11-09T00:12:20.6044074-06:00",
+    "cargo":  {
+                  "passed":  571,
+                  "failed":  0,
+                  "ignored":  2,
+                  "command":  "cargo test --workspace --locked",
+                  "suites":  44,
+                  "exit":  0
+              },
+    "web_typecheck":  {
+                          "exit":  0,
+                          "command":  "npm run typecheck"
+                      },
+    "web_tests":  {
+                      "passed":  191,
+                      "command":  "npm test",
+                      "failed":  0,
+                      "exit":  0
+                  },
+    "web_build":  {
+                      "exit":  0,
+                      "command":  "npm run build"
+                  },
+    "release_build":  {
+                          "bytes":  36094464,
+                          "command":  "cargo build --release --locked",
+                          "sha256":  "09AC4E0D8FC899D397EF46299DEE770B108DF16A70031CE5A29AF8924889C2D9",
+                          "binary":  "target/release/hiverouter.exe",
+                          "exit":  0
+                      },
+    "schema_version":  22,
+    "key_present":  false,
+    "launched":  false
+}
