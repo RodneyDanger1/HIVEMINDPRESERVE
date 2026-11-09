@@ -3939,23 +3939,28 @@ impl RunEngine {
             created_by: format!("hyper:{}", task.id),
         })?;
         // A remote principal with no device/grant is inert: it appears in the
-        // lane but can never be actuated. Give the two fixture-backed kinds one
-        // real device and one narrow grant; daemon relay remains records-only.
-        if matches!(kind, "light" | "garage") {
-            let (class, capability, action, caps) = if kind == "light" {
-                (
+        // lane but can never be actuated. Give the fixture-backed kinds one real
+        // device and one narrow grant; a relay is represented as a switch.
+        if matches!(kind, "light" | "garage" | "daemon_relay") {
+            let (class, capability, action, caps) = match kind {
+                "light" => (
                     "light",
                     "power",
                     "toggle",
                     r#"[{"capability_id":"power","actions":["on","off","toggle"]}]"#,
-                )
-            } else {
-                (
+                ),
+                "garage" => (
                     "cover",
                     "cover",
                     "open",
                     r#"[{"capability_id":"cover","actions":["open","close","stop"]}]"#,
-                )
+                ),
+                _ => (
+                    "switch",
+                    "power",
+                    "toggle",
+                    r#"[{"capability_id":"power","actions":["on","off","toggle"]}]"#,
+                ),
             };
             let device = remote.create_device(crate::remote::NewDevice {
                 remote_id: created.remote_id.clone(),

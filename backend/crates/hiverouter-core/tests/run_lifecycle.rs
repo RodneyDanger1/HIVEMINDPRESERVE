@@ -585,6 +585,12 @@ async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
         remotes[0].created_by
     );
     assert_eq!(remotes[0].adapter_kind, "daemon_relay");
+    let devices = harness
+        .remote
+        .list_devices(&remotes[0].remote_id)
+        .expect("devices");
+    assert_eq!(devices.len(), 1, "a spawned relay must be actuable");
+    assert_eq!(devices[0].class, "switch");
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     assert_eq!(tasks.len(), 3, "root plus two branch tasks");
     assert!(tasks.iter().all(|task| task.id.to_string() != remotes[0].remote_id));
