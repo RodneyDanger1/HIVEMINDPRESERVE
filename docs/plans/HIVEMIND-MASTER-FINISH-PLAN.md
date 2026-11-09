@@ -354,3 +354,8 @@ Not delivered and must not be claimed:
 - `GET /api/memory/journal?run_id=` returns recent content-free actions; test asserts no entry value is present.
 - Bank inspector shows recent actions and a `Promote to verified` control on unverified/quarantined entries; server remains the only trust authority.
 - Not delivered: hash chain, retention, context snapshots, rich journal filtering.
+### P2 continuation A2A updates
+
+- `ProviderExecutor::continue_with_tools_with_updates` accepts a bounded A2A delta; production adapter appends it as a data-only user message after the replayed transcript.
+- Engine builds the delta from the recipient task\'s latest durable messages (kind, status, sender, bounded text) before each continuation; test doubles keep their old behavior via the default method.
+- Still missing: exact per-turn cursor/deduplication, answer-attempt cap, parent-model answer.

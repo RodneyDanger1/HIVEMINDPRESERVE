@@ -316,6 +316,22 @@ pub trait ProviderExecutor: Send + Sync {
         Err(Refusal::ProviderInvalidResponse)
     }
 
+    /// Continuation with a bounded A2A delta appended as a data-only user
+    /// message. Default test doubles ignore the delta.
+    async fn continue_with_tools_with_updates(
+        &self,
+        run_id: RunId,
+        task: &TaskRecord,
+        prompt: &str,
+        cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+        transcript: &[ToolTurnTranscript],
+        _updates: &str,
+    ) -> Result<StreamedReply, Refusal> {
+        self.continue_with_tools(run_id, task, prompt, cancel, on_delta, transcript)
+            .await
+    }
+
     /// Final HyperAgent synthesis turn. It receives every completed task result
     /// and must answer without tools; the default keeps test doubles compatible
     /// by delegating to [`Self::execute`].
@@ -3241,6 +3257,30 @@ impl RunEngine {
         Ok(Some(context))
     }
 
+    /// Builds the bounded A2A delta appended to a continuation request. It is
+    /// data, never instructions; answers and open questions are both included.
+    fn a2a_updates_for_task(&self, task: &TaskRecord) -> String {
+        let Ok(messages) = self.store.agent_messages_for_task(task.run_id, task.id, 4) else {
+            return String::new();
+        };
+        let mut updates = String::new();
+        for message in messages {
+            let text: String = tool_loop::bounded_tool_text(&message.text)
+                .chars()
+                .take(500)
+                .map(|character| if character.is_control() { ' ' } else { character })
+                .collect();
+            updates.push_str(&format!(
+                "- [{} {}] from {}: {}\n",
+                message.kind, message.status, message.from_task_id, text
+            ));
+            if updates.chars().count() > 2_000 {
+                break;
+            }
+        }
+        updates
+    }
+
     /// Refreshes the recipient-specific A2A inbox from durable rows at task
     /// execution start. This makes messages that arrived after context seeding
     /// visible without leaking to children. Failure to read the inbox leaves the
@@ -3500,18 +3540,20 @@ impl RunEngine {
                 results: turn.executed,
             });
             let (continuation_sink, continuation_streamed) = self.reply_delta_sink(run.id);
+            let continuation_updates = self.a2a_updates_for_task(task);
             let continuation = match tokio::select! {
                 _ = token.cancelled() => {
                     self.fail_task(run, task, AgentState::Cancelled)?;
                     return Err(Refusal::ToolCancelled);
                 }
-                result = self.executor.continue_with_tools(
+                result = self.executor.continue_with_tools_with_updates(
                     run.id,
                     task,
                     prompt,
                     token,
                     &continuation_sink,
                     &transcript,
+                    &continuation_updates,
                 ) => result,
             } {
                 Ok(reply) => reply,
