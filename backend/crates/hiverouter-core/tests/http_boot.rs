@@ -415,8 +415,9 @@ async fn memory_bank_routes_return_real_banks_and_entries() {
     let (status, body) = http_get(
         server.addr,
         &format!(
-            "/api/memory/banks/{}/entries?limit=10",
-            urlencoding(branch)
+            "/api/memory/banks/{}/entries?run_id={}&limit=10",
+            urlencoding(branch),
+            run.id
         ),
     )
     .await;

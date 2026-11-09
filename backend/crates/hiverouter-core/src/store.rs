@@ -478,7 +478,9 @@ impl RunStore {
             .db
             .with_connection(|connection| {
                 connection.execute(
-                    "UPDATE runs SET status = ?2, error_code = ?3, updated_at = ?4 WHERE id = ?1",
+                    "UPDATE runs SET status = ?2, error_code = ?3, updated_at = ?4
+                     WHERE id = ?1
+                       AND status NOT IN ('completed','failed','cancelled','killed','interrupted')",
                     params![
                         run_id.to_string(),
                         status.as_str(),
@@ -489,6 +491,14 @@ impl RunStore {
             })
             .map_err(map)?;
         if updated == 0 {
+            let current = self.get_run(run_id)?;
+            if current.status.is_terminal() {
+                return if current.status == status {
+                    Ok(())
+                } else {
+                    Err(Refusal::RunTerminal)
+                };
+            }
             return Err(Refusal::RunNotFound);
         }
         Ok(())

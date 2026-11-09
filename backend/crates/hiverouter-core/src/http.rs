@@ -2249,6 +2249,8 @@ async fn memory_summary(
             Json(serde_json::json!({
                 "run_id": run_id.to_string(),
                 "raw_access": false,
+                "bounded_values": true,
+                "value_truncated_at": 512,
                 "count": entries.len(),
                 "summaries": entries.into_iter().map(|entry| serde_json::json!({
                     "entry_id": entry.entry_id,
@@ -2269,12 +2271,25 @@ async fn memory_bank_entries(
     Path(bank_id): Path<String>,
     Query(query): Query<std::collections::HashMap<String, String>>,
 ) -> Response {
+    let Some(raw_run) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw_run.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
     let limit = query
         .get("limit")
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(50)
         .clamp(1, 200);
-    match state.engine.store.memory_entries_for_bank(&bank_id, limit) {
+    match state
+        .engine
+        .store
+        .memory_entries_for_bank_scoped(run_id, &bank_id, limit)
+    {
         Ok(entries) => (
             [(header::CACHE_CONTROL, "no-store")],
             Json(serde_json::json!({

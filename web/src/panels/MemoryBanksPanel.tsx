@@ -250,7 +250,7 @@ export function MemoryBanksPanel() {
     }
     let cancelled = false;
     setEntryStatus('loading');
-    fetch(`${apiBaseUrl()}/api/memory/banks/${encodeURIComponent(selected)}/entries?limit=50`, {
+    fetch(`${apiBaseUrl()}/api/memory/banks/${encodeURIComponent(selected)}/entries?run_id=${encodeURIComponent(runId ?? '')}&limit=50`, {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
@@ -485,9 +485,10 @@ export function MemoryBanksPanel() {
         </div>
       </div>
       <div className="mt-2 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt p-2">
-        <div className="type-label text-ink-900">HyperAgent summaries · raw access disabled</div>
+        <div className="type-label text-ink-900">HyperAgent summaries · bounded values, full raw disabled</div>
         <div className="type-mono-meta mt-1 text-meta">
-          Only run/hive summaries are projected; no sibling branch raw entries.
+          Only run/hive summaries are projected, truncated at 512 characters; no sibling branch
+          raw entries.
         </div>
         {hyperSummary.length === 0 ? (
           <div className="type-mono-meta mt-1 text-meta">No summaries recorded.</div>
