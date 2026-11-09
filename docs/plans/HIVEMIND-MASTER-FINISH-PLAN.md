@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `9c0b8fa` (clean tree). Latest offline gate: `cargo test --workspace --locked` 548 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `9c0b8fa` (clean tree). Latest offline gate: `cargo test --workspace --locked` 549 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -407,3 +407,9 @@ Not delivered and must not be claimed:
 - `tests/scale_s0.rs` measures wall time with an instant provider double: 2 planned nodes (3 tasks/3 serial calls) = 20 ms; 8 planned nodes (9 tasks/9 serial calls) = 46 ms on this host.
 - The probe also proves the current hard ceiling: MAX_FANOUT=8 rejects larger root plans, so S0 cannot reach 50–150 agents. No S1/S2/S3 concurrency or 300–600 scale is claimed.
 - Plan-level scale remains blocked on a scheduler/worker-pool change, not on this probe.
+### P4 inactive retention
+
+- `RunStore::prune_inactive_memory(run_id, dry_run)` removes only `superseded`/`retracted` entries; active rows are never touched. Dry run counts without deleting or journaling.
+- `POST /api/memory/prune` is token-gated, refuses active runs, requires confirm, and defaults to dry-run.
+- Test quarantines a row, checks dry-run=1, then prunes and proves the active row remains.
+- Not delivered: age policy, automatic sweeps, snapshot/journal pruning, UI control.

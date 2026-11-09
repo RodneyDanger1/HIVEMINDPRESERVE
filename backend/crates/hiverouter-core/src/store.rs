@@ -1754,6 +1754,49 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Prunes inactive (superseded/mark inactived/expired) bank entries for one run.
+    /// Active entries are never touched. A dry run counts without deleting and
+    /// does not journal. Returns the number of rows that would/were removed.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn prune_inactive_memory(&self, run_id: RunId, dry_run: bool) -> Result<u64, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let count: i64 = connection.query_row(
+                    "SELECT COUNT(*) FROM memory_entries
+                     WHERE bank_id IN (SELECT id FROM memory_banks WHERE run_id = ?1)
+                       AND status IN ('superseded','retracted')",
+                    params![run_id.to_string()],
+                    |row| row.get(0),
+                )?;
+                if dry_run || count == 0 {
+                    return Ok(u64::try_from(count).unwrap_or(0));
+                }
+                let transaction = connection.transaction()?;
+                let removed = transaction.execute(
+                    "DELETE FROM memory_entries
+                     WHERE bank_id IN (SELECT id FROM memory_banks WHERE run_id = ?1)
+                       AND status IN ('superseded','retracted')",
+                    params![run_id.to_string()],
+                )?;
+                append_memory_journal(
+                    &transaction,
+                    &run_id.to_string(),
+                    "",
+                    "",
+                    "entries_pruned",
+                    "operator",
+                    Some("operator"),
+                    &serde_json::json!({ "removed": removed }).to_string(),
+                    Timestamp::now().as_str(),
+                )?;
+                transaction.commit()?;
+                Ok(u64::try_from(removed).unwrap_or(0))
+            })
+            .map_err(map)
+    }
+
     /// Reads the bounded bank set for one task: own branch, parent branch, and
     /// the run bank. Sibling/foreign-run banks are not addressable.
     ///
@@ -2616,6 +2659,38 @@ mod tests {
         assert!(verification.valid);
         assert_eq!(verification.checked, 2);
         assert_eq!(verification.unchained, 0);
+    }
+
+    #[test]
+    fn prune_inactive_memory_never_touches_active_entries() {
+        let store = store();
+        let run = store
+            .create_run("p", "prune", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "old", "a", run.id, task, &task.to_string())
+            .expect("old");
+        store
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE memory_entries SET status = 'superseded' WHERE entry_key = 'old'",
+                    [],
+                )?;
+                Ok(())
+            })
+            .expect("mark inactive");
+        store
+            .record_agent_memory_scoped("worker", "keep", "b", run.id, task, &task.to_string())
+            .expect("keep");
+        assert_eq!(store.prune_inactive_memory(run.id, true).expect("dry"), 1);
+        let bank = format!("bank:branch:{task}");
+        assert_eq!(store.memory_entries_for_bank(&bank, 10).expect("entries").len(), 1);
+        assert_eq!(store.prune_inactive_memory(run.id, false).expect("prune"), 1);
+        let entries = store.memory_entries_for_bank(&bank, 10).expect("entries");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].key, "keep");
     }
 
     #[test]

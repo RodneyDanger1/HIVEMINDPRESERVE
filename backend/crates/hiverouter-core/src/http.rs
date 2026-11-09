@@ -548,6 +548,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             get(memory_bank_entries),
         )
         .route("/api/memory/clear", post(clear_run_memory))
+        .route("/api/memory/prune", post(prune_run_memory))
         .route("/api/memory/trust", post(promote_memory))
         .route("/api/memory/journal", get(memory_journal))
         .route("/api/memory/journal/verify", get(verify_memory_journal))
@@ -1335,6 +1336,53 @@ async fn clear_run_memory(
                 "bank_entries": receipt.bank_entries,
                 "banks_closed": receipt.banks_closed,
                 "reason": reason,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `POST /api/memory/prune` — operator retention of inactive run entries.
+async fn prune_run_memory(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(run_raw) = body.get("run_id").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = run_raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let confirmed = body
+        .get("confirm")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(false);
+    let dry_run = body
+        .get("dry_run")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(true);
+    if !confirmed {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let run = match state.engine.store.get_run(run_id) {
+        Ok(run) => run,
+        Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+    };
+    if !run.status.is_terminal() {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::RunActive);
+    }
+    match state
+        .engine
+        .store
+        .prune_inactive_memory(run_id, dry_run)
+    {
+        Ok(removed) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "dry_run": dry_run,
+                "removed": removed,
             })),
         )
             .into_response(),
