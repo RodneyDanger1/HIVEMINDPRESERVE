@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 
@@ -26,13 +27,14 @@ export function RemoteLane() {
   const [remotes, setRemotes] = useState<readonly RemoteChip[]>([]);
   const [daemons, setDaemons] = useState<readonly DaemonChip[]>([]);
   const [unavailable, setUnavailable] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = (): void => {
       fetch(`${apiBaseUrl()}/api/remotes`, { headers: { Accept: 'application/json' } })
         .then(async (response) => {
-          if (!response.ok) throw new Error(`remote lane HTTP ${response.status}`);
+          if (!response.ok) throw await httpFailure(response, 'GET /api/remotes');
           const body = (await response.json()) as { remotes?: unknown };
           if (!Array.isArray(body.remotes)) throw new Error('remote lane missing rows');
           const decoded: RemoteChip[] = [];
@@ -63,15 +65,16 @@ export function RemoteLane() {
             setUnavailable(false);
           }
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (!cancelled) {
             setRemotes([]);
+            setFailure(failureText(error, 'Remote lane unavailable.'));
             setUnavailable(true);
           }
         });
       fetch(`${apiBaseUrl()}/api/daemons`, { headers: { Accept: 'application/json' } })
         .then(async (response) => {
-          if (!response.ok) throw new Error(`daemon lane HTTP ${response.status}`);
+          if (!response.ok) throw await httpFailure(response, 'GET /api/daemons');
           const body = (await response.json()) as { daemons?: unknown };
           if (!Array.isArray(body.daemons)) throw new Error('daemon lane missing rows');
           const decoded: DaemonChip[] = [];
@@ -95,8 +98,12 @@ export function RemoteLane() {
           }
           if (!cancelled) setDaemons(decoded);
         })
-        .catch(() => {
-          if (!cancelled) setDaemons([]);
+        .catch((error: unknown) => {
+          if (!cancelled) {
+            setDaemons([]);
+            setFailure(failureText(error, 'Daemon lane unavailable.'));
+            setUnavailable(true);
+          }
         });
     };
     load();
@@ -123,7 +130,9 @@ export function RemoteLane() {
         <span className="type-mono-meta text-[11px] text-ink-500">OPEN</span>
       </button>
       {unavailable ? (
-        <p className="type-mono-meta mt-1 text-[11px] text-signal">Remote lane unavailable.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-[11px] text-signal">
+          {failure ?? 'Remote lane unavailable.'}
+        </p>
       ) : remotes.length === 0 ? (
         <p className="type-mono-meta mt-1 text-[11px] text-meta">{STRINGS.panels.remoteTitle}: none enrolled</p>
       ) : (

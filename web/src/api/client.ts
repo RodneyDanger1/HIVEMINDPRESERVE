@@ -210,6 +210,12 @@ export class WsApiClient implements UiApi {
   private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
   private recoveryInFlight = false;
   private opening: Promise<SessionInfo> | null = null;
+  /**
+   * Incremented by every close(). An open() that started before the increment
+   * belongs to a dead socket generation: it must never publish a session,
+   * transport, or status after a StrictMode dispose/re-init.
+   */
+  private closeEpoch = 0;
   private readonly pending = new Map<string, PendingCommand>();
   private readonly eventListeners = new Set<
     (event: DecodedEvent, envelope: Envelope<unknown>) => void
@@ -244,10 +250,13 @@ export class WsApiClient implements UiApi {
     if (this.opening) {
       return this.opening;
     }
-    this.opening = this.openInternal().finally(() => {
-      this.opening = null;
+    const opening = this.openInternal().finally(() => {
+      if (this.opening === opening) {
+        this.opening = null;
+      }
     });
-    return this.opening;
+    this.opening = opening;
+    return opening;
   }
 
   private setStatus(status: ConnectionStatus, detail?: Refusal): void {
@@ -258,6 +267,18 @@ export class WsApiClient implements UiApi {
   }
 
   private async openInternal(): Promise<SessionInfo> {
+    const epoch = this.closeEpoch;
+    const superseded = (): RefusalError =>
+      new RefusalError(
+        clientRefusal('E_WS_DISCONNECTED', {
+          message: 'Session open was superseded by a disconnect.',
+        }),
+      );
+    const ensureCurrent = (): void => {
+      if (epoch !== this.closeEpoch) {
+        throw superseded();
+      }
+    };
     this.setStatus('connecting');
     const baseUrl = this.baseUrl ?? defaultBaseUrl();
     let response: Response;
@@ -271,24 +292,31 @@ export class WsApiClient implements UiApi {
           headers: { accept: 'application/json' },
         },
       });
+      ensureCurrent();
     } catch (error) {
+      if (epoch !== this.closeEpoch) {
+        throw superseded();
+      }
       const refusal =
         error instanceof RefusalError ? error.refusal : clientRefusal('E_WS_DISCONNECTED');
       this.setStatus('error', refusal);
       throw new RefusalError(refusal);
     }
     if (!response.ok) {
+      ensureCurrent();
       let body: unknown = null;
       try {
         body = await response.json();
       } catch {
         body = null;
       }
+      ensureCurrent();
       const refusal = parseRefusalBody(body) ?? clientRefusal('E_ORIGIN_REJECTED');
       this.setStatus('error', refusal);
       throw new RefusalError(refusal);
     }
     const body = (await response.json()) as Record<string, unknown>;
+    ensureCurrent();
     const token = body.token;
     const schema = body.schema;
     const lastSeq = body.last_seq;
@@ -307,6 +335,7 @@ export class WsApiClient implements UiApi {
     }
     this.session = { token, schema, last_seq: lastSeq, ws: wsPath };
     this.lastSeq = lastSeq;
+    ensureCurrent();
     const base = this.wsUrl ?? `${httpToWs(baseUrl)}${wsPath}`;
     const separator = base.includes('?') ? '&' : '?';
     const url = `${base}${separator}token=${encodeURIComponent(token)}&last_seq=${lastSeq}`;
@@ -316,6 +345,13 @@ export class WsApiClient implements UiApi {
     this.manuallyClosed = false;
     this.attach(transport);
     await this.waitForOpen(transport);
+    if (epoch !== this.closeEpoch) {
+      transport.close();
+      if (this.transport === transport) {
+        this.transport = null;
+      }
+      throw superseded();
+    }
     transport.send(JSON.stringify(buildHelloFrame(this.lastSeq)));
     this.setStatus('open');
     return this.session;
@@ -605,6 +641,8 @@ export class WsApiClient implements UiApi {
 
   close(): void {
     this.manuallyClosed = true;
+    this.closeEpoch += 1;
+    this.opening = null;
     if (this.recoveryTimer !== null) {
       clearTimeout(this.recoveryTimer);
       this.recoveryTimer = null;

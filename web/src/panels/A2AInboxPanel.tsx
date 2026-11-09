@@ -5,6 +5,8 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
+import { clientRefusal, RefusalError } from '../api/refusals';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { refusalCopy } from '../state/strings';
 import { EmptyState } from './StatePack';
@@ -64,6 +66,8 @@ export function A2AInboxPanel() {
   const [version, setVersion] = useState(0);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [history, setHistory] = useState<readonly HistoryRow[]>([]);
+  const [loadFailure, setLoadFailure] = useState<string | null>(null);
+  const [historyFailure, setHistoryFailure] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,11 +75,15 @@ export function A2AInboxPanel() {
     fetch(`${apiBaseUrl()}/api/a2a/pending`, { headers: { Accept: 'application/json' } })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`A2A pending HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/a2a/pending');
         }
         const body = (await response.json()) as { messages?: unknown };
         if (!Array.isArray(body.messages)) {
-          throw new Error('A2A pending payload has no messages');
+          throw new RefusalError(
+            clientRefusal('E_SCHEMA_INVALID', {
+              message: 'A2A pending payload has no messages array.',
+            }),
+          );
         }
         const decoded: PendingQuestion[] = [];
         for (const raw of body.messages) {
@@ -106,12 +114,14 @@ export function A2AInboxPanel() {
         }
         if (!cancelled) {
           setQuestions(dedupeById(decoded));
+          setLoadFailure(null);
           setStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setQuestions([]);
+          setLoadFailure(failureText(error, 'A2A pending list is unreachable.'));
           setStatus('error');
         }
       });
@@ -130,9 +140,10 @@ export function A2AInboxPanel() {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`A2A history HTTP ${response.status}`);
+        if (!response.ok) throw await httpFailure(response, 'GET /api/a2a/messages');
         const body = (await response.json()) as { messages?: unknown };
         if (!Array.isArray(body.messages) || cancelled) return;
+        setHistoryFailure(null);
         const rows: HistoryRow[] = [];
         for (const raw of body.messages) {
           if (typeof raw !== 'object' || raw === null) continue;
@@ -156,8 +167,11 @@ export function A2AInboxPanel() {
         }
         setHistory(dedupeById(rows).filter((row) => row.status !== 'open').slice(0, 8));
       })
-      .catch(() => {
-        if (!cancelled) setHistory([]);
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setHistory([]);
+          setHistoryFailure(failureText(error, 'A2A history is unreachable.'));
+        }
       });
     return () => {
       cancelled = true;
@@ -254,7 +268,7 @@ export function A2AInboxPanel() {
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading inbox…</p> : null}
       {status === 'error' ? (
         <p role="alert" className="type-mono-meta mt-1 text-signal">
-          Inbox unavailable; no question invented.
+          {loadFailure ?? 'Inbox unavailable; no question invented.'}
         </p>
       ) : null}
       {status === 'ok' && questions.length === 0 ? (
@@ -298,6 +312,11 @@ export function A2AInboxPanel() {
           </li>
         ))}
       </ul>
+      {historyFailure !== null ? (
+        <p role="alert" className="type-mono-meta mt-2 text-signal">
+          {historyFailure}
+        </p>
+      ) : null}
       {history.length > 0 ? (
         <div className="mt-2 border-t border-hairline pt-2">
           <h4 className="type-label text-ink-900">Recent answers · {history.length}</h4>

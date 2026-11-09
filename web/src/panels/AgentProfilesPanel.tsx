@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure, refusalFromBody } from '../api/failure';
 import { useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -46,6 +47,7 @@ export function AgentProfilesPanel() {
   const [profiles, setProfiles] = useState<readonly AgentProfileRow[]>([]);
   const [importText, setImportText] = useState(EXAMPLE_PROFILE);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [loadFailure, setLoadFailure] = useState<string | null>(null);
 
   const loadProfiles = useCallback(async () => {
     setStatus('loading');
@@ -54,7 +56,7 @@ export function AgentProfilesPanel() {
         headers: { Accept: 'application/json' },
       });
       if (!response.ok) {
-        throw new Error(`profiles HTTP ${response.status}`);
+        throw await httpFailure(response, 'GET /api/agents/profiles');
       }
       const body = (await response.json()) as { profiles?: unknown };
       if (!Array.isArray(body.profiles)) {
@@ -84,9 +86,11 @@ export function AgentProfilesPanel() {
         });
       }
       setProfiles(decoded);
+      setLoadFailure(null);
       setStatus('ok');
-    } catch {
+    } catch (error: unknown) {
       setProfiles([]);
+      setLoadFailure(failureText(error, 'Agent profiles are unavailable.'));
       setStatus('error');
     }
   }, []);
@@ -115,15 +119,15 @@ export function AgentProfilesPanel() {
       body: JSON.stringify({ profile: parsed }),
     })
       .then(async (response) => {
-        const body = (await response.json().catch(() => ({}))) as { code?: string };
+        const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         if (!response.ok) {
-          throw new Error(body.code ?? `import HTTP ${response.status}`);
+          throw refusalFromBody(body, response.status, 'POST /api/agents/profiles/import');
         }
         setImportStatus('Imported.');
         await loadProfiles();
       })
       .catch((error: unknown) => {
-        setImportStatus(`Import refused: ${error instanceof Error ? error.message : 'unknown error'}`);
+        setImportStatus(failureText(error, 'Import refused.'));
       });
   };
 
@@ -134,14 +138,14 @@ export function AgentProfilesPanel() {
       headers: token ? { 'x-hivemind-token': token } : {},
     })
       .then(async (response) => {
+        const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         if (!response.ok) {
-          const body = (await response.json().catch(() => ({}))) as { code?: string };
-          throw new Error(body.code ?? `delete HTTP ${response.status}`);
+          throw refusalFromBody(body, response.status, 'DELETE /api/agents/profiles');
         }
         await loadProfiles();
       })
       .catch((error: unknown) => {
-        setImportStatus(`Delete refused: ${error instanceof Error ? error.message : 'unknown error'}`);
+        setImportStatus(failureText(error, 'Delete refused.'));
       });
   };
 
@@ -152,7 +156,9 @@ export function AgentProfilesPanel() {
         <p className="type-mono-meta mt-1 text-meta">Loading boot profiles…</p>
       ) : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">Profiles unavailable; no profiles invented.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {loadFailure ?? 'Profiles unavailable; no profiles invented.'}
+        </p>
       ) : null}
       {status === 'ok' && profiles.length === 0 ? (
         <EmptyState message="No boot-loaded profiles." />

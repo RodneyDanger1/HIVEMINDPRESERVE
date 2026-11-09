@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -71,13 +72,15 @@ export function AgentMemoryPanel() {
   const [scoped, setScoped] = useState<readonly ScopedMemoryRow[]>([]);
   const [scopeFilter, setScopeFilter] = useState('all');
   const scopeRequest = useRef(0);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [scopeFailure, setScopeFailure] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setStatus('loading');
     fetch(`${apiBaseUrl()}/api/agents/memory`, { headers: { Accept: 'application/json' } })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`memory HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/agents/memory');
         }
         const body = (await response.json()) as { profiles?: unknown };
         if (!Array.isArray(body.profiles)) {
@@ -111,10 +114,12 @@ export function AgentMemoryPanel() {
           });
         }
         setProfiles(decoded);
+        setFailure(null);
         setStatus('ok');
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         setProfiles([]);
+        setFailure(failureText(error, 'Agent memory is unavailable.'));
         setStatus('error');
       });
   }, []);
@@ -139,17 +144,19 @@ export function AgentMemoryPanel() {
       .then(async (response) => {
         if (request !== scopeRequest.current) return;
         if (!response.ok) {
-          throw new Error(`scoped memory HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET run memory');
         }
         const rows = decodeScopedMemory(await response.json());
         if (request === scopeRequest.current) {
           setScoped(rows);
+          setScopeFailure(null);
           setScopeStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (request === scopeRequest.current) {
           setScoped([]);
+          setScopeFailure(failureText(error, 'Run memory is unavailable.'));
           setScopeStatus('error');
         }
       });
@@ -183,14 +190,17 @@ export function AgentMemoryPanel() {
       method: 'DELETE',
       headers: token ? { 'x-hivemind-token': token } : {},
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`clear HTTP ${response.status}`);
+          throw await httpFailure(response, 'DELETE agent memory');
         }
         refresh();
         refreshScoped();
       })
-      .catch(() => setStatus('error'));
+      .catch((error: unknown) => {
+        setFailure(failureText(error, 'Memory clear refused.'));
+        setStatus('error');
+      });
   };
 
   return (
@@ -200,7 +210,9 @@ export function AgentMemoryPanel() {
         <p className="type-mono-meta mt-1 text-meta">Loading durable memory…</p>
       ) : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">Memory unavailable; no rows invented.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {failure ?? 'Memory unavailable; no rows invented.'}
+        </p>
       ) : null}
       {status === 'ok' && profiles.every((profile) => profile.memories.length === 0) ? (
         <EmptyState message="No durable memories for the boot profiles." />
@@ -244,8 +256,8 @@ export function AgentMemoryPanel() {
           <p className="type-mono-meta mt-1 text-meta">Loading run memory…</p>
         ) : null}
         {scopeStatus === 'error' ? (
-          <p className="type-mono-meta mt-1 text-signal">
-            Run memory unavailable; no rows invented.
+          <p role="alert" className="type-mono-meta mt-1 text-signal">
+            {scopeFailure ?? 'Run memory unavailable; no rows invented.'}
           </p>
         ) : null}
         {scopeStatus === 'ok' && !replaying && scoped.length === 0 ? (

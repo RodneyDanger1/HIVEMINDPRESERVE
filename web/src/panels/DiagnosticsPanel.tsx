@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -40,6 +41,7 @@ export function DiagnosticsPanel() {
     readonly dbPath: string | null;
   } | null>(null);
   const [activeRun, setActiveRun] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +53,7 @@ export function DiagnosticsPanel() {
     ])
       .then(async ([response, workspaceResponse, activeResponse]) => {
         if (!response.ok) {
-          throw new Error(`diagnose HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /diagnose');
         }
         const body = (await response.json()) as Record<string, unknown>;
         const workspaceBody = workspaceResponse.ok
@@ -115,15 +117,17 @@ export function DiagnosticsPanel() {
                 },
           );
           setActiveRun(activeLabel);
+          setFailure(null);
           setStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setSummary(EMPTY);
           setRaw(null);
           setWorkspace(null);
           setActiveRun(null);
+          setFailure(failureText(error, 'Diagnostics are unavailable.'));
           setStatus('error');
         }
       });
@@ -139,8 +143,8 @@ export function DiagnosticsPanel() {
         <p className="type-mono-meta mt-1 text-meta">Loading diagnostics…</p>
       ) : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">
-          Diagnostics unavailable; no values invented.
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {failure ?? 'Diagnostics unavailable; no values invented.'}
         </p>
       ) : null}
       {status === 'ok' ? (

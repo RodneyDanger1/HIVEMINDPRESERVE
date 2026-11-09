@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 
 export interface ProjectEntry {
   readonly id: string;
@@ -28,8 +29,7 @@ export function ProjectsPanel({ currentProjectId }: { currentProjectId: string }
           signal: controller.signal,
         });
         if (!response.ok) {
-          setState({ kind: 'error', message: `Project registry refused (HTTP ${response.status}).` });
-          return;
+          throw await httpFailure(response, 'GET /api/projects');
         }
         const payload = (await response.json()) as { projects?: ProjectEntry[] };
         setState({ kind: 'ok', projects: payload.projects ?? [] });
@@ -37,7 +37,7 @@ export function ProjectsPanel({ currentProjectId }: { currentProjectId: string }
         if (!controller.signal.aborted) {
           setState({
             kind: 'error',
-            message: error instanceof Error ? error.message : 'Project registry unreachable.',
+            message: failureText(error, 'Project registry unreachable.'),
           });
         }
       }

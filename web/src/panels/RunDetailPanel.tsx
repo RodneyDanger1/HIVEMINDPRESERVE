@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 import { useUiStore } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -88,6 +89,8 @@ export function RunDetailPanel() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [snapshotStatus, setSnapshotStatus] = useState<Status>('idle');
+  const [detailFailure, setDetailFailure] = useState<string | null>(null);
+  const [snapshotFailure, setSnapshotFailure] = useState<string | null>(null);
 
   const inspectSnapshot = async (taskId: string): Promise<void> => {
     if (!taskId) {
@@ -102,7 +105,7 @@ export function RunDetailPanel() {
         { headers: { Accept: 'application/json' } },
       );
       if (!response.ok) {
-        throw new Error(`context snapshot HTTP ${response.status}`);
+        throw await httpFailure(response, `GET /api/memory/context/${taskId.slice(0, 8)}`);
       }
       const body = (await response.json()) as {
         banks?: string[];
@@ -118,8 +121,10 @@ export function RunDetailPanel() {
           `sha ${(body.prompt_sha256 ?? '').slice(0, 12)} · ${body.created_at ?? ''}`,
       );
       setSnapshotStatus('ok');
-    } catch {
+      setSnapshotFailure(null);
+    } catch (error: unknown) {
       setSnapshot(null);
+      setSnapshotFailure(failureText(error, 'Snapshot unavailable for that task.'));
       setSnapshotStatus('error');
     }
   };
@@ -137,17 +142,19 @@ export function RunDetailPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`run detail HTTP ${response.status}`);
+          throw await httpFailure(response, `GET /api/runs/${runId.slice(0, 8)}/detail`);
         }
         const body = (await response.json()) as Detail;
         if (!cancelled) {
           setDetail(body);
+          setDetailFailure(null);
           setStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setDetail(null);
+          setDetailFailure(failureText(error, 'Run detail is unavailable.'));
           setStatus('error');
         }
       });
@@ -162,7 +169,9 @@ export function RunDetailPanel() {
       {runId === null ? <EmptyState message="No run selected." /> : null}
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading run detail…</p> : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">Run detail unavailable; no fields invented.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {detailFailure ?? 'Run detail unavailable; no fields invented.'}
+        </p>
       ) : null}
       {status === 'ok' && detail ? (
         <div className="mt-1 space-y-1">
@@ -204,7 +213,9 @@ export function RunDetailPanel() {
             <p className="type-mono-meta text-meta">Loading snapshot…</p>
           ) : null}
           {snapshotStatus === 'error' ? (
-            <p className="type-mono-meta text-signal">Snapshot unavailable for that task.</p>
+            <p role="alert" className="type-mono-meta text-signal">
+              {snapshotFailure ?? 'Snapshot unavailable for that task.'}
+            </p>
           ) : null}
           {snapshotStatus === 'ok' && snapshot ? (
             <p className="type-mono-meta text-meta">{snapshot}</p>

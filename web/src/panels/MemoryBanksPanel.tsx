@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure, refusalFromBody } from '../api/failure';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -53,6 +54,9 @@ export function MemoryBanksPanel() {
   const [entries, setEntries] = useState<readonly EntryRow[]>([]);
   const [entryStatus, setEntryStatus] = useState<Status>('idle');
   const [clearReceipt, setClearReceipt] = useState<string | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [entryFailure, setEntryFailure] = useState<string | null>(null);
+  const [auxFailure, setAuxFailure] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ kind: 'clear' } | { kind: 'prune'; count: number } | null>(
     null,
   );
@@ -72,7 +76,7 @@ export function MemoryBanksPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`journal verify HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/memory/journal/verify');
         }
         const body = (await response.json()) as {
           valid?: boolean;
@@ -85,9 +89,9 @@ export function MemoryBanksPanel() {
           );
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
-          setJournalIntegrity('unavailable');
+          setJournalIntegrity(failureText(error, 'unavailable'));
         }
       });
     return () => {
@@ -106,7 +110,7 @@ export function MemoryBanksPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`memory journal HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/memory/journal');
         }
         const body = (await response.json()) as { actions?: unknown };
         if (!Array.isArray(body.actions) || cancelled) {
@@ -129,9 +133,10 @@ export function MemoryBanksPanel() {
         }
         setJournal(decoded);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setJournal([]);
+          setAuxFailure(failureText(error, 'Memory journal is unavailable.'));
         }
       });
     return () => {
@@ -149,7 +154,7 @@ export function MemoryBanksPanel() {
       headers: { Accept: 'application/json' },
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`memory summary HTTP ${response.status}`);
+        if (!response.ok) throw await httpFailure(response, 'GET /api/memory/summary');
         const body = (await response.json()) as { summaries?: unknown };
         if (!Array.isArray(body.summaries) || cancelled) return;
         const decoded: HyperSummaryRow[] = [];
@@ -167,8 +172,11 @@ export function MemoryBanksPanel() {
         }
         setHyperSummary(decoded);
       })
-      .catch(() => {
-        if (!cancelled) setHyperSummary([]);
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setHyperSummary([]);
+          setAuxFailure(failureText(error, 'Memory summary is unavailable.'));
+        }
       });
     return () => {
       cancelled = true;
@@ -190,7 +198,7 @@ export function MemoryBanksPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`memory banks HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/memory/banks');
         }
         const body = (await response.json()) as { banks?: unknown };
         if (!Array.isArray(body.banks)) {
@@ -218,12 +226,14 @@ export function MemoryBanksPanel() {
         if (!cancelled) {
           setBanks(decoded);
           setSelected(decoded[0]?.id ?? null);
+          setFailure(null);
           setStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setBanks([]);
+          setFailure(failureText(error, 'Memory banks are unavailable.'));
           setStatus('error');
         }
       });
@@ -245,7 +255,7 @@ export function MemoryBanksPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`memory entries HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET memory bank entries');
         }
         const body = (await response.json()) as { entries?: unknown };
         if (!Array.isArray(body.entries)) {
@@ -277,12 +287,14 @@ export function MemoryBanksPanel() {
         }
         if (!cancelled) {
           setEntries(decoded);
+          setEntryFailure(null);
           setEntryStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setEntries([]);
+          setEntryFailure(failureText(error, 'Memory entries are unavailable.'));
           setEntryStatus('error');
         }
       });
@@ -311,8 +323,8 @@ export function MemoryBanksPanel() {
         body: JSON.stringify({ run_id: runId, confirm: true, reason: 'operator clear from bank inspector' }),
       });
       if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { code?: string };
-        throw new Error(body.code ?? `clear HTTP ${response.status}`);
+        const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        throw refusalFromBody(body, response.status, 'POST /api/memory/clear');
       }
       const receipt = (await response.json()) as {
         flat_rows?: number;
@@ -326,7 +338,7 @@ export function MemoryBanksPanel() {
       setEntries([]);
       setSelected(null);
     } catch (error: unknown) {
-      setClearReceipt(error instanceof Error ? error.message : 'clear refused');
+      setClearReceipt(failureText(error, 'clear refused'));
     }
   };
 
@@ -358,8 +370,8 @@ export function MemoryBanksPanel() {
         body: JSON.stringify({ run_id: runId, confirm: true, dry_run: true }),
       });
       if (!dry.ok) {
-        const body = (await dry.json().catch(() => ({}))) as { code?: string };
-        throw new Error(body.code ?? `prune HTTP ${dry.status}`);
+        const body = (await dry.json().catch(() => ({}))) as Record<string, unknown>;
+        throw refusalFromBody(body, dry.status, 'POST /api/memory/prune');
       }
       const preview = (await dry.json()) as { removed?: number };
       const count = preview.removed ?? 0;
@@ -369,7 +381,7 @@ export function MemoryBanksPanel() {
       }
       setConfirm({ kind: 'prune', count });
     } catch (error: unknown) {
-      setClearReceipt(error instanceof Error ? error.message : 'prune refused');
+      setClearReceipt(failureText(error, 'prune refused'));
     }
   };
 
@@ -393,14 +405,14 @@ export function MemoryBanksPanel() {
         body: JSON.stringify({ run_id: runId, confirm: true, dry_run: false }),
       });
       if (!applied.ok) {
-        const body = (await applied.json().catch(() => ({}))) as { code?: string };
-        throw new Error(body.code ?? `prune HTTP ${applied.status}`);
+        const body = (await applied.json().catch(() => ({}))) as Record<string, unknown>;
+        throw refusalFromBody(body, applied.status, 'POST /api/memory/prune');
       }
       const receipt = (await applied.json()) as { removed?: number };
       setClearReceipt(`Pruned ${receipt.removed ?? 0} inactive entries.`);
       setJournalVersion((version) => version + 1);
     } catch (error: unknown) {
-      setClearReceipt(error instanceof Error ? error.message : 'prune refused');
+      setClearReceipt(failureText(error, 'prune refused'));
     }
   };
 
@@ -438,15 +450,15 @@ export function MemoryBanksPanel() {
         }),
       });
       if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { code?: string };
-        throw new Error(body.code ?? `trust HTTP ${response.status}`);
+        const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        throw refusalFromBody(body, response.status, 'POST /api/memory/trust');
       }
       setEntries((current) =>
         current.map((row) => (row.id === entry.id ? { ...row, trust: 'verified' } : row)),
       );
       setJournalVersion((version) => version + 1);
     } catch (error: unknown) {
-      setClearReceipt(error instanceof Error ? error.message : 'trust refused');
+      setClearReceipt(failureText(error, 'trust refused'));
     }
   };
 
@@ -494,7 +506,14 @@ export function MemoryBanksPanel() {
         <p className="type-mono-meta mt-1 text-meta">Loading memory banks…</p>
       ) : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">Memory banks unavailable; no bank invented.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {failure ?? 'Memory banks unavailable; no bank invented.'}
+        </p>
+      ) : null}
+      {auxFailure !== null && status !== 'error' ? (
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {auxFailure}
+        </p>
       ) : null}
       {status === 'ok' && banks.length === 0 ? (
         <EmptyState message="No memory banks for this run yet." />
@@ -527,7 +546,9 @@ export function MemoryBanksPanel() {
               <p className="type-mono-meta text-meta">Loading entries…</p>
             ) : null}
             {entryStatus === 'error' ? (
-              <p className="type-mono-meta text-signal">Entries unavailable; no entry invented.</p>
+              <p role="alert" className="type-mono-meta text-signal">
+                {entryFailure ?? 'Entries unavailable; no entry invented.'}
+              </p>
             ) : null}
             {entryStatus === 'ok' && entries.length === 0 ? (
               <p className="type-mono-meta text-meta">No active entries in this bank.</p>

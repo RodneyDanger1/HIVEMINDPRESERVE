@@ -4,6 +4,8 @@
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
+import { clientRefusal, RefusalError } from '../api/refusals';
 import { useUiStore } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -23,6 +25,7 @@ export function AgentRosterPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
   const [status, setStatus] = useState<Status>('idle');
   const [rows, setRows] = useState<readonly RosterRow[]>([]);
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     if (runId === null) {
@@ -37,11 +40,15 @@ export function AgentRosterPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`roster HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET agent roster');
         }
         const body = (await response.json()) as { agents?: unknown };
         if (!Array.isArray(body.agents)) {
-          throw new Error('roster payload has no tasks');
+          throw new RefusalError(
+            clientRefusal('E_SCHEMA_INVALID', {
+              message: 'The roster route returned no agents array.',
+            }),
+          );
         }
         const decoded: RosterRow[] = [];
         for (const raw of body.agents) {
@@ -64,12 +71,14 @@ export function AgentRosterPanel() {
         }
         if (!cancelled) {
           setRows(decoded);
+          setFailure(null);
           setStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setRows([]);
+          setFailure(failureText(error, 'Agent roster is unavailable.'));
           setStatus('error');
         }
       });
@@ -83,7 +92,9 @@ export function AgentRosterPanel() {
       <h3 className="type-label text-ink-900">Roster · {rows.length}</h3>
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading roster…</p> : null}
       {status === 'error' ? (
-        <p className="type-mono-meta mt-1 text-signal">Roster unavailable; no rows invented.</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">
+          {failure ?? 'Roster unavailable; no rows invented.'}
+        </p>
       ) : null}
       {status === 'ok' && rows.length === 0 ? <EmptyState message="No roster rows." /> : null}
       {rows.length > 0 ? (

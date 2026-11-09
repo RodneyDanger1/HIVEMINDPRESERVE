@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure, refusalFromBody } from '../api/failure';
 import { useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { EmptyState, PanelTitle } from './StatePack';
@@ -100,6 +101,8 @@ export function RemotePanel() {
   const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
   const [confirmRevoke, setConfirmRevoke] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loadFailure, setLoadFailure] = useState<string | null>(null);
+  const [detailFailure, setDetailFailure] = useState<string | null>(null);
 
   const token = (): string | null => storeApi.getState().session?.token ?? null;
 
@@ -107,7 +110,7 @@ export function RemotePanel() {
     setStatus('loading');
     try {
       const response = await fetch(`${apiBaseUrl()}/api/remotes`, { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error(`remote list HTTP ${response.status}`);
+      if (!response.ok) throw await httpFailure(response, 'GET /api/remotes');
       const body = (await response.json()) as { remotes?: unknown };
       const rows: RemoteSummary[] = [];
       if (Array.isArray(body.remotes)) {
@@ -126,9 +129,11 @@ export function RemotePanel() {
       }
       setRemotes(rows);
       setStatus('ok');
+      setLoadFailure(null);
       setSelectedId((current) => current ?? rows[0]?.remote.remote_id ?? null);
-    } catch {
+    } catch (error: unknown) {
       setRemotes([]);
+      setLoadFailure(failureText(error, 'Remote lane unavailable.'));
       setStatus('error');
     }
   }, []);
@@ -138,11 +143,13 @@ export function RemotePanel() {
       const response = await fetch(`${apiBaseUrl()}/api/remotes/${encodeURIComponent(remoteId)}`, {
         headers: { Accept: 'application/json' },
       });
-      if (!response.ok) throw new Error(`remote detail HTTP ${response.status}`);
+      if (!response.ok) throw await httpFailure(response, 'GET remote detail');
       const body = (await response.json()) as RemoteDetail;
       setDetail(body);
-    } catch {
+      setDetailFailure(null);
+    } catch (error: unknown) {
       setDetail(null);
+      setDetailFailure(failureText(error, 'Remote detail is unavailable.'));
     }
   }, []);
 
@@ -168,7 +175,7 @@ export function RemotePanel() {
     });
     const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
     if (!response.ok) {
-      throw new Error(typeof payload.code === 'string' ? payload.code : `HTTP ${response.status}`);
+      throw refusalFromBody(payload, response.status, path);
     }
     return payload;
   };
@@ -182,7 +189,7 @@ export function RemotePanel() {
       setSelectedId(typeof created.remote_id === 'string' ? created.remote_id : null);
       await loadRemotes();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'remote create refused');
+      setNotice(failureText(error, 'remote create refused'));
     } finally {
       setBusy(false);
     }
@@ -202,7 +209,7 @@ export function RemotePanel() {
       await loadDetail(selectedId);
       await loadRemotes();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'device create refused');
+      setNotice(failureText(error, 'device create refused'));
     } finally {
       setBusy(false);
     }
@@ -222,7 +229,7 @@ export function RemotePanel() {
       await loadDetail(selectedId);
       await loadRemotes();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'grant refused');
+      setNotice(failureText(error, 'grant refused'));
     } finally {
       setBusy(false);
     }
@@ -256,7 +263,7 @@ export function RemotePanel() {
       }
       await loadDetail(device.remote_id);
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'action refused');
+      setNotice(failureText(error, 'action refused'));
     } finally {
       setBusy(false);
     }
@@ -274,7 +281,7 @@ export function RemotePanel() {
       setPendingApproval(null);
       if (selectedId !== null) await loadDetail(selectedId);
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'approval refused');
+      setNotice(failureText(error, 'approval refused'));
     } finally {
       setBusy(false);
     }
@@ -290,7 +297,7 @@ export function RemotePanel() {
       await loadRemotes();
       await loadDetail(selectedId);
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'revoke refused');
+      setNotice(failureText(error, 'revoke refused'));
     } finally {
       setBusy(false);
     }
@@ -308,7 +315,7 @@ export function RemotePanel() {
       await loadRemotes();
       await loadDetail(selectedId);
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'heartbeat refused');
+      setNotice(failureText(error, 'heartbeat refused'));
     } finally {
       setBusy(false);
     }
@@ -325,7 +332,16 @@ export function RemotePanel() {
 
         {notice ? <p role="status" className="type-mono-meta mb-2 text-meta">{notice}</p> : null}
         {status === 'loading' ? <p className="type-mono-meta text-meta">Loading remote lane…</p> : null}
-        {status === 'error' ? <p role="alert" className="type-mono-meta text-signal">Remote lane unavailable; no card invented.</p> : null}
+        {status === 'error' ? (
+        <p role="alert" className="type-mono-meta text-signal">
+          {loadFailure ?? 'Remote lane unavailable; no card invented.'}
+        </p>
+      ) : null}
+      {detailFailure !== null ? (
+        <p role="alert" className="type-mono-meta mt-2 text-signal">
+          {detailFailure}
+        </p>
+      ) : null}
 
         <section className="surface-panel rounded-[var(--radius-card)] p-3">
           <h2 className="type-label text-ink-900">Create fixture remote</h2>

@@ -1,6 +1,7 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
 import { useEffect, useMemo, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
@@ -48,6 +49,7 @@ export function LibraryPanel() {
   const agents = Object.values(sourceTasks).filter((task) => task.kind !== 'hyperagent');
   const [templates, setTemplates] = useState<readonly TemplateRow[]>([]);
   const [templateStatus, setTemplateStatus] = useState<TemplateStatus>('idle');
+  const [templateFailure, setTemplateFailure] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +57,7 @@ export function LibraryPanel() {
     fetch(`${apiBaseUrl()}/api/templates`, { headers: { Accept: 'application/json' } })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`templates HTTP ${response.status}`);
+          throw await httpFailure(response, 'GET /api/templates');
         }
         const body = (await response.json()) as { templates?: unknown };
         if (!Array.isArray(body.templates)) {
@@ -78,12 +80,14 @@ export function LibraryPanel() {
         }
         if (!cancelled) {
           setTemplates(decoded);
+          setTemplateFailure(null);
           setTemplateStatus('ok');
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setTemplates([]);
+          setTemplateFailure(failureText(error, 'Template catalog unavailable.'));
           setTemplateStatus('error');
         }
       });
@@ -195,7 +199,9 @@ export function LibraryPanel() {
           <p className="type-mono-meta mt-1 text-meta">Loading templates…</p>
         ) : null}
         {templateStatus === 'error' ? (
-          <p className="type-mono-meta mt-1 text-signal">Template catalog unavailable.</p>
+          <p role="alert" className="type-mono-meta mt-1 text-signal">
+            {templateFailure ?? 'Template catalog unavailable.'}
+          </p>
         ) : null}
         {templateStatus === 'ok' && templates.length === 0 ? (
           <p className="type-mono-meta mt-1 text-meta">No insertable templates.</p>

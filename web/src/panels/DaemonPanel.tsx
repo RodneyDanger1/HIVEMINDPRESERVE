@@ -5,6 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure, refusalFromBody } from '../api/failure';
 import { useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
 
@@ -41,6 +42,7 @@ export function DaemonPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [reports, setReports] = useState<Readonly<Record<string, readonly { outcome: string; created_at: string }[]>>>({});
+  const [loadFailure, setLoadFailure] = useState<string | null>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setStatus('loading');
@@ -49,7 +51,7 @@ export function DaemonPanel() {
         fetch(`${apiBaseUrl()}/api/daemons`, { headers: { Accept: 'application/json' } }),
         fetch(`${apiBaseUrl()}/api/supervisor`, { headers: { Accept: 'application/json' } }),
       ]);
-      if (!daemonResponse.ok) throw new Error(`daemons HTTP ${daemonResponse.status}`);
+      if (!daemonResponse.ok) throw await httpFailure(daemonResponse, 'GET /api/daemons');
       const body = (await daemonResponse.json()) as { daemons?: unknown };
       const rows = Array.isArray(body.daemons)
         ? body.daemons.filter((raw): raw is DaemonRow => {
@@ -71,7 +73,9 @@ export function DaemonPanel() {
         setSupervisor(null);
       }
       setStatus('ok');
-    } catch {
+      setLoadFailure(null);
+    } catch (error: unknown) {
+      setLoadFailure(failureText(error, 'Daemon lane unavailable.'));
       setStatus('error');
     }
   }, []);
@@ -93,7 +97,7 @@ export function DaemonPanel() {
       body: JSON.stringify(body),
     });
     const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-    if (!response.ok) throw new Error(typeof payload.code === 'string' ? payload.code : `HTTP ${response.status}`);
+    if (!response.ok) throw refusalFromBody(payload, response.status, path);
     return payload;
   };
 
@@ -109,7 +113,7 @@ export function DaemonPanel() {
       setNotice('Daemon enrolled; it is not running until switched on.');
       await load();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'daemon refused');
+      setNotice(failureText(error, 'daemon refused'));
     } finally {
       setBusy(false);
     }
@@ -124,7 +128,7 @@ export function DaemonPanel() {
       });
       await load();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'switch refused');
+      setNotice(failureText(error, 'switch refused'));
     } finally {
       setBusy(false);
     }
@@ -137,7 +141,7 @@ export function DaemonPanel() {
       await write(`/api/daemons/${encodeURIComponent(daemon.daemon_id)}/retire`, {});
       await load();
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'retire refused');
+      setNotice(failureText(error, 'retire refused'));
     } finally {
       setBusy(false);
     }
@@ -157,7 +161,7 @@ export function DaemonPanel() {
         `${apiBaseUrl()}/api/daemons/${encodeURIComponent(daemon.daemon_id)}/reports`,
         { headers: { Accept: 'application/json' } },
       );
-      if (!response.ok) throw new Error(`reports HTTP ${response.status}`);
+      if (!response.ok) throw await httpFailure(response, `GET /api/daemons/${daemon.daemon_id}/reports`);
       const body = (await response.json()) as { reports?: unknown };
       const rows = Array.isArray(body.reports)
         ? body.reports.filter((raw): raw is { outcome: string; created_at: string } => {
@@ -168,7 +172,7 @@ export function DaemonPanel() {
         : [];
       setReports((current) => ({ ...current, [daemon.daemon_id]: rows }));
     } catch (error: unknown) {
-      setNotice(error instanceof Error ? error.message : 'reports unavailable');
+      setNotice(failureText(error, 'reports unavailable'));
     }
   };
 
@@ -222,7 +226,11 @@ export function DaemonPanel() {
         </button>
       </div>
       {status === 'loading' ? <p className="type-mono-meta mt-2 text-meta">Loading daemons…</p> : null}
-      {status === 'error' ? <p role="alert" className="type-mono-meta mt-2 text-signal">Daemon lane unavailable; no card invented.</p> : null}
+      {status === 'error' ? (
+        <p role="alert" className="type-mono-meta mt-2 text-signal">
+          {loadFailure ?? 'Daemon lane unavailable; no card invented.'}
+        </p>
+      ) : null}
       {status === 'ok' && daemons.length === 0 ? <EmptyState message="No daemons enrolled." /> : null}
       <ul className="mt-2 space-y-1">
         {daemons.map((daemon) => (

@@ -1,6 +1,8 @@
 /** Models (read-only): only values the server reports; contract reference labelled READ. */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
+import { clientRefusal, RefusalError } from '../api/refusals';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { PanelTitle } from './StatePack';
@@ -33,15 +35,7 @@ interface ProviderBalance {
  * claim or deny a model is accepted from a hardcoded provider list.
  */
 async function providerFailure(response: Response): Promise<Error> {
-  try {
-    const body = (await response.json()) as { code?: unknown; message?: unknown; how_to_fix?: unknown };
-    const code = typeof body.code === 'string' ? body.code : `HTTP ${response.status}`;
-    const message = typeof body.message === 'string' ? body.message : 'Provider metadata unavailable.';
-    const fix = typeof body.how_to_fix === 'string' ? ` — ${body.how_to_fix}` : '';
-    return new Error(`${code}: ${message}${fix}`);
-  } catch {
-    return new Error(`HTTP ${response.status}: provider metadata unavailable.`);
-  }
+  return httpFailure(response, 'GET /api/provider/models');
 }
 
 function tokenLabel(value: number | null): string {
@@ -55,6 +49,7 @@ export function ModelsPanel() {
   const runStatus = useUiStore((state) => state.run?.status ?? null);
   const [usage, setUsage] = useState<RunUsage | null>(null);
   const [usageError, setUsageError] = useState(false);
+  const [usageFailure, setUsageFailure] = useState<string | null>(null);
   const [providerModels, setProviderModels] = useState<readonly ProviderModel[]>([]);
   const [providerBalances, setProviderBalances] = useState<readonly ProviderBalance[]>([]);
   const [providerAvailable, setProviderAvailable] = useState<boolean | null>(null);
@@ -83,17 +78,22 @@ export function ModelsPanel() {
           throw await providerFailure(modelsResponse);
         }
         const modelsBody = (await modelsResponse.json()) as { models?: unknown };
-        if (!cancelled) {
-          setProviderModels(
-            Array.isArray(modelsBody.models) ? (modelsBody.models as ProviderModel[]) : [],
+        if (!Array.isArray(modelsBody.models)) {
+          throw new RefusalError(
+            clientRefusal('E_SCHEMA_INVALID', {
+              message: 'GET /api/provider/models returned no models array.',
+            }),
           );
+        }
+        if (!cancelled) {
+          setProviderModels(modelsBody.models as ProviderModel[]);
         }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
           setProviderModels([]);
           setProviderError(
-            error instanceof Error ? error.message : 'Provider metadata unavailable.',
+            failureText(error, 'Provider metadata unavailable.'),
           );
         }
       })
@@ -165,6 +165,7 @@ export function ModelsPanel() {
     if (runId === null) {
       setUsage(null);
       setUsageError(false);
+      setUsageFailure(null);
       return;
     }
     let cancelled = false;
@@ -173,18 +174,23 @@ export function ModelsPanel() {
     })
       .then(async (response) => {
         if (!response.ok) {
-          throw new Error(`usage HTTP ${response.status}`);
+          throw await httpFailure(response, `GET /api/usage/runs/${runId}`);
         }
         const body = (await response.json()) as { usage?: unknown };
         if (body.usage === null) {
           if (!cancelled) {
             setUsage(null);
             setUsageError(false);
+            setUsageFailure(null);
           }
           return;
         }
         if (typeof body.usage !== 'object' || body.usage === null) {
-          throw new Error('usage payload is malformed');
+          throw new RefusalError(
+            clientRefusal('E_SCHEMA_INVALID', {
+              message: 'The usage route returned a malformed usage payload.',
+            }),
+          );
         }
         const item = body.usage as Record<string, unknown>;
         if (!cancelled) {
@@ -200,12 +206,14 @@ export function ModelsPanel() {
               typeof item.reasoning_tokens === 'number' ? item.reasoning_tokens : null,
           });
           setUsageError(false);
+          setUsageFailure(null);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!cancelled) {
           setUsage(null);
           setUsageError(true);
+          setUsageFailure(failureText(error, 'Usage is unavailable for this run.'));
         }
       });
     return () => {
@@ -247,7 +255,9 @@ export function ModelsPanel() {
         </dl>
       ) : null}
       {usageError ? (
-        <p className="type-mono-meta mt-3 text-signal">Usage unavailable; no token count invented.</p>
+        <p className="type-mono-meta mt-3 text-signal">
+          {usageFailure ?? 'Usage unavailable; no token count invented.'}
+        </p>
       ) : null}
       {usage === null && !usageError ? (
         <p className="type-mono-meta mt-3 text-meta">No token usage reported for this run yet.</p>
