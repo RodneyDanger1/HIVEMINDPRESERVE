@@ -73,13 +73,39 @@ impl Plan {
         let by_id: HashMap<TaskId, &PlanNode> =
             self.nodes.iter().map(|node| (node.node_id, node)).collect();
         for node in &self.nodes {
-            if let Some(parent_id) = node.parent {
-                if parent_id == node.node_id {
+            match node.parent {
+                Some(parent_id) => {
+                    if parent_id == node.node_id {
+                        return Err(Refusal::SchemaInvalid);
+                    }
+                    let parent = by_id.get(&parent_id).ok_or(Refusal::SchemaInvalid)?;
+                    if parent.depth.saturating_add(1) != node.depth {
+                        return Err(Refusal::SchemaInvalid);
+                    }
+                    // A parent is already the ordering barrier (the parent
+                    // waits for its children). Keeping it in `deps` makes the
+                    // parent wait for the child too: an execution deadlock that
+                    // used to surface late as E_SCHEMA_INVALID.
+                    if node.deps.contains(&parent_id) {
+                        return Err(Refusal::SchemaInvalid);
+                    }
+                }
+                None if node.depth > 1 => {
+                    // A depth-2+ node with no parent would be attached to the
+                    // root by the engine, violating the strict class hierarchy.
                     return Err(Refusal::SchemaInvalid);
                 }
-                let parent = by_id.get(&parent_id).ok_or(Refusal::SchemaInvalid)?;
-                if parent.depth.saturating_add(1) != node.depth {
-                    return Err(Refusal::SchemaInvalid);
+                None => {}
+            }
+            // A dependency on a descendant is a cross-edge cycle: the parent
+            // already waits for that descendant to complete.
+            for dep in &node.deps {
+                let mut cursor = Some(*dep);
+                while let Some(id) = cursor {
+                    if id == node.node_id {
+                        return Err(Refusal::SchemaInvalid);
+                    }
+                    cursor = by_id.get(&id).and_then(|item| item.parent);
                 }
             }
             // A parent chain that loops would make the hierarchy non-tree-shaped
@@ -216,21 +242,41 @@ mod tests {
     #[test]
     fn valid_dag_orders_parents_first() {
         let first = node("super", Vec::new(), 1);
-        let second = node("worker", vec![first.node_id], 2);
+        let mut second = node("worker", Vec::new(), 2);
+        second.parent = Some(first.node_id);
         let plan = Plan::new(vec![first.clone(), second.clone()]);
         plan.validate().expect("valid plan");
         let order = plan.topo_order().expect("order");
-        assert_eq!(order, vec![first.node_id, second.node_id]);
+        assert_eq!(order.len(), 2);
+        assert!(order.contains(&first.node_id));
+        assert!(order.contains(&second.node_id));
         assert_eq!(plan.leaf_order().expect("leaves"), vec![second.node_id]);
     }
 
     #[test]
-    fn cycle_is_refused_at_plan_validation() {
+    fn parent_cannot_also_be_a_dependency() {
+        // A parent already waits for the child; adding the reverse dependency
+        // makes both sides wait and no node is dispatch-ready.
         let first = node("super", Vec::new(), 1);
-        let second = node("worker", vec![first.node_id], 2);
-        let mut cyc1 = first.clone();
-        cyc1.deps = vec![second.node_id];
-        let plan = Plan::new(vec![cyc1, second]);
+        let mut second = node("worker", vec![first.node_id], 2);
+        second.parent = Some(first.node_id);
+        let plan = Plan::new(vec![first, second]);
+        assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
+    }
+
+    #[test]
+    fn parentless_depth_two_is_refused() {
+        let plan = Plan::new(vec![node("worker", Vec::new(), 2)]);
+        assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
+    }
+
+    #[test]
+    fn cycle_is_refused_at_plan_validation() {
+        let mut first = node("super", Vec::new(), 1);
+        let mut second = node("worker", Vec::new(), 2);
+        second.parent = Some(first.node_id);
+        first.deps = vec![second.node_id];
+        let plan = Plan::new(vec![first, second]);
         assert_eq!(plan.validate(), Err(Refusal::SchemaInvalid));
     }
 

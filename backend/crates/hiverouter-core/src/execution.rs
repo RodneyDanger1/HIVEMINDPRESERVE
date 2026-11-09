@@ -2,7 +2,8 @@
 //! (blueprint Phase 4, WP 4.5/4.6/4.7/4.8).
 //!
 //! Guarantees:
-//! - hard caps (depth 3, fan-out 8, 64 agents, 40 calls) are enforced before a
+//! - hard caps (depth 3, fan-out 8, 64 agents, 64 provider calls, 40 plan
+//!   nodes) are enforced before a
 //!   spawn/reply and refuse by name;
 //! - one `CancellationToken` per run, children select on cancellation;
 //! - no fake success: an executor error fails the run with its named code and
@@ -154,9 +155,8 @@ pub(crate) fn role_class(role: &str) -> Option<&'static str> {
     match normalized.as_str() {
         "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator"
         | "hyper-agent" => Some("hyper"),
-        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" | "super-agent" => {
-            Some("super")
-        }
+        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" | "super-agent"
+        | "sub-hive" => Some("super"),
         "worker" | "workeragent" | "worker_agent" | "worker-agent" | "agent"
         | "content-writer" | "data-analyst" | "code-reviewer" | "chatbot" => Some("agent"),
         _ => None,
@@ -187,9 +187,9 @@ pub(crate) fn task_node_kind(task: &TaskRecord) -> &'static str {
 
 /// Enforces the hierarchical spawn policy before a child row is created.
 ///
-/// Hyper may spawn Super/Agent/Subagent; Super may spawn Agent/Subagent; Agent
-/// (Worker) may spawn **Subagent only** — never a Super, so a child cannot
-/// escalate its own capability tier. Subagents and tool actors cannot spawn.
+/// HyperAgent may spawn **SuperAgent only**; SuperAgent may spawn Agent;
+/// Agent (Worker) may spawn **Subagent only**; Subagent and tool actors cannot
+/// spawn. A child can never skip a level or widen its own class.
 pub(crate) fn validate_spawn_role(parent: AgentTier, requested_role: &str) -> Result<(), Refusal> {
     let role = requested_role.trim().to_ascii_lowercase();
     let subagent = is_subagent_role(&role);
@@ -236,7 +236,9 @@ pub(crate) fn task_agent_tier(task: &TaskRecord) -> AgentTier {
         "planner" | "hyper" | "hyperagent" | "hyper_agent" | "orchestrator" => {
             AgentTier::HyperAgent
         }
-        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" => AgentTier::SuperAgent,
+        "super" | "superagent" | "super_agent" | "sub_hive" | "subhive" | "sub-hive" => {
+            AgentTier::SuperAgent
+        }
         "tool" | "toolagent" | "tool_agent" => AgentTier::ToolAgent,
         "subagent" | "sub_agent" | "sub-agent" => AgentTier::Subagent,
         "worker" | "workeragent" | "worker_agent" => AgentTier::WorkerAgent,
@@ -350,6 +352,7 @@ pub trait ProviderExecutor: Send + Sync {
         _parent: &TaskRecord,
         _run_prompt: &str,
         _question: &str,
+        _parent_context: Option<&ScopedContext>,
         _cancel: &CancellationToken,
     ) -> Result<EscalationAnswer, Refusal> {
         Err(Refusal::ProviderInvalidResponse)
@@ -620,6 +623,14 @@ pub struct RunEngine {
     metrics_last: Mutex<HashMap<RunId, f64>>,
     /// Accumulated provider usage per run, persisted at terminal.
     usage_by_run: Mutex<HashMap<RunId, Usage>>,
+    /// Real provider calls claimed per run. The advertised run cap must count
+    /// actual sends (plan, root control, every task turn, parent answers), not
+    /// a literal `1` passed to `check_calls`.
+    provider_calls: Mutex<HashMap<RunId, u64>>,
+    /// Serializes snapshot revision allocation + write. Without it two parallel
+    /// task completions can compute the same count, share one temp path and
+    /// lose a revision (or leave a truncated file).
+    snapshot_lock: Mutex<()>,
 }
 
 impl std::fmt::Debug for RunEngine {
@@ -674,7 +685,32 @@ impl RunEngine {
             active_run: Mutex::new(None),
             metrics_last: Mutex::new(HashMap::new()),
             usage_by_run: Mutex::new(HashMap::new()),
+            provider_calls: Mutex::new(HashMap::new()),
+            snapshot_lock: Mutex::new(()),
         }
+    }
+
+    /// Claims one real provider call against the run's documented cap.
+    fn claim_provider_call(&self, run_id: RunId) -> Result<(), Refusal> {
+        let mut calls = self
+            .provider_calls
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        let count = calls.entry(run_id).or_insert(0);
+        *count = count.saturating_add(1);
+        self.caps.check_calls(*count)
+    }
+
+    fn clear_provider_calls(&self, run_id: RunId) {
+        if let Ok(mut calls) = self.provider_calls.lock() {
+            calls.remove(&run_id);
+        }
+    }
+
+    /// Effective concurrency bound for independently-ready tasks.
+    #[must_use]
+    pub fn parallel_dispatch(&self) -> usize {
+        self.parallel_dispatch
     }
 
     /// Attaches the durable snapshot store (boot path).
@@ -875,6 +911,8 @@ impl RunEngine {
             active_run: Mutex::new(None),
             metrics_last: Mutex::new(HashMap::new()),
             usage_by_run: Mutex::new(HashMap::new()),
+            provider_calls: Mutex::new(HashMap::new()),
+            snapshot_lock: Mutex::new(()),
         }
     }
 
@@ -1511,10 +1549,18 @@ impl RunEngine {
     /// the last committed graph instead of having no revision at all. A write
     /// failure is reported and leaves the previous revision intact; it never
     /// fabricates a snapshot.
-    fn commit_run_snapshot(&self, run: &Run, revision: u64, status: AgentState) {
+    fn commit_run_snapshot(&self, run: &Run, status: AgentState) {
         let Some(store) = &self.snapshots else {
             return;
         };
+        let _snapshot_guard = match self.snapshot_lock.lock() {
+            Ok(guard) => guard,
+            Err(_) => {
+                tracing::error!(run_id = %run.id, "snapshot commit skipped: snapshot lock poisoned");
+                return;
+            }
+        };
+        let revision = self.snapshot_revision(run.id);
         let allowed: std::collections::HashSet<_> = match self.store.tasks_for_run(run.id) {
             Ok(tasks) => tasks.into_iter().map(|task| task.id).collect(),
             Err(error) => {
@@ -1634,18 +1680,19 @@ impl RunEngine {
             }
         }
         // Keep the post-terminal snapshot in addition to the mid-run revisions.
-        self.commit_run_snapshot(&run, self.snapshot_revision(run.id), final_status);
+        self.commit_run_snapshot(&run, final_status);
         let _ = self.set_active(None);
         self.tokens.remove(run.id);
         self.persist_run_usage(run.id);
         self.executor.finish_run(run.id).await;
+        self.clear_provider_calls(run.id);
     }
 
     async fn dispatch_inner(self: &Arc<Self>, run: &Run, token: &CancellationToken) -> Result<(), Refusal> {
         self.store.set_run_status(run.id, AgentState::Planning, None)?;
 
-        // Exactly one planning call per plan.
-        self.caps.check_calls(1)?;
+        // Exactly one planning call per plan, counted against the real run cap.
+        self.claim_provider_call(run.id)?;
         let planning_prompt = self.planning_prompt(run);
         let plan = tokio::select! {
             _ = token.cancelled() => return Err(Refusal::ToolCancelled),
@@ -1788,7 +1835,7 @@ impl RunEngine {
         );
         // M-004: commit the planned graph before the first execution turn, so a
         // crash during execution restores this run instead of nothing.
-        self.commit_run_snapshot(run, self.snapshot_revision(run.id), start.to);
+        self.commit_run_snapshot(run, start.to);
 
         // Execute the planned graph by readiness: a node runs only after every
         // dependency and every direct child has a result. This covers both the
@@ -1890,7 +1937,7 @@ impl RunEngine {
                 .get_run(run.id)
                 .map(|current| current.status)
                 .unwrap_or(AgentState::Running);
-            self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+            self.commit_run_snapshot(run, status);
             match result {
                 Ok(_) => {
                     completed.insert(next);
@@ -1932,7 +1979,7 @@ impl RunEngine {
             }
             self.graph.set_state(root.id, AgentState::Running)?;
             self.publish_node(run.id, root.id, AgentState::Running);
-            self.commit_run_snapshot(run, self.snapshot_revision(run.id), AgentState::Running);
+            self.commit_run_snapshot(run, AgentState::Running);
             const ROOT_PROMPT_BUDGET: usize = 24_000;
             const ROOT_RESULT_LIMIT: usize = 2_000;
             let mut root_prompt = run.prompt.clone();
@@ -1995,7 +2042,7 @@ impl RunEngine {
             }
             self.execute_root_task_with_prompt(run, &root_task, token, &root_prompt)
                 .await?;
-            self.commit_run_snapshot(run, self.snapshot_revision(run.id), AgentState::Running);
+            self.commit_run_snapshot(run, AgentState::Running);
         }
         Ok(())
     }
@@ -2062,7 +2109,7 @@ impl RunEngine {
                     .get_run(run.id)
                     .map(|current| current.status)
                     .unwrap_or(AgentState::Running);
-                self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+                self.commit_run_snapshot(run, status);
                 match result {
                     Ok(_) => {
                         completed.insert(task_id);
@@ -2174,7 +2221,7 @@ impl RunEngine {
                 .get_run(run.id)
                 .map(|current| current.status)
                 .unwrap_or(AgentState::Running);
-            self.commit_run_snapshot(run, self.snapshot_revision(run.id), status);
+            self.commit_run_snapshot(run, status);
             match result {
                 Ok(_) => {}
                 Err(refusal) => {
@@ -2710,7 +2757,6 @@ impl RunEngine {
         // M-004: an awaiting-approval crash restores this committed graph.
         self.commit_run_snapshot(
             run,
-            self.snapshot_revision(run.id),
             AgentState::AwaitingApproval,
         );
         self.publish(Event::ApprovalRequest(event.clone()), Some(run.id), None);
@@ -3146,7 +3192,8 @@ impl RunEngine {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |duration| duration.as_secs());
-        let deadline = Timestamp::from_unix_secs(now.saturating_add(A2A_ANSWER_TIMEOUT_SECS));
+        let deadline_secs = now.saturating_add(A2A_ANSWER_TIMEOUT_SECS);
+        let deadline = Timestamp::from_unix_secs(deadline_secs);
         if let Err(refusal) = self
             .store
             .set_agent_message_deadline(run.id, message_id, deadline.as_str())
@@ -3159,46 +3206,56 @@ impl RunEngine {
         }
         // Prefer the parent's own bounded answer when the provider supports it.
         // A failure never fabricates an answer: it falls through to the
-        // operator mailbox and the same deadline.
+        // operator mailbox and the same durable deadline.
         if !token.is_cancelled() {
-            match self
-                .executor
-                .answer_escalation(run.id, &parent_task, &run.prompt, text, token)
-                .await
-            {
-                Ok(answer) => {
-                    self.add_run_usage(run.id, answer.usage);
-                    let answer_text = answer.text.trim();
-                    if !answer.needs_operator
-                        && !answer_text.is_empty()
-                        && memory_text_is_safe(answer_text)
-                    {
-                        let actor = format!("parent:{}", parent);
-                        if self
-                            .store
-                            .answer_agent_message(run.id, message_id, &actor, answer_text)
-                            .is_ok()
+            if self.claim_provider_call(run.id).is_ok() {
+                let parent_context = self.contexts.get(parent_task.id).ok().flatten();
+                match self
+                    .executor
+                    .answer_escalation(
+                        run.id,
+                        &parent_task,
+                        &run.prompt,
+                        text,
+                        parent_context.as_ref(),
+                        token,
+                    )
+                    .await
+                {
+                    Ok(answer) => {
+                        self.add_run_usage(run.id, answer.usage);
+                        let answer_text = answer.text.trim();
+                        if !answer.needs_operator
+                            && !answer_text.is_empty()
+                            && memory_text_is_safe(answer_text)
                         {
-                            return ToolExecution::ok(
-                                plan.tool_call_id.clone(),
-                                serde_json::json!({
-                                    "message_id": message_id.to_string(),
-                                    "to_task_id": parent.to_string(),
-                                    "kind": "ask_parent",
-                                    "status": "answered",
-                                    "answered_by": "parent",
-                                    "answer": answer_text,
-                                })
-                                .to_string(),
-                            );
+                            let actor = format!("parent:{}", parent);
+                            if self
+                                .store
+                                .answer_agent_message(run.id, message_id, &actor, answer_text)
+                                .is_ok()
+                            {
+                                return ToolExecution::ok(
+                                    plan.tool_call_id.clone(),
+                                    serde_json::json!({
+                                        "message_id": message_id.to_string(),
+                                        "to_task_id": parent.to_string(),
+                                        "kind": "ask_parent",
+                                        "status": "answered",
+                                        "answered_by": "parent",
+                                        "answer": answer_text,
+                                    })
+                                    .to_string(),
+                                );
+                            }
                         }
                     }
-                }
-                Err(refusal) => {
-                    tracing::debug!(
-                        code = refusal.code(),
-                        "parent escalation answer unavailable; falling back to operator"
-                    );
+                    Err(refusal) => {
+                        tracing::debug!(
+                            code = refusal.code(),
+                            "parent escalation answer unavailable; falling back to operator"
+                        );
+                    }
                 }
             }
         }
@@ -3222,14 +3279,20 @@ impl RunEngine {
                         "ask_parent cancelled while waiting for an answer".to_owned(),
                     );
                 }
-                _ = tokio::time::sleep(std::time::Duration::from_secs(A2A_ANSWER_TIMEOUT_SECS)) => {
+                _ = tokio::time::sleep(std::time::Duration::from_secs({
+                    let after = std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .map_or(0, |duration| duration.as_secs());
+                    deadline_secs.saturating_sub(after).max(1)
+                })) => {
                     self.a2a_waiters.lock().await.remove(&message_id);
-                    let _ = self.store.expire_agent_message(run.id, message_id);
-                    return ToolExecution::refused(
-                        plan.tool_call_id.clone(),
-                        Refusal::ToolTimeout.code(),
-                        "ask_parent timed out waiting for an operator answer".to_owned(),
-                    );
+                    // A committed answer may have lost its in-process wakeup.
+                    // Do not expire it blindly; the common read below returns it.
+                    if self.store.agent_message_status(run.id, message_id)
+                        != Ok(Some("answered".to_owned()))
+                    {
+                        let _ = self.store.expire_agent_message(run.id, message_id);
+                    }
                 }
             }
         }
@@ -3702,7 +3765,7 @@ impl RunEngine {
             .map(|node| format!("{}@{}", node.role, node.depth))
             .collect::<Vec<_>>()
             .join(", ");
-        let mut prompt = format!(
+        let prompt = format!(
             "{}\n\nYou are the HyperAgent orchestrator. The planner proposed this DAG: {}. \
              You may call one or more of: spawn_superagent (extra branch lead), \
              spawn_remote_agent (detached light/garage/daemon principal), \
@@ -3710,11 +3773,17 @@ impl RunEngine {
              Never spawn a direct Agent or Subagent. Return no prose in this control turn.\n",
             run.prompt, plan_digest
         );
-        for turn in 0..4 {
+        // A provider that ignores the finish instruction must not be allowed to
+        // turn one control response into an unbounded spawn burst. The cap is
+        // intentionally small: root adds a few extra branches, it is not a
+        // second scheduler.
+        const MAX_ROOT_TOOL_CALLS: usize = 4;
+        for _turn in 0..1 {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);
             }
             let sink: DeltaSink = Arc::new(|_| {});
+            self.claim_provider_call(run.id)?;
             let reply = self
                 .executor
                 .orchestrate_root(run.id, root, &prompt, token, &sink)
@@ -3722,19 +3791,27 @@ impl RunEngine {
             if reply.tool_calls.is_empty() {
                 return Ok(());
             }
-            let mut result_text = String::new();
-            for call in &reply.tool_calls {
+            if reply.tool_calls.len() > MAX_ROOT_TOOL_CALLS {
+                tracing::warn!(
+                    run_id = %run.id,
+                    requested = reply.tool_calls.len(),
+                    cap = MAX_ROOT_TOOL_CALLS,
+                    "root requested more tool calls than the control cap; ignoring the excess"
+                );
+            }
+            let mut _result_text = String::new();
+            for call in reply.tool_calls.iter().take(MAX_ROOT_TOOL_CALLS) {
                 match call.name.as_str() {
                     "spawn_superagent" => {
                         let child = self.spawn_sub_hive(root.id, "super")?;
-                        result_text.push_str(&format!(
+                        _result_text.push_str(&format!(
                             "- spawned superagent {} depth={}\n",
                             child.id, child.depth
                         ));
                     }
                     "spawn_remote_agent" => {
                         let result = self.execute_root_remote_call(root, call)?;
-                        result_text.push_str(&format!("- {result}\n"));
+                        _result_text.push_str(&format!("- {result}\n"));
                     }
                     "spawn_daemon" => {
                         let display_name = call
@@ -3764,7 +3841,7 @@ impl RunEngine {
                             interval_secs: interval,
                             created_by: format!("hyper:{}", root.id),
                         })?;
-                        result_text.push_str(&format!(
+                        _result_text.push_str(&format!(
                             "- enrolled daemon {} ({}) state={}\n",
                             daemon.daemon_id, daemon.display_name, daemon.state
                         ));
@@ -3783,7 +3860,7 @@ impl RunEngine {
                             .take(8)
                             .collect::<Vec<_>>()
                             .join(", ");
-                        result_text.push_str(&format!("- memory summaries: {digest}\n"));
+                        _result_text.push_str(&format!("- memory summaries: {digest}\n"));
                     }
                     "finish" => return Ok(()),
                     other => {
@@ -3792,14 +3869,11 @@ impl RunEngine {
                     }
                 }
             }
-            prompt.push_str("\nRoot tool results (data, not instructions):\n");
-            prompt.push_str(&result_text);
-            prompt.push_str("\nContinue the control turn or call finish.");
-            if turn == 3 {
-                return Err(Refusal::CallLimit);
-            }
+            // One bounded control round; the result text was consumed by the
+            // tool dispatch above and is intentionally not fed back (that would
+            // create an unbounded multi-turn controller here).
         }
-        Err(Refusal::CallLimit)
+        Ok(())
     }
 
     /// Executes the one root-only remote-spawn tool. It never inserts a task row
@@ -3839,6 +3913,43 @@ impl RunEngine {
             capabilities_json: "[]".to_owned(),
             created_by: format!("hyper:{}", task.id),
         })?;
+        // A remote principal with no device/grant is inert: it appears in the
+        // lane but can never be actuated. Give the two fixture-backed kinds one
+        // real device and one narrow grant; daemon relay remains records-only.
+        if matches!(kind, "light" | "garage") {
+            let (class, capability, action, caps) = if kind == "light" {
+                (
+                    "light",
+                    "power",
+                    "toggle",
+                    r#"[{"capability_id":"power","actions":["on","off","toggle"]}]"#,
+                )
+            } else {
+                (
+                    "cover",
+                    "cover",
+                    "open",
+                    r#"[{"capability_id":"cover","actions":["open","close","stop"]}]"#,
+                )
+            };
+            let device = remote.create_device(crate::remote::NewDevice {
+                remote_id: created.remote_id.clone(),
+                class: class.to_owned(),
+                name: display_name.to_owned(),
+                room: None,
+                adapter_ref: format!("fixture:{}", created.remote_id),
+                capabilities_json: caps.to_owned(),
+                safety_class: "reversible".to_owned(),
+            })?;
+            remote.create_grant(crate::remote::NewGrant {
+                remote_id: created.remote_id.clone(),
+                device_id: device.device_id,
+                capability_id: capability.to_owned(),
+                action: action.to_owned(),
+                constraints_json: "{}".to_owned(),
+                expires_at: None,
+            })?;
+        }
         Ok(format!(
             "spawned remote {} ({}) state={}",
             created.remote_id, created.display_name, created.state
@@ -3854,7 +3965,7 @@ impl RunEngine {
         start_task: bool,
         root_final: bool,
     ) -> Result<Option<String>, Refusal> {
-        if let Err(refusal) = self.caps.check_calls(1) {
+        if let Err(refusal) = self.claim_provider_call(run.id) {
             self.fail_task(run, task, AgentState::Failed)?;
             return Err(refusal);
         }
@@ -3869,7 +3980,6 @@ impl RunEngine {
             // crash during execution restores the running node, not only the plan.
             self.commit_run_snapshot(
                 run,
-                self.snapshot_revision(run.id),
                 AgentState::Running,
             );
         }
@@ -4011,6 +4121,10 @@ impl RunEngine {
                 reasoning: final_reply.reasoning.clone(),
                 results: turn.executed,
             });
+            if let Err(refusal) = self.claim_provider_call(run.id) {
+                self.fail_task(run, task, AgentState::Failed)?;
+                return Err(refusal);
+            }
             let (continuation_sink, continuation_streamed) = self.reply_delta_sink(run.id);
             let continuation_updates = self.a2a_updates_for_task(task);
             let continuation = match tokio::select! {

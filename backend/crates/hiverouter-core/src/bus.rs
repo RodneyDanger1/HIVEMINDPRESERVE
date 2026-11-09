@@ -51,6 +51,9 @@ pub struct EventBus {
     sender: broadcast::Sender<SequencedEvent>,
     seq: AtomicU64,
     replay: Mutex<VecDeque<SequencedEvent>>,
+    /// Serializes sequence assignment + replay insertion so concurrent
+    /// publishers cannot enqueue seq 2 in front of seq 1.
+    publish_lock: Mutex<()>,
 }
 
 impl std::fmt::Debug for EventBus {
@@ -76,6 +79,7 @@ impl EventBus {
             sender,
             seq: AtomicU64::new(0),
             replay: Mutex::new(VecDeque::with_capacity(REPLAY_CAPACITY)),
+            publish_lock: Mutex::new(()),
         }
     }
 
@@ -103,6 +107,10 @@ impl EventBus {
         event: Event,
         correlation_id: Option<Uuid>,
     ) -> Result<SequencedEvent, Refusal> {
+        let _publish_guard = self
+            .publish_lock
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
         let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
         let mut envelope = event.into_envelope()?.with_seq(seq);
         if let Some(correlation_id) = correlation_id {
@@ -132,6 +140,10 @@ impl EventBus {
         run_id: Option<hiverouter_contract::RunId>,
         correlation_id: Option<Uuid>,
     ) -> Result<SequencedEvent, Refusal> {
+        let _publish_guard = self
+            .publish_lock
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
         let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
         let mut envelope = event.into_envelope()?.with_seq(seq);
         if let Some(run_id) = run_id {

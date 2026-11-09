@@ -323,8 +323,23 @@ fn build_engine(
         }
         // Production bounded pool for independently-ready tasks. Test services
         // keep the historical serial path so scripted event sequences remain
-        // deterministic.
-        engine = engine.with_parallel_dispatch(32);
+        // deterministic. A local env override lets a low-rate provider be tested
+        // without changing the compiled default.
+        let parallel = std::env::var("HIVEROUTER_PARALLEL_TASKS")
+            .ok()
+            .and_then(|value| value.trim().parse::<usize>().ok())
+            .unwrap_or(32)
+            .clamp(1, 64);
+        // External OpenAI-compatible endpoints commonly publish a low per-key
+        // rate limit (the live Token Lab endpoint allows 20 req/min). Do not
+        // let a DeepSeek-sized local pool turn one plan into a 429 storm; the
+        // operator can still lower this with the env override.
+        let parallel = if config.provider.is_external_endpoint() {
+            parallel.min(2)
+        } else {
+            parallel
+        };
+        engine = engine.with_parallel_dispatch(parallel);
     }
     Arc::new(engine)
 }
@@ -973,12 +988,15 @@ async fn answer_agent_message(
     if answer.is_empty() || answer.chars().count() > 2_000 {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     }
-    let actor = body
-        .get("actor")
-        .and_then(|value| value.as_str())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or("operator");
+    if let Some(actor) = body.get("actor").and_then(|value| value.as_str()) {
+        if actor.trim() != "operator" {
+            // The HTTP mailbox is the operator surface. An agent answer uses the
+            // engine's parent path, not this route; accepting a caller-supplied
+            // actor would let an agent impersonate the operator.
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        }
+    }
+    let actor = "operator";
     match state
         .engine
         .store
@@ -2506,7 +2524,9 @@ async fn provider_models(State(state): State<Arc<AppState>>, headers: HeaderMap)
     if !provider_origin_allowed(&state, &headers) {
         return refusal_response(StatusCode::FORBIDDEN, &Refusal::OriginRejected);
     }
-    let client = match DeepSeekClient::from_env(ClientConfig::default()) {
+    let client = match DeepSeekClient::from_env(
+        ClientConfig::default().with_base_url(state.config.provider.base_url.clone()),
+    ) {
         Ok(client) => client,
         Err(error) => return provider_error_response(&error),
     };
@@ -2517,6 +2537,7 @@ async fn provider_models(State(state): State<Arc<AppState>>, headers: HeaderMap)
             Json(serde_json::json!({
                 "object": models.object,
                 "models": models.data,
+                "configured_model": state.config.provider.wire_model_id(),
             })),
         )
             .into_response(),
@@ -2529,7 +2550,22 @@ async fn provider_balance(State(state): State<Arc<AppState>>, headers: HeaderMap
     if !provider_origin_allowed(&state, &headers) {
         return refusal_response(StatusCode::FORBIDDEN, &Refusal::OriginRejected);
     }
-    let client = match DeepSeekClient::from_env(ClientConfig::default()) {
+    if state.config.provider.is_external_endpoint() {
+        return (
+            StatusCode::OK,
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "supported": false,
+                "is_available": null,
+                "balances": [],
+                "reason": "the configured OpenAI-compatible endpoint does not document an account-balance route",
+            })),
+        )
+            .into_response();
+    }
+    let client = match DeepSeekClient::from_env(
+        ClientConfig::default().with_base_url(state.config.provider.base_url.clone()),
+    ) {
         Ok(client) => client,
         Err(error) => return provider_error_response(&error),
     };
@@ -2538,6 +2574,7 @@ async fn provider_balance(State(state): State<Arc<AppState>>, headers: HeaderMap
             StatusCode::OK,
             [(header::CACHE_CONTROL, "no-store")],
             Json(serde_json::json!({
+                "supported": true,
                 "is_available": balance.is_available,
                 "balances": balance.balance_infos,
             })),
@@ -2620,10 +2657,14 @@ async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
                 "max_fanout": caps.max_fanout,
                 "max_agents": caps.max_agents,
                 "max_calls": caps.max_calls,
+                "parallel_dispatch": state.engine.parallel_dispatch(),
             },
             "provider": {
                 "enabled": state.config.provider.enabled,
                 "model": state.config.provider.model.id(),
+                "wire_model": state.config.provider.wire_model_id(),
+                "endpoint": if state.config.provider.is_external_endpoint() { "external" } else { "deepseek" },
+                "billing": if state.config.provider.is_external_endpoint() { "external_unverified" } else { "deepseek_usd" },
                 "key_present": key_present,
                 "planner_thinking": format!("{:?}", state.config.provider.planner_thinking.kind).to_lowercase(),
                 "leaf_thinking": format!("{:?}", state.config.provider.leaf_thinking.kind).to_lowercase(),
@@ -2715,6 +2756,7 @@ async fn api_session(
     }
     (
         StatusCode::OK,
+        [(header::CACHE_CONTROL, "no-store")],
         Json(serde_json::json!({
             "token": state.session.token(),
             "schema": hiverouter_contract::SCHEMA_VERSION,

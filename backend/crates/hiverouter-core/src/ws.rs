@@ -794,6 +794,49 @@ async fn handle_client_text(
                 }
             };
             if let Some(task) = &task {
+                // Rewiring is a hierarchy mutation, not just an edge edit. The
+                // graph CAS alone would let a Subagent be moved under the root or
+                // skip a class level; enforce the same matrix and depth that
+                // spawn_sub_hive enforces.
+                let parent = match state.engine.store.get_task(payload.new_parent_id) {
+                    Ok(parent) => parent,
+                    Err(refusal) => {
+                        publish_error(state, refusal, Some(correlation));
+                        return Ok(());
+                    }
+                };
+                if parent.depth.saturating_add(1) != task.depth {
+                    publish_error(state, Refusal::SpawnDepth, Some(correlation));
+                    return Ok(());
+                }
+                if let Err(refusal) = validate_spawn_role(task_agent_tier(&parent), &task.role) {
+                    publish_error(state, refusal, Some(correlation));
+                    return Ok(());
+                }
+                let parent_class = state
+                    .engine
+                    .store
+                    .task_identity(parent.id)
+                    .ok()
+                    .flatten()
+                    .map(|identity| identity.class)
+                    .or_else(|| role_class(&parent.role).map(str::to_owned));
+                let child_class = state
+                    .engine
+                    .store
+                    .task_identity(task.id)
+                    .ok()
+                    .flatten()
+                    .map(|identity| identity.class)
+                    .or_else(|| role_class(&task.role).map(str::to_owned));
+                if let (Some(parent_class), Some(child_class)) =
+                    (parent_class.as_deref(), child_class.as_deref())
+                {
+                    if !class_may_spawn(parent_class, child_class) {
+                        publish_error(state, Refusal::ToolNotAllowed, Some(correlation));
+                        return Ok(());
+                    }
+                }
                 if let Err(refusal) =
                     seed_rewire_context(&state.engine.contexts, task.id, previous_parent)
                 {
@@ -936,7 +979,12 @@ async fn handle_client_text(
         }
         Command::SettingsStatus(_) => {
             let mut result = state.tools.settings_status();
-            result.model = state.config.provider.model.id().to_owned();
+            result.provider = if state.config.provider.is_external_endpoint() {
+                "openai-compatible".to_owned()
+            } else {
+                "deepseek".to_owned()
+            };
+            result.model = state.config.provider.wire_model_id().to_owned();
             result.thinking = Some(match state.config.provider.planner_thinking.kind {
                 hiverouter_provider::dto::ThinkingType::Enabled => "enabled".to_owned(),
                 hiverouter_provider::dto::ThinkingType::Disabled => "disabled".to_owned(),

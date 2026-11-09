@@ -160,6 +160,18 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
         <span className="flex h-[18px] w-[68px] shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-honey-300">
           <span className="type-mono-meta text-[11px] text-ink-800">{visualFor(data.task.state).label}</span>
         </span>
+        <button
+          type="button"
+          className="nodrag grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full border border-honey-500 bg-panel text-[14px] leading-none text-ink-800 hover:bg-honey-100"
+          title="Spawn an Agent under this SuperAgent"
+          aria-label={`Spawn an Agent under ${data.task.label}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            data.onSpawn(data.task.id);
+          }}
+        >
+          +
+        </button>
       </div>
       <button type="button" className="nodrag flex min-h-0 flex-1 flex-col px-4 py-2 text-left" onClick={() => data.onSelect(data.task.id)}>
         <span className="type-mono-meta text-[11px] tracking-[0.12em] text-meta">{NODE_KIND_LABELS.superagent}</span>
@@ -188,6 +200,18 @@ export function WorkerAgentNode({ data }: HiveNodeProps) {
           <span className="type-mono-meta text-meta">
             {data.task.progress === null ? STRINGS.node.noMetrics : formatPercent(data.task.progress, 0)}
           </span>
+          <button
+            type="button"
+            className="nodrag grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-hairline bg-panel text-[12px] leading-none text-ink-800 hover:bg-honey-100"
+            title="Spawn a temporary Subagent under this Agent"
+            aria-label={`Spawn a temporary Subagent under ${data.task.label}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              data.onSpawn(data.task.id);
+            }}
+          >
+            +
+          </button>
         </div>
         <span className="type-mono-meta mt-1 text-meta">{STRINGS.node.workerLabel}</span>
         <div className="mt-auto">

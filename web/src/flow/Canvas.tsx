@@ -109,6 +109,7 @@ function CanvasInner() {
   const tasks = useUiStore((state) => state.tasks);
   const selectedTaskId = useUiStore((state) => state.selectedTaskId);
   const selectTask = useUiStore((state) => state.selectTask);
+  const spawnSubHive = useUiStore((state) => state.spawnSubHive);
   const rewireSelected = useUiStore((state) => state.rewireSelected);
   const runId = useUiStore((state) => state.run?.id ?? null);
   const setViewport = useUiStore((state) => state.setViewport);
@@ -142,6 +143,13 @@ function CanvasInner() {
       selectTask(taskId);
     },
     [selectTask],
+  );
+
+  const handleSpawn = useCallback(
+    (taskId: string) => {
+      void spawnSubHive(taskId);
+    },
+    [spawnSubHive],
   );
 
   const findDropTarget = useCallback(
@@ -181,8 +189,8 @@ function CanvasInner() {
     // A graph that is visible is arrangeable: dragging a card after a run
     // finishes still persists its position. Server mutations stay gated by
     // `interactiveGraph` in the drag/drop handlers.
-    return buildNodes(visibleTasks, selectedTaskId, handleSelect, runStatus !== null);
-  }, [visibleTasks, selectedTaskId, handleSelect, history.replayGraph, runStatus]);
+    return buildNodes(visibleTasks, selectedTaskId, handleSelect, runStatus !== null, handleSpawn);
+  }, [visibleTasks, selectedTaskId, handleSelect, handleSpawn, history.replayGraph, runStatus]);
 
   const nodes = useMemo<CanvasNode[]>(() => {
     if (history.replayGraph) {

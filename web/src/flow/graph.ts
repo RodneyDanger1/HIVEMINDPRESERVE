@@ -15,6 +15,8 @@ export interface CanvasNodeData extends Record<string, unknown> {
   readonly task: TaskRecord;
   readonly selected: boolean;
   readonly onSelect: (taskId: string) => void;
+  /** Per-card spawn action; the server still enforces the class matrix. */
+  readonly onSpawn: (taskId: string) => void;
   /**
    * Which side of its parent this card sits on. Left branches attach their
    * target to the right handle and their source to the left handle, so the
@@ -368,6 +370,7 @@ export function buildNodes(
   selectedTaskId: string | null,
   onSelect: (taskId: string) => void,
   interactive = true,
+  onSpawn: (taskId: string) => void = () => {},
 ): CanvasNode[] {
   const positions = layoutTasks(tasks);
   const centerX = (id: string): number => {
@@ -402,6 +405,7 @@ export function buildNodes(
           task,
           selected: task.id === selectedTaskId,
           onSelect,
+          onSpawn,
           branchSide: branchSideOf(task),
         },
         ariaLabel: `${task.label} (${task.kind}, ${task.state})`,

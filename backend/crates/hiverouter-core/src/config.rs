@@ -38,6 +38,8 @@ pub const BASE_URL_ENV: &str = "HIVEROUTER_BASE_URL";
 /// Optional wire model id when the endpoint's catalog name differs from the
 /// documented DeepSeek id used for local pricing/accounting.
 pub const WIRE_MODEL_ENV: &str = "HIVEROUTER_WIRE_MODEL";
+/// Optional path to a saved provider profile JSON.
+pub const PROVIDER_FILE_ENV: &str = "HIVEROUTER_PROVIDER_FILE";
 
 /// Provider behaviour resolved from the environment at boot.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -79,6 +81,19 @@ impl Default for ProviderSettings {
 }
 
 impl ProviderSettings {
+    /// True when the configured base URL is not the documented DeepSeek API.
+    /// Such endpoints are OpenAI-compatible transports, not DeepSeek accounts.
+    #[must_use]
+    pub fn is_external_endpoint(&self) -> bool {
+        self.base_url != hiverouter_provider::DEFAULT_BASE_URL
+    }
+
+    /// Wire model id: the endpoint catalogue id, or the documented model id.
+    #[must_use]
+    pub fn wire_model_id(&self) -> &str {
+        self.wire_model.as_deref().unwrap_or(self.model.id())
+    }
+
     /// Resolves provider settings from the process environment.
     ///
     /// # Errors
@@ -87,6 +102,15 @@ impl ProviderSettings {
     /// become defaults.
     pub fn from_env() -> Result<Self, ConfigError> {
         let default = Self::default();
+        let profile = load_provider_profile();
+        let profile_str = |key: &str| {
+            profile
+                .as_ref()
+                .and_then(|value| value.get(key))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+        };
         let enabled = match std::env::var(PROVIDER_ENV) {
             Ok(value) => match value.trim().to_ascii_lowercase().as_str() {
                 "auto" | "on" | "enabled" | "true" | "1" => true,
@@ -108,7 +132,14 @@ impl ProviderSettings {
                     ))
                 })?
             }
-            Err(_) => default.model,
+            Err(_) => match profile_str("model") {
+                Some(value) => Model::from_id(value).ok_or_else(|| {
+                    ConfigError::ProviderSetting(format!(
+                        "provider profile model `{value}` is not documented"
+                    ))
+                })?,
+                None => default.model,
+            },
         };
         let planner_thinking = match std::env::var(THINKING_ENV) {
             Ok(value) => parse_thinking(&value, THINKING_ENV)?,
@@ -131,29 +162,26 @@ impl ProviderSettings {
             Err(_) => default.leaf_max_tokens,
         };
         let base_url = match std::env::var(BASE_URL_ENV) {
-            Ok(value) => {
-                let trimmed = value.trim().trim_end_matches('/').to_owned();
-                if trimmed.is_empty() || !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
-                    return Err(ConfigError::ProviderSetting(format!(
-                        "{BASE_URL_ENV} must be an http(s) URL"
-                    )));
-                }
-                trimmed
-            }
-            Err(_) => default.base_url,
+            Ok(value) => validate_base_url(&value)?,
+            Err(_) => match profile_str("base_url") {
+                Some(value) => validate_base_url(value)?,
+                None => default.base_url,
+            },
         };
         let wire_model = match std::env::var(WIRE_MODEL_ENV) {
-            Ok(value) => {
-                let trimmed = value.trim();
-                if trimmed.is_empty() {
-                    return Err(ConfigError::ProviderSetting(format!(
-                        "{WIRE_MODEL_ENV} is present but empty"
-                    )));
-                }
-                Some(trimmed.to_owned())
-            }
-            Err(_) => None,
+            Ok(value) => parse_wire_model(&value, WIRE_MODEL_ENV)?,
+            Err(_) => match profile_str("wire_model") {
+                Some(value) => parse_wire_model(value, "provider profile wire_model")?,
+                None => None,
+            },
         };
+        if base_url != hiverouter_provider::DEFAULT_BASE_URL && wire_model.is_none() {
+            return Err(ConfigError::ProviderSetting(
+                "an external OpenAI-compatible base URL requires a wire model id; set \
+                 HIVEROUTER_WIRE_MODEL or the provider profile's wire_model"
+                    .to_owned(),
+            ));
+        }
         Ok(Self {
             enabled,
             model,
@@ -166,6 +194,44 @@ impl ProviderSettings {
             wire_model,
         })
     }
+}
+
+/// Loads a saved non-secret provider profile. The key is never in this file;
+/// it is supplied separately (DPAPI file via the launcher, or the process env).
+fn load_provider_profile() -> Option<serde_json::Value> {
+    let path = std::env::var(PROVIDER_FILE_ENV)
+        .ok()
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var("LOCALAPPDATA")
+                .ok()
+                .map(std::path::PathBuf::from)
+                .map(|root| root.join("HiveMind").join("provider.json"))
+        })?;
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+fn validate_base_url(raw: &str) -> Result<String, ConfigError> {
+    let trimmed = raw.trim().trim_end_matches('/').to_owned();
+    if trimmed.is_empty()
+        || !trimmed.starts_with("http://") && !trimmed.starts_with("https://")
+    {
+        return Err(ConfigError::ProviderSetting(
+            "provider base URL must be an http(s) URL".to_owned(),
+        ));
+    }
+    Ok(trimmed)
+}
+
+fn parse_wire_model(raw: &str, key: &str) -> Result<Option<String>, ConfigError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(ConfigError::ProviderSetting(format!(
+            "{key} is present but empty"
+        )));
+    }
+    Ok(Some(trimmed.to_owned()))
 }
 
 /// Parses one documented thinking toggle value.

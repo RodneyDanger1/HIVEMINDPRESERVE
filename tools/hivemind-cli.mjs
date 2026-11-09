@@ -2119,6 +2119,14 @@ async function main() {
       }
       return EXIT.OK;
     }
+    if (definition.transport === 'process/http') {
+      const data = await executeLocal(command, options, baseUrl);
+      emitSuccess(command, data, options, startedAt);
+      if (command === 'doctor' && data.ready === false) {
+        return EXIT.REFUSAL;
+      }
+      return EXIT.OK;
+    }
     if (definition.transport === 'http') {
       if (options.dryRun) {
         emitSuccess(command, { dry_run: true, request: { method: 'GET', path: command } }, options, startedAt);

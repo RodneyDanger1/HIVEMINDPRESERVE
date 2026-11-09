@@ -175,6 +175,7 @@ impl ProviderExecutor for ScriptedExecutor {
         _parent: &TaskRecord,
         _run_prompt: &str,
         _question: &str,
+        _parent_context: Option<&hiverouter_core::context::ScopedContext>,
         _cancel: &CancellationToken,
     ) -> Result<EscalationAnswer, Refusal> {
         self.escalation
