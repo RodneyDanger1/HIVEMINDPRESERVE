@@ -205,6 +205,13 @@ pub fn write_provider_profile(value: &serde_json::Value) -> Result<(), ConfigErr
             "no provider profile path is available (LOCALAPPDATA is unset)".to_owned(),
         ));
     };
+    write_provider_profile_to(&path, value)
+}
+
+fn write_provider_profile_to(
+    path: &std::path::Path,
+    value: &serde_json::Value,
+) -> Result<(), ConfigError> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|error| {
             ConfigError::ProviderSetting(format!("cannot create provider profile dir: {error}"))
@@ -218,13 +225,29 @@ pub fn write_provider_profile(value: &serde_json::Value) -> Result<(), ConfigErr
         ConfigError::ProviderSetting(format!("cannot write provider profile: {error}"))
     })?;
     if path.exists() {
-        std::fs::remove_file(&path).map_err(|error| {
+        // Keep the previous profile until the new one is committed. On Windows
+        // `rename` does not replace an existing destination, so the old file is
+        // moved aside first and restored if the commit fails.
+        let backup = path.with_extension("json.bak");
+        std::fs::copy(path, &backup).map_err(|error| {
+            ConfigError::ProviderSetting(format!("cannot back up provider profile: {error}"))
+        })?;
+        std::fs::remove_file(path).map_err(|error| {
             ConfigError::ProviderSetting(format!("cannot replace provider profile: {error}"))
         })?;
+        if let Err(error) = std::fs::rename(&temp, path) {
+            let _ = std::fs::rename(&backup, path);
+            return Err(ConfigError::ProviderSetting(format!(
+                "cannot commit provider profile: {error}"
+            )));
+        }
+        let _ = std::fs::remove_file(backup);
+    } else {
+        std::fs::rename(&temp, path).map_err(|error| {
+            ConfigError::ProviderSetting(format!("cannot commit provider profile: {error}"))
+        })?;
     }
-    std::fs::rename(&temp, &path).map_err(|error| {
-        ConfigError::ProviderSetting(format!("cannot commit provider profile: {error}"))
-    })
+    Ok(())
 }
 
 /// Path of the saved provider profile, if a location is configured.
@@ -534,6 +557,32 @@ fn resolve_allowed_origins(bind: SocketAddr) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_profile_write_is_replace_safe() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let path = temp.path().join("provider.json");
+        write_provider_profile_to(
+            &path,
+            &serde_json::json!({"base_url":"https://api.deepseek.com","model":"deepseek-flash"}),
+        )
+        .expect("first write");
+        write_provider_profile_to(
+            &path,
+            &serde_json::json!({
+                "name":"tokenlab",
+                "base_url":"https://api.tokenlab.amd.com/v1",
+                "model":"deepseek-flash",
+                "wire_model":"DeepSeek-V4.1-Flash"
+            }),
+        )
+        .expect("replace");
+        let text = std::fs::read_to_string(&path).expect("profile");
+        assert!(text.contains("tokenlab"));
+        assert!(text.contains("DeepSeek-V4.1-Flash"));
+        assert!(!path.with_extension("json.tmp").exists(), "temp file removed");
+        assert!(!path.with_extension("json.bak").exists(), "backup removed");
+    }
 
     #[test]
     fn defaults_bind_loopback_and_derive_db_path() {
