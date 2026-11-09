@@ -1,7 +1,7 @@
 # HiveMind UI/UX + HMARS gap audit
 
 Status date: 2026-11-08  
-Audited commit: `3f5ec41` (UI pass; latest gate below)  
+Audited commit: `d8afbd5` (UI pass; latest gate below)
 Design sources: `00 · Cover.pdf` / `docs/ui/figcraft/ASSETS/hivemind-cover.png`, accepted FigCraft boards, `web/src/tokens/tokens.ts`, `web/src/styles/tokens.css`, `docs/ui/figcraft/ASSETS-INDEX.json`, `ledgers/ui-watchdog.json`  
 Offline only: no server, browser, provider call, or live FigCraft generator was used.
 
@@ -74,7 +74,7 @@ npm run build          exit 0
 node --check tools/hivemind-cli.mjs  exit 0
 ```
 
-Receipt: `docs/evidence/gate-3f5ec41a-offline.json`.
+Receipt: `docs/evidence/gate-d8afbd54-offline.json`.
 
 Graph check: `detect-changes` reported **high** risk, 16 changed symbols, 8 affected flows (`AppFrame`, `ChatCore`, `BeeEdge`, `SettingsPanel`, etc.). `impact HiveField` returned `UNKNOWN` (not indexed), so it is not evidence of safety. Full gate is the stronger signal here.
 
@@ -963,8 +963,26 @@ verify_ui_pass():
 
 ## 10. Final truth
 
-The UI is now materially more complete and more consistently HiveMind/FigCraft-shaped: settings are tabbed, the A2A queue is usable, diagnostics and transcripts are visible, destructive actions use a token-styled dialog, chat feels alive, and the hive has ambient/sheen/edge bee choreography.
+The UI is now materially more complete and more consistently HiveMind/FigCraft-shaped: settings are tabbed, the A2A queue is usable, diagnostics and transcripts are visible, destructive actions use a token-styled dialog, chat feels alive, and the hive has ambient/sheen/edge-bee choreography plus the randomized honeycomb ripple. The run insight and shortcut cards add real data/controls rather than decorative placeholders.
 
 The HMARS objective is still not complete. The largest missing pieces are root orchestration tools, SuperAgent branch ownership, parent-model A2A answers, hive/ancestor banks, read/session authority, durable resume, remote/daemon, and a sealed release. Scale remains intentionally out of scope.
 
 No new FigCraft boards were generated; the workspace has no FigCraft generator. The implementation uses the accepted token system and boards, and pixel fidelity remains unverified.
+
+### 1.3 Additional cards/features added in the ripple pass
+
+1. Honeycomb gold ripple: a soft vertical column travels left-to-right across the full honeycomb grid, behind the hive; each cycle randomizes its duration from 12–30 seconds.
+2. Run insight state-distribution card: real task-state proportions, legend, and accessible label.
+3. Keyboard shortcut card: the actual implemented chords (canvas, chat, modal, tabs), no fake controls.
+4. Settings motion control: persisted ambient level.
+5. Settings palette: all 20 printed tokens.
+6. Settings tab icons: shared local line-icon set.
+7. A2A inbox card.
+8. Diagnostics card.
+9. Historical transcript card.
+10. Token-styled destructive confirmation card.
+11. Chat live status/streaming surface.
+12. Figure-eight ambient bees.
+13. Traveling edge bees.
+14. Stronger hive sheen.
+15. Template catalog detail list (insertable IDs from server).
