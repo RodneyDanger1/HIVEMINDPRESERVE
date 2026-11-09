@@ -1,0 +1,13 @@
+﻿{
+    "commit":  "cf8bff0f51f9acd944dc5bc8b71aa20900762fec",
+    "captured_at":  "2026-11-09T00:03:01.6215086-06:00",
+    "test":  "cargo test -p hiverouter-core --test scale_s1 -- --nocapture",
+    "tasks":  41,
+    "plan_nodes":  40,
+    "provider_calls":  41,
+    "wall_ms":  227,
+    "mode":  "serial",
+    "claim":  "baseline only; no concurrency claim",
+    "max_plan_nodes":  40,
+    "max_agents":  64
+}
