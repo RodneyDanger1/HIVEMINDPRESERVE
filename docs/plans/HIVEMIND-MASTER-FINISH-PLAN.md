@@ -376,3 +376,8 @@ Not delivered and must not be claimed:
 - `RunStore::task_ownership` reads the triple; roster exposes mode/scope/owner.
 - Test covers root/super/agent ownership.
 - Not delivered: exclusive owner enforcement, offices, ownership switch UI, ownership in snapshots.
+### P2 A2A per-task cursor
+
+- Inbox refresh marks delivered message ids; continuation updates skip already-delivered ids, so the same question is not re-injected every turn.
+- Cursor is in-process and reset on restart; durable rows remain the source of truth.
+- Not delivered: persisted cursor, answer-attempt cap, parent-model answer.

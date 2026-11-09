@@ -546,6 +546,8 @@ pub struct RunEngine {
     /// In-process A2A answer waiters keyed by message id. A crash loses the
     /// waiter; the message remains open for an operator answer after restart.
     a2a_waiters: tokio::sync::Mutex<HashMap<Uuid, tokio::sync::oneshot::Sender<()>>>,
+    /// Message ids already delivered through a task prompt/continuation.
+    a2a_delivered: Mutex<HashSet<String>>,
     /// One clock for approval timestamps/CAS (tests inject a fixed clock).
     clock: Clock,
     /// Shell allowlist used only for an approved `shell_exec`.
@@ -604,6 +606,7 @@ impl RunEngine {
             tools: None,
             waiters: Arc::new(ApprovalWaiters::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
+            a2a_delivered: Mutex::new(HashSet::new()),
             clock: Arc::new(default_now_unix_secs),
             shell_policy: ShellPolicy::conservative_default(),
             task_tokens: Mutex::new(HashMap::new()),
@@ -772,6 +775,7 @@ impl RunEngine {
             tools: None,
             waiters: Arc::new(ApprovalWaiters::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
+            a2a_delivered: Mutex::new(HashSet::new()),
             clock: Arc::new(default_now_unix_secs),
             shell_policy: ShellPolicy::conservative_default(),
             task_tokens: Mutex::new(HashMap::new()),
@@ -3283,6 +3287,14 @@ impl RunEngine {
         };
         let mut updates = String::new();
         for message in messages {
+            if self
+                .a2a_delivered
+                .lock()
+                .map(|mut delivered| !delivered.insert(message.id.clone()))
+                .unwrap_or(true)
+            {
+                continue;
+            }
             let text: String = tool_loop::bounded_tool_text(&message.text)
                 .chars()
                 .take(500)
@@ -3316,6 +3328,9 @@ impl RunEngine {
         };
         context.facts.retain(|key, _| !key.starts_with("a2a:"));
         for message in messages {
+            if let Ok(mut delivered) = self.a2a_delivered.lock() {
+                delivered.insert(message.id.clone());
+            }
             let Some(text) = bounded_a2a_text(&message.text) else {
                 continue;
             };
