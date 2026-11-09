@@ -69,6 +69,8 @@ pub struct PendingAgentMessage {
 /// One entry returned to an agent's bank read-set.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MemoryReadEntry {
+    /// Entry id.
+    pub entry_id: String,
     /// Bank source.
     pub bank_id: String,
     /// Stable key.
@@ -1459,6 +1461,79 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Persists the exact bank/entry set that shaped one task prompt.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_memory_context_snapshot(
+        &self,
+        task_id: TaskId,
+        run_id: RunId,
+        banks: &[String],
+        entry_ids: &[String],
+        rendered_chars: usize,
+        truncated: bool,
+        prompt_sha256: &str,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO memory_context_snapshots
+                     (id, task_id, run_id, banks_json, entry_ids_json,
+                      rendered_chars, truncated, prompt_sha256, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                    params![
+                        format!("snapshot:{}", Uuid::now_v7()),
+                        task_id.to_string(),
+                        run_id.to_string(),
+                        serde_json::to_string(banks).map_err(|_| rusqlite::Error::InvalidQuery)?,
+                        serde_json::to_string(entry_ids).map_err(|_| rusqlite::Error::InvalidQuery)?,
+                        i64::try_from(rendered_chars).unwrap_or(i64::MAX),
+                        i64::from(truncated),
+                        prompt_sha256,
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(())
+    }
+
+    /// Reads the latest context snapshot for a task.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_context_snapshot(
+        &self,
+        task_id: TaskId,
+    ) -> Result<Option<(String, String, usize, bool, String, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT banks_json, entry_ids_json, rendered_chars, truncated,
+                                prompt_sha256, created_at
+                         FROM memory_context_snapshots
+                         WHERE task_id = ?1
+                         ORDER BY created_at DESC, rowid DESC LIMIT 1",
+                        params![task_id.to_string()],
+                        |row| {
+                            Ok((
+                                row.get(0)?,
+                                row.get(1)?,
+                                usize::try_from(row.get::<_, i64>(2)?).unwrap_or(usize::MAX),
+                                row.get::<_, i64>(3)? != 0,
+                                row.get(4)?,
+                                row.get(5)?,
+                            ))
+                        },
+                    )
+                    .optional()
+            })
+            .map_err(map)
+    }
+
     /// Reads the bounded bank set for one task: own branch, parent branch, and
     /// the run bank. Sibling/foreign-run banks are not addressable.
     ///
@@ -1479,7 +1554,7 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
-                    "SELECT bank_id, entry_key, value FROM memory_entries
+                    "SELECT id, bank_id, entry_key, value FROM memory_entries
                      WHERE status = 'active'
                        AND (trust IN ('unverified','verified','authoritative')
                             OR (trust IS NULL AND kind = 'note'))
@@ -1495,9 +1570,10 @@ impl RunStore {
                     ],
                     |row| {
                         Ok(MemoryReadEntry {
-                            bank_id: row.get(0)?,
-                            key: row.get(1)?,
-                            value: row.get(2)?,
+                            entry_id: row.get(0)?,
+                            bank_id: row.get(1)?,
+                            key: row.get(2)?,
+                            value: row.get(3)?,
                         })
                     },
                 )?;
@@ -2237,6 +2313,33 @@ mod tests {
         assert_eq!(identity.rank, 4);
         assert_eq!(identity.profile_id, "subagent");
         assert!(store.task_identity(unknown.id).expect("unknown").is_none());
+    }
+
+    #[test]
+    fn memory_context_snapshot_records_bank_set() {
+        let store = store();
+        let run = store
+            .create_run("p", "snapshot", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_memory_context_snapshot(
+                task,
+                run.id,
+                &["bank:run:1".to_owned()],
+                &["entry:1".to_owned()],
+                42,
+                false,
+                "abc",
+            )
+            .expect("snapshot");
+        let snapshot = store
+            .memory_context_snapshot(task)
+            .expect("read")
+            .expect("snapshot");
+        assert_eq!(snapshot.2, 42);
+        assert!(!snapshot.3);
+        assert_eq!(snapshot.4, "abc");
     }
 
     #[test]

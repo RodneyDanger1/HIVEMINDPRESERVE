@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `7d54a9e` (clean tree). Latest offline gate: `cargo test --workspace --locked` 542 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `7d54a9e` (clean tree). Latest offline gate: `cargo test --workspace --locked` 543 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -365,3 +365,8 @@ Not delivered and must not be claimed:
 - History panel mounts `RunDetailPanel`; it renders only server fields and explicit empty/error states.
 - Test covers a real run/task detail response and hyper class.
 - Not delivered: artifact/diff review, tool ledger drill-down, virtualized task table.
+### P4 memory context snapshots
+
+- v16 adds `memory_context_snapshots`; every execution-time bank read-set render records task/run, bank ids, entry ids, rendered chars, truncation, and SHA-256 of the rendered memory block. No second copy of memory text is stored.
+- Test covers snapshot write/read; read-set entries now carry durable `entry_id`.
+- Not delivered: UI snapshot viewer, retention pruning, hash-chain linking to the journal.

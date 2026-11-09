@@ -3242,16 +3242,34 @@ impl RunEngine {
                 .memory_read_set(task.run_id, task.id, task.parent_task_id, 16)
         {
             let run_bank = format!("bank:run:{}", task.run_id);
+            let mut banks: Vec<String> = Vec::new();
+            let mut entry_ids: Vec<String> = Vec::new();
+            let mut rendered = String::new();
             for entry in entries {
+                if !banks.iter().any(|bank| bank == &entry.bank_id) {
+                    banks.push(entry.bank_id.clone());
+                }
+                entry_ids.push(entry.entry_id.clone());
                 let prefix = if entry.bank_id == run_bank {
                     "memory:run:"
                 } else {
                     "memory:"
                 };
+                rendered.push_str(&format!("{prefix}{}={}\n", entry.key, entry.value));
                 context
                     .facts
                     .insert(format!("{prefix}{}", entry.key), entry.value);
             }
+            let hash = hiverouter_tools::sha256::sha256_hex(rendered.as_bytes());
+            let _ = self.store.record_memory_context_snapshot(
+                task.id,
+                task.run_id,
+                &banks,
+                &entry_ids,
+                rendered.chars().count(),
+                false,
+                &hash,
+            );
         }
         self.contexts.set(task.id, context.clone())?;
         Ok(Some(context))
