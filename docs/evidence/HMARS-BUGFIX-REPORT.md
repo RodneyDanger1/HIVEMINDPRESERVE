@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `6a1a1fa`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `C46F745CCE381B32643C63F903159CE1286337FE1058980332F53D4FE1E4E997`
+Final repair HEAD at report write: `ecee300`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `AAE7A992201673E15BF0288069F1EE6C72EE5CC992965E620200FFC44F5071D3`
 
 ## 1. What HiveMind is supposed to be
 
@@ -112,6 +112,7 @@ TRUTH:
 | `aaf2c62` | Provider settings | profile GET exposes only defined fields; unknown file content cannot leak |
 | `4d15389` | Daemon | real DB-health job executes and reports measured `ok`/`failed`; root-spawned watchdog uses it |
 | `6a1a1fa` | Snapshot | terminal runs retain the newest 16 revisions; old files/index rows are pruned, latest recovery point preserved |
+| `ecee300` | Engine hygiene | terminal runs release metrics, delivered-A2A ids and queued spawn ids |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -131,7 +132,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 C46F745CCE381B32643C63F903159CE1286337FE1058980332F53D4FE1E4E997
+  target/release/hiverouter.exe SHA-256 AAE7A992201673E15BF0288069F1EE6C72EE5CC992965E620200FFC44F5071D3
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
