@@ -38,7 +38,8 @@ done from the provided context, say exactly what is missing.";
 const ROOT_CONTROL_SYSTEM: &str = "You are the HiveMind HyperAgent controller. You receive \
 the operator goal and the plan. Return only tool calls: spawn_superagent to add one branch lead, \
 spawn_remote_agent to create one tree-free remote principal (light switch, garage controller, or \
-daemon relay), read_memory_summary for bounded summaries, or finish. Never spawn a direct Agent \
+daemon relay), spawn_daemon to enroll one tree-free watchdog/relay record, \
+read_memory_summary for bounded summaries, or finish. Never spawn a direct Agent \
 or Subagent. Do not answer the user in this turn.";
 
 const ROOT_SYSTEM: &str = "You are the HiveMind HyperAgent orchestrator. You receive the \
@@ -475,6 +476,23 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                     "properties": {
                         "display_name": { "type": "string", "minLength": 1, "maxLength": 120 },
                         "kind": { "type": "string", "enum": ["light", "garage", "daemon_relay"] }
+                    },
+                    "required": ["display_name", "kind"],
+                    "additionalProperties": false
+                }),
+            }),
+            ToolSpec::function(FunctionDefinition {
+                name: "spawn_daemon".to_owned(),
+                description: Some(
+                    "Enroll one tree-free daemon/watchdog/relay record; it is not a task and starts stopped."
+                        .to_owned(),
+                ),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "display_name": { "type": "string", "minLength": 1, "maxLength": 120 },
+                        "kind": { "type": "string", "enum": ["watchdog", "relay", "switch", "satellite"] },
+                        "interval_secs": { "type": "integer", "minimum": 5, "maximum": 86400 }
                     },
                     "required": ["display_name", "kind"],
                     "additionalProperties": false

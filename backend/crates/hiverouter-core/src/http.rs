@@ -302,11 +302,13 @@ fn build_engine(
     wire_workspace_jail: bool,
 ) -> Arc<RunEngine> {
     let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
+    let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
         .with_tools(tools)
         .with_remote_store(remote)
+        .with_daemon_store(daemons)
         .with_root_orchestrator();
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {

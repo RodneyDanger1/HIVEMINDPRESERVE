@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use hiverouter_contract::event::EventName;
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Usage};
 use hiverouter_core::bus::{EventBus, SequencedEvent};
+use hiverouter_core::daemon::DaemonStore;
 use hiverouter_core::db::Database;
 use hiverouter_core::entities::TaskRecord;
 use hiverouter_core::execution::{
@@ -346,11 +347,106 @@ impl ProviderExecutor for RootSuperExecutor {
     }
 }
 
+struct RootToolExecutor {
+    orchestrations: AtomicUsize,
+    tool: &'static str,
+    arguments: serde_json::Value,
+}
+
+impl RootToolExecutor {
+    fn new(tool: &'static str, arguments: serde_json::Value) -> Arc<Self> {
+        Arc::new(Self {
+            orchestrations: AtomicUsize::new(0),
+            tool,
+            arguments,
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for RootToolExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(1, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = format!("branch {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn orchestrate_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let name = if self.orchestrations.fetch_add(1, Ordering::SeqCst) == 0 {
+            self.tool
+        } else {
+            "finish"
+        };
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: vec![AssembledToolCall {
+                index: 0,
+                id: format!("call-{name}"),
+                name: name.to_owned(),
+                arguments: if name == "finish" {
+                    json!({})
+                } else {
+                    self.arguments.clone()
+                },
+            }],
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "root answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
 struct TestEngine {
     engine: Arc<RunEngine>,
     bus: Arc<EventBus>,
     store: RunStore,
     remote: Arc<RemoteStore>,
+    daemons: Arc<DaemonStore>,
     _temp: tempfile::TempDir,
 }
 
@@ -367,6 +463,7 @@ fn test_engine_with_personas(
     db.migrate().expect("migrate");
     let bus = Arc::new(EventBus::new());
     let remote = Arc::new(RemoteStore::new(db.clone()));
+    let daemons = Arc::new(DaemonStore::new(db.clone()));
     let engine = Arc::new(
         RunEngine::new(
             db.clone(),
@@ -377,6 +474,7 @@ fn test_engine_with_personas(
         )
         .with_personas(personas)
         .with_remote_store(remote.clone())
+        .with_daemon_store(daemons.clone())
         .with_root_orchestrator(),
     );
     TestEngine {
@@ -384,6 +482,7 @@ fn test_engine_with_personas(
         bus,
         store: RunStore::new(db),
         remote,
+        daemons,
         _temp: temp,
     }
 }
@@ -581,6 +680,39 @@ async fn superagent_hive_bank_and_branch_read_set_are_real() {
     let keys: Vec<&str> = read.iter().map(|entry| entry.key.as_str()).collect();
     assert!(keys.contains(&"hive-key"), "child must read its hive: {keys:?}");
     assert!(keys.contains(&"worker-key"), "child must read its parent branch: {keys:?}");
+}
+
+#[tokio::test]
+async fn hyperagent_checkpoint_can_enroll_a_daemon_without_a_task_row() {
+    let executor = RootToolExecutor::new(
+        "spawn_daemon",
+        json!({
+            "display_name": "Hive relay",
+            "kind": "relay",
+            "interval_secs": 60
+        }),
+    );
+    let harness = test_engine(executor);
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("enroll a relay", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    let daemons = harness.daemons.list().expect("daemons");
+    assert_eq!(daemons.len(), 1);
+    assert_eq!(daemons[0].kind, "relay");
+    assert_eq!(daemons[0].owner_kind, "hive");
+    assert!(daemons[0].created_by.starts_with("hyper:"));
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    assert!(
+        tasks.iter().all(|task| !task.id.to_string().contains("daemon")),
+        "daemons must never become task rows"
+    );
 }
 
 #[tokio::test]

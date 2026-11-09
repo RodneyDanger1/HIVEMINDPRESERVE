@@ -586,6 +586,8 @@ pub struct RunEngine {
     tools: Option<Arc<ToolsBridge>>,
     /// Remote control plane for the root-only `spawn_remote_agent` tool.
     remote: Option<Arc<crate::remote::RemoteStore>>,
+    /// Daemon plane for the root-only `spawn_daemon` tool.
+    daemons: Option<Arc<crate::daemon::DaemonStore>>,
     /// Enables the bounded HyperAgent control turn. Production boot enables it;
     /// test doubles opt in explicitly so a scripted provider call sequence is
     /// never silently shifted by an extra root request.
@@ -658,6 +660,7 @@ impl RunEngine {
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
+            daemons: None,
             root_orchestrator: false,
             parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
@@ -706,6 +709,13 @@ impl RunEngine {
     #[must_use]
     pub fn with_remote_store(mut self, remote: Arc<crate::remote::RemoteStore>) -> Self {
         self.remote = Some(remote);
+        self
+    }
+
+    /// Attaches the daemon plane used by the root's daemon-spawn tool.
+    #[must_use]
+    pub fn with_daemon_store(mut self, daemons: Arc<crate::daemon::DaemonStore>) -> Self {
+        self.daemons = Some(daemons);
         self
     }
 
@@ -851,6 +861,7 @@ impl RunEngine {
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
+            daemons: None,
             root_orchestrator: false,
             parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
@@ -3724,6 +3735,39 @@ impl RunEngine {
                     "spawn_remote_agent" => {
                         let result = self.execute_root_remote_call(root, call)?;
                         result_text.push_str(&format!("- {result}\n"));
+                    }
+                    "spawn_daemon" => {
+                        let display_name = call
+                            .arguments
+                            .get("display_name")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|name| !name.is_empty())
+                            .ok_or(Refusal::SchemaInvalid)?;
+                        let kind = call
+                            .arguments
+                            .get("kind")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or("watchdog");
+                        let interval = call
+                            .arguments
+                            .get("interval_secs")
+                            .and_then(serde_json::Value::as_i64)
+                            .unwrap_or(60);
+                        let daemons = self.daemons.as_ref().ok_or(Refusal::InternalError)?;
+                        let daemon = daemons.create(crate::daemon::NewDaemon {
+                            display_name: display_name.to_owned(),
+                            owner_kind: "hive".to_owned(),
+                            owner_id: root.id.to_string(),
+                            kind: kind.to_owned(),
+                            job_json: "{}".to_owned(),
+                            interval_secs: interval,
+                            created_by: format!("hyper:{}", root.id),
+                        })?;
+                        result_text.push_str(&format!(
+                            "- enrolled daemon {} ({}) state={}\n",
+                            daemon.daemon_id, daemon.display_name, daemon.state
+                        ));
                     }
                     "read_memory_summary" => {
                         let entries = self.store.memory_hyper_summary(run.id, 8)?;

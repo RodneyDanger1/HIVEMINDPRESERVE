@@ -1,5 +1,10 @@
 # HiveMind Agent CLI
 
+> External desktop drivers (Hermes, DeepSeek Harness, or any shell agent): see
+> [`EXTERNAL-DRIVERS.md`](EXTERNAL-DRIVERS.md). HiveMind is a local EXE + loopback
+> UI; the CLI is the headless driver surface. Internal agents remain DeepSeek-only
+> until a provider adapter is explicitly added.
+
 `tools/hivemind-cli.mjs` is the agent-native control surface over the same
 localhost HTTP routes and WebSocket COMMAND/EVENT contract the UI uses. It is
 not a second backend and does not read, print, or store the provider key.
