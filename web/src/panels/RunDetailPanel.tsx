@@ -131,7 +131,7 @@ export function RunDetailPanel() {
             ))}
           </ul>
           <select
-            className="h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-meta text-ink-900"
+            className="h-8 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
             defaultValue=""
             onChange={(event) => {
               void inspectSnapshot(event.target.value);

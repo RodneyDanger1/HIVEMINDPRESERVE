@@ -9,6 +9,48 @@
  * styles/motion.css (`motion-honeycomb-glow`, `motion-hive-sheen`) and every
  * colour is a CSS variable.
  */
+import { useAppReducedMotion } from '../state/useAppReducedMotion';
+
+/** Figure-eight flight path around the 620x660 hive; decorative only. */
+const FIGURE_EIGHT_PATH =
+  'M310 330 C382 238 505 248 505 330 C505 412 382 422 310 330 C238 238 115 248 115 330 C115 412 238 422 310 330 Z';
+
+function AmbientBee({
+  scale,
+  duration,
+  begin,
+  opacity,
+}: {
+  readonly scale: number;
+  readonly duration: string;
+  readonly begin: string;
+  readonly opacity: number;
+}) {
+  return (
+    <g
+      className="ambient-bee"
+      style={{ opacity, filter: 'blur(0.18px)' }}
+      transform={`scale(${scale})`}
+    >
+      <animateMotion
+        path={FIGURE_EIGHT_PATH}
+        dur={duration}
+        begin={begin}
+        repeatCount="indefinite"
+        rotate="auto"
+        keyPoints="0;1;0"
+        keyTimes="0;0.5;1"
+        calcMode="linear"
+      />
+      <ellipse cx="10" cy="10" rx="7" ry="4.2" fill="var(--color-honey-300)" />
+      <path d="M3 10h14M6 6.4h8M6 13.6h8" stroke="var(--color-ink-800)" strokeWidth="1.2" />
+      <path
+        d="M6 6.6C4 4 1.8 3.6 0.6 4.5c1.8.6 2.9 1.4 5 2.8ZM14 6.6c2-2.6 4.2-3 5.4-2.1-1.8.6-2.9 1.4-5 2.8Z"
+        fill="var(--color-honey-100)"
+      />
+    </g>
+  );
+}
 
 /** Beehive art box, unchanged from Canvas.tsx. */
 const HIVE_BOX_WIDTH = 620;
@@ -23,6 +65,7 @@ const SHEEN_BOX_CENTRED = `${SHEEN_BOX} left-1/2 top-1/2 -translate-x-1/2 -trans
 const SHEEN_BOX_ANCHORED = `${SHEEN_BOX} left-0 top-0`;
 
 export function HiveField({ center = true }: { center?: boolean }) {
+  const reduced = useAppReducedMotion();
   // The hive is placed as a 620x660 viewport at 50%/50% of the field and
   // pulled back by half its box, so no measurement or JS is involved.
   const hiveOrigin = center ? '50%' : 0;
@@ -105,6 +148,13 @@ export function HiveField({ center = true }: { center?: boolean }) {
           height={HIVE_BOX_HEIGHT}
           transform={hiveTransform}
         />
+        {reduced ? null : (
+          <g className="ambient-bee-swarm" aria-hidden="true">
+            <AmbientBee scale={0.1} duration="19s" begin="-2s" opacity={0.62} />
+            <AmbientBee scale={0.15} duration="23s" begin="-9s" opacity={0.5} />
+            <AmbientBee scale={0.2} duration="27s" begin="-15s" opacity={0.42} />
+          </g>
+        )}
       </svg>
       <div className={center ? SHEEN_BOX_CENTRED : SHEEN_BOX_ANCHORED}>
         <div className="motion-hive-sheen absolute inset-0" />

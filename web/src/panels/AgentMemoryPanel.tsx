@@ -194,7 +194,7 @@ export function AgentMemoryPanel() {
   };
 
   return (
-    <section aria-label="Agent memory" className="surface-panel mt-3 rounded-[14px] p-3">
+    <section aria-label="Agent memory" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <h3 className="type-label text-ink-900">Agent memory</h3>
       {status === 'loading' ? (
         <p className="type-mono-meta mt-1 text-meta">Loading durable memory…</p>
@@ -257,7 +257,7 @@ export function AgentMemoryPanel() {
           <label className="mt-2 block">
             <span className="type-mono-meta block text-meta">Branch scope</span>
             <select
-              className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+              className="mt-1 h-8 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
               value={activeScopeFilter}
               onChange={(event) => setScopeFilter(event.target.value)}
             >

@@ -46,7 +46,7 @@ export function ProjectsPanel({ currentProjectId }: { currentProjectId: string }
   }, []);
 
   return (
-    <section className="surface-panel rounded-[14px] p-3" aria-label="Projects">
+    <section className="surface-panel rounded-[var(--radius-card)] p-3" aria-label="Projects">
       <div className="type-label mb-2 text-ink-500">Projects</div>
       {state.kind === 'loading' ? (
         <p className="type-mono-meta text-meta">Reading project registry…</p>
@@ -62,7 +62,7 @@ export function ProjectsPanel({ currentProjectId }: { currentProjectId: string }
             <li
               key={project.id}
               className={
-                'flex items-center justify-between gap-2 rounded-[7px] border px-2 py-1 ' +
+                'flex items-center justify-between gap-2 rounded-[var(--radius-sm)] border px-2 py-1 ' +
                 (project.id === currentProjectId
                   ? 'border-honey-400 bg-honey-100'
                   : 'border-hairline bg-panel')

@@ -54,6 +54,7 @@
 
 :root {
   color-scheme: light;
+  --ambient-strength: 1;
 
   /* Semantic corrections forced by R-U3/DELTA R-10 */
   --text-primary: var(--color-ink-900);

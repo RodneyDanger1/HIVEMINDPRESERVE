@@ -145,13 +145,13 @@ export function AgentMessagesPanel() {
   };
 
   return (
-    <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[14px] p-3">
+    <section aria-label="Agent messages" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <h3 className="type-label text-ink-900">Agent messages</h3>
       {status === 'ok' && messages.length > 0 ? (
         <label className="mt-2 block">
           <span className="type-mono-meta block text-meta">Kind</span>
           <select
-            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+            className="mt-1 h-8 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
             value={kindFilter}
             onChange={(event) => setKindFilter(event.target.value)}
           >
@@ -189,7 +189,7 @@ export function AgentMessagesPanel() {
             {(message.status ?? 'open') === 'open' ? (
               <div className="mt-1 flex gap-1">
                 <input
-                  className="h-8 min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
+                  className="h-8 min-w-0 flex-1 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 type-mono-code text-ink-900"
                   aria-label={`Answer ${message.id}`}
                   value={answeringId === message.id ? answerDraft : ''}
                   placeholder="Operator answer"
@@ -200,7 +200,7 @@ export function AgentMessagesPanel() {
                 />
                 <button
                   type="button"
-                  className="h-8 rounded-[6px] border border-hairline px-2 type-mono-meta"
+                  className="h-8 rounded-[var(--radius-sm)] border border-hairline px-2 type-mono-meta"
                   disabled={answeringId === message.id}
                   onClick={() => void answer(message.id)}
                 >

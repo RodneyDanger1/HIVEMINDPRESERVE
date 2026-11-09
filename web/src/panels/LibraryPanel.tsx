@@ -1,5 +1,6 @@
 /** Left project/library rail, matching the HiveMind spatial style system. */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { apiBaseUrl } from '../api/client';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
@@ -7,12 +8,12 @@ import { StateDot } from '../flow/nodes';
 import { buildReplayTasks } from '../flow/graph';
 import { LAYOUT } from '../tokens/tokens';
 
-const TEMPLATES: ReadonlyArray<{ id: string; label: string }> = [
-  { id: 'content-writer', label: STRINGS.templates.contentWriter },
-  { id: 'data-analyst', label: STRINGS.templates.dataAnalyst },
-  { id: 'code-reviewer', label: STRINGS.templates.codeReviewer },
-  { id: 'chatbot', label: STRINGS.templates.chatbot },
-];
+interface TemplateRow {
+  readonly id: string;
+  readonly label: string;
+}
+
+type TemplateStatus = 'idle' | 'loading' | 'ok' | 'error';
 
 const TABS = [
   { id: 'workspace' as const, label: STRINGS.tabs.workspace },
@@ -45,6 +46,51 @@ export function LibraryPanel() {
     [replayGraph, tasks],
   );
   const agents = Object.values(sourceTasks).filter((task) => task.kind !== 'hyperagent');
+  const [templates, setTemplates] = useState<readonly TemplateRow[]>([]);
+  const [templateStatus, setTemplateStatus] = useState<TemplateStatus>('idle');
+
+  useEffect(() => {
+    let cancelled = false;
+    setTemplateStatus('loading');
+    fetch(`${apiBaseUrl()}/api/templates`, { headers: { Accept: 'application/json' } })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`templates HTTP ${response.status}`);
+        }
+        const body = (await response.json()) as { templates?: unknown };
+        if (!Array.isArray(body.templates)) {
+          throw new Error('templates payload has no templates');
+        }
+        const decoded: TemplateRow[] = [];
+        for (const raw of body.templates) {
+          if (typeof raw !== 'object' || raw === null) {
+            continue;
+          }
+          const item = raw as Record<string, unknown>;
+          if (
+            typeof item.template_id !== 'string' ||
+            typeof item.name !== 'string' ||
+            item.insertable !== true
+          ) {
+            continue;
+          }
+          decoded.push({ id: item.template_id, label: item.name });
+        }
+        if (!cancelled) {
+          setTemplates(decoded);
+          setTemplateStatus('ok');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTemplates([]);
+          setTemplateStatus('error');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <aside
@@ -52,7 +98,7 @@ export function LibraryPanel() {
       className="hidden shrink-0 flex-col gap-4 overflow-y-auto border-r border-hairline bg-panel-alt p-3 lg:flex"
       style={{ width: LAYOUT.library }}
     >
-      <div className="flex h-8 items-center rounded-[8px] border border-hairline bg-panel px-2">
+      <div className="flex h-8 items-center rounded-[var(--radius-sm)] border border-hairline bg-panel px-2">
         <span className="truncate text-[11.5px] font-medium text-ink-800">
           {STRINGS.library.projectLabel}: {project.name}
         </span>
@@ -91,7 +137,7 @@ export function LibraryPanel() {
             tabIndex={tab === entry.id ? 0 : -1}
             onClick={() => setTab(entry.id)}
             className={
-              'type-label rounded-[7px] border px-1 py-1 text-[9px] ' +
+              'type-label rounded-[var(--radius-sm)] border px-1 py-1 text-[9px] ' +
               (tab === entry.id
                 ? 'border-honey-400 bg-honey-100 text-ink-900'
                 : 'border-transparent text-ink-500 hover:bg-panel-alt')
@@ -145,12 +191,21 @@ export function LibraryPanel() {
 
       <div>
         <div className="text-[11.5px] font-semibold text-ink-900">{STRINGS.library.templates}</div>
+        {templateStatus === 'loading' ? (
+          <p className="type-mono-meta mt-1 text-meta">Loading templates…</p>
+        ) : null}
+        {templateStatus === 'error' ? (
+          <p className="type-mono-meta mt-1 text-signal">Template catalog unavailable.</p>
+        ) : null}
+        {templateStatus === 'ok' && templates.length === 0 ? (
+          <p className="type-mono-meta mt-1 text-meta">No insertable templates.</p>
+        ) : null}
         <ul className="mt-2 space-y-1.5">
-          {TEMPLATES.map((template) => (
+          {templates.map((template) => (
             <li key={template.id}>
               <button
                 type="button"
-                className="flex h-[30px] w-full items-center gap-2 rounded-[7px] border border-hairline bg-panel px-2 text-left text-[11px] text-ink-800 hover:bg-honey-100"
+                className="flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-left text-[11px] text-ink-800 hover:bg-honey-100"
                 onClick={() => {
                   void insertTemplate(template.id);
                 }}
@@ -165,7 +220,7 @@ export function LibraryPanel() {
         </ul>
       </div>
 
-      <div className="rounded-[8px] bg-honey-100 p-2">
+      <div className="rounded-[var(--radius-sm)] bg-honey-100 p-2">
         <div className="type-mono-meta text-meta">TIP</div>
         <p className="mt-1 text-[10.5px] leading-[15px] text-ink-700">{STRINGS.library.tip}</p>
       </div>

@@ -7,6 +7,7 @@ import { isRunActive } from '../state/agentState';
 import { STRINGS } from '../state/strings';
 import { EmptyState, PanelTitle } from './StatePack';
 import { RunDetailPanel } from './RunDetailPanel';
+import { RunTranscriptPanel } from './RunTranscriptPanel';
 
 export function HistoryPanel() {
   const history = useUiStore((state) => state.history);
@@ -26,7 +27,7 @@ export function HistoryPanel() {
         <label className="mb-2 block">
           <span className="type-mono-meta block text-meta">Run</span>
           <select
-            className="mt-1 h-8 w-full rounded-[6px] border border-hairline bg-panel px-2 type-mono-code text-ink-900 disabled:opacity-50"
+            className="mt-1 h-8 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 type-mono-code text-ink-900 disabled:opacity-50"
             value={run?.id ?? ''}
             disabled={run !== null && isRunActive(run.status)}
             title={
@@ -49,13 +50,13 @@ export function HistoryPanel() {
       {refreshFailure === null ? null : (
         <div
           role="alert"
-          className="mb-2 rounded-[8px] border border-signal bg-panel-alt p-2"
+          className="mb-2 rounded-[var(--radius-sm)] border border-signal bg-panel-alt p-2"
         >
           <div className="type-mono-meta text-signal">{refreshFailure.code}</div>
           <p className="type-body-l mt-1 text-ink-900">{refreshFailure.message}</p>
           <button
             type="button"
-            className="type-label mt-2 rounded-[6px] border border-hairline px-2 py-1 text-ink-900 hover:bg-honey-100"
+            className="type-label mt-2 rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-900 hover:bg-honey-100"
             onClick={() => {
               void refreshRunSnapshot('manual');
             }}
@@ -83,7 +84,7 @@ export function HistoryPanel() {
                     type="button"
                     aria-pressed={selected}
                     className={
-                      'mb-1 flex w-full items-center justify-between rounded-[8px] border px-2 py-1.5 text-left ' +
+                      'mb-1 flex w-full items-center justify-between rounded-[var(--radius-sm)] border px-2 py-1.5 text-left ' +
                       (selected
                         ? 'border-honey-400 bg-honey-100 text-ink-900'
                         : 'border-hairline bg-panel text-ink-700 hover:bg-panel-alt')
@@ -103,7 +104,7 @@ export function HistoryPanel() {
           </ol>
           <button
             type="button"
-            className="type-label mt-2 h-9 rounded-[8px] border border-hairline px-3 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
+            className="type-label mt-2 h-9 rounded-[var(--radius-sm)] border border-hairline px-3 text-ink-900 hover:bg-honey-100 disabled:opacity-50"
             onClick={() => exitHistoryReplay()}
             disabled={!replaying}
           >
@@ -112,6 +113,7 @@ export function HistoryPanel() {
         </>
       )}
       <RunDetailPanel />
+      <RunTranscriptPanel />
     </aside>
   );
 }

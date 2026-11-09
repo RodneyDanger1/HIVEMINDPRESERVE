@@ -82,6 +82,20 @@ function AppFrame() {
     document.documentElement.dataset.reducedMotion = reduced ? 'true' : 'false';
   }, [reduced]);
 
+  useEffect(() => {
+    let stored = 100;
+    try {
+      const raw = window.localStorage.getItem('hivemind.ambient-motion');
+      const parsed = raw === null ? 100 : Number(raw);
+      stored = Number.isFinite(parsed) ? Math.min(100, Math.max(0, parsed)) : 100;
+    } catch {
+      stored = 100;
+    }
+    document.documentElement.dataset.ambientMotion =
+      stored === 0 ? 'off' : stored < 55 ? 'calm' : 'full';
+    document.documentElement.style.setProperty('--ambient-strength', String(stored / 100));
+  }, []);
+
   const banner =
     connection === 'error' || connection === 'closed'
       ? connectionRefusal?.message ?? STRINGS.connection.offlineBanner
@@ -103,7 +117,7 @@ function AppFrame() {
             <Canvas />
           ) : (
             <div className="flex h-full items-center justify-center p-6">
-              <div className="surface-panel max-w-[420px] rounded-[16px] p-5">
+              <div className="surface-panel max-w-[420px] rounded-[var(--radius-lg)] p-5">
                 <div className="type-mono-meta text-[8px] tracking-[0.14em] text-meta">COMMITTED HISTORY</div>
                 <h2 className="mt-1 font-display text-[26px] leading-tight text-ink-900">Nothing to replay yet</h2>
                 <p className="mt-2 text-[12.5px] leading-[18px] text-ink-500">
@@ -112,7 +126,7 @@ function AppFrame() {
                 </p>
                 <button
                   type="button"
-                  className="type-label mt-4 h-9 rounded-[8px] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400"
+                  className="type-label mt-4 h-9 rounded-[var(--radius-sm)] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400"
                   onClick={() => setTab('workspace')}
                 >
                   Go to Workspace

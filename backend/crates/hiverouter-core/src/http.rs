@@ -1239,10 +1239,15 @@ async fn templates(State(state): State<Arc<AppState>>) -> Response {
         .into_iter()
         .filter_map(|id| state.engine.templates.get(&id).map(|template| (id, template)))
         .map(|(id, template)| {
+            let insertable = matches!(
+                id.as_str(),
+                "content-writer" | "data-analyst" | "code-reviewer" | "chatbot"
+            );
             serde_json::json!({
                 "template_id": id,
                 "name": template.name,
                 "inputs": template.inputs,
+                "insertable": insertable,
                 "spdx": template.manifest.spdx,
                 "source_url": template.manifest.source_url,
                 "fetched_at": template.manifest.fetched_at,

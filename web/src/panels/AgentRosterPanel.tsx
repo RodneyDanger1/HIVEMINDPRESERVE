@@ -79,7 +79,7 @@ export function AgentRosterPanel() {
   }, [runId]);
 
   return (
-    <section aria-label="Agent roster" className="surface-panel mt-3 rounded-[14px] p-3">
+    <section aria-label="Agent roster" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <h3 className="type-label text-ink-900">Roster · {rows.length}</h3>
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading roster…</p> : null}
       {status === 'error' ? (

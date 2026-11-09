@@ -48,7 +48,7 @@ export function NavRail() {
         >
           <span
             className={
-              'flex h-12 w-12 items-center justify-center rounded-[11px] border ' +
+              'flex h-12 w-12 items-center justify-center rounded-[var(--radius-button)] border ' +
               (nav === item.id
                 ? 'border-ink-900 bg-ink-900'
                 : 'border-transparent hover:border-hairline hover:bg-panel-alt')

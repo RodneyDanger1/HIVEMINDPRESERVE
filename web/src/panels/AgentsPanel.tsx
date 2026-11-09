@@ -19,6 +19,7 @@ import { AgentMemoryPanel } from './AgentMemoryPanel';
 import { MemoryBanksPanel } from './MemoryBanksPanel';
 import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
+import { A2AInboxPanel } from './A2AInboxPanel';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -68,12 +69,13 @@ export function AgentsPanel() {
         role="region"
         aria-label={STRINGS.toolActivity.regionAria}
         data-testid="agents-tool-activity"
-        className="surface-panel mt-3 rounded-[14px] p-3"
+        className="surface-panel mt-3 rounded-[var(--radius-card)] p-3"
       >
         <ToolActivityPanel entries={toolActivity} />
       </div>
       <AgentProfilesPanel />
       <AgentRosterPanel />
+      <A2AInboxPanel />
       <AgentMemoryPanel />
       <MemoryBanksPanel />
       <AgentMessagesPanel />

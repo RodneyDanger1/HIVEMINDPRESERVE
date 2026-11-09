@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
+import { isTerminal } from '../state/agentState';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
 import { clientRefusal } from '../api/refusals';
@@ -88,6 +89,16 @@ export function ChatCore() {
   const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
   const keyPresent = useUiStore((state) => state.settings.keyPresent);
   const toolActivity = useUiStore((state) => state.toolActivity);
+  const tasks = useUiStore((state) => state.tasks);
+  const activeAgents = Object.values(tasks).filter((task) => !isTerminal(task.state)).length;
+  const liveLabel =
+    connection !== 'open'
+      ? 'offline'
+      : runStatus === 'planning'
+        ? 'planning'
+        : streamingRunId !== null || runStatus === 'running' || runStatus === 'thinking'
+          ? `${activeAgents} active`
+          : 'idle';
   const runRefusal = runErrorCode === null ? null : clientRefusal(runErrorCode);
   const reduced = useAppReducedMotion();
   const store = useUiStoreApi();
@@ -192,7 +203,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
+        className="chat-core pointer-events-auto surface-panel flex h-[480px] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -211,6 +222,23 @@ export function ChatCore() {
             <div className="truncate text-[14px] font-semibold leading-[18px]">{STRINGS.chat.title}</div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <span
+              className="type-mono-meta flex items-center gap-1 whitespace-nowrap px-1 text-[8px] text-honey-100/80"
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                className={
+                  'h-1.5 w-1.5 rounded-full ' +
+                  (connection !== 'open'
+                    ? 'bg-signal'
+                    : streamingRunId !== null || runStatus === 'running'
+                      ? 'motion-hive-live-dot bg-honey-300'
+                      : 'bg-honey-100/70')
+                }
+              />
+              {liveLabel}
+            </span>
             <button
               type="button"
               className="type-mono-meta whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-2 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10"
@@ -273,7 +301,8 @@ export function ChatCore() {
                 key={message.id}
                 className={
                   'chat-message mb-2 rounded-[10px] px-2 py-1.5 last:mb-0 ' +
-                  (message.role === 'assistant' ? 'bg-honey-100' : 'bg-panel-alt')
+                  (message.role === 'assistant' ? 'bg-honey-100' : 'bg-panel-alt') +
+                  (message.streaming ? ' chat-streaming' : '')
                 }
               >
                 <div className="type-mono-meta text-meta">

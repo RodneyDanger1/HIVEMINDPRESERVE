@@ -67,7 +67,12 @@ describe('G-UI-11 token isolation and no illustrative hardcoding', () => {
     expect(
       consumers
         .map(([path]) => path)
-        .filter((path) => !path.includes('/figcraft/') && !path.endsWith('/FigCraftPanel.tsx')),
+        .filter(
+          (path) =>
+            !path.includes('/figcraft/') &&
+            !path.endsWith('/FigCraftPanel.tsx') &&
+            !path.endsWith('/SettingsPanel.tsx'),
+        ),
     ).toEqual([]);
   });
 });

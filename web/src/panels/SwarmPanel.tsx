@@ -114,7 +114,7 @@ export function SwarmPanel() {
             ['ERRORS', counts.errors],
             ['ACTIVE', counts.active],
           ].map(([label, value]) => (
-            <div key={label} className="surface-panel rounded-[12px] p-3">
+            <div key={label} className="surface-panel rounded-[var(--radius-md)] p-3">
               <div className="type-mono-meta text-[8.5px] tracking-[0.12em] text-meta">{label}</div>
               <div className="mt-1 font-display text-[26px] leading-none text-ink-900">{value}</div>
             </div>
@@ -122,7 +122,7 @@ export function SwarmPanel() {
         </div>
 
         {list.length === 0 ? (
-          <section className="relative overflow-hidden rounded-[16px] border border-hairline bg-panel p-6">
+          <section className="relative overflow-hidden rounded-[var(--radius-lg)] border border-hairline bg-panel p-6">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 opacity-50"
@@ -132,7 +132,7 @@ export function SwarmPanel() {
               }}
             />
             <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] bg-honey-100 ring-1 ring-[var(--color-border-gold)]">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-honey-100 ring-1 ring-[var(--color-border-gold)]">
                 <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
                   <path d="M17 3 29 10v14L17 31 5 24V10Z" fill="var(--color-ink-900)" />
                   <path d="M17 10 23 13.5v7L17 24l-6-3.5v-7Z" fill="var(--color-honey-300)" />
@@ -147,14 +147,14 @@ export function SwarmPanel() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="type-label h-9 rounded-[8px] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400"
+                    className="type-label h-9 rounded-[var(--radius-sm)] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400"
                     onClick={() => setTab('workspace')}
                   >
                     Start in Workspace
                   </button>
                   <button
                     type="button"
-                    className="type-label h-9 rounded-[8px] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
+                    className="type-label h-9 rounded-[var(--radius-sm)] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
                     onClick={() => setNav('agents')}
                   >
                     Open profiles &amp; memory
@@ -168,7 +168,7 @@ export function SwarmPanel() {
                 ['02', 'Map', 'The HyperAgent names the work and spawns sub-hives.'],
                 ['03', 'Inspect', 'This view mirrors the live hierarchy and census.'],
               ].map(([step, title, body]) => (
-                <div key={step} className="rounded-[10px] border border-hairline bg-panel-alt p-3">
+                <div key={step} className="rounded-[var(--radius-button)] border border-hairline bg-panel-alt p-3">
                   <div className="type-mono-meta text-[8px] text-meta">STEP {step}</div>
                   <div className="mt-1 text-[12px] font-semibold text-ink-900">{title}</div>
                   <p className="mt-1 text-[11px] leading-[16px] text-ink-500">{body}</p>
@@ -178,11 +178,11 @@ export function SwarmPanel() {
           </section>
         ) : (
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-            <section className="surface-panel rounded-[14px] p-3" aria-label="Agent hierarchy">
+            <section className="surface-panel rounded-[var(--radius-card)] p-3" aria-label="Agent hierarchy">
               <div className="type-label mb-2 text-ink-500">Hierarchy / workspace-jailed</div>
               <AgentHierarchy tasks={sourceTasks} selectedTaskId={selectedTaskId} selectTask={selectTask} />
             </section>
-            <section className="surface-panel rounded-[14px] p-3" aria-label="Swarm controls">
+            <section className="surface-panel rounded-[var(--radius-card)] p-3" aria-label="Swarm controls">
               <div className="type-label mb-2 text-ink-500">Surfaces</div>
               <p className="text-[12.5px] leading-[18px] text-ink-500">
                 Profiles, memory and the cross-branch mailbox live in the Agents surface.
@@ -191,14 +191,14 @@ export function SwarmPanel() {
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="type-label h-9 rounded-[8px] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
+                  className="type-label h-9 rounded-[var(--radius-sm)] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
                   onClick={() => setNav('agents')}
                 >
                   Open agents
                 </button>
                 <button
                   type="button"
-                  className="type-label h-9 rounded-[8px] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
+                  className="type-label h-9 rounded-[var(--radius-sm)] border border-hairline px-3 text-ink-900 hover:bg-honey-100"
                   onClick={() => setNav('data')}
                 >
                   Open files
@@ -206,7 +206,7 @@ export function SwarmPanel() {
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-2">
                 {list.slice(0, 6).map((task) => (
-                  <div key={task.id} className="rounded-[8px] border border-hairline bg-panel-alt p-2">
+                  <div key={task.id} className="rounded-[var(--radius-sm)] border border-hairline bg-panel-alt p-2">
                     <dt className="type-mono-meta text-[8px] text-meta">{NODE_KIND_LABELS[task.kind]}</dt>
                     <dd className="mt-0.5 truncate text-[11.5px] font-medium text-ink-900">{task.label}</dd>
                   </div>

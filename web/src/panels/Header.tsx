@@ -100,7 +100,7 @@ export function Header() {
         </div>
       </div>
       {searchOpen ? (
-        <div className="surface-panel absolute right-3 top-[48px] z-50 w-[320px] rounded-[12px] border border-hairline p-2 shadow-[var(--shadow-e2)]">
+        <div className="surface-panel absolute right-3 top-[48px] z-50 w-[320px] rounded-[var(--radius-md)] border border-hairline p-2 shadow-[var(--shadow-e2)]">
           <label className="sr-only" htmlFor="agent-search">
             Search agents
           </label>
@@ -115,7 +115,7 @@ export function Header() {
               }
             }}
             placeholder="Find an agent…"
-            className="w-full rounded-[8px] border border-hairline bg-panel-alt px-2 py-1.5 text-[12px] text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink-700)]"
+            className="w-full rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1.5 text-[12px] text-ink-900 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ink-700)]"
           />
           <ul className="mt-1 max-h-[240px] overflow-y-auto">
             {results.length === 0 ? (
@@ -125,7 +125,7 @@ export function Header() {
                 <li key={task.id}>
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-2 rounded-[6px] px-2 py-1.5 text-left hover:bg-honey-100"
+                    className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-left hover:bg-honey-100"
                     onClick={() => {
                       selectTask(task.id);
                       setSearchOpen(false);

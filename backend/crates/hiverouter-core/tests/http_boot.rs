@@ -149,6 +149,18 @@ async fn memory_journal_route_returns_actions_without_values() {
 }
 
 #[tokio::test]
+async fn templates_route_marks_only_insertable_library_ids() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let (status, body) = http_get(server.addr, "/api/templates").await;
+    assert_eq!(status, 200, "templates: {body}");
+    let value: Value = serde_json::from_str(&body).expect("templates JSON");
+    let templates = value["templates"].as_array().expect("templates array");
+    assert!(templates.iter().any(|row| row["template_id"] == "planner" && row["insertable"] == false));
+    assert!(templates.iter().any(|row| row["template_id"] == "content-writer" && row["insertable"] == true));
+}
+
+#[tokio::test]
 async fn task_memory_context_route_returns_snapshot_metadata() {
     let temp = tempfile::tempdir().expect("temp dir");
     let server = TestServer::start(&temp).await;

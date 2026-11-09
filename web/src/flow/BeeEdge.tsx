@@ -28,6 +28,11 @@ export function BeeEdge(props: EdgeProps) {
     Math.PI;
   const broken = (props.data as { broken?: boolean } | undefined)?.broken === true;
   const flip = Math.abs(angle) > 90;
+  const rideDelay = (props.id.length * 0.37) % 6;
+  const supportsOffsetPath =
+    typeof CSS !== 'undefined' &&
+    typeof CSS.supports === 'function' &&
+    CSS.supports('offset-path', 'path("M 0 0 L 1 1")');
   return (
     <>
       <BaseEdge
@@ -43,25 +48,57 @@ export function BeeEdge(props: EdgeProps) {
             : `${broken ? 'bee-dash-broken' : 'bee-dash'} 2.4s linear infinite`,
         }}
       />
-      <EdgeLabelRenderer>
-        <div
-          style={{
-            position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${flip ? angle + 180 : angle}deg) scale(${flip ? -1 : 1}, 1)`,
-            pointerEvents: 'none',
-            color: broken ? 'var(--color-signal)' : 'var(--color-ink-800)',
-          }}
-          aria-hidden="true"
-        >
-          <div className={reduced ? undefined : 'bee-bob'}>
-            <svg width="18" height="18" viewBox="0 0 18 18">
-              <ellipse cx="9" cy="9" rx="5" ry="3.2" fill="currentColor" />
-              <path d="M3 9h12M5.5 6.5h7M5.5 11.5h7" stroke="var(--color-honey-300)" strokeWidth="1.1" />
-              <path d="M7 5.5C5.5 3.7 3.6 3.4 2.5 4.2c1.4.4 2.2 1 3.8 1.9ZM11 5.5c1.5-1.8 3.4-2.1 4.5-1.3-1.4.4-2.2 1-3.8 1.9Z" fill="var(--color-honey-100)" />
-            </svg>
+      {reduced || !supportsOffsetPath ? (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${flip ? angle + 180 : angle}deg) scale(${flip ? -1 : 1}, 1)`,
+              pointerEvents: 'none',
+              color: broken ? 'var(--color-signal)' : 'var(--color-ink-800)',
+            }}
+            aria-hidden="true"
+          >
+            <div className="bee-bob">
+              <BeeGlyph />
+            </div>
           </div>
-        </div>
-      </EdgeLabelRenderer>
+        </EdgeLabelRenderer>
+      ) : (
+        <EdgeLabelRenderer>
+          <div
+            className="motion-bee-ride"
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              offsetPath: `path("${path}")`,
+              offsetRotate: 'auto',
+              animationDelay: `-${rideDelay}s`,
+              pointerEvents: 'none',
+              color: broken ? 'var(--color-signal)' : 'var(--color-ink-800)',
+            }}
+            aria-hidden="true"
+          >
+            <div className="bee-bob">
+              <BeeGlyph />
+            </div>
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
+  );
+}
+
+function BeeGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18">
+      <ellipse cx="9" cy="9" rx="5" ry="3.2" fill="currentColor" />
+      <path d="M3 9h12M5.5 6.5h7M5.5 11.5h7" stroke="var(--color-honey-300)" strokeWidth="1.1" />
+      <path
+        d="M7 5.5C5.5 3.7 3.6 3.4 2.5 4.2c1.4.4 2.2 1 3.8 1.9ZM11 5.5c1.5-1.8 3.4-2.1 4.5-1.3-1.4.4-2.2 1-3.8 1.9Z"
+        fill="var(--color-honey-100)"
+      />
+    </svg>
   );
 }

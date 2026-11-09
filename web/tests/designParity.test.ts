@@ -32,6 +32,33 @@ describe('HiveMind spatial design parity pins', () => {
     expect(sourceOf('/panels/Header.tsx')).toContain('h-[52px]');
   });
 
+  it('keeps the new operator surfaces on token geometry', () => {
+    for (const suffix of [
+      '/panels/A2AInboxPanel.tsx',
+      '/panels/DiagnosticsPanel.tsx',
+      '/panels/RunTranscriptPanel.tsx',
+      '/panels/RunDetailPanel.tsx',
+      '/panels/AgentRosterPanel.tsx',
+      '/panels/MemoryBanksPanel.tsx',
+      '/panels/ConfirmDialog.tsx',
+    ]) {
+      const source = sourceOf(suffix);
+      expect(source, suffix).toMatch(/surface-panel|border-hairline/);
+      expect(source, suffix).not.toMatch(/rounded-\[\d+px\]/);
+      expect(source, suffix).not.toMatch(/#[0-9a-fA-F]{6}/);
+    }
+  });
+
+  it('keeps settings tabbed and the hive alive', () => {
+    const settings = sourceOf('/panels/SettingsPanel.tsx');
+    expect(settings).toContain('role="tablist"');
+    expect(settings).toContain("tab === 'appearance'");
+    expect(settings).toContain('Ambient motion intensity');
+    const hive = sourceOf('/flow/HiveField.tsx');
+    expect(hive).toContain('FIGURE_EIGHT_PATH');
+    expect(hive).toContain('AmbientBee');
+  });
+
   it('has no user-facing HiveRouter or mojibake in the UI source', () => {
     for (const suffix of [
       '/App.tsx',

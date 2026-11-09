@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { EmptyState } from './StatePack';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface BankRow {
   readonly id: string;
@@ -46,6 +47,9 @@ export function MemoryBanksPanel() {
   const [entries, setEntries] = useState<readonly EntryRow[]>([]);
   const [entryStatus, setEntryStatus] = useState<Status>('idle');
   const [clearReceipt, setClearReceipt] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{ kind: 'clear' } | { kind: 'prune'; count: number } | null>(
+    null,
+  );
   const [journal, setJournal] = useState<readonly JournalRow[]>([]);
   const [journalVersion, setJournalVersion] = useState(0);
   const [journalIntegrity, setJournalIntegrity] = useState<string | null>(null);
@@ -244,12 +248,8 @@ export function MemoryBanksPanel() {
     };
   }, [selected]);
 
-  const clear = async (): Promise<void> => {
-    if (!runId || !runStatus || !['completed', 'failed', 'cancelled', 'killed', 'interrupted'].includes(runStatus)) {
-      setClearReceipt('Only a terminal run can be cleared.');
-      return;
-    }
-    if (!window.confirm('Clear this run’s memory banks and legacy rows? This cannot be undone.')) {
+  const executeClear = async (): Promise<void> => {
+    if (!runId) {
       return;
     }
     const token = storeApi.getState().session?.token;
@@ -287,6 +287,14 @@ export function MemoryBanksPanel() {
     }
   };
 
+  const askClear = (): void => {
+    if (!runId || !runStatus || !['completed', 'failed', 'cancelled', 'killed', 'interrupted'].includes(runStatus)) {
+      setClearReceipt('Only a terminal run can be cleared.');
+      return;
+    }
+    setConfirm({ kind: 'clear' });
+  };
+
   const prune = async (): Promise<void> => {
     if (!runId) {
       return;
@@ -316,9 +324,22 @@ export function MemoryBanksPanel() {
         setClearReceipt('No inactive entries to prune.');
         return;
       }
-      if (!window.confirm(`Prune ${count} inactive memory entries? Active entries are kept.`)) {
-        return;
-      }
+      setConfirm({ kind: 'prune', count });
+    } catch (error: unknown) {
+      setClearReceipt(error instanceof Error ? error.message : 'prune refused');
+    }
+  };
+
+  const executePrune = async (): Promise<void> => {
+    if (!runId) {
+      return;
+    }
+    const token = storeApi.getState().session?.token;
+    if (!token) {
+      setClearReceipt('Session token unavailable; nothing pruned.');
+      return;
+    }
+    try {
       const applied = await fetch(`${apiBaseUrl()}/api/memory/prune`, {
         method: 'POST',
         headers: {
@@ -337,6 +358,16 @@ export function MemoryBanksPanel() {
       setJournalVersion((version) => version + 1);
     } catch (error: unknown) {
       setClearReceipt(error instanceof Error ? error.message : 'prune refused');
+    }
+  };
+
+  const confirmExecute = (): void => {
+    const action = confirm;
+    setConfirm(null);
+    if (action?.kind === 'clear') {
+      void executeClear();
+    } else if (action?.kind === 'prune') {
+      void executePrune();
     }
   };
 
@@ -377,23 +408,22 @@ export function MemoryBanksPanel() {
   };
 
   return (
-    <section aria-label="Memory banks" className="surface-panel mt-3 rounded-[14px] p-3">
+    <section aria-label="Memory banks" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="type-label text-ink-900">Memory banks</h3>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta"
+            className="type-label h-8 rounded-[var(--radius-button)] border border-hairline px-3 text-ink-800 hover:bg-honey-100 transition-colors"
             disabled={runId === null}
-            onClick={() => void prune()}
-          >
+            onClick={() => void prune()}          >
             Prune inactive
           </button>
           <button
             type="button"
-            className="h-7 rounded-[6px] border border-hairline px-2 type-mono-meta text-signal"
+            className="type-label h-8 rounded-[var(--radius-button)] border border-signal px-3 text-signal hover:bg-recessed transition-colors"
             disabled={runId === null}
-            onClick={() => void clear()}
+            onClick={askClear}
           >
             Clear run memory
           </button>
@@ -454,7 +484,7 @@ export function MemoryBanksPanel() {
                   {entry.trust === 'unverified' || entry.trust === 'quarantined' ? (
                     <button
                       type="button"
-                      className="mt-1 h-7 rounded-[6px] border border-hairline px-2 type-mono-meta"
+                      className="mt-1 type-label h-8 rounded-[var(--radius-button)] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400 transition-colors"
                       onClick={() => void promote(entry)}
                     >
                       Promote to verified
@@ -475,12 +505,25 @@ export function MemoryBanksPanel() {
           <ul className="mt-1 space-y-0.5">
             {journal.map((row, index) => (
               <li key={`${row.action}-${row.created_at}-${index}`} className="type-mono-meta text-meta">
-                {row.action} Â· {row.bank_id?.slice(0, 24) ?? 'run'} Â· {row.created_at}
+                {row.action} · {row.bank_id?.slice(0, 24) ?? 'run'} · {row.created_at}
               </li>
             ))}
           </ul>
         </div>
       ) : null}
+      <ConfirmDialog
+        open={confirm !== null}
+        title={confirm?.kind === 'clear' ? 'Clear run memory' : 'Prune inactive memory'}
+        body={
+          confirm?.kind === 'clear'
+            ? 'This deletes this terminal run’s legacy rows and bank entries. The journal and snapshot hashes remain as audit records.'
+            : `Permanently remove ${confirm?.kind === 'prune' ? confirm.count : 0} inactive memory entries? Active entries are kept.`
+        }
+        confirmLabel={confirm?.kind === 'clear' ? 'Clear memory' : 'Prune entries'}
+        danger={confirm?.kind === 'clear'}
+        onConfirm={confirmExecute}
+        onCancel={() => setConfirm(null)}
+      />
     </section>
   );
 }

@@ -235,7 +235,7 @@ export function ModelsPanel() {
               <div className="type-mono-meta text-meta">Available models</div>
               <ul className="mt-1 space-y-1">
                 {providerModels.map((model) => (
-                  <li key={model.id} className="rounded-[6px] border border-hairline bg-panel-alt px-2 py-1">
+                  <li key={model.id} className="rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="type-mono-code text-ink-900">{model.id}</span>
                       <span className="type-mono-meta text-[7.5px] text-meta">
