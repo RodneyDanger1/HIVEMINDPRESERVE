@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `d5e4e40` (clean tree). Latest offline gate: `cargo test --workspace --locked` 544 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `d5e4e40` (clean tree). Latest offline gate: `cargo test --workspace --locked` 545 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -381,3 +381,9 @@ Not delivered and must not be claimed:
 - Inbox refresh marks delivered message ids; continuation updates skip already-delivered ids, so the same question is not re-injected every turn.
 - Cursor is in-process and reset on restart; durable rows remain the source of truth.
 - Not delivered: persisted cursor, answer-attempt cap, parent-model answer.
+### P4 journal hash chain
+
+- v18 adds `prev_hash`/`event_hash` to `memory_journal`; each run chains entries via SHA-256 over the previous hash and canonical fields.
+- Store tests prove the second entry links to the first and hashes differ.
+- `memory_journal_chain` exposes the chain for verification. Legacy v15 rows stay unchained and are identifiable by NULL hashes.
+- GitNexus detect-changes flagged this schema/store diff critical/18 affected flows; full workspace gate is green. Impact lookup for `record_agent_memory_scoped` returned UNKNOWN (not found), so no clean impact claim is made.

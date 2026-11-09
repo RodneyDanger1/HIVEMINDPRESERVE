@@ -15,6 +15,54 @@ fn map(error: DbError) -> Refusal {
     error.refusal()
 }
 
+/// Appends one hash-chained journal row for a run.
+fn append_memory_journal(
+    connection: &rusqlite::Connection,
+    run_id: &str,
+    bank_id: &str,
+    entry_id: &str,
+    action: &str,
+    actor_kind: &str,
+    actor_id: Option<&str>,
+    detail_json: &str,
+    created_at: &str,
+) -> rusqlite::Result<()> {
+    let previous: Option<String> = connection
+        .query_row(
+            "SELECT event_hash FROM memory_journal
+             WHERE run_id = ?1 AND event_hash IS NOT NULL
+             ORDER BY seq DESC LIMIT 1",
+            params![run_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let prev = previous.as_deref().unwrap_or("");
+    let canonical = format!(
+        "{prev}|{run_id}|{bank_id}|{entry_id}|{action}|{actor_kind}|{}|{detail_json}|{created_at}",
+        actor_id.unwrap_or("")
+    );
+    let hash = hiverouter_tools::sha256::sha256_hex(canonical.as_bytes());
+    connection.execute(
+        "INSERT INTO memory_journal
+         (run_id, bank_id, entry_id, action, actor_kind, actor_id,
+          detail_json, created_at, prev_hash, event_hash)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+        params![
+            run_id,
+            bank_id,
+            entry_id,
+            action,
+            actor_kind,
+            actor_id,
+            detail_json,
+            created_at,
+            previous,
+            hash
+        ],
+    )?;
+    Ok(())
+}
+
 /// One durable memory row, including its hive/branch scope.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AgentMemoryRecord {
@@ -1156,18 +1204,16 @@ impl RunStore {
                         Timestamp::now().as_str()
                     ],
                 )?;
-                connection.execute(
-                    "INSERT INTO memory_journal
-                     (run_id, bank_id, entry_id, action, actor_kind, actor_id,
-                      detail_json, created_at)
-                     VALUES (?1, ?2, ?3, 'entry_written', 'agent', ?4, '{}', ?5)",
-                    params![
-                        run_id.to_string(),
-                        bank_id,
-                        entry_id,
-                        agent_key,
-                        Timestamp::now().as_str()
-                    ],
+                append_memory_journal(
+                    connection,
+                    &run_id.to_string(),
+                    &bank_id,
+                    &entry_id,
+                    "entry_written",
+                    "agent",
+                    Some(agent_key),
+                    "{}",
+                    Timestamp::now().as_str(),
                 )?;
                 Ok(())
             })
@@ -1448,19 +1494,16 @@ impl RunStore {
                     ],
                 )?;
                 if changed == 1 {
-                    transaction.execute(
-                        "INSERT INTO memory_journal
-                         (run_id, bank_id, entry_id, action, actor_kind, actor_id,
-                          detail_json, created_at)
-                         VALUES (?1, ?2, ?3, 'trust_changed', 'operator', ?4, ?5, ?6)",
-                        params![
-                            run_id.to_string(),
-                            bank_id,
-                            entry_id,
-                            actor,
-                            serde_json::json!({ "trust": trust }).to_string(),
-                            Timestamp::now().as_str()
-                        ],
+                    append_memory_journal(
+                        &transaction,
+                        &run_id.to_string(),
+                        bank_id,
+                        entry_id,
+                        "trust_changed",
+                        "operator",
+                        Some(actor),
+                        &serde_json::json!({ "trust": trust }).to_string(),
+                        Timestamp::now().as_str(),
                     )?;
                 }
                 transaction.commit()?;
@@ -1567,6 +1610,33 @@ impl RunStore {
                         },
                     )
                     .optional()
+            })
+            .map_err(map)
+    }
+
+    /// Reads the journal hash chain for a run, oldest first.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_journal_chain(
+        &self,
+        run_id: RunId,
+    ) -> Result<Vec<(Option<String>, String)>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT prev_hash, event_hash FROM memory_journal
+                     WHERE run_id = ?1 AND event_hash IS NOT NULL
+                     ORDER BY seq ASC",
+                )?;
+                let rows = statement.query_map(params![run_id.to_string()], |row| {
+                    Ok((row.get(0)?, row.get(1)?))
+                })?;
+                let mut chain = Vec::new();
+                for row in rows {
+                    chain.push(row?);
+                }
+                Ok(chain)
             })
             .map_err(map)
     }
@@ -2409,6 +2479,26 @@ mod tests {
         assert_eq!(identity.rank, 4);
         assert_eq!(identity.profile_id, "subagent");
         assert!(store.task_identity(unknown.id).expect("unknown").is_none());
+    }
+
+    #[test]
+    fn memory_journal_is_hash_chained() {
+        let store = store();
+        let run = store
+            .create_run("p", "chain", AgentState::Running)
+            .expect("run");
+        let task = TaskId::new();
+        store
+            .record_agent_memory_scoped("worker", "one", "a", run.id, task, &task.to_string())
+            .expect("first");
+        store
+            .record_agent_memory_scoped("worker", "two", "b", run.id, task, &task.to_string())
+            .expect("second");
+        let chain = store.memory_journal_chain(run.id).expect("chain");
+        assert_eq!(chain.len(), 2);
+        assert!(chain[0].0.is_none());
+        assert_eq!(chain[1].0.as_deref(), Some(chain[0].1.as_str()));
+        assert_ne!(chain[0].1, chain[1].1);
     }
 
     #[test]
