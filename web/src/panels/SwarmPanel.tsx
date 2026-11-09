@@ -9,6 +9,7 @@ import { NODE_KIND_LABELS, isTerminal } from '../state/agentState';
 import { spawnGate } from '../state/spawnMatrix';
 import { buildReplayTasks } from '../flow/graph';
 import { apiBaseUrl } from '../api/client';
+import { failureText, httpFailure } from '../api/failure';
 import { STRINGS } from '../state/strings';
 import { AgentHierarchy } from './AgentHierarchy';
 import { PanelTitle } from './StatePack';
@@ -34,6 +35,7 @@ export function SwarmPanel() {
   const connection = useUiStore((state) => state.connection);
   const pendingCommands = useUiStore((state) => state.pendingCommands);
   const [capacity, setCapacity] = useState<RuntimeCapacity | null>(null);
+  const [capacityFailure, setCapacityFailure] = useState<string | null>(null);
   const replayTasks = useMemo(
     () => (replayGraph === null ? null : buildReplayTasks(replayGraph.graph)),
     [replayGraph],
@@ -47,7 +49,7 @@ export function SwarmPanel() {
       fetch(`${apiBaseUrl()}/api/runtime`, { headers: { Accept: 'application/json' } })
         .then(async (response) => {
           if (!response.ok) {
-            throw new Error(`runtime HTTP ${response.status}`);
+            throw await httpFailure(response, 'GET /api/runtime');
           }
           const body = (await response.json()) as Record<string, unknown>;
           const caps =
@@ -69,11 +71,13 @@ export function SwarmPanel() {
               maxAgents: caps.max_agents,
               maxCalls: caps.max_calls,
             });
+            setCapacityFailure(null);
           }
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (!cancelled) {
             setCapacity(null);
+            setCapacityFailure(failureText(error, 'Runtime capacity is unavailable.'));
           }
         });
     };
@@ -103,6 +107,11 @@ export function SwarmPanel() {
             ? 'CAPACITY UNKNOWN'
             : `CAP ${capacity.maxAgents} AGENTS / ${capacity.maxCalls} CALLS · ${capacity.active === null ? 'ACTIVE UNKNOWN' : `${capacity.active} ACTIVE`} · ${capacity.state.toUpperCase()}`}
         </p>
+        {capacityFailure !== null ? (
+          <p role="alert" className="type-mono-meta text-signal">
+            {capacityFailure}
+          </p>
+        ) : null}
         <p className="type-body-l max-w-[720px] text-ink-500">
           The HyperAgent tree and the live swarm graph are one object. Re-parenting is only
           possible while a branch is not streaming; every edge is a bee line, never decoration.
