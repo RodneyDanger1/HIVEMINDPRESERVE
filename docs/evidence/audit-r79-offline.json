@@ -1,0 +1,41 @@
+﻿{
+    "round":  79,
+    "commit":  "f149977bbf984550ed4aeadbd193a0d40134db55",
+    "captured_at":  "2026-11-08T19:51:54.6579877-06:00",
+    "cargo":  {
+                  "ignored":  2,
+                  "suites":  43,
+                  "exit":  0,
+                  "failed":  0,
+                  "passed":  551
+              },
+    "web":  {
+                "tests":  189,
+                "build":  0,
+                "typecheck":  0
+            },
+    "evidence_refs_missing":  0,
+    "stub_sweep":  {
+                       "hits":  0,
+                       "changed_files":  10
+                   },
+    "release":  {
+                    "blocker":  "E_RELEASE_TAG_MISSING",
+                    "tag":  "hivemind-1.2.0-dev",
+                    "exit":  2
+                },
+    "completion":  {
+
+                   },
+    "goal_status":  "active",
+    "not_met":  [
+                    "scheduler and 50-150/300-600 scale",
+                    "remote/daemon",
+                    "A2A answer-attempt/parent answer",
+                    "hive/ancestor summaries",
+                    "read/session auth and provider context preflight",
+                    "browser/e2e UI",
+                    "sealed release",
+                    "full HMARS completion"
+                ]
+}

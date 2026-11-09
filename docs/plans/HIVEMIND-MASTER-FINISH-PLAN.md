@@ -445,3 +445,10 @@ Not delivered and must not be claimed:
 - Verification compares the recomputed chain tail with the run head, so deleting the newest row now fails (`valid=false`) instead of passing.
 - Test deletes the max-seq row and proves truncation is detected.
 - GitNexus detect-changes again reports schema/store flows; full gate is green.
+### Round 79 final audit
+
+- Clean tree; cargo 551 passed / 0 failed / 2 ignored across 43 suites; web typecheck 0; web 189/189; build 0.
+- All evidence paths referenced by this plan exist (0 missing). Stub sweep remains zero on the audited files.
+- Release rehearsal still blocks at `E_RELEASE_TAG_MISSING` (`hivemind-1.2.0-dev`); no sealed artifact.
+- **Completion is false.** Not met: scheduler/50–150/300–600 scale, remote/daemon, A2A answer-attempt/parent answer, hive/ancestor summaries, read/session auth and provider context preflight, browser/e2e UI, sealed release.
+- Receipt: `docs/evidence/audit-r79-offline.json`. Goal remains active.
