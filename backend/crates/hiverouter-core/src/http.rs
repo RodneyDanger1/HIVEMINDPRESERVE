@@ -576,6 +576,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/memory/journal", get(memory_journal))
         .route("/api/memory/journal/verify", get(verify_memory_journal))
         .route("/api/a2a/pending", get(a2a_pending))
+        .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
         .route("/api/remotes/{remote_id}", get(remote_detail))
         .route("/api/remotes/{remote_id}/revoke", post(remote_revoke))
@@ -2119,6 +2120,45 @@ async fn a2a_pending(State(state): State<Arc<AppState>>) -> Response {
                     "kind": message.kind,
                     "text": message.text,
                     "deadline_at": message.deadline_at,
+                    "created_at": message.created_at,
+                })).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn a2a_messages(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Some(raw) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    match state.engine.store.agent_messages_for_run(run_id) {
+        Ok(messages) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "messages": messages.into_iter().map(|message| serde_json::json!({
+                    "id": message.id,
+                    "from_task_id": message.from_task_id,
+                    "to_task_id": message.to_task_id,
+                    "kind": message.kind,
+                    "text": message.text,
+                    "status": message.status,
+                    "deadline_at": message.deadline_at,
+                    "answered_at": message.answered_at,
+                    "answer_text": message.answer_text,
+                    "answer_actor": message.answer_actor,
+                    "in_reply_to": message.in_reply_to,
                     "created_at": message.created_at,
                 })).collect::<Vec<_>>(),
             })),

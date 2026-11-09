@@ -440,6 +440,16 @@ async fn a2a_answer_route_is_authenticated_and_cas_guarded() {
     .await;
     assert_eq!(status, 409, "duplicate answer: {body}");
     assert!(body.contains("E_TASK_TERMINAL"), "{body}");
+    let (status, body) = http_get(
+        server.addr,
+        &format!("/api/a2a/messages?run_id={}", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "a2a messages: {body}");
+    let projection: Value = serde_json::from_str(&body).expect("a2a JSON");
+    assert_eq!(projection["messages"][0]["status"], "answered");
+    assert_eq!(projection["messages"][0]["answer_actor"], "operator");
+    assert_eq!(projection["messages"][0]["answer_text"], "operator answer");
     let messages = server
         .state
         .engine

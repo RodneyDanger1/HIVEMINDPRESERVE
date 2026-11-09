@@ -19,6 +19,15 @@ interface PendingQuestion {
   readonly created_at: string;
 }
 
+interface HistoryRow {
+  readonly id: string;
+  readonly status: string;
+  readonly answer_text: string | null;
+  readonly answer_actor: string | null;
+  readonly from_task_id: string;
+  readonly to_task_id: string;
+}
+
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 export function A2AInboxPanel() {
@@ -30,6 +39,7 @@ export function A2AInboxPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [history, setHistory] = useState<readonly HistoryRow[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +95,50 @@ export function A2AInboxPanel() {
       cancelled = true;
     };
   }, [version, runId]);
+
+  useEffect(() => {
+    if (runId === null) {
+      setHistory([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`${apiBaseUrl()}/api/a2a/messages?run_id=${encodeURIComponent(runId)}`, {
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`A2A history HTTP ${response.status}`);
+        const body = (await response.json()) as { messages?: unknown };
+        if (!Array.isArray(body.messages) || cancelled) return;
+        const rows: HistoryRow[] = [];
+        for (const raw of body.messages) {
+          if (typeof raw !== 'object' || raw === null) continue;
+          const item = raw as Record<string, unknown>;
+          if (
+            typeof item.id !== 'string' ||
+            typeof item.status !== 'string' ||
+            typeof item.from_task_id !== 'string' ||
+            typeof item.to_task_id !== 'string'
+          ) {
+            continue;
+          }
+          rows.push({
+            id: item.id,
+            status: item.status,
+            answer_text: typeof item.answer_text === 'string' ? item.answer_text : null,
+            answer_actor: typeof item.answer_actor === 'string' ? item.answer_actor : null,
+            from_task_id: item.from_task_id,
+            to_task_id: item.to_task_id,
+          });
+        }
+        setHistory(rows.filter((row) => row.status !== 'open').slice(0, 8));
+      })
+      .catch(() => {
+        if (!cancelled) setHistory([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [runId, version]);
 
   const answer = async (question: PendingQuestion): Promise<void> => {
     if (sendingId !== null) {
@@ -193,6 +247,20 @@ export function A2AInboxPanel() {
           </li>
         ))}
       </ul>
+      {history.length > 0 ? (
+        <div className="mt-2 border-t border-hairline pt-2">
+          <h4 className="type-label text-ink-900">Recent answers · {history.length}</h4>
+          <ul className="mt-1 space-y-0.5">
+            {history.map((row) => (
+              <li key={row.id} className="type-mono-meta text-[9px] text-meta">
+                {row.status} · {row.from_task_id.slice(0, 8)} → {row.to_task_id.slice(0, 8)}
+                {row.answer_actor ? ` · by ${row.answer_actor}` : ''}
+                {row.answer_text ? ` · ${row.answer_text.slice(0, 120)}` : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
