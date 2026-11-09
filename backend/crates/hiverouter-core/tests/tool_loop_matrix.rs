@@ -39,7 +39,7 @@ use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 
 const NOTE_TEXT: &str = "tool-loop-matrix note";
 const USAGE_JSON: &str = r#"{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15,"prompt_cache_hit_tokens":2,"prompt_cache_miss_tokens":8}"#;
-const PLAN_CONTENT: &str = r#"{"nodes":[{"id":"n1","role":"worker","deps":[],"depth":1}]}"#;
+const PLAN_CONTENT: &str = r#"{"nodes":[{"id":"n1","role":"super","deps":[],"depth":1}]}"#;
 
 fn usage_value() -> Value {
     json!({

@@ -83,7 +83,7 @@ const SHELL_MARKER: &str = "HIVE-SHELL-OK";
 fn leaf_plan() -> Plan {
     Plan::new(vec![PlanNode {
         node_id: TaskId::new(),
-        role: "worker".to_owned(),
+        role: "super".to_owned(),
         deps: Vec::new(),
         depth: 1,
         parent: None,
@@ -865,7 +865,7 @@ async fn restart_marks_awaiting_run_interrupted_and_expires_pending() {
         id: TaskId::new(),
         run_id: run.id,
         parent_task_id: None,
-        role: "worker".to_owned(),
+        role: "super".to_owned(),
         depth: 1,
         spawn_seq: 1,
         state: AgentState::AwaitingApproval,

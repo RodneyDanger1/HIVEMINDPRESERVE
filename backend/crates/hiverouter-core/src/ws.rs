@@ -27,6 +27,7 @@ use hiverouter_contract::event::{
 };
 use hiverouter_contract::schema;
 use hiverouter_contract::{AgentState, Refusal, RunId, TaskId, Timestamp};
+use hiverouter_tools::tool::AgentTier;
 
 use crate::bus::{EventBus, Replay, SequencedEvent};
 use crate::caps::Caps;
@@ -252,6 +253,7 @@ fn insert_template_dag(
         .flatten()
         .map(|identity| identity.class)
         .or_else(|| role_class(&root.role).map(str::to_owned));
+    let mut needs_super_branch = false;
     for node in &dag.nodes {
         // A template id is a persona/profile name, not necessarily a spawn
         // class. Library templates are worker profiles; authority-looking ids
@@ -270,12 +272,27 @@ fn insert_template_dag(
         let child_class = role_class(&node.role)
             .or_else(|| role_class(requested_class))
             .ok_or(Refusal::PersonaUnknown)?;
-        if let Some(parent_class) = parent_class.as_deref() {
-            if !class_may_spawn(parent_class, child_class) {
+        // A library Agent template inserted while the active run has only the
+        // HyperAgent root gets an explicit SuperAgent branch lead, preserving
+        // the strict Hyper -> Super -> Agent -> Subagent hierarchy.
+        if parent_class.as_deref() == Some("hyper") && child_class == "agent" {
+            needs_super_branch = true;
+        }
+        let effective_parent_class = if needs_super_branch && child_class == "agent" {
+            Some("super")
+        } else {
+            parent_class.as_deref()
+        };
+        if let Some(effective_parent_class) = effective_parent_class {
+            if !class_may_spawn(effective_parent_class, child_class) {
                 return Err(Refusal::ToolNotAllowed);
             }
         }
-        validate_spawn_role(parent_tier, requested_class)?;
+        if needs_super_branch {
+            validate_spawn_role(AgentTier::SuperAgent, requested_class)?;
+        } else {
+            validate_spawn_role(parent_tier, requested_class)?;
+        }
     }
     let siblings = tasks
         .iter()
@@ -295,31 +312,62 @@ fn insert_template_dag(
     }
     for index in 0..dag.nodes.len() {
         let index = u64::try_from(index).unwrap_or(u64::MAX);
-        caps.check_spawn(
-            depth,
-            usize::try_from(index)
-                .unwrap_or(usize::MAX)
-                .saturating_add(siblings),
-            agents.saturating_add(index),
-        )?;
+        if needs_super_branch {
+            caps.check_spawn(depth, siblings, agents.saturating_add(1))?;
+            caps.check_spawn(
+                depth.saturating_add(1),
+                usize::try_from(index)
+                    .unwrap_or(usize::MAX),
+                agents.saturating_add(1).saturating_add(index),
+            )?;
+        } else {
+            caps.check_spawn(
+                depth,
+                usize::try_from(index)
+                    .unwrap_or(usize::MAX)
+                    .saturating_add(siblings),
+                agents.saturating_add(index),
+            )?;
+        }
     }
 
     let mut spawn_seq = tasks.iter().map(|task| task.spawn_seq).max().unwrap_or(0);
-    let mut inserted = Vec::with_capacity(dag.nodes.len());
-    for node in &dag.nodes {
+    let mut inserted = Vec::with_capacity(dag.nodes.len() + usize::from(needs_super_branch));
+    let mut branch_parent = root.id;
+    let mut branch_depth = depth;
+    if needs_super_branch {
         spawn_seq = spawn_seq.saturating_add(1);
-        let task = TaskRecord {
+        let branch = TaskRecord {
             id: TaskId::new(),
             run_id,
             parent_task_id: Some(root.id),
-            role: node.role.clone(),
+            role: "super".to_owned(),
             depth,
             spawn_seq,
             state: AgentState::Queued,
             rev: 0,
         };
+        store.insert_task(&branch)?;
+        graph.add_task(branch.id, Some(root.id))?;
+        graph.set_metadata(branch.id, task_node_kind(&branch), &branch.role, None)?;
+        branch_parent = branch.id;
+        branch_depth = depth.saturating_add(1);
+        inserted.push(branch);
+    }
+    for node in &dag.nodes {
+        spawn_seq = spawn_seq.saturating_add(1);
+        let task = TaskRecord {
+            id: TaskId::new(),
+            run_id,
+            parent_task_id: Some(branch_parent),
+            role: node.role.clone(),
+            depth: branch_depth,
+            spawn_seq,
+            state: AgentState::Queued,
+            rev: 0,
+        };
         store.insert_task(&task)?;
-        graph.add_task(task.id, Some(root.id))?;
+        graph.add_task(task.id, Some(branch_parent))?;
         graph.set_metadata(
             task.id,
             task_node_kind(&task),
@@ -1203,13 +1251,17 @@ mod tests {
             &payload,
         )
         .expect("insert the manifest-backed DAG");
-        assert_eq!(inserted.len(), 1, "the content-writer DAG is one node");
-        let task = &inserted[0];
+        assert_eq!(inserted.len(), 2, "strict hierarchy adds one SuperAgent branch");
+        let branch = &inserted[0];
+        let task = &inserted[1];
+        assert_eq!(branch.role, "super");
+        assert_eq!(branch.parent_task_id, Some(fixture.root.id));
+        assert_eq!(branch.depth, fixture.root.depth + 1);
         assert_eq!(task.role, "content-writer");
         assert_eq!(task.run_id, fixture.run_id);
-        assert_eq!(task.parent_task_id, Some(fixture.root.id));
+        assert_eq!(task.parent_task_id, Some(branch.id));
         assert_eq!(task.state, AgentState::Queued);
-        assert_eq!(task.depth, fixture.root.depth + 1);
+        assert_eq!(task.depth, branch.depth + 1);
 
         // A template id that resolves to HyperAgent authority is refused even
         // though its prompt asset exists.
@@ -1238,11 +1290,11 @@ mod tests {
         );
         assert_eq!(
             fixture.graph.parent_of(task.id).expect("graph parent"),
-            Some(fixture.root.id)
+            Some(branch.id)
         );
         assert_eq!(
             fixture.store.task_count(fixture.run_id).expect("count"),
-            2
+            3
         );
 
         // The transport frame the ACK path publishes for each inserted node: a
@@ -1258,14 +1310,14 @@ mod tests {
         assert_eq!(events.len(), inserted.len());
         assert_eq!(events[0].envelope.name, "NODE_SPAWN");
         assert_eq!(events[0].envelope.run_id, Some(fixture.run_id));
-        let frame = events[0].envelope.payload.as_object().expect("payload");
+        let frame = events[1].envelope.payload.as_object().expect("payload");
         assert_eq!(frame["task_id"], task.id.to_string());
         assert_eq!(frame["state"], "queued");
         assert_eq!(
             frame["rev"], 0_u64,
             "a fresh graph node starts at revision 0"
         );
-        assert_eq!(frame["parent_task_id"], fixture.root.id.to_string());
+        assert_eq!(frame["parent_task_id"], branch.id.to_string());
         assert_eq!(
             frame["kind"], "worker",
             "NODE_SPAWN carries the task's authoritative tier"
@@ -1290,13 +1342,14 @@ mod tests {
                 &payload,
             )
             .expect("the embedded Library template must resolve");
-            assert_eq!(tasks.len(), 1);
-            assert_eq!(tasks[0].role, template_id);
+            assert_eq!(tasks.len(), 2, "strict hierarchy adds a branch lead");
+            assert_eq!(tasks[0].role, "super");
+            assert_eq!(tasks[1].role, template_id);
         }
         assert_eq!(
             fixture.store.task_count(fixture.run_id).expect("count"),
-            5,
-            "root + four inserted template tasks"
+            9,
+            "root + four branch leads + four inserted template agents"
         );
         let catalog = TemplateDagCatalog::from_registry(&templates);
         assert_eq!(catalog.template_ids(), templates.template_ids());

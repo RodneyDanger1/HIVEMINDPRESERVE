@@ -403,6 +403,8 @@ impl ToolRegistry {
                 ToolId::Finish,
                 ToolId::FileRead,
                 ToolId::FileList,
+                ToolId::FileWrite,
+                ToolId::ShellExec,
             ],
         );
         allowlists.insert(

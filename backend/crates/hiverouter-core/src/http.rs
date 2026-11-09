@@ -299,10 +299,12 @@ fn build_engine(
     tools: Arc<ToolsBridge>,
     wire_workspace_jail: bool,
 ) -> Arc<RunEngine> {
+    let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
-        .with_tools(tools);
+        .with_tools(tools)
+        .with_remote_store(remote);
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
             Ok(jail) => engine = engine.with_tool_workspace(jail),
@@ -1521,6 +1523,7 @@ fn remote_json(remote: &RemoteAgent) -> serde_json::Value {
         "display_name": remote.display_name,
         "owner_kind": remote.owner_kind,
         "owner_id": remote.owner_id,
+        "created_by": remote.created_by,
         "transport_kind": remote.transport_kind,
         "adapter_kind": remote.adapter_kind,
         "state": remote.state,
@@ -1676,6 +1679,7 @@ async fn remote_create(
         endpoint_ref: endpoint_ref.to_owned(),
         credential_ref: None,
         capabilities_json: "[]".to_owned(),
+        created_by: "operator".to_owned(),
     }) {
         Ok(remote) => (StatusCode::CREATED, Json(remote_json(&remote))).into_response(),
         Err(refusal) => remote_refusal_response(&refusal),

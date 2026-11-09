@@ -36,7 +36,7 @@ const NOTE_TEXT: &str = "hello tool loop";
 fn leaf_plan() -> Plan {
     Plan::new(vec![PlanNode {
         node_id: TaskId::new(),
-        role: "worker".to_owned(),
+        role: "super".to_owned(),
         deps: Vec::new(),
         depth: 1,
         parent: None,

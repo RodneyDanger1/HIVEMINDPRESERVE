@@ -18,7 +18,10 @@ use hiverouter_core::execution::{
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
 use hiverouter_core::prompts::{Persona, PersonaTier, TemplateRegistry};
+use hiverouter_core::remote::RemoteStore;
 use hiverouter_core::store::RunStore;
+use hiverouter_provider::tool_assembler::AssembledToolCall;
+use serde_json::json;
 use tokio::sync::broadcast::error::RecvError;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -27,7 +30,9 @@ fn leaf_plan(count: usize, depth: u8) -> Plan {
     let nodes = (0..count)
         .map(|_| PlanNode {
             node_id: TaskId::new(),
-            role: "worker".to_owned(),
+            // Strict hierarchy: a HyperAgent may only spawn SuperAgent branch
+            // leads; a direct worker plan would be a named refusal.
+            role: "super".to_owned(),
             deps: Vec::new(),
             depth,
             parent: None,
@@ -155,10 +160,87 @@ impl ProviderExecutor for MockExecutor {
     }
 }
 
+struct RootRemoteExecutor {
+    finalizes: AtomicUsize,
+}
+
+impl RootRemoteExecutor {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            finalizes: AtomicUsize::new(0),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for RootRemoteExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(2, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = format!("branch {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        if self.finalizes.fetch_add(1, Ordering::SeqCst) == 0 {
+            return Ok(StreamedReply {
+                deltas: Vec::new(),
+                usage: Usage::default(),
+                tool_calls: vec![AssembledToolCall {
+                    index: 0,
+                    id: "call-remote".to_owned(),
+                    name: "spawn_remote_agent".to_owned(),
+                    arguments: json!({
+                        "display_name": "Satellite relay",
+                        "kind": "daemon_relay"
+                    }),
+                }],
+                reasoning: String::new(),
+            });
+        }
+        let text = "root answer with detached relay";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
 struct TestEngine {
     engine: Arc<RunEngine>,
     bus: Arc<EventBus>,
     store: RunStore,
+    remote: Arc<RemoteStore>,
     _temp: tempfile::TempDir,
 }
 
@@ -174,6 +256,7 @@ fn test_engine_with_personas(
     let db = Arc::new(Database::open(&temp.path().join("hiverouter.db")).expect("db"));
     db.migrate().expect("migrate");
     let bus = Arc::new(EventBus::new());
+    let remote = Arc::new(RemoteStore::new(db.clone()));
     let engine = Arc::new(
         RunEngine::new(
             db.clone(),
@@ -182,12 +265,14 @@ fn test_engine_with_personas(
             executor,
             Arc::new(TemplateRegistry::default()),
         )
-        .with_personas(personas),
+        .with_personas(personas)
+        .with_remote_store(remote.clone()),
     );
     TestEngine {
         engine,
         bus,
         store: RunStore::new(db),
+        remote,
         _temp: temp,
     }
 }
@@ -237,6 +322,62 @@ async fn unknown_spawn_role_is_refused_by_name() {
     harness.store.insert_task(&root).expect("root");
     let refused = harness.engine.spawn_sub_hive(root.id, "researcher");
     assert_eq!(refused, Err(Refusal::PersonaUnknown));
+}
+
+#[tokio::test]
+async fn strict_hierarchy_refuses_direct_hyper_agent_and_super_subagent_edges() {
+    let direct_agent = Plan::new(vec![PlanNode {
+        node_id: TaskId::new(),
+        role: "worker".to_owned(),
+        deps: Vec::new(),
+        depth: 1,
+        parent: None,
+    }]);
+    let harness = test_engine(MockExecutor::new(direct_agent));
+    let mut receiver = harness.bus.subscribe();
+    harness
+        .engine
+        .submit_prompt("direct agent", "p", Uuid::now_v7())
+        .expect("submit");
+    let failed = wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] != "running"
+    })
+    .await;
+    assert_eq!(
+        failed.envelope.payload["error_code"],
+        Refusal::ToolNotAllowed.code(),
+        "HyperAgent must not plan/spawn a direct Agent"
+    );
+}
+
+#[tokio::test]
+async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
+    let harness = test_engine(RootRemoteExecutor::new());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("spawn a relay", "p", Uuid::now_v7())
+        .expect("submit");
+    let completed = wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    assert_eq!(completed.envelope.payload["status"], "completed");
+
+    let remotes = harness.remote.list_remotes().expect("remotes");
+    assert_eq!(remotes.len(), 1, "root tool must create exactly one remote");
+    assert_eq!(remotes[0].owner_kind, "hive");
+    assert!(
+        remotes[0].created_by.starts_with("hyper:"),
+        "root attribution must name the HyperAgent task: {}",
+        remotes[0].created_by
+    );
+    assert_eq!(remotes[0].adapter_kind, "daemon_relay");
+    let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
+    assert_eq!(tasks.len(), 3, "root plus two branch tasks");
+    assert!(tasks.iter().all(|task| task.id.to_string() != remotes[0].remote_id));
 }
 
 #[tokio::test]

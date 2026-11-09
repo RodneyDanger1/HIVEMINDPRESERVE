@@ -37,6 +37,7 @@ pub struct RemoteAgent {
     pub lease_expires_at: Option<String>,
     pub quarantined_at: Option<String>,
     pub revoked_at: Option<String>,
+    pub created_by: String,
     pub created_at: String,
 }
 
@@ -121,6 +122,7 @@ pub struct NewRemote {
     pub endpoint_ref: String,
     pub credential_ref: Option<String>,
     pub capabilities_json: String,
+    pub created_by: String,
 }
 
 /// Input for registering a device.
@@ -158,7 +160,7 @@ pub struct RemoteStore {
 const REMOTE_SELECT: &str = "SELECT remote_id, display_name, owner_kind, owner_id,
     transport_kind, adapter_kind, endpoint_ref, credential_ref, capabilities_json,
     state, generation, rev, last_seen_at, lease_expires_at, quarantined_at,
-    revoked_at, created_at FROM remote_agents";
+    revoked_at, created_by, created_at FROM remote_agents";
 
 const DEVICE_SELECT: &str = "SELECT device_id, remote_id, class, name, room,
     adapter_ref, capabilities_json, state_json, state_version, last_seen_at,
@@ -191,7 +193,8 @@ fn remote_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<RemoteAgent> {
         lease_expires_at: row.get(13)?,
         quarantined_at: row.get(14)?,
         revoked_at: row.get(15)?,
-        created_at: row.get(16)?,
+        created_by: row.get(16)?,
+        created_at: row.get(17)?,
     })
 }
 
@@ -331,7 +334,7 @@ impl RemoteStore {
                       state, generation, rev, last_seen_at, lease_expires_at,
                       created_by, created_at)
                      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,
-                             'online', 1, 0, ?10, NULL, 'operator', ?10)",
+                             'online', 1, 0, ?10, NULL, ?11, ?10)",
                     params![
                         remote_id,
                         input.display_name.trim(),
@@ -343,12 +346,13 @@ impl RemoteStore {
                         input.credential_ref,
                         input.capabilities_json,
                         now,
+                        input.created_by,
                     ],
                 )?;
                 audit(
                     connection,
                     "operator",
-                    "operator",
+                    &input.created_by,
                     Some(&remote_id),
                     None,
                     "remote_created",
@@ -1015,6 +1019,7 @@ mod tests {
                 endpoint_ref: "fixture".to_owned(),
                 credential_ref: None,
                 capabilities_json: "[]".to_owned(),
+                created_by: "operator".to_owned(),
             })
             .expect("remote");
         let device = store
