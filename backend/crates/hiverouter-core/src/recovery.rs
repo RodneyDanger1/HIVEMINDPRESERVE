@@ -48,6 +48,11 @@ pub struct RecoveryReport {
     /// newest loadable snapshot wins. Every other run remains readable through
     /// the history API.
     pub restored_runs: Vec<RunId>,
+    /// Runs with a loadable latest snapshot that the single in-memory graph
+    /// image superseded. Named degradation, never silence: each run's task
+    /// rows are still settled and (from step 3) represented in the graph, and
+    /// its history stays readable through the snapshot API.
+    pub not_restored_runs: Vec<RunId>,
     /// Snapshot files that could not be loaded (left in place, reported).
     pub corrupt_snapshots: Vec<RunId>,
     /// Non-terminal tasks recovery settled (database + graph).
@@ -64,6 +69,7 @@ impl RecoveryReport {
     pub fn is_empty(&self) -> bool {
         self.interrupted_runs.is_empty()
             && self.restored_runs.is_empty()
+            && self.not_restored_runs.is_empty()
             && self.corrupt_snapshots.is_empty()
             && self.settled_tasks.is_empty()
             && self.graph_settle_failures.is_empty()
@@ -152,10 +158,14 @@ pub fn recover_on_boot_with_events(
     }
     restore_order.sort();
     let mut restored_run = None;
+    let mut loadable_runs = Vec::new();
     for (_, run_id) in restore_order {
         match snapshots.latest(run_id) {
             Ok(Some(envelope)) => match graph.restore_from_snapshot(&envelope.graph) {
-                Ok(()) => restored_run = Some(run_id),
+                Ok(()) => {
+                    restored_run = Some(run_id);
+                    loadable_runs.push(run_id);
+                }
                 Err(refusal) if refusal == Refusal::SnapshotCorrupt => {
                     tracing::error!(
                         run = %run_id,
@@ -181,6 +191,12 @@ pub fn recover_on_boot_with_events(
     if let Some(run_id) = restored_run {
         report.restored_runs.push(run_id);
     }
+    // Name the degradation explicitly: every other loadable image was replaced
+    // in the single in-memory graph by the newest one.
+    report.not_restored_runs = loadable_runs
+        .into_iter()
+        .filter(|run_id| Some(*run_id) != restored_run)
+        .collect();
 
     // 3. Settle every non-terminal task of every interrupted run; repair the
     //    graph node of an already-terminal task (a crash between the row write
@@ -383,8 +399,10 @@ fn settlement_target(current: AgentState) -> AgentState {
 /// Makes the graph node state equal the persisted task state (repair path).
 ///
 /// Returns `true` when the graph had to be changed. A task without a graph node
-/// is left alone: the node was never restored, so there is no contradictory
-/// state to repair.
+/// is **rebuilt from its authoritative task row** — the snapshot image holds
+/// one run at a time, so another interrupted run's nodes may be missing even
+/// though its rows are settled. Rebuilding keeps every interrupted run
+/// represented instead of silently dropping it from the graph.
 fn repair_graph_state(
     graph: &GraphAuthority,
     task: &crate::entities::TaskRecord,
@@ -395,7 +413,32 @@ fn repair_graph_state(
             graph.set_state(task.id, task.state)?;
             Ok(true)
         }
-        None => Ok(false),
+        None => {
+            match graph.add_task(task.id, task.parent_task_id) {
+                Ok(_) => {}
+                // Already present: another recovery writer won the insert.
+                Err(Refusal::SchemaInvalid) => {}
+                Err(Refusal::TaskNotFound) => {
+                    // The parent row is missing (its run's image was
+                    // superseded); keep the task represented at the top level.
+                    tracing::warn!(
+                        task = %task.id,
+                        parent = ?task.parent_task_id,
+                        "parent node missing while rebuilding a task node from its row"
+                    );
+                    graph.add_task(task.id, None)?;
+                }
+                Err(refusal) => return Err(refusal),
+            }
+            graph.set_metadata(
+                task.id,
+                crate::execution::task_node_kind(task),
+                &task.role,
+                None,
+            )?;
+            graph.set_state(task.id, task.state)?;
+            Ok(true)
+        }
     }
 }
 

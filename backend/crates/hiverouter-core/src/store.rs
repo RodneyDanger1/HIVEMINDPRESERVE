@@ -235,6 +235,34 @@ pub struct TaskIdentity {
     pub profile_id: String,
 }
 
+/// The `memory_entries.kind` vocabulary accepted by the v14 schema check.
+pub const MEMORY_ENTRY_KINDS: [&str; 8] = [
+    "observation",
+    "summary",
+    "fact",
+    "decision",
+    "constraint",
+    "preference",
+    "artifact_ref",
+    "note",
+];
+
+/// Trust labels the task read filter (`memory_read_set` / `hyper_summary_rows`)
+/// accepts. `quarantined` is deliberately absent: such a row is hidden from
+/// model reads, so a model-facing write must never create one.
+pub const READABLE_MEMORY_TRUST: [&str; 3] = ["unverified", "verified", "authoritative"];
+
+/// Bank a writer in `class` owns. `None` means the class is unknown and the
+/// caller must refuse rather than guess a bank.
+fn caller_bank_for_class(class: &str, run_id: RunId, task_id: TaskId) -> Option<String> {
+    match class {
+        "hyper" => Some(format!("bank:run:{run_id}")),
+        "super" => Some(format!("bank:hive:{task_id}")),
+        "agent" | "subagent" => Some(format!("bank:branch:{task_id}")),
+        _ => None,
+    }
+}
+
 /// One durable agent-to-agent message row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AgentMessageRecord {
@@ -1165,15 +1193,21 @@ impl RunStore {
         task_id: TaskId,
         scope_id: &str,
     ) -> Result<(), Refusal> {
+        // Fail closed: a task whose persisted identity is missing must never
+        // fall back to the run bank, which every task in the run can read. Its
+        // own branch is the narrowest readable bank that cannot leak across
+        // tasks.
         let class = self
             .task_identity(task_id)?
-            .map(|identity| identity.class)
-            .unwrap_or_default();
-        let bank_id = match class.as_str() {
-            "super" => format!("bank:hive:{task_id}"),
-            "agent" | "subagent" => format!("bank:branch:{task_id}"),
-            _ if scope_id != "run" && scope_id != "legacy" => format!("bank:branch:{task_id}"),
-            _ => format!("bank:run:{run_id}"),
+            .map(|identity| identity.class);
+        let bank_id = match class.as_deref() {
+            Some("super") => format!("bank:hive:{task_id}"),
+            Some("agent" | "subagent") => format!("bank:branch:{task_id}"),
+            None => format!("bank:branch:{task_id}"),
+            Some(_) if scope_id != "run" && scope_id != "legacy" => {
+                format!("bank:branch:{task_id}")
+            }
+            Some(_) => format!("bank:run:{run_id}"),
         };
         self.db
             .with_connection(|connection| {
@@ -1314,6 +1348,131 @@ impl RunStore {
             })
             .map_err(map)?;
         Ok(())
+    }
+
+    /// Validated, caller-bank memory write for a model-facing tool surface.
+    ///
+    /// Unlike the engine's [`Self::record_agent_memory_scoped`], this API is
+    /// strict by construction:
+    /// - the caller's persisted class must exist (unknown identity is refused,
+    ///   never defaulted to a wider bank);
+    /// - the write lands only in the caller's own bank (`hyper` -> run bank,
+    ///   `super` -> its hive bank, `agent`/`subagent` -> its branch bank);
+    /// - `kind` and `trust` are validated against the exact vocabularies the
+    ///   read filter uses, so a row can never be written silently unreadable.
+    ///
+    /// Returns the new entry id.
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` when the caller has no persisted identity,
+    /// `E_SCHEMA_INVALID` for an unknown kind/trust or empty/oversized key,
+    /// database refusal otherwise.
+    pub fn record_memory_entry(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        agent_key: &str,
+        key: &str,
+        value: &str,
+        kind: &str,
+        trust: &str,
+    ) -> Result<String, Refusal> {
+        if key.trim().is_empty() || key.len() > 256 {
+            return Err(Refusal::SchemaInvalid);
+        }
+        if !MEMORY_ENTRY_KINDS.contains(&kind) {
+            return Err(Refusal::SchemaInvalid);
+        }
+        if !READABLE_MEMORY_TRUST.contains(&trust) {
+            return Err(Refusal::SchemaInvalid);
+        }
+        let identity = self.task_identity(task_id)?.ok_or(Refusal::TaskNotFound)?;
+        let bank_id =
+            caller_bank_for_class(&identity.class, run_id, task_id).ok_or(Refusal::SchemaInvalid)?;
+        let now = Timestamp::now();
+        let entry_id = format!("entry:{}", Uuid::now_v7());
+        let (bank_kind, owner_task_id, parent_bank_id, display_name): (
+            &str,
+            Option<String>,
+            String,
+            String,
+        ) = match identity.class.as_str() {
+            "hyper" => (
+                "run",
+                None,
+                "bank:global:default".to_owned(),
+                format!("Run {run_id}"),
+            ),
+            "super" => (
+                "hive",
+                Some(task_id.to_string()),
+                format!("bank:run:{run_id}"),
+                format!("Hive {task_id}"),
+            ),
+            _ => (
+                "branch",
+                Some(task_id.to_string()),
+                format!("bank:run:{run_id}"),
+                format!("Task {task_id}"),
+            ),
+        };
+        self.db
+            .with_connection(|connection| {
+                let transaction = connection.transaction()?;
+                transaction.execute(
+                    "INSERT OR IGNORE INTO memory_banks
+                     (id, kind, scope_id, run_id, owner_task_id, parent_bank_id,
+                      display_name, rev, created_at, closed_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 0, ?8, NULL)",
+                    params![
+                        bank_id,
+                        bank_kind,
+                        task_id.to_string(),
+                        run_id.to_string(),
+                        owner_task_id,
+                        parent_bank_id,
+                        display_name,
+                        now.as_str()
+                    ],
+                )?;
+                transaction.execute(
+                    "DELETE FROM memory_entries
+                     WHERE bank_id = ?1 AND entry_key = ?2 AND status = 'active'",
+                    params![bank_id, key],
+                )?;
+                transaction.execute(
+                    "INSERT INTO memory_entries
+                     (id, bank_id, entry_key, kind, value, source_kind, source_task_id,
+                      source_run_id, trust, status, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, 'agent_result', ?6, ?7, ?8, 'active', ?9, ?9)",
+                    params![
+                        entry_id,
+                        bank_id,
+                        key,
+                        kind,
+                        value,
+                        task_id.to_string(),
+                        run_id.to_string(),
+                        trust,
+                        now.as_str()
+                    ],
+                )?;
+                append_memory_journal(
+                    &transaction,
+                    &run_id.to_string(),
+                    &bank_id,
+                    &entry_id,
+                    "entry_written",
+                    "agent",
+                    Some(agent_key),
+                    "{}",
+                    now.as_str(),
+                )?;
+                transaction.commit()?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(entry_id)
     }
 
     /// Lists memory banks for one run.
@@ -1960,6 +2119,60 @@ impl RunStore {
                 )?;
                 let rows = statement.query_map(
                     params![bank_id, i64::try_from(limit).unwrap_or(i64::MAX)],
+                    |row| {
+                        Ok(MemoryEntryRecord {
+                            id: row.get(0)?,
+                            bank_id: row.get(1)?,
+                            key: row.get(2)?,
+                            kind: row.get(3)?,
+                            value: row.get(4)?,
+                            source_kind: row.get(5)?,
+                            trust: row.get(6)?,
+                            status: row.get(7)?,
+                            created_at: row.get(8)?,
+                        })
+                    },
+                )?;
+                let mut entries = Vec::new();
+                for row in rows {
+                    entries.push(row?);
+                }
+                Ok(entries)
+            })
+            .map_err(map)
+    }
+
+    /// Lists active entries in one bank **scoped to one run**.
+    ///
+    /// This is the isolated read API: the bank must belong to `run_id`, so a
+    /// caller cannot read a same-shaped bank from a foreign run. Prefer this
+    /// over [`Self::memory_entries_for_bank`], which is the unscoped operator
+    /// surface and trusts its caller to supply an in-run bank id.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn memory_entries_for_bank_scoped(
+        &self,
+        run_id: RunId,
+        bank_id: &str,
+        limit: usize,
+    ) -> Result<Vec<MemoryEntryRecord>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT e.id, e.bank_id, e.entry_key, e.kind, e.value, e.source_kind,
+                            e.trust, e.status, e.created_at
+                     FROM memory_entries e
+                     JOIN memory_banks b ON b.id = e.bank_id
+                     WHERE e.bank_id = ?1 AND b.run_id = ?2 AND e.status = 'active'
+                     ORDER BY e.created_at DESC, e.id DESC LIMIT ?3",
+                )?;
+                let rows = statement.query_map(
+                    params![
+                        bank_id,
+                        run_id.to_string(),
+                        i64::try_from(limit).unwrap_or(i64::MAX)
+                    ],
                     |row| {
                         Ok(MemoryEntryRecord {
                             id: row.get(0)?,
