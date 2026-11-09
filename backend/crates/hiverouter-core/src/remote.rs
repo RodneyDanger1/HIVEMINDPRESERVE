@@ -673,6 +673,53 @@ impl RemoteStore {
         self.get_remote(remote_id)?.ok_or(Refusal::RemoteUnknown)
     }
 
+    /// Demotes online remotes whose lease has expired. This is the supervisor's
+    /// truthful health transition; it never extends a lease or invents a state.
+    pub fn expire_leases(&self) -> Result<usize, Refusal> {
+        let now = Timestamp::now().as_str().to_owned();
+        self.db
+            .with_connection(|connection| {
+                let changed = connection.execute(
+                    "UPDATE remote_agents SET state = 'offline', rev = rev + 1
+                     WHERE state = 'online' AND lease_expires_at IS NOT NULL
+                       AND lease_expires_at <= ?1",
+                    params![now],
+                )?;
+                Ok(changed)
+            })
+            .map_err(map)
+    }
+
+    /// Boot reconciliation for remote actions: an executing action becomes
+    /// interrupted; an expired approval becomes timeout. No action is replayed.
+    pub fn reconcile_on_boot(&self) -> Result<usize, Refusal> {
+        let now = Timestamp::now().as_str().to_owned();
+        self.db
+            .with_connection(|connection| {
+                let tx = connection.transaction()?;
+                let executing = tx.execute(
+                    "UPDATE device_actions SET status = 'interrupted', ended_at = ?1
+                     WHERE status = 'executing'",
+                    params![now],
+                )?;
+                let expired = tx.execute(
+                    "UPDATE device_actions SET status = 'timeout', ended_at = ?1
+                     WHERE status IN ('requested','awaiting_approval')
+                       AND approval_expires_at IS NOT NULL AND approval_expires_at <= ?1",
+                    params![now],
+                )?;
+                let leases = tx.execute(
+                    "UPDATE remote_agents SET state = 'offline', rev = rev + 1
+                     WHERE state = 'online' AND lease_expires_at IS NOT NULL
+                       AND lease_expires_at <= ?1",
+                    params![now],
+                )?;
+                tx.commit()?;
+                Ok(executing + expired + leases)
+            })
+            .map_err(map)
+    }
+
     /// Requests a device action. A reversible fixture action executes now; a
     /// critical action waits for an explicit nonce-bound approval.
     ///

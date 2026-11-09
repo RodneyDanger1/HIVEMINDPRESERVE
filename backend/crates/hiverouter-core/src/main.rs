@@ -14,6 +14,11 @@ use hiverouter_core::recovery::recover_on_boot;
 use hiverouter_core::run_checks;
 use hiverouter_core::snapshot::SnapshotStore;
 use tokio::net::TcpListener;
+use tokio_util::sync::CancellationToken;
+
+use hiverouter_core::daemon::DaemonStore;
+use hiverouter_core::remote::RemoteStore;
+use hiverouter_core::remote_supervisor::RemoteSupervisor;
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -82,6 +87,13 @@ async fn run() -> Result<(), ExitCode> {
     };
 
     let database = Arc::new(database);
+    let remote_boot = RemoteStore::new(database.clone());
+    if let Err(refusal) = remote_boot.reconcile_on_boot() {
+        tracing::warn!(
+            code = refusal.code(),
+            "remote boot reconciliation failed; refusing to replay any action"
+        );
+    }
     let snapshots = SnapshotStore::new(&config.data_dir, database.clone());
     let graph = hiverouter_core::graph::GraphAuthority::new();
     match recover_on_boot(database.clone(), &graph, &snapshots) {
@@ -163,7 +175,27 @@ async fn run() -> Result<(), ExitCode> {
         "server booted"
     );
 
-    match http::serve(listener, state, shutdown_signal()).await {
+    let shutdown = CancellationToken::new();
+    let supervisor = RemoteSupervisor::new(
+        state.db.clone(),
+        Arc::new(RemoteStore::new(state.db.clone())),
+        Arc::new(DaemonStore::new(state.db.clone())),
+        std::time::Duration::from_secs(2),
+        shutdown.clone(),
+    );
+    let supervisor_handle = tokio::spawn(async move { supervisor.run().await });
+
+    let shutdown_for_serve = shutdown.clone();
+    let server_result = http::serve(listener, state, async move {
+        tokio::select! {
+            _ = shutdown_signal() => {}
+            _ = shutdown_for_serve.cancelled() => {}
+        }
+    })
+    .await;
+    shutdown.cancel();
+    let _ = supervisor_handle.await;
+    match server_result {
         Ok(()) => {
             tracing::info!("server stopped cleanly");
             Ok(())

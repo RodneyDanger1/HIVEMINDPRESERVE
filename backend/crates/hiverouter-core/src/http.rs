@@ -60,6 +60,8 @@ pub struct AppState {
     pub engine: Arc<RunEngine>,
     /// Remote control plane (tree-free principals, devices, actions).
     pub remote: Arc<crate::remote::RemoteStore>,
+    /// Daemon/watchdog records (also tree-free; never task rows).
+    pub daemons: Arc<crate::daemon::DaemonStore>,
     /// History / time-travel read model.
     pub history: Arc<HistoryReadModel>,
     /// Wired tools capabilities (settings, jailed files, approvals, diagnose).
@@ -364,6 +366,7 @@ impl AppState {
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
+        let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -376,6 +379,7 @@ impl AppState {
             session,
             engine,
             remote,
+            daemons,
             history,
             tools,
             prompt_assets_error,
@@ -411,6 +415,7 @@ impl AppState {
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, templates, personas, snapshots.clone(), tools.clone(), true);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
+        let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -423,6 +428,7 @@ impl AppState {
             session,
             engine,
             remote,
+            daemons,
             history,
             tools,
             prompt_assets_error,
@@ -450,6 +456,7 @@ impl AppState {
         let engine = build_engine(db.clone(), bus.clone(), graph.clone(), &config, Arc::new(TemplateRegistry::default()), Vec::new(), snapshots.clone(), tools.clone(), false);
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
+        let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         Self {
             db,
             checks,
@@ -461,6 +468,7 @@ impl AppState {
             session,
             engine,
             remote,
+            daemons,
             history,
             tools,
             prompt_assets_error: None,
@@ -580,6 +588,11 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         )
         .route("/api/remotes/{remote_id}/grants", post(remote_grant_create))
         .route("/api/remotes/{remote_id}/audit", get(remote_audit_list))
+        .route("/api/daemons", get(daemon_list).post(daemon_create))
+        .route("/api/daemons/{daemon_id}", get(daemon_detail))
+        .route("/api/daemons/{daemon_id}/switch", post(daemon_switch))
+        .route("/api/daemons/{daemon_id}/retire", post(daemon_retire))
+        .route("/api/supervisor", get(supervisor_status))
         .route("/api/devices/{device_id}", get(remote_device_get))
         .route("/api/devices/{device_id}/actions", post(remote_action_create))
         .route(
@@ -1920,6 +1933,143 @@ async fn remote_audit_list(
         )
             .into_response(),
         Err(refusal) => remote_refusal_response(&refusal),
+    }
+}
+
+fn daemon_json(daemon: &crate::daemon::Daemon) -> serde_json::Value {
+    serde_json::json!({
+        "daemon_id": daemon.daemon_id,
+        "display_name": daemon.display_name,
+        "owner_kind": daemon.owner_kind,
+        "owner_id": daemon.owner_id,
+        "kind": daemon.kind,
+        "job": serde_json::from_str::<serde_json::Value>(&daemon.job_json)
+            .unwrap_or(serde_json::Value::Null),
+        "state": daemon.state,
+        "interval_secs": daemon.interval_secs,
+        "next_tick_at": daemon.next_tick_at,
+        "last_tick_at": daemon.last_tick_at,
+        "last_report_at": daemon.last_report_at,
+        "restart_attempts": daemon.restart_attempts,
+        "last_error_code": daemon.last_error_code,
+        "created_by": daemon.created_by,
+        "created_at": daemon.created_at,
+        "retired_at": daemon.retired_at,
+    })
+}
+
+async fn daemon_list(State(state): State<Arc<AppState>>) -> Response {
+    match state.daemons.list() {
+        Ok(daemons) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "daemons": daemons.iter().map(daemon_json).collect::<Vec<_>>(),
+                "count": daemons.len(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn daemon_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(display_name) = body.get("display_name").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let owner_kind = body
+        .get("owner_kind")
+        .and_then(|value| value.as_str())
+        .unwrap_or("operator");
+    let owner_id = body
+        .get("owner_id")
+        .and_then(|value| value.as_str())
+        .unwrap_or("operator");
+    let kind = body
+        .get("kind")
+        .and_then(|value| value.as_str())
+        .unwrap_or("watchdog");
+    let interval_secs = body
+        .get("interval_secs")
+        .and_then(serde_json::Value::as_i64)
+        .unwrap_or(60);
+    match state.daemons.create(crate::daemon::NewDaemon {
+        display_name: display_name.to_owned(),
+        owner_kind: owner_kind.to_owned(),
+        owner_id: owner_id.to_owned(),
+        kind: kind.to_owned(),
+        job_json: body
+            .get("job")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!({}))
+            .to_string(),
+        interval_secs,
+        created_by: "operator".to_owned(),
+    }) {
+        Ok(daemon) => (StatusCode::CREATED, Json(daemon_json(&daemon))).into_response(),
+        Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
+    }
+}
+
+async fn daemon_detail(
+    State(state): State<Arc<AppState>>,
+    Path(daemon_id): Path<String>,
+) -> Response {
+    match state.daemons.get(&daemon_id) {
+        Ok(Some(daemon)) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(daemon_json(&daemon)),
+        )
+            .into_response(),
+        Ok(None) => refusal_response(StatusCode::NOT_FOUND, &Refusal::TaskNotFound),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn daemon_switch(
+    State(state): State<Arc<AppState>>,
+    Path(daemon_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(enabled) = body.get("enabled").and_then(serde_json::Value::as_bool) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    match state.daemons.set_enabled(&daemon_id, enabled) {
+        Ok(daemon) => (StatusCode::OK, Json(daemon_json(&daemon))).into_response(),
+        Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
+}
+
+async fn daemon_retire(
+    State(state): State<Arc<AppState>>,
+    Path(daemon_id): Path<String>,
+) -> Response {
+    match state.daemons.retire(&daemon_id) {
+        Ok(()) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({ "daemon_id": daemon_id, "state": "retired" })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
+}
+
+async fn supervisor_status(State(state): State<Arc<AppState>>) -> Response {
+    match crate::remote_supervisor::read_state(&state.db) {
+        Ok(supervisor) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "lane_started_at": supervisor.lane_started_at,
+                "last_tick_at": supervisor.last_tick_at,
+                "next_due_at": supervisor.next_due_at,
+                "backoff_ms": supervisor.backoff_ms,
+                "last_error_code": supervisor.last_error_code,
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }
 

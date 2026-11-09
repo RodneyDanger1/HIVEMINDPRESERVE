@@ -788,6 +788,47 @@ Migration {
         DROP TABLE IF EXISTS remote_agents;
     "#,
 },
+Migration {
+    version: 22,
+    name: "daemon_plane",
+    up: r#"
+        CREATE TABLE daemons (
+            daemon_id         TEXT PRIMARY KEY NOT NULL,
+            display_name      TEXT NOT NULL CHECK (length(display_name) BETWEEN 1 AND 120),
+            owner_kind        TEXT NOT NULL CHECK (owner_kind IN ('operator','hive','remote')),
+            owner_id          TEXT NOT NULL,
+            kind              TEXT NOT NULL CHECK (kind IN ('watchdog','relay','switch','satellite')),
+            job_json          TEXT NOT NULL DEFAULT '{}',
+            state             TEXT NOT NULL DEFAULT 'enrolled'
+                              CHECK (state IN ('enrolled','running','degraded','stopped','retired')),
+            interval_secs     INTEGER NOT NULL CHECK (interval_secs BETWEEN 5 AND 86400),
+            next_tick_at      TEXT,
+            last_tick_at      TEXT,
+            last_report_at    TEXT,
+            restart_attempts  INTEGER NOT NULL DEFAULT 0,
+            restart_window_at TEXT,
+            last_error_code   TEXT,
+            created_by        TEXT NOT NULL,
+            created_at        TEXT NOT NULL,
+            retired_at        TEXT
+        );
+        CREATE INDEX idx_daemons_state ON daemons(state, next_tick_at);
+        CREATE INDEX idx_daemons_owner ON daemons(owner_kind, owner_id);
+
+        CREATE TABLE daemon_reports (
+            report_id    TEXT PRIMARY KEY NOT NULL,
+            daemon_id    TEXT NOT NULL REFERENCES daemons(daemon_id) ON DELETE CASCADE,
+            outcome      TEXT NOT NULL,
+            detail_json  TEXT NOT NULL DEFAULT '{}',
+            created_at   TEXT NOT NULL
+        );
+        CREATE INDEX idx_daemon_reports_daemon ON daemon_reports(daemon_id, created_at);
+    "#,
+    down: r#"
+        DROP TABLE IF EXISTS daemon_reports;
+        DROP TABLE IF EXISTS daemons;
+    "#,
+},
 ];
 
 /// Database errors; each maps to a named refusal for the wire.
@@ -1402,10 +1443,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 21);
-        assert_eq!(database.migrate().expect("second migrate"), 21);
+        assert_eq!(database.migrate().expect("first migrate"), 22);
+        assert_eq!(database.migrate().expect("second migrate"), 22);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 21);
+        assert_eq!(applied.len(), 22);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1442,7 +1483,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 21);
+        assert_eq!(database.migrate().expect("re-migrate"), 22);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1458,7 +1499,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 21);
+        assert_eq!(reopened.schema_version().expect("version"), 22);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1613,7 +1654,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 21);
+        assert_eq!(database.migrate().expect("migrate"), 22);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1648,7 +1689,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 21);
+        assert_eq!(database.migrate().expect("re-migrate"), 22);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1672,7 +1713,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (22, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (23, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1682,12 +1723,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 22,
-                latest: 21
+                current: 23,
+                latest: 22
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 22);
+        assert_eq!(database.schema_version().expect("version"), 23);
     }
 
     #[test]

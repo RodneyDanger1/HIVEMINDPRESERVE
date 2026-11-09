@@ -9,6 +9,7 @@ import { useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { EmptyState, PanelTitle } from './StatePack';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DaemonPanel } from './DaemonPanel';
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -522,6 +523,7 @@ export function RemotePanel() {
             </section>
           </div>
         ) : null}
+        <DaemonPanel />
       </div>
       <ConfirmDialog
         open={confirmRevoke}

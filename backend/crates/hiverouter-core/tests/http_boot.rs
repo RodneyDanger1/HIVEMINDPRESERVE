@@ -583,7 +583,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
-    assert_eq!(health["database"]["schema_version"], 21);
+    assert_eq!(health["database"]["schema_version"], 22);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));
@@ -915,6 +915,61 @@ async fn remote_create_without_token_is_refused() {
     )
     .await;
     assert_eq!(status, 401, "tokenless create: {body}");
+}
+
+#[tokio::test]
+async fn daemon_lifecycle_is_durable_and_not_a_task() {
+    let temp = tempfile::tempdir().expect("temp dir");
+    let server = TestServer::start(&temp).await;
+    let token = server.state.session.token();
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        "/api/daemons",
+        Some(&serde_json::json!({
+            "display_name": "Hive watchdog",
+            "kind": "watchdog",
+            "interval_secs": 60
+        }).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 201, "daemon create: {body}");
+    let daemon: Value = serde_json::from_str(&body).expect("daemon JSON");
+    assert_eq!(daemon["state"], "enrolled");
+    let daemon_id = daemon["daemon_id"].as_str().expect("daemon id").to_owned();
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/daemons/{daemon_id}/switch"),
+        Some(&serde_json::json!({"enabled": true}).to_string()),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "switch: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("switched")["state"],
+        "running"
+    );
+    let (status, body) = http_get(server.addr, "/api/daemons").await;
+    assert_eq!(status, 200, "daemon list: {body}");
+    assert_eq!(serde_json::from_str::<Value>(&body).expect("list")["count"], 1);
+    let (status, body) = http_get(server.addr, "/api/supervisor").await;
+    assert_eq!(status, 200, "supervisor status: {body}");
+    let (status, body) = http_json(
+        server.addr,
+        "POST",
+        &format!("/api/daemons/{daemon_id}/retire"),
+        Some("{}"),
+        Some(token),
+    )
+    .await;
+    assert_eq!(status, 200, "retire: {body}");
+    assert_eq!(
+        serde_json::from_str::<Value>(&body).expect("retired")["state"],
+        "retired"
+    );
+    assert!(server.state.engine.store.list_runs(10).expect("runs").is_empty());
 }
 
 #[tokio::test]

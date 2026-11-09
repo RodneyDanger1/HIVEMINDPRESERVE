@@ -11,6 +11,7 @@ pub mod caps;
 pub mod checks;
 pub mod config;
 pub mod context;
+pub mod daemon;
 pub mod db;
 pub mod entities;
 pub mod execution;
@@ -23,6 +24,7 @@ pub mod prompts;
 pub mod provider_executor;
 pub mod recovery;
 pub mod remote;
+pub mod remote_supervisor;
 pub mod run_state;
 pub mod snapshot;
 pub mod static_ui;
@@ -37,6 +39,7 @@ pub use caps::Caps;
 pub use checks::{run_checks, Check};
 pub use config::{Config, ConfigError};
 pub use context::{ContextStore, ScopedContext};
+pub use daemon::{Daemon, DaemonReport, DaemonStore, NewDaemon};
 pub use db::{Database, DbError, Migration, ToolTurnRecord, MIGRATIONS};
 pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
 pub use execution::{
@@ -53,6 +56,7 @@ pub use recovery::{recover_on_boot, RecoveryReport};
 pub use remote::{
     Device, DeviceAction, RemoteAgent, RemoteAudit, RemoteGrant, RemoteStore,
 };
+pub use remote_supervisor::{RemoteSupervisor, SupervisorState};
 pub use run_state::{
     apply_run, apply_task, can_apply_run, can_apply_task, Effect, RunStateError, RunTransition,
     Scope, StateEvent, TaskTransition,
