@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `8d99f79`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `A3A30B07C1535070B4781091C73DA5045DA4D3E0025E9E9EE277EE44669232EF`
+Final repair HEAD at report write: `40ba553`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C`
 
 ## 1. What HiveMind is supposed to be
 
@@ -114,6 +114,7 @@ TRUTH:
 | `6a1a1fa` | Snapshot | terminal runs retain the newest 16 revisions; old files/index rows are pruned, latest recovery point preserved |
 | `ecee300` | Engine hygiene | terminal runs release metrics, delivered-A2A ids and queued spawn ids |
 | `8d99f79` | Provider settings | profile replacement keeps a backup, restores on failure, removes temp/backup on success |
+| `40ba553` | Engine hygiene | task-context store is bounded to 1024 entries with oldest-first eviction |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -124,7 +125,7 @@ the runtime `billing`/`endpoint`/`parallel_dispatch` fields.
 ```text
 Backend:
   cargo test --workspace --locked
-  EXIT=0  SUITES=49  PASSED=608  FAILED=0  IGNORED=2
+  EXIT=0  SUITES=49  PASSED=609  FAILED=0  IGNORED=2
 
 Web:
   npm.cmd run typecheck  -> exit 0
@@ -133,7 +134,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 A3A30B07C1535070B4781091C73DA5045DA4D3E0025E9E9EE277EE44669232EF
+  target/release/hiverouter.exe SHA-256 275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
