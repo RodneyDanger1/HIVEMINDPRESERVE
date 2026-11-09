@@ -550,6 +550,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/memory/clear", post(clear_run_memory))
         .route("/api/memory/trust", post(promote_memory))
         .route("/api/memory/journal", get(memory_journal))
+        .route("/api/memory/journal/verify", get(verify_memory_journal))
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/approvals", get(pending_approvals))
         .route("/api/templates", get(templates))
@@ -1401,6 +1402,32 @@ async fn memory_journal(
                         "created_at": created_at,
                     })
                 }).collect::<Vec<_>>(),
+            })),
+        )
+            .into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+/// `GET /api/memory/journal/verify?run_id=` — recomputes the journal hash chain.
+async fn verify_memory_journal(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    let Some(raw) = query.get("run_id") else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(run_id) = raw.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    match state.engine.store.verify_memory_journal(run_id) {
+        Ok(verification) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "run_id": run_id.to_string(),
+                "valid": verification.valid,
+                "checked": verification.checked,
+                "unchained": verification.unchained,
             })),
         )
             .into_response(),

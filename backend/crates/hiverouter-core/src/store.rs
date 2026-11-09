@@ -15,6 +15,34 @@ fn map(error: DbError) -> Refusal {
     error.refusal()
 }
 
+/// Result of verifying one run's journal hash chain.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JournalVerification {
+    /// True only when every chained row links and rehashes correctly.
+    pub valid: bool,
+    /// Chained rows checked.
+    pub checked: usize,
+    /// Legacy rows with no hash.
+    pub unchained: usize,
+}
+
+fn journal_event_hash(
+    previous: &str,
+    run_id: &str,
+    bank_id: &str,
+    entry_id: &str,
+    action: &str,
+    actor_kind: &str,
+    actor_id: &str,
+    detail_json: &str,
+    created_at: &str,
+) -> String {
+    let canonical = format!(
+        "{previous}|{run_id}|{bank_id}|{entry_id}|{action}|{actor_kind}|{actor_id}|{detail_json}|{created_at}"
+    );
+    hiverouter_tools::sha256::sha256_hex(canonical.as_bytes())
+}
+
 /// Appends one hash-chained journal row for a run.
 fn append_memory_journal(
     connection: &rusqlite::Connection,
@@ -37,11 +65,17 @@ fn append_memory_journal(
         )
         .optional()?;
     let prev = previous.as_deref().unwrap_or("");
-    let canonical = format!(
-        "{prev}|{run_id}|{bank_id}|{entry_id}|{action}|{actor_kind}|{}|{detail_json}|{created_at}",
-        actor_id.unwrap_or("")
+    let hash = journal_event_hash(
+        prev,
+        run_id,
+        bank_id,
+        entry_id,
+        action,
+        actor_kind,
+        actor_id.unwrap_or(""),
+        detail_json,
+        created_at,
     );
-    let hash = hiverouter_tools::sha256::sha256_hex(canonical.as_bytes());
     connection.execute(
         "INSERT INTO memory_journal
          (run_id, bank_id, entry_id, action, actor_kind, actor_id,
@@ -1641,6 +1675,85 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Verifies the run's chained journal rows.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn verify_memory_journal(
+        &self,
+        run_id: RunId,
+    ) -> Result<JournalVerification, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT run_id, bank_id, entry_id, action, actor_kind, actor_id,
+                            detail_json, created_at, prev_hash, event_hash
+                     FROM memory_journal WHERE run_id = ?1 ORDER BY seq ASC",
+                )?;
+                let rows = statement.query_map(params![run_id.to_string()], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, Option<String>>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, Option<String>>(5)?,
+                        row.get::<_, String>(6)?,
+                        row.get::<_, String>(7)?,
+                        row.get::<_, Option<String>>(8)?,
+                        row.get::<_, Option<String>>(9)?,
+                    ))
+                })?;
+                let mut previous: Option<String> = None;
+                let mut checked = 0usize;
+                let mut unchained = 0usize;
+                let mut valid = true;
+                for row in rows {
+                    let (
+                        run,
+                        bank,
+                        entry,
+                        action,
+                        actor_kind,
+                        actor_id,
+                        detail,
+                        created,
+                        prev_hash,
+                        event_hash,
+                    ) = row?;
+                    let Some(event_hash) = event_hash else {
+                        unchained += 1;
+                        continue;
+                    };
+                    let prev_hash = prev_hash.unwrap_or_default();
+                    let expected = journal_event_hash(
+                        previous.as_deref().unwrap_or(""),
+                        &run,
+                        bank.as_deref().unwrap_or(""),
+                        entry.as_deref().unwrap_or(""),
+                        &action,
+                        &actor_kind,
+                        actor_id.as_deref().unwrap_or(""),
+                        &detail,
+                        &created,
+                    );
+                    if prev_hash != previous.as_deref().unwrap_or("")
+                        || event_hash != expected
+                    {
+                        valid = false;
+                    }
+                    previous = Some(event_hash);
+                    checked += 1;
+                }
+                Ok(JournalVerification {
+                    valid,
+                    checked,
+                    unchained,
+                })
+            })
+            .map_err(map)
+    }
+
     /// Reads the bounded bank set for one task: own branch, parent branch, and
     /// the run bank. Sibling/foreign-run banks are not addressable.
     ///
@@ -2499,6 +2612,10 @@ mod tests {
         assert!(chain[0].0.is_none());
         assert_eq!(chain[1].0.as_deref(), Some(chain[0].1.as_str()));
         assert_ne!(chain[0].1, chain[1].1);
+        let verification = store.verify_memory_journal(run.id).expect("verify");
+        assert!(verification.valid);
+        assert_eq!(verification.checked, 2);
+        assert_eq!(verification.unchained, 0);
     }
 
     #[test]

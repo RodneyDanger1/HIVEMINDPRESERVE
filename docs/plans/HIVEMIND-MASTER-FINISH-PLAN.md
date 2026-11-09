@@ -387,3 +387,8 @@ Not delivered and must not be claimed:
 - Store tests prove the second entry links to the first and hashes differ.
 - `memory_journal_chain` exposes the chain for verification. Legacy v15 rows stay unchained and are identifiable by NULL hashes.
 - GitNexus detect-changes flagged this schema/store diff critical/18 affected flows; full workspace gate is green. Impact lookup for `record_agent_memory_scoped` returned UNKNOWN (not found), so no clean impact claim is made.
+### P4 journal verification
+
+- `GET /api/memory/journal/verify?run_id=` recomputes the chain and returns `valid`, `checked`, and `unchained`; legacy rows are counted separately.
+- Store test asserts a two-entry chain verifies clean.
+- GitNexus detect-changes again reported critical/26 flows for this store/http diff; the full workspace gate is green. Index output names unrelated symbols, so it is treated as a warning, not proof of impact.
