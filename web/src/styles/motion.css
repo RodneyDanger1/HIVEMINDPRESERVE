@@ -466,3 +466,36 @@
 [data-ambient-motion="calm"] .motion-bee-ride {
   animation-duration: 10s;
 }
+/* ------------------------------------------------------------------------- */
+/* 4. Honeycomb gold ripple - a soft vertical column of honey light travels  */
+/* left-to-right across the grid behind the hive. Duration is randomized by  */
+/* HiveField between 12 and 30 seconds for each cycle.                       */
+/* ------------------------------------------------------------------------- */
+@keyframes honeycomb-ripple-wave {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  84% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(430%);
+    opacity: 0;
+  }
+}
+
+.honeycomb-ripple {
+  animation-name: honeycomb-ripple-wave;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+  animation-iteration-count: 1;
+  will-change: transform, opacity;
+}
+
+[data-ambient-motion="off"] .honeycomb-ripple {
+  display: none !important;
+}

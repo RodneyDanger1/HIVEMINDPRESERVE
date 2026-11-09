@@ -20,8 +20,46 @@ const TABS: readonly { id: SettingsTab; label: string; icon: SettingsIconName }[
 
 type SettingsIconName = 'hive' | 'signal' | 'sliders' | 'pulse' | 'grid';
 
-function SettingsIcon({ name }: { name: SettingsIconName }) {
+const SHORTCUTS: readonly { readonly keys: readonly string[]; readonly action: string }[] = [
+  { keys: ['Ctrl', '0'], action: 'Recentre the hive' },
+  { keys: ['Ctrl', '='], action: 'Zoom in' },
+  { keys: ['Ctrl', '-'], action: 'Zoom out' },
+  { keys: ['Ctrl', '1'], action: 'Fit the swarm' },
+  { keys: ['Enter'], action: 'Submit the chat prompt' },
+  { keys: ['Shift', 'Enter'], action: 'New line in the composer' },
+  { keys: ['Esc'], action: 'Close a confirmation or approval' },
+  { keys: ['←', '→'], action: 'Move between tabs' },
+];
+
+function ShortcutCard() {
   return (
+    <section className="surface-panel mt-3 rounded-[var(--radius-md)] p-3">
+      <div className="type-label text-ink-500">Keyboard</div>
+      <p className="type-body-l mt-1 text-ink-500">
+        Shortcuts are active only when focus is outside an input, except in the composer.
+      </p>
+      <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+        {SHORTCUTS.map((shortcut) => (
+          <div key={shortcut.action} className="contents">
+            <dt className="type-mono-meta text-meta">{shortcut.action}</dt>
+            <dd className="flex gap-1">
+              {shortcut.keys.map((key) => (
+                <kbd
+                  key={key}
+                  className="type-mono-meta rounded-[var(--radius-xs)] border border-hairline bg-panel-alt px-1.5 py-0.5 text-[9px] text-ink-800"
+                >
+                  {key}
+                </kbd>
+              ))}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+function SettingsIcon({ name }: { name: SettingsIconName }) {  return (
     <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
       {name === 'hive' ? (
         <path d="M8 1.5 14 5v6l-6 3.5L2 11V5Z M8 4.5 11.5 6.4v3.2L8 11.5 4.5 9.6V6.4Z" fill="none" stroke="currentColor" strokeWidth="1.1" />
@@ -251,6 +289,7 @@ export function SettingsPanel() {
               </p>
               {keySection}
               {healthSection}
+              <ShortcutCard />
             </>
           ) : null}
 

@@ -27,6 +27,61 @@ interface Detail {
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
+const STATE_TONE: Readonly<Record<string, string>> = {
+  completed: 'var(--color-verify)',
+  running: 'var(--color-honey-500)',
+  thinking: 'var(--color-honey-500)',
+  streaming: 'var(--color-honey-500)',
+  queued: 'var(--color-hairline)',
+  failed: 'var(--color-signal)',
+  killed: 'var(--color-signal)',
+  interrupted: 'var(--color-signal)',
+  cancelled: 'var(--color-signal)',
+  awaiting_approval: 'var(--color-honey-700)',
+};
+
+function StateBar({ counts }: { readonly counts: Readonly<Record<string, number>> }) {
+  const entries = Object.entries(counts).filter(([, count]) => count > 0);
+  const total = entries.reduce((sum, [, count]) => sum + count, 0);
+  if (total === 0) {
+    return null;
+  }
+  return (
+    <div className="mt-2">
+      <div
+        role="img"
+        aria-label={`Task state distribution: ${entries
+          .map(([state, count]) => `${state} ${count}`)
+          .join(', ')}`}
+        className="flex h-2 w-full overflow-hidden rounded-[var(--radius-pill)] bg-hairline"
+      >
+        {entries.map(([state, count]) => (
+          <span
+            key={state}
+            title={`${state}: ${count}`}
+            style={{
+              width: `${(count / total) * 100}%`,
+              background: STATE_TONE[state] ?? 'var(--color-ink-500)',
+            }}
+          />
+        ))}
+      </div>
+      <ul className="type-mono-meta mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[8px] text-meta">
+        {entries.map(([state, count]) => (
+          <li key={state} className="flex items-center gap-1">
+            <span
+              aria-hidden="true"
+              className="h-[5px] w-[5px] rounded-full"
+              style={{ background: STATE_TONE[state] ?? 'var(--color-ink-500)' }}
+            />
+            {state} {count}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function RunDetailPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
   const [status, setStatus] = useState<Status>('idle');
@@ -120,6 +175,7 @@ export function RunDetailPanel() {
               .map(([state, count]) => `${state} ${count}`)
               .join(' · ')}
           </div>
+          <StateBar counts={detail.state_counts} />
           <div className="type-mono-meta text-meta">
             usage: {detail.usage?.total_tokens ?? 'unreported'}
           </div>

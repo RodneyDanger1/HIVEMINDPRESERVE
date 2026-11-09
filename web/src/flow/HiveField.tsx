@@ -9,7 +9,13 @@
  * styles/motion.css (`motion-honeycomb-glow`, `motion-hive-sheen`) and every
  * colour is a CSS variable.
  */
+import { useState } from 'react';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
+
+/** Random quiet interval for the honeycomb gold ripple: 12–30 seconds inclusive. */
+function randomRippleSeconds(): number {
+  return 12 + Math.floor(Math.random() * 19);
+}
 
 /** Figure-eight flight path around the 620x660 hive; decorative only. */
 const FIGURE_EIGHT_PATH =
@@ -66,6 +72,8 @@ const SHEEN_BOX_ANCHORED = `${SHEEN_BOX} left-0 top-0`;
 
 export function HiveField({ center = true }: { center?: boolean }) {
   const reduced = useAppReducedMotion();
+  const [rippleSeconds, setRippleSeconds] = useState(randomRippleSeconds);
+  const [rippleCycle, setRippleCycle] = useState(0);
   // The hive is placed as a 620x660 viewport at 50%/50% of the field and
   // pulled back by half its box, so no measurement or JS is involved.
   const hiveOrigin = center ? '50%' : 0;
@@ -87,6 +95,15 @@ export function HiveField({ center = true }: { center?: boolean }) {
               strokeWidth="1"
             />
           </pattern>
+          {/* A soft vertical column of honey light that travels left to right. */}
+          <linearGradient id="hivefield-ripple" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--color-honey-300)" stopOpacity="0" />
+            <stop offset="28%" stopColor="var(--color-honey-300)" stopOpacity="0.08" />
+            <stop offset="48%" stopColor="var(--color-honey-100)" stopOpacity="0.22" />
+            <stop offset="62%" stopColor="var(--color-honey-200)" stopOpacity="0.14" />
+            <stop offset="86%" stopColor="var(--color-honey-300)" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="var(--color-honey-300)" stopOpacity="0" />
+          </linearGradient>
           {/* Lobe body: cream core high on the lobe, gold shoulders, honey-700 silhouette. */}
           <radialGradient id="hivefield-lobe" cx="50%" cy="34%" r="60%">
             <stop offset="0%" stopColor="var(--color-honey-100)" stopOpacity="0.98" />
@@ -140,6 +157,22 @@ export function HiveField({ center = true }: { center?: boolean }) {
         </defs>
 
         <rect width="100%" height="100%" fill="url(#hivefield-honeycomb)" opacity="0.9" />
+        {reduced ? null : (
+          <rect
+            key={rippleCycle}
+            className="honeycomb-ripple"
+            x="-30%"
+            y="0"
+            width="30%"
+            height="100%"
+            fill="url(#hivefield-ripple)"
+            style={{ animationDuration: `${rippleSeconds}s` }}
+            onAnimationEnd={() => {
+              setRippleSeconds(randomRippleSeconds());
+              setRippleCycle((cycle) => cycle + 1);
+            }}
+          />
+        )}
         <use
           href="#hivefield-hive"
           x={hiveOrigin}

@@ -57,6 +57,9 @@ describe('HiveMind spatial design parity pins', () => {
     const hive = sourceOf('/flow/HiveField.tsx');
     expect(hive).toContain('FIGURE_EIGHT_PATH');
     expect(hive).toContain('AmbientBee');
+    expect(hive).toContain('honeycomb-ripple');
+    expect(settings).toContain('SHORTCUTS');
+    expect(sourceOf('/panels/RunDetailPanel.tsx')).toContain('StateBar');
   });
 
   it('has no user-facing HiveRouter or mojibake in the UI source', () => {
