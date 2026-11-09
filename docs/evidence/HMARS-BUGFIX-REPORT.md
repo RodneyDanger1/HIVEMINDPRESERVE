@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `0ecb419`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `8E71D566C2DF370EDB6CE4E5C9DCB7554968B4B669ABE0E1E60302B33219BF62`
+Final repair HEAD at report write: `ad01fdf`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `79D0374467A561E59FDB859AA376C877604CCBE5C9A974C34C8152D9BCE36149`
 
 ## 1. What HiveMind is supposed to be
 
@@ -106,6 +106,7 @@ TRUTH:
 | `b0b4b9d` | Core | real per-run provider call cap, hierarchy checks, A2A deadline/cap/context, bus ordering, snapshot lock, provider compatibility |
 | `4cf35f6` | Core/UI | transport-failure classification, root remote device, final hierarchy and chat fit |
 | `0ecb419` | Core | memory bank HTTP reads are run-scoped; terminal run transitions cannot be resurrected |
+| `ad01fdf` | Provider settings | saved non-secret provider profile API + Settings provider editor; external profile applies on restart |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -125,7 +126,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 8E71D566C2DF370EDB6CE4E5C9DCB7554968B4B669ABE0E1E60302B33219BF62
+  target/release/hiverouter.exe SHA-256 79D0374467A561E59FDB859AA376C877604CCBE5C9A974C34C8152D9BCE36149
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
@@ -143,6 +144,16 @@ provider was called.
 ## 5. Provider option (AMD Token Lab / DeepSeek)
 
 The provider is a saved, non-secret profile plus a separately stored key:
+
+- Settings → Provider → **Save provider profile** writes
+  `%LOCALAPPDATA%\HiveMind\provider.json` through
+  `POST /api/provider/profile` and reports `restart_required:true`.
+- The API key is never in that file. It is DPAPI-protected by
+  `tools/set-provider-key.ps1` (the desktop launcher injects it), or supplied
+  through the process environment. Direct `hiverouter.exe` launches need the
+  environment or the launcher.
+- `GET /api/provider/profile` returns the saved profile plus the active
+  endpoint/model, without secrets.
 
 ```powershell
 # 1. Save the endpoint/model profile (no secret)
