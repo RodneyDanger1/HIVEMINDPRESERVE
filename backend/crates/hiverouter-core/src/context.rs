@@ -213,16 +213,34 @@ pub fn switch_context(
 }
 
 /// In-memory context owner (one context per task).
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ContextStore {
     contexts: Mutex<HashMap<TaskId, ScopedContext>>,
+    insertion: Mutex<std::collections::VecDeque<TaskId>>,
+    capacity: usize,
+}
+
+impl Default for ContextStore {
+    fn default() -> Self {
+        Self::with_capacity(1_024)
+    }
 }
 
 impl ContextStore {
-    /// Creates an empty store.
+    /// Creates an empty store with a bounded task-context capacity.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates an empty store retaining at most `capacity` task contexts.
+    #[must_use]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            contexts: Mutex::new(HashMap::new()),
+            insertion: Mutex::new(std::collections::VecDeque::with_capacity(capacity.max(1))),
+            capacity: capacity.max(1),
+        }
     }
 
     /// Stores a task's context.
@@ -231,7 +249,21 @@ impl ContextStore {
     /// `E_INTERNAL_ERROR` if the store lock is poisoned.
     pub fn set(&self, task_id: TaskId, context: ScopedContext) -> Result<(), Refusal> {
         let mut contexts = self.contexts.lock().map_err(|_| Refusal::InternalError)?;
+        let is_new = !contexts.contains_key(&task_id);
         contexts.insert(task_id, context);
+        if is_new {
+            let mut insertion = self
+                .insertion
+                .lock()
+                .map_err(|_| Refusal::InternalError)?;
+            insertion.push_back(task_id);
+            while contexts.len() > self.capacity {
+                let Some(evicted) = insertion.pop_front() else {
+                    break;
+                };
+                contexts.remove(&evicted);
+            }
+        }
         Ok(())
     }
 
@@ -286,6 +318,21 @@ impl ContextStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn context_store_is_bounded_and_evicts_oldest() {
+        let store = ContextStore::with_capacity(2);
+        let first = TaskId::new();
+        let second = TaskId::new();
+        let third = TaskId::new();
+        store.set(first, ScopedContext::new(None)).expect("first");
+        store.set(second, ScopedContext::new(None)).expect("second");
+        store.set(third, ScopedContext::new(None)).expect("third");
+        assert_eq!(store.len(), 2);
+        assert!(store.get(first).expect("get").is_none());
+        assert!(store.get(second).expect("get").is_some());
+        assert!(store.get(third).expect("get").is_some());
+    }
 
     #[test]
     fn switch_clears_old_parent_facts_and_injects_new_ones() {
