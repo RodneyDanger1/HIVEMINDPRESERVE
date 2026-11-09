@@ -1,6 +1,6 @@
 # HiveMind Agent-Wave Report Index
 
-Baseline: HEAD `ec45b2b`; offline evidence at `ec45b2bd` (`cargo test --workspace` 549 passed/2 ignored, web 189/189, build 0); no e2e/live run; provider key disabled.
+Baseline: HEAD `ec45b2b`; offline evidence at `ec45b2bd` (`cargo test --workspace` 550 passed/2 ignored, web 189/189, build 0); no e2e/live run; provider key disabled.
 This file compiles the read-only seats and points to the detailed reports. Findings are source-read unless a test/build is quoted.
 
 ## Detailed reports

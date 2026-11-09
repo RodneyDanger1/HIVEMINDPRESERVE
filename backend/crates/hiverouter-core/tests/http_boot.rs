@@ -571,7 +571,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
-    assert_eq!(health["database"]["schema_version"], 18);
+    assert_eq!(health["database"]["schema_version"], 19);
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));

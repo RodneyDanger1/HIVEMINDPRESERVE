@@ -1,6 +1,6 @@
 # HiveMind Master Finish Plan
 
-Baseline: HEAD `ec45b2b` (clean tree). Latest offline gate: `cargo test --workspace --locked` 549 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
+Baseline: HEAD `ec45b2b` (clean tree). Latest offline gate: `cargo test --workspace --locked` 550 passed / 0 failed / 2 ignored across 42 suites, web typecheck 0, web 189/189, build 0, CLI 0. Evidence: `docs/evidence/gate-4113713a-offline.json`. Prior P0 evidence at `8a19d0b` remains historical. Offline only; no server/UI/provider run.
 This plan is the merge point for the team reports in `docs/research/`, `docs/audit/`, `docs/ui/figcraft/`, and the independent analysis seats.
 
 ## Current verdict
@@ -413,3 +413,8 @@ Not delivered and must not be claimed:
 - `POST /api/memory/prune` is token-gated, refuses active runs, requires confirm, and defaults to dry-run.
 - Test quarantines a row, checks dry-run=1, then prunes and proves the active row remains.
 - Not delivered: age policy, automatic sweeps, snapshot/journal pruning, UI control.
+### P3 single durable owner
+
+- v19 adds a partial unique index on `tasks(run_id) WHERE ownership_mode='run'`; a second HyperAgent owner for a run is refused by the database.
+- Test inserts two planner tasks and proves the second insert fails.
+- GitNexus detect-changes reported schema/store symbols and affected flows; full gate is green, but no clean-risk claim is made.

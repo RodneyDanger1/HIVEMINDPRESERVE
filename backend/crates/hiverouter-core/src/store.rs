@@ -2541,6 +2541,36 @@ mod tests {
     }
 
     #[test]
+    fn run_accepts_only_one_durable_owner() {
+        let store = store();
+        let run = store
+            .create_run("p", "one owner", AgentState::Running)
+            .expect("run");
+        let first = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "planner".to_owned(),
+            depth: 0,
+            spawn_seq: 0,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        let second = TaskRecord {
+            id: TaskId::new(),
+            run_id: run.id,
+            parent_task_id: None,
+            role: "planner".to_owned(),
+            depth: 0,
+            spawn_seq: 1,
+            state: AgentState::Queued,
+            rev: 0,
+        };
+        store.insert_task(&first).expect("first owner");
+        assert!(store.insert_task(&second).is_err(), "second owner must be refused");
+    }
+
+    #[test]
     fn task_ownership_is_persisted_by_class() {
         let store = store();
         let run = store

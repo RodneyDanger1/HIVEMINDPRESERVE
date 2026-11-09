@@ -13,7 +13,7 @@ use rusqlite::Connection;
 use crate::sha256::sha256_hex;
 
 /// Newest schema this binary understands. Keep in step with core migrations.
-pub const SUPPORTED_SCHEMA: i64 = 18;
+pub const SUPPORTED_SCHEMA: i64 = 19;
 
 /// One backup/restore receipt.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -218,7 +218,7 @@ mod tests {
         connection
             .execute_batch(
                 "CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL);
-                 INSERT INTO schema_migrations VALUES (19, 'future', 'now');",
+                 INSERT INTO schema_migrations VALUES (20, 'future', 'now');",
             )
             .expect("future schema");
         assert_eq!(
