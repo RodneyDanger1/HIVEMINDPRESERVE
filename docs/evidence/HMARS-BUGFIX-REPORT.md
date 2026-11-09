@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `4cf35f6`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `CD8ED0B665A976103DB2A468AFA2405BDD000D322D44A44D3C3596EEB3BECDC3`
+Final repair HEAD at report write: `0ecb419`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `8E71D566C2DF370EDB6CE4E5C9DCB7554968B4B669ABE0E1E60302B33219BF62`
 
 ## 1. What HiveMind is supposed to be
 
@@ -105,6 +105,7 @@ TRUTH:
 | `6fb4bcd` | Memory/recovery | fail-closed banks, scoped bank reads, validated writes, multi-run recovery repair |
 | `b0b4b9d` | Core | real per-run provider call cap, hierarchy checks, A2A deadline/cap/context, bus ordering, snapshot lock, provider compatibility |
 | `4cf35f6` | Core/UI | transport-failure classification, root remote device, final hierarchy and chat fit |
+| `0ecb419` | Core | memory bank HTTP reads are run-scoped; terminal run transitions cannot be resurrected |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -124,7 +125,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 CD8ED0B665A976103DB2A468AFA2405BDD000D322D44A44D3C3596EEB3BECDC3
+  target/release/hiverouter.exe SHA-256 8E71D566C2DF370EDB6CE4E5C9DCB7554968B4B669ABE0E1E60302B33219BF62
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
@@ -172,10 +173,13 @@ Environment variables still override the saved profile:
 - **A2A audit/attempt counter:** parent answer now receives the parent scoped
   context and counts against the run call cap, but there is no A2A audit row
   or persisted attempt counter (needs a migration).
-- **Memory HTTP scoping:** store has `memory_entries_for_bank_scoped`, but the
-  HTTP entry route still calls the unscoped read; raw full access is still a
-  loopback operator surface. Summary `raw_access` remains false while bounded
-  values are returned.
+- **Memory HTTP scoping:** the bank entry route now requires `run_id` and uses
+  `memory_entries_for_bank_scoped`; raw full access remains a loopback operator
+  surface. Summary returns bounded values with `bounded_values:true` and
+  `value_truncated_at:512`.
+- **Run transition resurrection:** `set_run_status` now refuses any
+  terminal-to-nonterminal transition with `E_RUN_TERMINAL` and is idempotent
+  for the same terminal status.
 - **Session token exposure:** `/api/session` still returns the token to a
   loopback peer with no Origin; read routes remain un-tokenized. Host guard is
   present. Needs a launcher-secret design.
