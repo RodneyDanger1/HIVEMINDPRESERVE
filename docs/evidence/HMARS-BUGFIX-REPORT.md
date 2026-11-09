@@ -5,7 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `2021619`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C`
+Release binary: `target/release/hiverouter.exe` SHA-256 `275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C`  
+Portable package: `dist/HiveMind.zip` SHA-256 `19FE249C81BB49FAF1756D2C51C2C0B532A7ED0CC499FDAE4157B87FCFDD04AB`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `FB62E6C70B7F6A3AAC61B3A46DEE9CAC2BA8CE13FAD4DF38CA0235F3B78E6402`
 
 ## 1. What HiveMind is supposed to be
 
@@ -143,6 +145,8 @@ Smoke (no provider key, deliberately degraded):
                       provider.key_present false,
                       provider.endpoint "deepseek", billing "deepseek_usd"
   UI screenshot: docs/evidence/live/ui-final2.png
+  Portable package: dist/HiveMind/{HiveMind.exe,hiverouter.exe,README.txt}
+  Portable server smoke: health "degraded", schema 22, port closed after stop
   Server stopped; port 8099 closed.
 ```
 
