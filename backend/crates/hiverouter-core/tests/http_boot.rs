@@ -584,6 +584,16 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
     assert_eq!(health["database"]["schema_version"], 22);
+    let (status, diagnosis) = http_get(server.addr, "/diagnose").await;
+    assert_eq!(status, 200, "diagnose: {diagnosis}");
+    let diagnosis: Value = serde_json::from_str(&diagnosis).expect("diagnose JSON");
+    assert_eq!(diagnosis["pid"], health["pid"]);
+    assert_eq!(diagnosis["boot_id"], health["boot_id"]);
+    assert!(
+        diagnosis["uptime_secs"].as_u64().unwrap_or(0)
+            >= health["uptime_secs"].as_u64().unwrap_or(0),
+        "diagnose uptime must come from the process, not a fresh state"
+    );
 
     let checks = health["checks"].as_array().expect("checks array");
     assert!(checks.iter().any(|check| check["name"] == "rustc" && check["ok"] == true));

@@ -1192,6 +1192,40 @@ mod tests {
     }
 
     #[test]
+    fn boot_reconciliation_never_replays_an_executing_action() {
+        let (store, db) = store_with_db();
+        let (_remote, device) = remote_and_light(&store);
+        let action = store
+            .request_action(
+                &device.device_id,
+                "power",
+                "toggle",
+                &json!({}),
+                None,
+                "idem-boot",
+                "operator",
+                "operator",
+            )
+            .expect("action");
+        db.with_connection(|connection| {
+            connection.execute(
+                "UPDATE device_actions SET status = 'executing' WHERE action_id = ?1",
+                params![action.action_id],
+            )?;
+            Ok(())
+        })
+        .expect("mark executing");
+        assert!(store.reconcile_on_boot().expect("reconcile") >= 1);
+        let stored = store.get_action(&action.action_id).expect("action").expect("row");
+        assert_eq!(stored.status, "interrupted");
+        assert_eq!(
+            store.reconcile_on_boot().expect("second reconcile"),
+            0,
+            "reconciliation is idempotent"
+        );
+    }
+
+    #[test]
     fn critical_action_waits_for_nonce_and_never_replays() {
         let store = store();
         let (remote, _device) = remote_and_light(&store);

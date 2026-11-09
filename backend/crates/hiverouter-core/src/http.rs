@@ -728,6 +728,12 @@ async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
                     "side_effects_enabled".to_owned(),
                     serde_json::Value::Bool(state.config.side_effects_enabled),
                 );
+                object.insert(
+                    "uptime_secs".to_owned(),
+                    serde_json::json!(state.started_at.elapsed().as_secs()),
+                );
+                object.insert("pid".to_owned(), serde_json::json!(std::process::id()));
+                object.insert("boot_id".to_owned(), serde_json::json!(state.boot_id));
             }
             (StatusCode::OK, Json(value)).into_response()
         }
