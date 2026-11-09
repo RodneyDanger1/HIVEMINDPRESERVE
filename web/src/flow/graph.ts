@@ -15,6 +15,12 @@ export interface CanvasNodeData extends Record<string, unknown> {
   readonly task: TaskRecord;
   readonly selected: boolean;
   readonly onSelect: (taskId: string) => void;
+  /**
+   * Which side of its parent this card sits on. Left branches attach their
+   * target to the right handle and their source to the left handle, so the
+   * parent->child edge never crosses the parent card.
+   */
+  readonly branchSide: 'left' | 'right' | 'center';
 }
 
 export type CanvasNode = Node<CanvasNodeData>;
@@ -364,6 +370,25 @@ export function buildNodes(
   interactive = true,
 ): CanvasNode[] {
   const positions = layoutTasks(tasks);
+  const centerX = (id: string): number => {
+    const position = positions[id];
+    return (position?.x ?? 0) + nodeSize(tasks[id].kind).width / 2;
+  };
+  const branchSideOf = (task: TaskRecord): 'left' | 'right' | 'center' => {
+    if (task.parentId === null) {
+      return 'center';
+    }
+    const parent = tasks[task.parentId];
+    if (parent === undefined) {
+      return 'center';
+    }
+    const parentCenter = parent.kind === 'hyperagent' ? HIVE_ORIGIN.x : centerX(parent.id);
+    const childCenter = centerX(task.id);
+    if (childCenter < parentCenter) {
+      return 'left';
+    }
+    return childCenter > parentCenter ? 'right' : 'center';
+  };
   return Object.values(tasks)
     .filter((task) => task.kind !== 'hyperagent')
     .map((task) => {
@@ -373,7 +398,12 @@ export function buildNodes(
         type: task.kind,
         position: positions[task.id] ?? { x: 0, y: 0 },
         style: { width: size.width, height: size.height },
-        data: { task, selected: task.id === selectedTaskId, onSelect },
+        data: {
+          task,
+          selected: task.id === selectedTaskId,
+          onSelect,
+          branchSide: branchSideOf(task),
+        },
         ariaLabel: `${task.label} (${task.kind}, ${task.state})`,
         draggable: interactive,
         selectable: interactive,

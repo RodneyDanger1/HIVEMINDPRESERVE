@@ -172,6 +172,20 @@ describe('hive layout: outward branches with collision avoidance', () => {
       seen.add(key);
     }
   });
+
+  it('attaches each card to the side it branches toward its parent from', () => {
+    const nodes = buildNodes(hive(), null, noop);
+    const sideOf = new Map(nodes.map((node) => [node.id, node.data.branchSide]));
+    expect(sideOf.get('S1')).toBe('left');
+    expect(sideOf.get('S2')).toBe('right');
+    // Descendants inherit their branch side, so edges run outward from both
+    // parents to children exactly like the SuperAgent -> Agent edge above.
+    expect(sideOf.get('A1')).toBe('left');
+    expect(sideOf.get('T1')).toBe('left');
+    expect(sideOf.get('A3')).toBe('right');
+    expect(sideOf.get('A4')).toBe('right');
+    expect(sideOf.has('H')).toBe(false);
+  });
 });
 
 describe('canvas visibility filters keep hierarchy edges mounted', () => {
@@ -232,6 +246,10 @@ describe('interaction invariants (static pins)', () => {
     const nodrag = nodesSource.match(/className="nodrag/g) ?? [];
     expect(buttons.length).toBeGreaterThan(0);
     expect(nodrag.length).toBeGreaterThanOrEqual(buttons.length);
+    // Handles follow the branch side so left-branch edges never cross the
+    // parent card.
+    expect(nodesSource).toContain('position={targetPosition}');
+    expect(nodesSource).toContain('position={sourcePosition}');
   });
 
   it('Canvas mounts the fixed anchor position and never overlays the HyperAgent', () => {

@@ -82,6 +82,12 @@ function Frame(props: {
   readonly radius?: number;
 }) {
   const selected = props.data.selected;
+  // On a left branch the child sits left of its parent: attach the target to
+  // the right edge and the source to the left edge so the parent->child edge
+  // stays outside the cards instead of crossing the parent.
+  const leftBranch = props.data.branchSide === 'left';
+  const targetPosition = leftBranch ? Position.Right : Position.Left;
+  const sourcePosition = leftBranch ? Position.Left : Position.Right;
   const style: CSSProperties = {
     borderColor: selected
       ? 'var(--color-ink-700)'
@@ -102,9 +108,9 @@ function Frame(props: {
       style={style}
       data-node-kind={props.data.task.kind}
     >
-      <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-honey-500" />
+      <Handle type="target" position={targetPosition} className="!h-2 !w-2 !border-0 !bg-honey-500" />
       {props.children}
-      <Handle type="source" position={Position.Right} className="!h-2 !w-2 !border-0 !bg-honey-500" />
+      <Handle type="source" position={sourcePosition} className="!h-2 !w-2 !border-0 !bg-honey-500" />
     </div>
   );
 }
