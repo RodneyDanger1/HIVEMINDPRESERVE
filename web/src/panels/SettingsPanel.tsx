@@ -1,6 +1,9 @@
 /** Settings: tabbed surface for provider health, appearance, diagnostics and FigCraft evidence. */
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore } from '../state/context';
+import { apiBaseUrl } from '../api/client';
+import { fetchWithBoundTimeout } from '../api/http';
+import { failureText, httpFailure } from '../api/failure';
 import { STRINGS } from '../state/strings';
 import { SWATCHES } from '../tokens/tokens';
 import { PanelTitle, LoadingState, ErrorState } from './StatePack';
@@ -107,6 +110,147 @@ function readAmbientPreference(): number {
   } catch {
     return 100;
   }
+}
+
+type ProviderProfile = {
+  readonly name?: string;
+  readonly base_url?: string;
+  readonly model?: string;
+  readonly wire_model?: string;
+};
+
+/**
+ * Saves the non-secret provider profile. The key is never typed here: it is
+ * stored separately by tools\set-provider-key.ps1 (Windows DPAPI) and injected
+ * by the desktop launcher, or supplied through the process environment.
+ */
+function ProviderProfileEditor() {
+  const token = useUiStore((state) => state.session?.token ?? null);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [wireModel, setWireModel] = useState('');
+  const [model, setModel] = useState('deepseek-flash');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchWithBoundTimeout(`${apiBaseUrl()}/api/provider/profile`, {
+      label: 'GET /api/provider/profile',
+      init: { headers: { Accept: 'application/json' } },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw await httpFailure(response, 'GET /api/provider/profile');
+        const body = (await response.json()) as {
+          profile?: ProviderProfile | null;
+          active?: ProviderProfile;
+        };
+        const current = body.profile ?? body.active ?? null;
+        if (cancelled || current === null) return;
+        setBaseUrl(current.base_url ?? '');
+        setWireModel(current.wire_model ?? '');
+        if (current.model !== undefined) setModel(current.model);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setNotice(failureText(error, 'Provider profile unavailable.'));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = async (): Promise<void> => {
+    if (token === null) {
+      setNotice('No session token; reconnect before saving the provider profile.');
+      return;
+    }
+    setBusy(true);
+    setNotice(null);
+    try {
+      const response = await fetchWithBoundTimeout(`${apiBaseUrl()}/api/provider/profile`, {
+        label: 'POST /api/provider/profile',
+        init: {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'x-hivemind-token': token,
+          },
+          body: JSON.stringify({
+            name: 'custom',
+            base_url: baseUrl.trim(),
+            wire_model: wireModel.trim(),
+            model,
+          }),
+        },
+      });
+      if (!response.ok) throw await httpFailure(response, 'POST /api/provider/profile');
+      const body = (await response.json()) as { restart_required?: boolean };
+      setNotice(
+        body.restart_required === true
+          ? 'Saved. Restart the server/desktop app to apply the provider profile. The key is stored separately (DPAPI provider.key or runtime env).'
+          : 'Saved.',
+      );
+    } catch (error) {
+      setNotice(failureText(error, 'Provider profile was not saved.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="surface-panel mt-3 rounded-[var(--radius-md)] p-3">
+      <div className="type-label text-ink-500">Saved provider profile</div>
+      <p className="type-body-l mt-1 max-w-[640px] text-ink-500">
+        This file contains no secret. DeepSeek or an OpenAI-compatible lab endpoint can be selected
+        here; an external endpoint needs its wire model id. The API key remains DPAPI-protected or
+        in the process environment.
+      </p>
+      <div className="mt-2 grid gap-2 md:grid-cols-3">
+        <label className="type-mono-meta text-meta">
+          base URL
+          <input
+            className="mt-1 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-[12px] text-ink-900"
+            value={baseUrl}
+            onChange={(event) => setBaseUrl(event.target.value)}
+            placeholder="https://api.deepseek.com"
+          />
+        </label>
+        <label className="type-mono-meta text-meta">
+          wire model
+          <input
+            className="mt-1 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-[12px] text-ink-900"
+            value={wireModel}
+            onChange={(event) => setWireModel(event.target.value)}
+            placeholder="deepseek-flash"
+          />
+        </label>
+        <label className="type-mono-meta text-meta">
+          accounting model
+          <select
+            className="mt-1 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-[12px] text-ink-900"
+            value={model}
+            onChange={(event) => setModel(event.target.value)}
+          >
+            <option value="deepseek-flash">deepseek-flash</option>
+            <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+          </select>
+        </label>
+      </div>
+      <button
+        type="button"
+        className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100 disabled:opacity-50"
+        disabled={busy}
+        onClick={() => void save()}
+      >
+        {busy ? 'Saving…' : 'Save provider profile'}
+      </button>
+      {notice === null ? null : (
+        <p className="type-mono-meta mt-2 text-meta" role="status">
+          {notice}
+        </p>
+      )}
+    </section>
+  );
 }
 
 export function SettingsPanel() {
@@ -315,6 +459,7 @@ export function SettingsPanel() {
                   <dd className="type-mono-code text-ink-900">{keyLabel}</dd>
                 </dl>
               </section>
+              <ProviderProfileEditor />
             </>
           ) : null}
 

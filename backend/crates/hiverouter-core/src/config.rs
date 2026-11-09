@@ -196,10 +196,41 @@ impl ProviderSettings {
     }
 }
 
-/// Loads a saved non-secret provider profile. The key is never in this file;
-/// it is supplied separately (DPAPI file via the launcher, or the process env).
-fn load_provider_profile() -> Option<serde_json::Value> {
-    let path = std::env::var(PROVIDER_FILE_ENV)
+/// Saves a non-secret provider profile for the next boot.
+///
+/// The key is never written here; it remains in the DPAPI file/env.
+pub fn write_provider_profile(value: &serde_json::Value) -> Result<(), ConfigError> {
+    let Some(path) = provider_profile_path() else {
+        return Err(ConfigError::ProviderSetting(
+            "no provider profile path is available (LOCALAPPDATA is unset)".to_owned(),
+        ));
+    };
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            ConfigError::ProviderSetting(format!("cannot create provider profile dir: {error}"))
+        })?;
+    }
+    let text = serde_json::to_string_pretty(value).map_err(|error| {
+        ConfigError::ProviderSetting(format!("cannot serialise provider profile: {error}"))
+    })?;
+    let temp = path.with_extension("json.tmp");
+    std::fs::write(&temp, text).map_err(|error| {
+        ConfigError::ProviderSetting(format!("cannot write provider profile: {error}"))
+    })?;
+    if path.exists() {
+        std::fs::remove_file(&path).map_err(|error| {
+            ConfigError::ProviderSetting(format!("cannot replace provider profile: {error}"))
+        })?;
+    }
+    std::fs::rename(&temp, &path).map_err(|error| {
+        ConfigError::ProviderSetting(format!("cannot commit provider profile: {error}"))
+    })
+}
+
+/// Path of the saved provider profile, if a location is configured.
+#[must_use]
+pub fn provider_profile_path() -> Option<std::path::PathBuf> {
+    std::env::var(PROVIDER_FILE_ENV)
         .ok()
         .map(std::path::PathBuf::from)
         .or_else(|| {
@@ -207,7 +238,13 @@ fn load_provider_profile() -> Option<serde_json::Value> {
                 .ok()
                 .map(std::path::PathBuf::from)
                 .map(|root| root.join("HiveMind").join("provider.json"))
-        })?;
+        })
+}
+
+/// Loads a saved non-secret provider profile. The key is never in this file;
+/// it is supplied separately (DPAPI file via the launcher, or the process env).
+fn load_provider_profile() -> Option<serde_json::Value> {
+    let path = provider_profile_path()?;
     let text = std::fs::read_to_string(path).ok()?;
     serde_json::from_str(&text).ok()
 }

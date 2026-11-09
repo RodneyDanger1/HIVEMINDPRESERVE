@@ -638,6 +638,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
         .route("/api/provider/balance", get(provider_balance))
+        .route(
+            "/api/provider/profile",
+            get(provider_profile_get).post(provider_profile_set),
+        )
         .route("/ws", get(ws_handler))
         .fallback(crate::static_ui::static_ui)
         .layer(middleware::from_fn_with_state(guard_state, host_guard))
@@ -2599,8 +2603,92 @@ async fn provider_balance(State(state): State<Arc<AppState>>, headers: HeaderMap
     }
 }
 
-fn provider_origin_allowed(state: &AppState, headers: &HeaderMap) -> bool {
-    match headers.get(header::ORIGIN).and_then(|value| value.to_str().ok()) {
+/// `GET /api/provider/profile` — saved non-secret provider profile.
+async fn provider_profile_get(State(state): State<Arc<AppState>>) -> Response {
+    let path = crate::config::provider_profile_path();
+    let current = path
+        .as_deref()
+        .and_then(|path| std::fs::read_to_string(path).ok())
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+    (
+        StatusCode::OK,
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "profile": current,
+            "path": path.as_ref().map(|path| path.display().to_string()),
+            "active": {
+                "base_url": state.config.provider.base_url,
+                "wire_model": state.config.provider.wire_model_id(),
+                "model": state.config.provider.model.id(),
+                "endpoint": if state.config.provider.is_external_endpoint() { "external" } else { "deepseek" },
+            },
+            "restart_required_after_save": true,
+        })),
+    )
+        .into_response()
+}
+
+/// `POST /api/provider/profile` — persist a non-secret provider profile.
+async fn provider_profile_set(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    if !state.config.side_effects_enabled {
+        return refusal_response(StatusCode::FORBIDDEN, &Refusal::ToolNotAllowed);
+    }
+    let Some(base_url) = body.get("base_url").and_then(|value| value.as_str()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let base_url = base_url.trim().trim_end_matches('/');
+    if base_url.is_empty()
+        || !base_url.starts_with("http://") && !base_url.starts_with("https://")
+    {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let model = body
+        .get("model")
+        .and_then(|value| value.as_str())
+        .unwrap_or("deepseek-flash");
+    if hiverouter_provider::Model::from_id(model).is_none() {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let wire_model = body
+        .get("wire_model")
+        .and_then(|value| value.as_str())
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    if base_url != hiverouter_provider::DEFAULT_BASE_URL && wire_model.is_none() {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let profile = serde_json::json!({
+        "name": body.get("name").and_then(|value| value.as_str()).unwrap_or("custom"),
+        "base_url": base_url,
+        "model": model,
+        "wire_model": wire_model,
+    });
+    match crate::config::write_provider_profile(&profile) {
+        Ok(()) => (
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(serde_json::json!({
+                "saved": true,
+                "restart_required": true,
+                "profile": profile,
+            })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "code": Refusal::InternalError.code(),
+                "message": error.to_string(),
+                "how_to_fix": "Fix the provider profile path/permissions, then save again.",
+            })),
+        )
+            .into_response(),
+    }
+}
+
+fn provider_origin_allowed(state: &AppState, headers: &HeaderMap) -> bool {    match headers.get(header::ORIGIN).and_then(|value| value.to_str().ok()) {
         None => true,
         Some(origin) => state
             .config
