@@ -673,18 +673,99 @@ impl RemoteStore {
         self.get_remote(remote_id)?.ok_or(Refusal::RemoteUnknown)
     }
 
+    /// Expires abandoned critical approvals so their in-flight row cannot lock
+    /// a device forever. Called by the supervisor each tick.
+    pub fn expire_approvals(&self) -> Result<usize, Refusal> {
+        let now = Timestamp::now().as_str().to_owned();
+        self.db
+            .with_connection(|connection| {
+                let tx = connection.transaction()?;
+                let mut expired: Vec<(String, String, String)> = Vec::new();
+                {
+                    let mut statement = tx.prepare(
+                        "SELECT action_id, remote_id, device_id FROM device_actions
+                         WHERE status = 'awaiting_approval'
+                           AND approval_expires_at IS NOT NULL
+                           AND approval_expires_at <= ?1",
+                    )?;
+                    let rows = statement.query_map(params![now], |row| {
+                        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                    })?;
+                    for row in rows {
+                        expired.push(row?);
+                    }
+                }
+                let changed = tx.execute(
+                    "UPDATE device_actions SET status = 'timeout', ended_at = ?1
+                     WHERE status = 'awaiting_approval'
+                       AND approval_expires_at IS NOT NULL
+                       AND approval_expires_at <= ?1",
+                    params![now],
+                )?;
+                for (action_id, remote_id, device_id) in &expired {
+                    audit(
+                        &tx,
+                        "system",
+                        "supervisor",
+                        Some(remote_id),
+                        Some(device_id),
+                        "device_action_approval_expired",
+                        Some(action_id),
+                        None,
+                        None,
+                        "timeout",
+                        None,
+                        &json!({"reason": "approval_expired", "at": now}).to_string(),
+                    )?;
+                }
+                tx.commit()?;
+                Ok(changed)
+            })
+            .map_err(map)
+    }
+
     /// Demotes online remotes whose lease has expired. This is the supervisor's
     /// truthful health transition; it never extends a lease or invents a state.
     pub fn expire_leases(&self) -> Result<usize, Refusal> {
         let now = Timestamp::now().as_str().to_owned();
         self.db
             .with_connection(|connection| {
-                let changed = connection.execute(
+                let tx = connection.transaction()?;
+                let mut expired: Vec<String> = Vec::new();
+                {
+                    let mut statement = tx.prepare(
+                        "SELECT remote_id FROM remote_agents
+                         WHERE state = 'online' AND lease_expires_at IS NOT NULL
+                           AND lease_expires_at <= ?1",
+                    )?;
+                    let rows = statement.query_map(params![now], |row| row.get(0))?;
+                    for row in rows {
+                        expired.push(row?);
+                    }
+                }
+                let changed = tx.execute(
                     "UPDATE remote_agents SET state = 'offline', rev = rev + 1
                      WHERE state = 'online' AND lease_expires_at IS NOT NULL
                        AND lease_expires_at <= ?1",
                     params![now],
                 )?;
+                for remote_id in &expired {
+                    audit(
+                        &tx,
+                        "system",
+                        "supervisor",
+                        Some(remote_id),
+                        None,
+                        "remote_lease_expired",
+                        None,
+                        None,
+                        None,
+                        "offline",
+                        None,
+                        &json!({"reason": "lease_expired", "at": now}).to_string(),
+                    )?;
+                }
+                tx.commit()?;
                 Ok(changed)
             })
             .map_err(map)
@@ -697,6 +778,46 @@ impl RemoteStore {
         self.db
             .with_connection(|connection| {
                 let tx = connection.transaction()?;
+                let mut interrupted: Vec<(String, String, String)> = Vec::new();
+                {
+                    let mut statement = tx.prepare(
+                        "SELECT action_id, remote_id, device_id FROM device_actions
+                         WHERE status = 'executing'",
+                    )?;
+                    let rows = statement.query_map([], |row| {
+                        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                    })?;
+                    for row in rows {
+                        interrupted.push(row?);
+                    }
+                }
+                let mut timed_out: Vec<(String, String, String)> = Vec::new();
+                {
+                    let mut statement = tx.prepare(
+                        "SELECT action_id, remote_id, device_id FROM device_actions
+                         WHERE status IN ('requested','awaiting_approval')
+                           AND approval_expires_at IS NOT NULL
+                           AND approval_expires_at <= ?1",
+                    )?;
+                    let rows = statement.query_map(params![now], |row| {
+                        Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+                    })?;
+                    for row in rows {
+                        timed_out.push(row?);
+                    }
+                }
+                let mut offline: Vec<String> = Vec::new();
+                {
+                    let mut statement = tx.prepare(
+                        "SELECT remote_id FROM remote_agents
+                         WHERE state = 'online' AND lease_expires_at IS NOT NULL
+                           AND lease_expires_at <= ?1",
+                    )?;
+                    let rows = statement.query_map(params![now], |row| row.get(0))?;
+                    for row in rows {
+                        offline.push(row?);
+                    }
+                }
                 let executing = tx.execute(
                     "UPDATE device_actions SET status = 'interrupted', ended_at = ?1
                      WHERE status = 'executing'",
@@ -714,6 +835,55 @@ impl RemoteStore {
                        AND lease_expires_at <= ?1",
                     params![now],
                 )?;
+                for (action_id, remote_id, device_id) in &interrupted {
+                    audit(
+                        &tx,
+                        "system",
+                        "supervisor",
+                        Some(remote_id),
+                        Some(device_id),
+                        "device_action_boot_reconciled",
+                        Some(action_id),
+                        None,
+                        None,
+                        "interrupted",
+                        None,
+                        &json!({"reason": "boot_reconciliation", "prior": "executing", "at": now})
+                            .to_string(),
+                    )?;
+                }
+                for (action_id, remote_id, device_id) in &timed_out {
+                    audit(
+                        &tx,
+                        "system",
+                        "supervisor",
+                        Some(remote_id),
+                        Some(device_id),
+                        "device_action_boot_reconciled",
+                        Some(action_id),
+                        None,
+                        None,
+                        "timeout",
+                        None,
+                        &json!({"reason": "approval_expired", "at": now}).to_string(),
+                    )?;
+                }
+                for remote_id in &offline {
+                    audit(
+                        &tx,
+                        "system",
+                        "supervisor",
+                        Some(remote_id),
+                        None,
+                        "remote_lease_expired",
+                        None,
+                        None,
+                        None,
+                        "offline",
+                        None,
+                        &json!({"reason": "boot_reconciliation", "at": now}).to_string(),
+                    )?;
+                }
                 tx.commit()?;
                 Ok(executing + expired + leases)
             })
@@ -776,6 +946,51 @@ impl RemoteStore {
             .db
             .with_connection(|connection| {
                 let tx = connection.transaction()?;
+                // Re-check the control-plane authority inside the same
+                // transaction that writes the action. The pre-check above can
+                // race a revoke or lease expiry; this second read makes the
+                // device mutation atomic with the decision.
+                let now_text = Timestamp::now().as_str().to_owned();
+                let remote_authority: Option<(String, Option<String>, Option<String>)> = tx
+                    .query_row(
+                        "SELECT state, lease_expires_at, revoked_at FROM remote_agents
+                         WHERE remote_id = ?1",
+                        params![device.remote_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let Some((remote_state, lease_expires_at, remote_revoked)) = remote_authority
+                else {
+                    return Ok(Err(Refusal::RemoteUnknown));
+                };
+                if remote_revoked.is_some() {
+                    return Ok(Err(Refusal::RemoteUnknown));
+                }
+                if remote_state != "online" {
+                    return Ok(Err(Refusal::RemoteOffline));
+                }
+                if lease_expires_at
+                    .as_deref()
+                    .is_some_and(|lease| lease <= now_text.as_str())
+                {
+                    return Ok(Err(Refusal::RemoteOffline));
+                }
+                let device_row: Option<(String, String, String, Option<String>)> = tx
+                    .query_row(
+                        "SELECT class, state_json, safety_class, revoked_at FROM devices
+                         WHERE device_id = ?1",
+                        params![device_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                    )
+                    .optional()?;
+                let Some((device_class, device_state_json, device_safety_class, device_revoked)) =
+                    device_row
+                else {
+                    return Ok(Err(Refusal::DeviceUnknown));
+                };
+                if device_revoked.is_some() {
+                    return Ok(Err(Refusal::DeviceUnknown));
+                }
                 let grant: Option<i64> = tx
                     .query_row(
                         "SELECT COUNT(*) FROM remote_grants
@@ -804,7 +1019,7 @@ impl RemoteStore {
                 if in_flight > 0 {
                     return Ok(Err(Refusal::DeviceActionInFlight));
                 }
-                let status = if device.safety_class == "critical" {
+                let status = if device_safety_class == "critical" {
                     "awaiting_approval"
                 } else {
                     "confirmed"
@@ -822,9 +1037,11 @@ impl RemoteStore {
                 } else {
                     None
                 };
-                let state_before = hash(&device.state_json);
+                let state_before = hash(&device_state_json);
                 let state_after = if status == "confirmed" {
-                    let Ok(after) = fixture_apply(&device.class, action, &device.state_json) else {
+                    let Ok(after) =
+                        fixture_apply(&device_class, action, &device_state_json)
+                    else {
                         return Ok(Err(Refusal::RemoteCapability));
                     };
                     Some(after)
@@ -938,30 +1155,111 @@ impl RemoteStore {
             }
         }
         let _action_guard = self.action_lock.lock().map_err(|_| Refusal::InternalError)?;
-        let device = self
-            .get_device(&action.device_id)?
-            .ok_or(Refusal::DeviceUnknown)?;
         let refused = self.db
             .with_connection(|connection| {
                 let tx = connection.transaction()?;
+                let now = Timestamp::now().as_str().to_owned();
+                // Revalidate the whole authority chain inside the transaction
+                // that commits the resolution. The pre-check above can race a
+                // revoke, a lease expiry or a sweep; this read makes the
+                // decision atomic with the device mutation.
+                let action_row: Option<(String, Option<String>, Option<String>)> = tx
+                    .query_row(
+                        "SELECT status, approval_nonce, approval_expires_at
+                         FROM device_actions WHERE action_id = ?1",
+                        params![action_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let Some((status_now, nonce_now, expires_now)) = action_row else {
+                    return Ok(Err(Refusal::DeviceApprovalInvalid));
+                };
+                if status_now != "awaiting_approval" || nonce_now.as_deref() != Some(nonce) {
+                    return Ok(Err(Refusal::DeviceApprovalInvalid));
+                }
+                if expires_now
+                    .as_deref()
+                    .is_some_and(|expires| expires <= now.as_str())
+                {
+                    return Ok(Err(Refusal::DeviceApprovalInvalid));
+                }
+                let remote_row: Option<(String, Option<String>, Option<String>)> = tx
+                    .query_row(
+                        "SELECT state, lease_expires_at, revoked_at FROM remote_agents
+                         WHERE remote_id = ?1",
+                        params![action.remote_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let Some((remote_state, lease_expires_at, remote_revoked)) = remote_row else {
+                    return Ok(Err(Refusal::RemoteUnknown));
+                };
+                if remote_revoked.is_some() {
+                    return Ok(Err(Refusal::RemoteUnknown));
+                }
+                if remote_state != "online" {
+                    return Ok(Err(Refusal::RemoteOffline));
+                }
+                if lease_expires_at
+                    .as_deref()
+                    .is_some_and(|lease| lease <= now.as_str())
+                {
+                    return Ok(Err(Refusal::RemoteOffline));
+                }
+                let device_row: Option<(String, String, Option<String>)> = tx
+                    .query_row(
+                        "SELECT class, state_json, revoked_at FROM devices
+                         WHERE device_id = ?1",
+                        params![action.device_id],
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                    )
+                    .optional()?;
+                let Some((device_class, device_state_json, device_revoked)) = device_row else {
+                    return Ok(Err(Refusal::DeviceUnknown));
+                };
+                if device_revoked.is_some() {
+                    return Ok(Err(Refusal::DeviceUnknown));
+                }
+                let grant: i64 = tx.query_row(
+                    "SELECT COUNT(*) FROM remote_grants
+                     WHERE remote_id = ?1 AND device_id = ?2 AND capability_id = ?3
+                       AND action = ?4 AND revoked_at IS NULL
+                       AND (expires_at IS NULL OR expires_at > ?5)",
+                    params![
+                        action.remote_id,
+                        action.device_id,
+                        action.capability_id,
+                        action.action,
+                        now
+                    ],
+                    |row| row.get(0),
+                )?;
+                if grant == 0 {
+                    return Ok(Err(Refusal::RemoteCapability));
+                }
                 let status = if approve { "confirmed" } else { "denied" };
                 let state_after = if approve {
-                    let Ok(after) = fixture_apply(&device.class, &action.action, &device.state_json) else {
+                    let Ok(after) =
+                        fixture_apply(&device_class, &action.action, &device_state_json)
+                    else {
                         return Ok(Err(Refusal::RemoteCapability));
                     };
                     after
                 } else {
-                    device.state_json.clone()
+                    device_state_json.clone()
                 };
                 let changed = tx.execute(
                     "UPDATE device_actions SET status = ?2, approval_nonce = NULL,
                      state_after_hash = ?3, ended_at = ?4
-                     WHERE action_id = ?1 AND status = 'awaiting_approval'",
+                     WHERE action_id = ?1 AND status = 'awaiting_approval'
+                       AND approval_nonce = ?5
+                       AND (approval_expires_at IS NULL OR approval_expires_at > ?4)",
                     params![
                         action_id,
                         status,
                         hash(&state_after),
-                        Timestamp::now().as_str()
+                        now,
+                        nonce
                     ],
                 )?;
                 if changed != 1 {

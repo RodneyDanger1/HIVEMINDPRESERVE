@@ -89,10 +89,16 @@ async fn run() -> Result<(), ExitCode> {
     let database = Arc::new(database);
     let remote_boot = RemoteStore::new(database.clone());
     if let Err(refusal) = remote_boot.reconcile_on_boot() {
-        tracing::warn!(
-            code = refusal.code(),
-            "remote boot reconciliation failed; refusing to replay any action"
+        // Reconciliation is the only thing that stops a crash-stale `executing`
+        // action or an abandoned approval from locking a device forever. A
+        // silent warning would start the server on an unreconciled control
+        // plane; fail the boot with the named code instead.
+        eprintln!(
+            "hiverouter: remote boot reconciliation failed: {} ({}); refusing to start on an unreconciled control plane",
+            refusal.message(),
+            refusal.code()
         );
+        return Err(ExitCode::FAILURE);
     }
     let snapshots = SnapshotStore::new(&config.data_dir, database.clone());
     let graph = hiverouter_core::graph::GraphAuthority::new();

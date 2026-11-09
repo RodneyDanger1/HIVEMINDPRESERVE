@@ -217,6 +217,10 @@ impl DaemonStore {
 
     /// Advances every due daemon exactly once. The supervisor owns the cadence;
     /// this method is deterministic and never calls a model.
+    ///
+    /// No daemon job runner exists yet. A tick therefore marks the daemon
+    /// `degraded` and records that fact instead of fabricating an `alive`
+    /// success for work that never ran.
     pub fn tick_due(&self, limit: usize) -> Result<usize, Refusal> {
         let now_secs = Timestamp::now()
             .unix_secs()
@@ -225,39 +229,50 @@ impl DaemonStore {
         self.db
             .with_connection(|connection| {
                 let tx = connection.transaction()?;
-                let mut ids: Vec<(String, i64)> = Vec::new();
+                let mut ids: Vec<(String, i64, String)> = Vec::new();
                 {
                     let mut statement = tx.prepare(
-                        "SELECT daemon_id, interval_secs FROM daemons
+                        "SELECT daemon_id, interval_secs, job_json FROM daemons
                          WHERE state = 'running'
                            AND (next_tick_at IS NULL OR next_tick_at <= ?1)
                          ORDER BY next_tick_at ASC LIMIT ?2",
                     )?;
                     let rows = statement.query_map(
                         params![now, i64::try_from(limit).unwrap_or(10)],
-                        |row| Ok((row.get(0)?, row.get(1)?)),
+                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
                     )?;
                     for row in rows {
                         ids.push(row?);
                     }
                 }
-                for (daemon_id, interval) in &ids {
-                    let next = Timestamp::from_unix_secs(
-                        now_secs.saturating_add(u64::try_from(*interval).unwrap_or(5)),
-                    )
-                    .as_str()
-                    .to_owned();
+                for (daemon_id, _interval, job_json) in &ids {
+                    let reason = if job_json.trim().is_empty() || job_json.trim() == "{}" {
+                        "daemon has no executable job"
+                    } else {
+                        "daemon job runtime is not implemented"
+                    };
                     tx.execute(
-                        "UPDATE daemons SET last_tick_at = ?2, next_tick_at = ?3,
-                            last_report_at = ?2
-                         WHERE daemon_id = ?1",
-                        params![daemon_id, now, next],
+                        "UPDATE daemons SET state = 'degraded', last_tick_at = ?2,
+                            last_report_at = ?2, next_tick_at = NULL,
+                            last_error_code = 'E_DAEMON_JOB_UNIMPLEMENTED'
+                         WHERE daemon_id = ?1 AND state = 'running'",
+                        params![daemon_id, now],
                     )?;
                     tx.execute(
                         "INSERT INTO daemon_reports
                          (report_id, daemon_id, outcome, detail_json, created_at)
-                         VALUES (?1, ?2, 'alive', '{}', ?3)",
-                        params![format!("report:{}", Uuid::now_v7()), daemon_id, now],
+                         VALUES (?1, ?2, 'degraded', ?3, ?4)",
+                        params![
+                            format!("report:{}", Uuid::now_v7()),
+                            daemon_id,
+                            serde_json::json!({
+                                "executed": false,
+                                "reason": reason,
+                                "job": job_json,
+                            })
+                            .to_string(),
+                            now
+                        ],
                     )?;
                 }
                 tx.commit()?;
@@ -331,7 +346,19 @@ mod tests {
         assert_eq!(store.tick_due(10).expect("not yet due"), 0);
         let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
         assert_eq!(reports.len(), 1);
-        assert_eq!(reports[0].outcome, "alive");
+        assert_eq!(
+            reports[0].outcome, "degraded",
+            "a daemon with no executable job must not claim an alive success"
+        );
+        let fresh = store
+            .get(&daemon.daemon_id)
+            .expect("query")
+            .expect("daemon");
+        assert_eq!(fresh.state, "degraded");
+        assert_eq!(
+            fresh.last_error_code.as_deref(),
+            Some("E_DAEMON_JOB_UNIMPLEMENTED")
+        );
         let tasks: i64 = db
             .with_connection(|connection| {
                 connection.query_row("SELECT COUNT(*) FROM tasks", [], |row| row.get(0))

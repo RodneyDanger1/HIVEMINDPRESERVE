@@ -95,6 +95,7 @@ impl RemoteSupervisor {
     /// One deterministic tick used by tests and the run loop.
     pub fn tick_once(&self) -> Result<(), Refusal> {
         self.remote.expire_leases()?;
+        self.remote.expire_approvals()?;
         self.daemons.tick_due(64)?;
         Ok(())
     }
