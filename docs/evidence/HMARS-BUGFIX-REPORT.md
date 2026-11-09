@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `2021619`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C`  
+Final repair HEAD at report write: `c3ec90f`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `221FE4A5EC253D28FFE287E1CFB18311A39E135C0AF845B550674577277A1881`  
 Portable package: `dist/HiveMind.zip` SHA-256 `19FE249C81BB49FAF1756D2C51C2C0B532A7ED0CC499FDAE4157B87FCFDD04AB`  
 Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `FB62E6C70B7F6A3AAC61B3A46DEE9CAC2BA8CE13FAD4DF38CA0235F3B78E6402`
 
@@ -117,6 +117,7 @@ TRUTH:
 | `ecee300` | Engine hygiene | terminal runs release metrics, delivered-A2A ids and queued spawn ids |
 | `8d99f79` | Provider settings | profile replacement keeps a backup, restores on failure, removes temp/backup on success |
 | `40ba553` | Engine hygiene | task-context store is bounded to 1024 entries with oldest-first eviction |
+| `c3ec90f` | Remote | HyperAgent-spawned relay gets a switch device + narrow grant instead of an inert record |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -136,7 +137,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 275A5606220103411D943EF71CD248102EBA4C3F11138CA3A44A667CE73DE57C
+  target/release/hiverouter.exe SHA-256 221FE4A5EC253D28FFE287E1CFB18311A39E135C0AF845B550674577277A1881
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
