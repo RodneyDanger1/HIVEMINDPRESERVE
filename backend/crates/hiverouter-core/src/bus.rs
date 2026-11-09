@@ -111,8 +111,11 @@ impl EventBus {
             .publish_lock
             .lock()
             .map_err(|_| Refusal::InternalError)?;
+        // Serialize before consuming a sequence number: a failed event must not
+        // create a permanent gap in the replay stream.
+        let mut envelope = event.into_envelope()?;
         let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
-        let mut envelope = event.into_envelope()?.with_seq(seq);
+        envelope = envelope.with_seq(seq);
         if let Some(correlation_id) = correlation_id {
             envelope = envelope.with_correlation(correlation_id);
         }
@@ -144,8 +147,9 @@ impl EventBus {
             .publish_lock
             .lock()
             .map_err(|_| Refusal::InternalError)?;
+        let mut envelope = event.into_envelope()?;
         let seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
-        let mut envelope = event.into_envelope()?.with_seq(seq);
+        envelope = envelope.with_seq(seq);
         if let Some(run_id) = run_id {
             envelope = envelope.with_run(run_id);
         }
