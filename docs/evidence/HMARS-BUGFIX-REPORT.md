@@ -4,8 +4,8 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `aaf2c62`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `D84A827310D0BA5EE82D358A3C02E8DE51C3757679140D05CC4D8D41382F0066`
+Final repair HEAD at report write: `4d15389`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `3369A3EA37F61E4064CE9EB97DD6E25F0907A255545DC51F715633B40EBE62AD`
 
 ## 1. What HiveMind is supposed to be
 
@@ -110,6 +110,7 @@ TRUTH:
 | `fef47c7` | Core | replay-consistent `current_seq` and a proven real provider-call cap test |
 | `8c84193` | Core | a failed serialization no longer consumes a replay sequence or leaves a permanent gap |
 | `aaf2c62` | Provider settings | profile GET exposes only defined fields; unknown file content cannot leak |
+| `4d15389` | Daemon | real DB-health job executes and reports measured `ok`/`failed`; root-spawned watchdog uses it |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -120,7 +121,7 @@ the runtime `billing`/`endpoint`/`parallel_dispatch` fields.
 ```text
 Backend:
   cargo test --workspace --locked
-  EXIT=0  SUITES=49  PASSED=605  FAILED=0  IGNORED=2
+  EXIT=0  SUITES=49  PASSED=606  FAILED=0  IGNORED=2
 
 Web:
   npm.cmd run typecheck  -> exit 0
@@ -129,7 +130,7 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 D84A827310D0BA5EE82D358A3C02E8DE51C3757679140D05CC4D8D41382F0066
+  target/release/hiverouter.exe SHA-256 3369A3EA37F61E4064CE9EB97DD6E25F0907A255545DC51F715633B40EBE62AD
   size 36,217,856 bytes
 
 Smoke (no provider key, deliberately degraded):
