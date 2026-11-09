@@ -194,6 +194,42 @@ impl SnapshotStore {
         Ok(runs)
     }
 
+    /// Retains only the newest `keep` revisions for a terminal run.
+    ///
+    /// A crash-safe run writes a snapshot at each committed node transition, so
+    /// a 40-node run can otherwise leave dozens of files forever. Pruning is
+    /// only called after terminal commit; the newest revision is what recovery
+    /// reads, and no later revision can reuse the deleted numbers.
+    ///
+    /// # Errors
+    /// `E_SNAPSHOT_CORRUPT` if the directory or index cannot be read.
+    pub fn prune_run(&self, run_id: RunId, keep: usize) -> Result<usize, Refusal> {
+        let keep = keep.max(1);
+        let revisions = self.list_revisions(run_id)?;
+        if revisions.len() <= keep {
+            return Ok(0);
+        }
+        let remove = &revisions[..revisions.len() - keep];
+        for revision in remove {
+            let path = self.run_dir(run_id).join(format!("{revision:010}.json"));
+            match std::fs::remove_file(&path) {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(_) => return Err(Refusal::SnapshotCorrupt),
+            }
+            self.db
+                .with_connection(|connection| {
+                    connection.execute(
+                        "DELETE FROM snapshots WHERE run_id = ?1 AND revision = ?2",
+                        rusqlite::params![run_id.to_string(), i64::try_from(*revision).unwrap_or(i64::MAX)],
+                    )?;
+                    Ok(())
+                })
+                .map_err(|error: DbError| error.refusal())?;
+        }
+        Ok(remove.len())
+    }
+
     /// Indexed revision metadata from SQLite for a run.
     ///
     /// # Errors

@@ -259,3 +259,32 @@ async fn history_http_api() {
     assert_eq!(status, 404);
     assert_eq!(unknown["code"], "E_RUN_NOT_FOUND");
 }
+
+#[test]
+fn terminal_prune_keeps_the_newest_revisions_and_latest_is_readable() {
+    let (_db, store, _temp) = setup();
+    let (graph, _root, _child) = graph_with_two_tasks();
+    let run_id = RunId::new();
+    for revision in 0..6 {
+        store
+            .write(&capture(&graph, run_id, revision, AgentState::Running).expect("capture"))
+            .expect("write");
+    }
+    assert_eq!(store.list_revisions(run_id).expect("list").len(), 6);
+    assert_eq!(store.prune_run(run_id, 2).expect("prune"), 4);
+    assert_eq!(
+        store.list_revisions(run_id).expect("list after prune"),
+        vec![4, 5]
+    );
+    assert_eq!(store.latest(run_id).expect("latest").expect("latest").revision, 5);
+    assert_eq!(
+        store.indexed_revisions(run_id).expect("index").len(),
+        2,
+        "the index row is removed with the file"
+    );
+    assert_eq!(
+        store.read(run_id, 2).expect_err("deleted revision").code(),
+        "E_SNAPSHOT_CORRUPT"
+    );
+}
+

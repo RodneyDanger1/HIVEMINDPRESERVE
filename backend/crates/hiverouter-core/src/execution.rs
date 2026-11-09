@@ -1681,6 +1681,15 @@ impl RunEngine {
         }
         // Keep the post-terminal snapshot in addition to the mid-run revisions.
         self.commit_run_snapshot(&run, final_status);
+        if let Some(snapshots) = &self.snapshots {
+            if let Err(error) = snapshots.prune_run(run.id, 16) {
+                tracing::warn!(
+                    code = error.code(),
+                    run_id = %run.id,
+                    "terminal snapshot pruning failed; old revisions remain"
+                );
+            }
+        }
         let _ = self.set_active(None);
         self.tokens.remove(run.id);
         self.persist_run_usage(run.id);
