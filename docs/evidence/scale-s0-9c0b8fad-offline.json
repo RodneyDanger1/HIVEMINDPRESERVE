@@ -1,0 +1,28 @@
+﻿{
+    "commit":  "9c0b8fad2bc0d5b241ae7ab168dde4440e61680d",
+    "captured_at":  "2026-11-08T19:20:08.4205874-06:00",
+    "command":  "cargo test -p hiverouter-core --test scale_s0 -- --nocapture",
+    "provider":  "instant test double",
+    "scheduler":  "serial",
+    "max_fanout":  8,
+    "runs":  [
+                 {
+                     "calls":  3,
+                     "tasks":  3,
+                     "wall_ms":  20,
+                     "nodes":  2
+                 },
+                 {
+                     "calls":  9,
+                     "tasks":  9,
+                     "wall_ms":  46,
+                     "nodes":  8
+                 }
+             ],
+    "claims":  [
+                   "S0 serial baseline only",
+                   "no scheduler concurrency",
+                   "no 50-150 or 300-600 scale claim"
+               ],
+    "blocker":  "MAX_FANOUT=8 rejects larger root plans"
+}
