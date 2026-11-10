@@ -412,3 +412,10 @@ proposal is mutated → apply returns **409**; restoring the proposal → apply
 returns **200**. After rollback, the run is set terminal and
 `POST /api/memory/clear` with confirm/reason returns **409** because the
 governance rows still exist.
+## Test AC — proposals/lessons surface state and bounded fetches
+
+The proposal and lesson panels now use the shared bounded fetch helper with an
+abort controller, render `LoadingState`/`ErrorState` (role=status/alert), show
+an explicit idle instruction when no run is selected, and render
+`can_apply`/`applied` as `unknown`/`yes`/`no` rather than `String(null)`.
+Web gate: 31 files / 231 tests passed, typecheck 0, production build 0.
