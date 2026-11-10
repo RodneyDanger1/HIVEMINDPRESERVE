@@ -5,6 +5,7 @@ import '@fontsource-variable/inter';
 import '@fontsource/playfair-display/600.css';
 import { App } from './App';
 import './styles/index.css';
+import './styles/splash.css';
 
 // The launcher passes a one-time secret in the URL. Send it on same-origin API
 // reads; the server requires it when HIVEROUTER_LAUNCH_TOKEN is configured.

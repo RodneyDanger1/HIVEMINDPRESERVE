@@ -29,6 +29,10 @@ Files touched:
 `web/src/panels/RunDetailPanel.tsx`, `web/src/panels/DaemonPanel.tsx`,
 `web/src/styles/index.css`, `web/src/panels/Header.tsx`.
 
+Startup veil added: `web/src/splash/HiveMindSplash.tsx` and
+`web/src/styles/splash.css` (HoneyGlass: glassmorphism pane, liquid honeycomb,
+neumorphic progress; finite motion; FigCraft tokens only).
+
 ## Audit before / after
 
 Command:
@@ -39,12 +43,12 @@ Command:
 |---|---|---|
 | Exit code | 1 | 1 |
 | Error findings | 71 | 47 |
-| Warning findings | 3 | 3 |
+| Warning findings | 3 | 5 |
 | U006 spacing | 23 | **0** |
 | U003 weight | 1 | **0** |
 | U001 exclamation | 25 | 25 |
 | U005 infinite animation | 20 | 20 |
-| U010 uppercase label | 3 | 3 |
+| U010 uppercase label | 3 | 5 |
 | U011 hype vocabulary | 2 | 2 |
 
 Artifacts: `audit/audit-before.json`, `audit/audit-after.json`.
@@ -57,8 +61,9 @@ Artifacts: `audit/audit-before.json`, `audit/audit-after.json`.
   hex drift). It is intentional and guarded by the existing ambient-motion
   preference; removing it would flatten the product identity and exceed the
   requested 10–20% change budget.
-- **U010 (3):** tracked uppercase mono labels are part of the FigCraft system,
-  not an accidental template habit.
+- **U010 (5):** tracked uppercase mono labels are part of the FigCraft system,
+  not an accidental template habit; the two new occurrences are the splash
+  kicker and loading label.
 - **U011 (2):** `unlock` is the domain action for a lock device, not hype.
 
 ## Render evidence
@@ -69,6 +74,8 @@ Artifacts: `audit/audit-before.json`, `audit/audit-after.json`.
 - Connected product screenshot: `docs/evidence/live/ui-polished-final.png` —
   same 1440×900 view after the app connects, showing the `CONNECTED` state and
   the idle HyperAgent workspace.
+- Startup veil: `docs/evidence/live/ui-splash.png` — captured before the
+  1.6s minimum veil window closes.
 
 `read_image` inspection: the composition is unchanged — honeycomb field left,
 HyperAgent beacon centered, chat on the right, quiet neutral chrome. The

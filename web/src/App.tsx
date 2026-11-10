@@ -27,6 +27,7 @@ import { SwarmPanel } from './panels/SwarmPanel';
 import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
+import { HiveMindSplash } from './splash/HiveMindSplash';
 
 const NAV_SECTIONS = ['workspace', 'agents', 'data', 'models', 'routing', 'remote', 'settings'] as const;
 const TAB_IDS = ['workspace', 'swarm', 'routing', 'history'] as const;
@@ -214,6 +215,7 @@ export function App() {
   return (
     <UiStoreContext.Provider value={store}>
       <AppFrame />
+      <HiveMindSplash />
     </UiStoreContext.Provider>
   );
 }
