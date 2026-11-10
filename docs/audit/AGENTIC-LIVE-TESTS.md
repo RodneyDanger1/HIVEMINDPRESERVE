@@ -432,3 +432,6 @@ Against the same data directory, the final build then returned:
 `POST .../rollback` **200** and `GET lessons` **count=0**.
 
 Evidence: `docs/evidence/live/live-tokenlab-auto-voters-five-seat.json`.
+The proposal `truthful_scope.side_effects_while_awaiting` now names the real
+side effects: one memory row, one root-control audit row, four spawned SuperAgent
+voter tasks, and four A2A vote requests.
