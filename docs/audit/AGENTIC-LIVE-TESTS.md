@@ -452,3 +452,9 @@ directory. Production boot wires `config.data_dir` into the jail. Test
 `denied_data_subtree_is_refused_even_inside_the_root` proves a seeded
 `data/secret.txt` is refused with `E_PATH_OUTSIDE_JAIL`. Backend gate: 51 suites /
 637 passed.
+## Test AG — no terminal run with live tasks
+
+The dispatch path now calls `settle_unfinished_tasks` after draining the spawn
+queue and before the root’s final answer. It executes Queued tasks, resets stale
+Running tasks to Queued, and fails the run with `E_INTERNAL_ERROR` if a non-root
+task still cannot settle after 64 passes. Backend gate: 51 suites / 637 passed.
