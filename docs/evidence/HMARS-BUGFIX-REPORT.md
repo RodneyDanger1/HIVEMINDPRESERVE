@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `bc5ab0d`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `E1FB02E407D16CD9EEE0929F520EB68AA664A2FB33FEAEFEDE6AB4F8AE4127AC`  
-Portable package: `dist/HiveMind.zip` SHA-256 `BBB7EAA155A8FEB18EE3C607968358943929B330F36E786BAE9C6077C40DE1FE`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `E1FB02E407D16CD9EEE0929F520EB68AA664A2FB33FEAEFEDE6AB4F8AE4127AC`
+Final repair HEAD at report write: `113586c`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `AFAD3EBB396037E38D5A12D8C8112C3ED18F6E627224557CDA4C2D0268B74BEB`  
+Portable package: `dist/HiveMind.zip` SHA-256 `050672FE90435FF271991D39579904D3B1881CA64B3C4F94F896824CA84454EF`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `AFAD3EBB396037E38D5A12D8C8112C3ED18F6E627224557CDA4C2D0268B74BEB`
 
 ## 1. What HiveMind is supposed to be
 
@@ -125,6 +125,8 @@ TRUTH:
 | `68ff3c4` | Launcher | boot-timeout path stops the child process instead of leaving a server running |
 | `fc88323` | Security | launcher/start script create a per-launch token; `/api/session` refuses a request without a matching `x-hivemind-launch` header |
 | `bc5ab0d` | Security | all `/api/*` reads require the launcher token when configured; UI wraps same-origin API fetch to send it |
+| `3a43ceb` | Runtime | planner/control usage checkpointed; invalid plans get one counted repair call; root checkpoint cannot add a branch when the planner already supplied one |
+| `113586c` | UI | 10–20% Unslop polish: all off-grid spacing and header weight fixed; audit before/after in `audit/` |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -135,7 +137,7 @@ the runtime `billing`/`endpoint`/`parallel_dispatch` fields.
 ```text
 Backend:
   cargo test --workspace --locked
-  EXIT=0  SUITES=49  PASSED=616  FAILED=0  IGNORED=2
+  EXIT=0  SUITES=49  PASSED=617  FAILED=0  IGNORED=2
 
 Web:
   npm.cmd run typecheck  -> exit 0
@@ -198,13 +200,49 @@ an explicit base URL.
 A2A rows now persist `attempts`/`last_attempt_at`, and every parent-answer
 attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 
-## 6. Remaining / unverified
+## 6. Live Token Lab evidence (2026-11-10)
+
+Two real runs against `https://api.tokenlab.amd.com/v1` with
+`DeepSeek-V4.1-Flash`; no DeepSeek account was used.
+
+| Run | Result | Tasks | Usage | Wall |
+|---|---|---|---|---|
+| Small prompt | `completed`, assistant `hello hive` | 2 (HyperAgent + SuperAgent) | 1,698 prompt / 3 completion / 1,701 total | ~26 s |
+| Exact two-branch hierarchy | `completed` | 7 (HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents) | 14,407 prompt / 1,144 completion / 15,551 total | ~106 s |
+| Earlier two-branch attempt | `completed` before the root-cap fix | 10 (extra depth-1 `super` leads) | 19,791 / 883 / 20,674 | ~290 s |
+
+The root-cap fix is what makes the exact-two run produce exactly 7 tasks: the
+checkpoint refuses `spawn_superagent` when the planner already supplied branch
+leads. The earlier 10-task run is the reproduction of that over-spawn.
+
+Raw summaries: `docs/evidence/live/live-tokenlab-simple.json`,
+`docs/evidence/live/live-tokenlab-hierarchy.json`.
+Billing remains `external_unverified`; no USD figure is claimed for these runs.
+
+## 7. UI polish (Unslop, 10–20% cap)
+
+`audit/UNSLOP-REPORT.md` records the five-line direction, nine-pass scope,
+before/after audit, and accepted findings. Deterministic audit:
+**71 → 47 errors**, with **U006 spacing 23 → 0** and **U003 weight 1 → 0**.
+Remaining U005 is the intentional FigCraft motion language; U001/U011 are
+false positives from Tailwind `!` utilities and the domain action `unlock`.
+Baseline/final renders are `audit/baseline.light.png` and
+`audit/final.light.png`; connected product proof is
+`docs/evidence/live/ui-polished-final.png`.
+
+## 8. Remaining / unverified
 
 - **Key hygiene:** the AMD Token Lab key was pasted into chat during this
   session and must be treated as leaked. Rotate/revoke it before the next live
-  test. The smoke above used no key.
-- **Live end-to-end run after all fixes:** not run against a fresh key. The
-  last provider call was before the final repair commits.
+  test. The live runs above are evidence only; they are not a production-key
+  approval.
+- **Live end-to-end after the final repair:** the exact-two run used the final
+  root gate and measured usage; the planner repair path was added after an
+  earlier `E_SCHEMA_INVALID` attempt and is covered by unit tests, not by a
+  fresh live malformed-plan run.
+- **Usage checkpoint under hard kill:** checkpointing after every measured
+  reply is implemented; a deliberate kill during a live run has not been
+  repeated after that change.
 - **Daemon script runtime:** daemons execute the real DB-health job and an
   allowlisted script job (`{"kind":"script","program":"name.ps1","args":[],"timeout_secs":N}`)
   rooted under the workspace. Only `.exe`/`.ps1`, plain file names, <=16 bounded
@@ -243,3 +281,12 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 The UI/API test credentials are not present in source, committed files, or
 this report. The pasted Token Lab key remains compromised and must be rotated
 before any further live run.
+
+## 10. Live and UI evidence files
+
+- `docs/evidence/live/live-tokenlab-simple.json` - completed 2-task TokenLab run
+- `docs/evidence/live/live-tokenlab-hierarchy.json` - completed exact-two 7-task TokenLab run
+- `docs/evidence/live/ui-polished-final.png` - connected UI after the 10-20% polish
+- `audit/UNSLOP-REPORT.md`, `audit/baseline.light.png`, `audit/final.light.png`
+- `docs/evidence/live/ui-e2e-provider-save.png` - CDP Settings -> Provider save
+- `tools/qa/ui-e2e.mjs` - repeatable local UI E2E (no provider key)
