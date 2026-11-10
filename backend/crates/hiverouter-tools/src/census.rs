@@ -231,7 +231,7 @@ mod tests {
         assert!(census.refusal_count >= 40, "the frozen table is complete");
         assert_eq!(census.tier_count, 5);
         assert_eq!(census.permission_class_count, 5);
-        assert_eq!(census.grant_count(), 3 + 12 + 12 + 5 + 4);
+        assert_eq!(census.grant_count(), 3 + 12 + 11 + 5 + 4);
         assert!(census.tools_by_tier.contains_key("hyper_agent"));
         assert_eq!(census.executor_dispositions.len(), census.registry_tool_ids.len());
         assert_eq!(

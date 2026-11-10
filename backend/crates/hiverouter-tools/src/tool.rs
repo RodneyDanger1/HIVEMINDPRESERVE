@@ -493,7 +493,6 @@ impl ToolRegistry {
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
                 ToolId::WebFetch,
-                ToolId::VoteEvolution,
             ],
         );
         allowlists.insert(
