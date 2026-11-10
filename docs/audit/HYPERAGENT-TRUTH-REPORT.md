@@ -24,7 +24,7 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 634 passed, 0 failed, 2 ignored |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 51 suites, 635 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 231 tests passed, production build 0 |
 | T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116` |
 | T4 | Server binary hash | **VERIFIED** | `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68` |
@@ -359,7 +359,7 @@ persona allowlist. Test:
   retry, idempotent mismatched payload, daemon admission, duplicate names, run
   bank.
 - `provider_adapter.rs`: tier∩persona request capture.
-- Full gate: **50 suites, 634 passed, 0 failed, 2 ignored**.
+- Full gate: **51 suites, 635 passed, 0 failed, 2 ignored**.
 
 ### What this does NOT prove
 

@@ -386,7 +386,7 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **50 suites, 634 passed, 0 failed, 2 ignored**.
+- Backend: **51 suites, 635 passed, 0 failed, 2 ignored**.
 - Web: 227 tests, typecheck 0, production build 0; UI gained the replayed-network-approval fail-closed gate.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)

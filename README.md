@@ -166,7 +166,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **50 suites, 634 passed, 0 failed, 2 ignored**
+- Backend: **51 suites, 635 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **231 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
   `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116`
@@ -288,7 +288,7 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
   admission, duplicate refusal, root-gate durability, foreign-run rewire.
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
-- Full gate: **50 suites, 634 passed, 0 failed, 2 ignored**; web typecheck 0,
+- Full gate: **51 suites, 635 passed, 0 failed, 2 ignored**; web typecheck 0,
   231 tests passed.
 
 ### Not implemented
@@ -323,7 +323,7 @@ before buffering, and the request has a 15s timeout. The global
 
 Live evidence: `docs/evidence/live/live-tokenlab-web-fetch.json` and
 `docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`. Unit tests cover
-the SSRF policy and census lane; full gate is 634 backend / 231 web.
+the SSRF policy and census lane; full gate is 635 backend / 231 web.
 ---
 
 ## 12. Authorized self-evolution gate

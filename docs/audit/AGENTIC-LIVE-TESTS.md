@@ -359,3 +359,18 @@ The run completed and both the child and final answers returned **HONEYCOMB**
 planner, root, and task prompts as labelled data.
 
 Evidence: `docs/evidence/live/live-tokenlab-lesson-retrieval.json`.
+## Test X — positive four-SuperAgent authorize → apply → rollback
+
+`backend/crates/hiverouter-core/tests/proposal_authorization.rs` drives the real
+HTTP routes against an in-process server and real SQLite rows:
+
+1. insert one root task and four completed `superagent` tasks in one run;
+2. record one approval vote per SuperAgent and one proposal;
+3. `POST .../authorize` → **200**, `authorized_not_applied`;
+4. `POST .../apply` → **200**, `applied:true`, `scope:"lesson_artifact_only"`;
+5. read back `evolution/LESSONS.jsonl` and see the proposal id;
+6. `POST .../rollback` → **200**, `rolled_back:true`, no proposal id remains.
+
+This proves the positive five-seat authorization plus lesson apply/rollback path
+at the route/database level. The four voter tasks are seeded test doubles, not
+model-spawned agents.
