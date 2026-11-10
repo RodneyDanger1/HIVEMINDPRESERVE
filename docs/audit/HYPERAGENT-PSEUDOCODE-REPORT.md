@@ -438,3 +438,15 @@ skipped, control characters are replaced, and the block is fenced with
 `<<<AUTHORIZED_LESSONS_DATA … <<<END_AUTHORIZED_LESSONS>>>`. Apply rejects lesson
 fields containing secret markers or control characters. Live run `01a1c740-…`
 returned HONEYCOMB through this path (3,478 tokens). Backend 51 suites / 636 passed.
+## 11. Live automatic four-voter convene (2026-11-10)
+
+`propose_improvement` now auto-spawns exactly four SuperAgent tasks (direct
+children of the root) and sends each an A2A `evolution_vote_request`. The four
+tasks execute after the root control turn, see the request in their scoped
+context, and call `vote_evolution`.
+
+Live run `01a1c77e-…` (30,288 tokens): four depth-1 `super` tasks, four approve
+votes, zero rejections, `awaiting_operator`. Against the same data dir:
+authorize 200 (`authorized_not_applied`) → apply 200 (`lesson_artifact_only`) →
+lessons count 1 → rollback 200 → lessons count 0. Evidence:
+`docs/evidence/live/live-tokenlab-auto-voters-five-seat.json`.

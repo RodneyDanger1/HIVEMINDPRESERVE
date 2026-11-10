@@ -1,0 +1,22 @@
+{
+    "lesson_count_after_apply":  1,
+    "run_id":  "01a1c77e-9713-74a1-bb64-cae5851270e4",
+    "proposal_id":  "01a1c77e-aad7-71be-a15f-13216bfbae8b",
+    "lesson_count_after_rollback":  0,
+    "auto_spawned_voters":  4,
+    "provider":  "tokenlab",
+    "vote_state":  "awaiting_operator",
+    "rollback_http":  200,
+    "superagent_approvals":  4,
+    "rejections":  0,
+    "observed_at":  "2026-11-10T21:56:00Z",
+    "usage":  {
+                  "total_tokens":  30288,
+                  "prompt_tokens":  26269,
+                  "completion_tokens":  4019
+              },
+    "authorize_http":  200,
+    "apply_http":  200,
+    "apply_scope":  "lesson_artifact_only",
+    "authorize_state":  "authorized_not_applied"
+}

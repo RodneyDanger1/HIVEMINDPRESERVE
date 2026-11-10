@@ -419,3 +419,16 @@ abort controller, render `LoadingState`/`ErrorState` (role=status/alert), show
 an explicit idle instruction when no run is selected, and render
 `can_apply`/`applied` as `unknown`/`yes`/`no` rather than `String(null)`.
 Web gate: 31 files / 231 tests passed, typecheck 0, production build 0.
+## Test AD — live auto-spawned four SuperAgent voters + five-seat apply
+
+Run `01a1c77e-…` (TokenLab DeepSeek-V4.1-Flash, 30,288 tokens) recorded one
+proposal; `propose_improvement` auto-spawned **four** SuperAgent voters with A2A
+vote requests; the roster shows four depth-1 `super` tasks; the proposal API
+reports four approve votes, zero rejections, `vote_state="awaiting_operator"`.
+
+Against the same data directory, the final build then returned:
+`POST .../authorize` **200** `authorized_not_applied`; `POST .../apply` **200**
+`lesson_artifact_only` with one lesson; `GET lessons` **count=1**;
+`POST .../rollback` **200** and `GET lessons` **count=0**.
+
+Evidence: `docs/evidence/live/live-tokenlab-auto-voters-five-seat.json`.
