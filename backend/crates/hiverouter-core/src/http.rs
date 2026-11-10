@@ -1489,6 +1489,19 @@ async fn clear_run_memory(
     if !run.status.is_terminal() {
         return refusal_response(StatusCode::CONFLICT, &Refusal::RunActive);
     }
+    // Governance records are the only rollback key. Refuse to clear them; a
+    // global applied lesson must never be orphaned by a run-memory wipe.
+    match state.engine.store.memory_hyper_summary(run_id, 256) {
+        Ok(entries) => {
+            if entries.iter().any(|entry| {
+                entry.key.starts_with("evolution_authorization:")
+                    || entry.key.starts_with("evolution_apply:")
+            }) {
+                return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
+            }
+        }
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
     match state.engine.store.clear_run_memory(run_id) {
         Ok(receipt) => (
             [(header::CACHE_CONTROL, "no-store")],
@@ -2592,8 +2605,10 @@ async fn authorize_evolution_proposal(
         })))
         .into_response();
     }
+    let proposal_sha256 = evolution_proposal_sha256(&proposal_value);
     let payload = serde_json::json!({
         "proposal_id": proposal_uuid.to_string(),
+        "proposal_sha256": proposal_sha256,
         "operator_approved": true,
         "superagent_approvals": 4,
         "superagent_rejections": 0,
@@ -2651,6 +2666,25 @@ async fn evolution_lessons(State(state): State<Arc<AppState>>) -> Response {
         .into_response()
 }
 
+/// Stable hash of the proposal fields an authorization binds. Field values are
+/// concatenated explicitly so JSON map ordering cannot change the digest.
+fn evolution_proposal_sha256(proposal: &serde_json::Value) -> String {
+    let field = |name: &str| {
+        proposal
+            .get(name)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+    };
+    let canonical = format!(
+        "area={}\nproblem={}\nproposal={}\nevidence={}\n",
+        field("area"),
+        field("problem"),
+        field("proposal"),
+        field("evidence")
+    );
+    hiverouter_tools::sha256_hex(canonical.as_bytes())
+}
+
 /// Fixed, non-agent-writable lesson path used by the authorized evolution apply.
 fn evolution_lesson_path(state: &AppState) -> std::path::PathBuf {
     state.config.data_dir.join("evolution").join("LESSONS.jsonl")
@@ -2698,9 +2732,13 @@ async fn apply_evolution_lesson(
         Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     };
     let authorization_key = format!("evolution_authorization:{proposal_uuid}");
-    if !entries.iter().any(|entry| entry.key == authorization_key) {
+    let Some(authorization) = entries
+        .iter()
+        .find(|entry| entry.key == authorization_key)
+        .and_then(|entry| serde_json::from_str::<serde_json::Value>(&entry.value).ok())
+    else {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
-    }
+    };
     let apply_key = format!("evolution_apply:{proposal_uuid}");
     if entries.iter().any(|entry| entry.key == apply_key) {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
@@ -2713,6 +2751,15 @@ async fn apply_evolution_lesson(
     else {
         return refusal_response(StatusCode::NOT_FOUND, &Refusal::ToolNotFound);
     };
+    let Some(authorized_sha256) = authorization
+        .get("proposal_sha256")
+        .and_then(serde_json::Value::as_str)
+    else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid);
+    };
+    if evolution_proposal_sha256(&proposal) != authorized_sha256 {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+    }
     let root_task_id = match state.engine.store.tasks_for_run(run_id) {
         Ok(tasks) => tasks
             .into_iter()
