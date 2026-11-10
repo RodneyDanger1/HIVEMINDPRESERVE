@@ -4408,6 +4408,44 @@ impl RunEngine {
                             .and_then(serde_json::Value::as_str)
                             .map(str::trim)
                             .unwrap_or_default();
+                        let existing_key = self
+                            .store
+                            .memory_hyper_summary(run.id, 64)?
+                            .into_iter()
+                            .filter(|entry| entry.key.starts_with("improvement:"))
+                            .find(|entry| {
+                                serde_json::from_str::<serde_json::Value>(&entry.value)
+                                    .ok()
+                                    .is_some_and(|value| {
+                                        value.get("area").and_then(serde_json::Value::as_str)
+                                            == Some(area)
+                                            && value
+                                                .get("problem")
+                                                .and_then(serde_json::Value::as_str)
+                                                == Some(problem)
+                                            && value
+                                                .get("proposal")
+                                                .and_then(serde_json::Value::as_str)
+                                                == Some(proposal)
+                                    })
+                            })
+                            .map(|entry| entry.key);
+                        if let Some(key) = existing_key {
+                            // The root control loop is two turns; the model can
+                            // repeat the same proposal. Idempotency is keyed by
+                            // the proposal content, not by a fresh UUID.
+                            self.record_root_gate_decision(
+                                run,
+                                root,
+                                "propose_improvement",
+                                "deduplicated",
+                                &format!("{key} area={area} applied=false"),
+                            )?;
+                            _result_text.push_str(&format!(
+                                "- existing improvement proposal {key} area={area}; not re-recorded\n"
+                            ));
+                            continue;
+                        }
                         let proposal_id = Uuid::now_v7().to_string();
                         let payload = serde_json::json!({
                             "status": "proposed",
