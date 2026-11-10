@@ -5,7 +5,8 @@
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
 import { failureText, httpFailure } from '../api/failure';
-import { EmptyState } from './StatePack';
+import { EmptyState, ErrorState, LoadingState } from './StatePack';
+import { fetchWithBoundTimeout } from '../api/http';
 
 export interface LessonRow {
   readonly proposalId: string;
@@ -60,7 +61,13 @@ export function LessonsPanel() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${apiBaseUrl()}/api/evolution/lessons`, { headers: { Accept: 'application/json' } })
+    const controller = new AbortController();
+    setStatus('loading');
+    fetchWithBoundTimeout(`${apiBaseUrl()}/api/evolution/lessons`, {
+      label: 'GET evolution lessons',
+      signal: controller.signal,
+      init: { headers: { Accept: 'application/json' } },
+    })
       .then(async (response) => {
         if (!response.ok) {
           throw await httpFailure(response, 'GET evolution lessons');
@@ -84,6 +91,7 @@ export function LessonsPanel() {
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [reloadToken]);
 
@@ -96,8 +104,8 @@ export function LessonsPanel() {
         <h3 className="type-heading-h4 text-ink-900">Authorized lessons</h3>
         <span className="type-mono-meta text-meta">read-only</span>
       </div>
-      {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading lessons…</p> : null}
-      {status === 'error' ? <p className="type-mono-meta mt-1 text-signal">{failure}</p> : null}
+      {status === 'loading' ? <LoadingState label="Loading lessons..." /> : null}
+      {status === 'error' ? <ErrorState message={failure ?? 'Evolution lessons are unavailable.'} /> : null}
       {status === 'ok' && rows.length === 0 ? (
         <EmptyState message="No authorized evolution lessons recorded." />
       ) : null}

@@ -9,7 +9,8 @@ import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
 import { failureText, httpFailure } from '../api/failure';
 import { useUiStore } from '../state/context';
-import { EmptyState } from './StatePack';
+import { EmptyState, ErrorState, LoadingState } from './StatePack';
+import { fetchWithBoundTimeout } from '../api/http';
 
 interface ProposalGovernance {
   readonly requiredApprovals: number | null;
@@ -136,10 +137,16 @@ export function ProposalsPanel() {
       return;
     }
     let cancelled = false;
+    const controller = new AbortController();
     setStatus('loading');
-    fetch(`${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals`, {
-      headers: { Accept: 'application/json' },
-    })
+    fetchWithBoundTimeout(
+      `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals`,
+      {
+        label: 'GET proposals',
+        signal: controller.signal,
+        init: { headers: { Accept: 'application/json' } },
+      },
+    )
       .then(async (response) => {
         if (!response.ok) {
           throw await httpFailure(response, 'GET proposals');
@@ -164,6 +171,7 @@ export function ProposalsPanel() {
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [runId, reloadToken]);
 
@@ -175,13 +183,16 @@ export function ProposalsPanel() {
     setAuthorizing(true);
     setActionError(null);
     try {
-      const response = await fetch(
+      const response = await fetchWithBoundTimeout(
         `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposalId)}/authorize`,
         {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+          label: 'POST proposal authorization',
+          init: {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+            },
           },
         },
       );
@@ -205,13 +216,16 @@ export function ProposalsPanel() {
     setAuthorizing(true);
     setActionError(null);
     try {
-      const response = await fetch(
+      const response = await fetchWithBoundTimeout(
         `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposalId)}/${action}`,
         {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+          label: `POST proposal ${action}`,
+          init: {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+            },
           },
         },
       );
@@ -236,10 +250,11 @@ export function ProposalsPanel() {
         <h3 className="type-heading-h4 text-ink-900">Self-evolution proposals</h3>
         <span className="type-mono-meta text-meta">operator-gated · lesson only</span>
       </div>
-      {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading proposals…</p> : null}
-      {status === 'error' ? <p className="type-mono-meta mt-1 text-signal">{failure}</p> : null}
+      {status === 'idle' ? <EmptyState message="Select a run to read evolution proposals." /> : null}
+      {status === 'loading' ? <LoadingState label="Loading proposals..." /> : null}
+      {status === 'error' ? <ErrorState message={failure ?? 'Evolution proposals are unavailable.'} /> : null}
       {actionError === null ? null : (
-        <p className="type-mono-meta mt-1 text-signal">{actionError}</p>
+        <p role="alert" className="type-mono-meta mt-1 text-signal">{actionError}</p>
       )}
       {status === 'ok' && rows.length === 0 ? (
         <EmptyState message="No self-evolution proposals recorded in this run." />
@@ -257,11 +272,18 @@ export function ProposalsPanel() {
               <p className="type-mono-meta mt-1 text-ink-700">{row.problem}</p>
               <p className="type-body-sm mt-1 text-ink-900">{row.proposal}</p>
               <div className="type-mono-meta mt-2 flex flex-wrap gap-x-3 gap-y-1 text-meta">
-                <span>applied: {String(row.applied)}</span>
+                <span>applied: {row.applied ? 'yes' : 'no'}</span>
                 <span>
                   superagent votes: {row.currentApprovals} approve / {row.currentRejections} reject
                 </span>
-                <span>can_apply: {String(row.governance.canApply)}</span>
+                <span>
+                  can_apply:{' '}
+                  {row.governance.canApply === null
+                    ? 'unknown'
+                    : row.governance.canApply
+                      ? 'yes'
+                      : 'no'}
+                </span>
                 <span>
                   votes required: {row.governance.requiredApprovals ?? 'unknown'} (operator{' '}
                   {row.governance.operatorApprovals ?? 'unknown'} + superagents{' '}
