@@ -351,3 +351,13 @@ spawning for the vote, or automatic application. Test:
 
 This is authorized self-evolution, not autonomy: four spawned SuperAgents plus the
 operator must be unanimous, and nothing applies before all five approvals exist.
+---
+
+## 13. Self-evolution proposal surface
+
+`GET /api/agents/runs/{run_id}/proposals` returns recorded `improvement:*` proposals
+with `applied:false`, the five-seat `governance` block, and `vote_path:"not_implemented"`.
+The web `ProposalsPanel` renders them read-only and refuses to present them as applied.
+
+This is visibility, not self-application. The backend has no vote-submission or apply
+path; the panel deliberately shows `awaiting_votes` and `can_apply:false`.

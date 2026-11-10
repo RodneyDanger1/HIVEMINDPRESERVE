@@ -434,3 +434,13 @@ A negative live run with `HIVEROUTER_SIDE_EFFECTS=0` approved the call and got
 `E_TOOL_NOT_ALLOWED`; tool rows were only `web_fetch: refused` and
 `report_result: ok`. Evidence:
 `docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.
+## 21. Proposal surface (read-only)
+
+`GET /api/agents/runs/{run_id}/proposals` exposes recorded improvement proposals
+and their governance block. The response explicitly sets `applied:false` and
+`vote_path:"not_implemented"`. The web `ProposalsPanel` renders this projection
+and contains no approve/apply button.
+
+This is a read surface, not a five-seat vote or apply mechanism. The proposal
+payload now carries a stable `proposal_id`; votes, four-SuperAgent spawning for
+those votes, operator authorization, and rollback remain unimplemented.
