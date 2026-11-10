@@ -407,3 +407,8 @@ mismatch, so an authorization cannot be reused for changed proposal text. Run
 memory clear now refuses **409** when an `evolution_authorization:` or
 `evolution_apply:` row exists, so a run-memory wipe cannot orphan an applied
 lesson. Backend gate: 51 suites / 636 passed.
+Negative paths now exercised in the same route test: after authorization, the
+proposal is mutated → apply returns **409**; restoring the proposal → apply
+returns **200**. After rollback, the run is set terminal and
+`POST /api/memory/clear` with confirm/reason returns **409** because the
+governance rows still exist.

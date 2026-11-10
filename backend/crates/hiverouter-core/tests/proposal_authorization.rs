@@ -50,6 +50,31 @@ async fn post_json(addr: std::net::SocketAddr, path: &str, token: &str) -> (u16,
     (status, body)
 }
 
+async fn post_json_with_body(
+    addr: std::net::SocketAddr,
+    path: &str,
+    token: &str,
+    body: &str,
+) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).await.expect("connect");
+    let request = format!(
+        "POST {path} HTTP/1.1\r\nHost: {addr}\r\nAuthorization: Bearer {token}\r\nContent-Type: application/json\r\nAccept: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    stream.write_all(request.as_bytes()).await.expect("write");
+    let mut raw = Vec::new();
+    let _ = tokio::time::timeout(Duration::from_secs(5), stream.read_to_end(&mut raw)).await;
+    let text = String::from_utf8_lossy(&raw).into_owned();
+    let status = text
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+        .expect("status");
+    let body = text.split("\r\n\r\n").nth(1).unwrap_or_default().to_owned();
+    (status, body)
+}
+
 #[tokio::test]
 async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     let temp = tempfile::tempdir().expect("temp dir");
@@ -151,6 +176,32 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     assert_eq!(value["state"], "authorized_not_applied");
     assert_eq!(value["applied"], false);
 
+    let mut changed = proposal.clone();
+    changed["proposal"] = serde_json::json!("A different proposal after authorization");
+    store
+        .record_agent_memory_scoped(
+            "hyper",
+            &format!("improvement:{proposal_id}"),
+            &changed.to_string(),
+            run.id,
+            root.id,
+            "run",
+        )
+        .expect("mutate proposal");
+    let (status, body) = post_json(server.addr, &format!("{base}/apply"), support::TEST_TOKEN).await;
+    assert_eq!(status, 409, "changed proposal apply: {body}");
+
+    store
+        .record_agent_memory_scoped(
+            "hyper",
+            &format!("improvement:{proposal_id}"),
+            &proposal.to_string(),
+            run.id,
+            root.id,
+            "run",
+        )
+        .expect("restore proposal");
+
     let (status, body) = post_json(server.addr, &format!("{base}/apply"), support::TEST_TOKEN).await;
     assert_eq!(status, 200, "apply: {body}");
     let applied: Value = serde_json::from_str(&body).expect("apply JSON");
@@ -198,4 +249,22 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     let row = &projection["proposals"][0];
     assert_eq!(row["lesson_applied"], false, "row: {row}");
     assert_eq!(row["lesson_state"], "rolled_back", "row: {row}");
+
+    // A terminal run with governance records must not lose the rollback key.
+    store
+        .set_run_status(run.id, AgentState::Completed, None)
+        .expect("complete run");
+    let clear_body = serde_json::json!({
+        "run_id": run.id.to_string(),
+        "confirm": true,
+        "reason": "test clear guard",
+    });
+    let (status, body) = post_json_with_body(
+        server.addr,
+        "/api/memory/clear",
+        support::TEST_TOKEN,
+        &clear_body.to_string(),
+    )
+    .await;
+    assert_eq!(status, 409, "governance memory clear: {body}");
 }
