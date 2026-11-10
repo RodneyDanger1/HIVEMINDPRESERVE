@@ -4116,8 +4116,10 @@ impl RunEngine {
                             .get("scope")
                             .and_then(serde_json::Value::as_str)
                             .unwrap_or("run");
-                        let mut entries =
-                            self.store.memory_hyper_summary(run.id, requested_limit)?;
+                        // Fetch a bounded superset before applying the scope
+                        // predicate; filtering after a small limit can hide the
+                        // requested bank when newer run-bank entries dominate.
+                        let mut entries = self.store.memory_hyper_summary(run.id, 64)?;
                         entries.retain(|entry| match requested_scope {
                             "hive" => entry.bank_id.starts_with("bank:hive:"),
                             "branch" => entry.bank_id.starts_with("bank:branch:"),
