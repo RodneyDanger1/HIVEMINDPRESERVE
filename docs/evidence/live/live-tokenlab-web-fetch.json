@@ -1,23 +1,22 @@
 {
     "url":  "https://example.com",
-    "body_bytes":  577,
-    "contains":  "Example Domain",
+    "usage":  {
+                  "total_tokens":  9257,
+                  "prompt_tokens":  8232,
+                  "completion_tokens":  1025
+              },
     "http_status":  200,
     "approval":  {
                      "decision":  "approve",
                      "tool":  "web_fetch"
                  },
-    "usage":  {
-                  "total_tokens":  9351,
-                  "prompt_tokens":  8411,
-                  "completion_tokens":  940
-              },
-    "observed_at":  "2026-11-10T17:10:00Z",
+    "observed_at":  "2026-11-10T17:36:00Z",
     "tools":  [
                   "web_fetch:ok"
               ],
+    "grant":  "verified_and_consumed_before_http",
     "status":  "completed",
-    "run_id":  "01a1c675-1afd-71c8-afa2-0ef0a202ba8c",
+    "run_id":  "01a1c689-e005-72cf-8f36-eefbedf973bb",
     "provider":  "tokenlab",
     "tasks":  2
 }

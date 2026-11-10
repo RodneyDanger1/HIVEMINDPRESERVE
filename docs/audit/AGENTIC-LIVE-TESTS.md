@@ -305,3 +305,10 @@ Run `01a1c678-fcbb-7182-9bfa-8f04218520ff` requested `shell_exec` with
 `shell_exec: ok`, and the Agent reported stdout `shell-ok` with exit code 0.
 This is the live shell path, not just a unit test. Evidence:
 `docs/evidence/live/live-tokenlab-shell-exec.json`.
+## Test P — durable grant verification before web_fetch
+
+Final build run `01a1c689-e005-72cf-8f36-eefbedf973bb` completed with exactly
+one `web_fetch: ok` row (9,257 tokens). The durable single-use grant is now
+verified/consumed before the HTTP request, so an approval cannot be replayed
+from an in-memory waiter alone. Evidence:
+`docs/evidence/live/live-tokenlab-web-fetch.json`.

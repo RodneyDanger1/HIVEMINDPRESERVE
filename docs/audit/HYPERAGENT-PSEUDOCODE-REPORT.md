@@ -255,3 +255,50 @@ self-improvement, and an observable UI. It is **not** an AGI and not a
 self-modifying HyperAgent. The next safe gains are request idempotency, a
 first-class control ledger, network transport, daemon ticks, and live stability —
 not a claim of autonomy.
+
+---
+
+## 4. Current-wave pseudocode update (2026-11-10)
+
+```text
+tool_registry = 11 tools / 5 permission classes
+web_fetch:
+  caller tier in {SuperAgent, WorkerAgent} AND persona allows web_fetch
+  -> request approval (Network)
+  -> operator resolves nonce
+  -> resume_and_execute
+     if HIVEROUTER_SIDE_EFFECTS == 0: refuse E_TOOL_NOT_ALLOWED
+     verify_and_consume_durable_grant(run, web_fetch, args)
+     parse URL: https only, default port only, no userinfo
+     resolve host under 10s timeout + cancellation
+     reject loopback/private/link-local/CGNAT/240/4/IPv4-mapped/NAT64
+     GET with redirects disabled, 15s timeout
+     stream body until EOF or >1 MiB -> E_FILE_TOO_LARGE
+     return bounded result
+
+root propose_improvement:
+  record in run bank
+  state = awaiting_votes, required = 4 superagents + operator, unanimous
+  applied = false; no code/schema/tool/prompt/gate changes
+  no vote-submission/apply path exists yet
+```
+
+### Evidence additions
+
+- `web_fetch` live success: run `01a1c689-e005-72cf-8f36-eefbedf973bb`,
+  HTTP 200, one `web_fetch: ok`, 9,257 tokens.
+- kill switch: run `01a1c676-20cb-74ca-8535-1540b1e942ce`, approved request
+  refused `E_TOOL_NOT_ALLOWED`, no fetch.
+- shell: run `01a1c678-fcbb-7182-9bfa-8f04218520ff`, approved
+  `cmd.exe /c echo shell-ok`, stdout `shell-ok`, exit 0.
+- Tests: backend 50 suites / 633 passed / 0 failed / 2 ignored; web 227 passed.
+- Real bugs fixed by audit: kill-switch bypass, DNS hang, post-buffer body cap,
+  unnecessary jail requirement, hyphenated persona lookup, missing durable
+  grant verification for `web_fetch`.
+
+### Honest boundary
+
+RapidTool's phase pipeline, evidence-hashed DoD gate, Agent Packet, and unified
+ledger remain **not implemented**. HiveMind now has a real approval-gated
+network tool and a truthful five-seat proposal contract, but no implemented
+SuperAgent vote submission or self-apply path.
