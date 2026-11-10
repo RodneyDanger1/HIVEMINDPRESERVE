@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `63218e9`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`  
-Portable package: `dist/HiveMind.zip` SHA-256 `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`
+Release binary: `target/release/hiverouter.exe` SHA-256 `ECEA2A36E0BF43D63D3011B435874FB73873E98935B875B5CE16A9672C24B60C`  
+Portable package: `dist/HiveMind.zip` SHA-256 `347625E082C23546267F13861462C1702D2B1D42546FAEBD47C340DB437DFF3F`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `ECEA2A36E0BF43D63D3011B435874FB73873E98935B875B5CE16A9672C24B60C`
 
 ## 1. What HiveMind is supposed to be
 

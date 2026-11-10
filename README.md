@@ -169,9 +169,9 @@ Current gates (this tree, 2026-11-10):
 - Backend: **51 suites, 635 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **231 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116`
+  `347625E082C23546267F13861462C1702D2B1D42546FAEBD47C340DB437DFF3F`
 - Packaged server / release binary: SHA-256
-  `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`
+  `ECEA2A36E0BF43D63D3011B435874FB73873E98935B875B5CE16A9672C24B60C`
 
 ---
 
@@ -356,7 +356,7 @@ operator must be unanimous, and nothing applies before all five approvals exist.
 ## 13. Self-evolution proposal surface
 
 `GET /api/agents/runs/{run_id}/proposals` returns recorded `improvement:*` proposals
-with `applied:false`, the five-seat `governance` block, and `vote_path:"superagent_votes_recorded; operator_apply_not_implemented"`.
+with `applied:false`, the five-seat `governance` block, and `vote_path:"superagent_votes; operator_authorize; lesson_apply; lesson_rollback; code_apply_not_implemented"`.
 The web `ProposalsPanel` renders them read-only and refuses to present them as applied.
 
 SuperAgents record `approve`/`reject` with `vote_evolution`; the API
@@ -369,7 +369,7 @@ lesson line to `evolution/LESSONS.jsonl` and `POST .../rollback` removes it.
 mutation and `can_apply` remains false.
 The applied lesson ledger is also readable at `GET /api/evolution/lessons` and
 rendered read-only by `LessonsPanel`. It is a lesson artifact viewer, not a
-behavioral learning loop; no future run retrieves it automatically.
+behavioral learning loop; authorized lessons are loaded at boot and hot-reloaded after apply/rollback into planner, root, and task prompts. No automatic quality evaluation or code mutation exists.
 Boot retrieval: authorized lessons are loaded from `<data_dir>/evolution/LESSONS.jsonl`
 and appended to the planner, root-control, and task prompts as bounded, labelled
 data (8 lines, 400 chars each). A live seeded-lesson run returned the lesson token

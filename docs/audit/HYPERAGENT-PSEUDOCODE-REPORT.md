@@ -280,7 +280,7 @@ root propose_improvement:
   record in run bank
   state = awaiting_votes, required = 4 superagents + operator, unanimous
   applied = false; no code/schema/tool/prompt/gate changes
-  no vote-submission/apply path exists yet
+  vote + operator authorization + lesson apply/rollback exist; no code mutation or four-voter spawn
 ```
 
 ### Evidence additions
@@ -371,8 +371,8 @@ GET proposals now reports authorized=true and vote_state=authorized_not_applied
 UI shows "Authorize with operator (5th seat)" only when all four approvals exist
 ```
 
-This is the fifth seat, not self-application. Apply and rollback remain absent;
-`can_apply` is false. Backend 633 passed; web 229 passed.
+This is the fifth seat, not code self-application. Lesson apply and rollback exist
+and change only `evolution/LESSONS.jsonl`; `can_apply` remains false for code. Backend 633 passed; web 229 passed.
 Live fifth-seat refusal: `POST .../authorize` on a proposal with zero
 SuperAgent votes returned HTTP 409; no authorization row and no apply. Evidence:
 `docs/evidence/live/live-tokenlab-authorize-refusal.json`.

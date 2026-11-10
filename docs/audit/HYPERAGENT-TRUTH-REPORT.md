@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 51 suites, 635 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 231 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116` |
-| T4 | Server binary hash | **VERIFIED** | `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `347625E082C23546267F13861462C1702D2B1D42546FAEBD47C340DB437DFF3F` |
+| T4 | Server binary hash | **VERIFIED** | `ECEA2A36E0BF43D63D3011B435874FB73873E98935B875B5CE16A9672C24B60C` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -387,7 +387,7 @@ It also carries `truthful_scope.what_changes`, `what_does_not_change`, and
 `side_effects_while_awaiting`. Recording never mutates code, schema, tool grants,
 prompts, or running agents. A proposal stays `awaiting_votes` until four spawned
 SuperAgent approvals and the operator approval are recorded **and unanimous**; the
-current tree does not implement the vote-submission path or automatic application.
+current tree implements SuperAgent vote submission, operator authorization, and lesson apply/rollback; it does not implement four-voter spawning, automatic application, code mutation, or quality evaluation.
 Test: `root_can_record_but_never_auto_apply_an_improvement_proposal`.
 ## 20. `web_fetch` network capability (approval-gated)
 
@@ -438,7 +438,7 @@ A negative live run with `HIVEROUTER_SIDE_EFFECTS=0` approved the call and got
 
 `GET /api/agents/runs/{run_id}/proposals` exposes recorded improvement proposals
 and their governance block. The response explicitly sets `applied:false` and
-`vote_path:"superagent_votes_recorded; operator_apply_not_implemented"`. The web `ProposalsPanel` renders this projection
+`vote_path:"superagent_votes; operator_authorize; lesson_apply; lesson_rollback; code_apply_not_implemented"`. The web `ProposalsPanel` renders this projection
 and contains no approve/apply button.
 
 The proposal payload now carries a stable `proposal_id`, and SuperAgents can

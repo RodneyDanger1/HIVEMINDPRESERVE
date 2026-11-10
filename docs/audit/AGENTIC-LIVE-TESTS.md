@@ -323,7 +323,7 @@ UUID. Evidence: `docs/evidence/live/live-tokenlab-proposal-dedupe.json`.
 
 Final vote-tool build run `01a1c6bc-be10-7721-839b-15b8aeb365b2` completed with
 one proposal, `applied=false`, zero votes, and
-`vote_path="superagent_votes_recorded; operator_apply_not_implemented"`.
+`vote_path="superagent_votes; operator_authorize; lesson_apply; lesson_rollback; code_apply_not_implemented"`.
 Evidence: `docs/evidence/live/live-tokenlab-proposal-votes.json`.
 ## Test S — operator authorization refused without four votes
 
@@ -374,7 +374,14 @@ HTTP routes against an in-process server and real SQLite rows:
 This proves the positive five-seat authorization plus lesson apply/rollback path
 at the route/database level. The four voter tasks are seeded test doubles, not
 model-spawned agents.
-Tamper branch (same test): after apply, append one foreign line to
+Tamper branch (same test): after apply, mutate the target lesson line in
 `evolution/LESSONS.jsonl`; rollback returns **409** and the tampered bytes remain
 unchanged. Restoring the exact applied bytes makes rollback succeed and removes
-only the proposal line.
+only the proposal line. A foreign line append no longer blocks per-line rollback.
+## Test Y — hot reload, per-line rollback, and rollback projection
+
+The positive route test now also proves: apply hot-reloads the lesson snapshot
+without restart; rollback removes the exact line by stored `line_sha256` (not the
+whole-file hash); mutating the target line returns **409** and preserves it; and
+the proposals projection reports `lesson_applied:false`, `lesson_state:"rolled_back"`
+after a successful rollback. Backend gate: 51 suites / 635 passed.
