@@ -28,6 +28,7 @@ export interface ProposalRow {
   readonly voteState: string | null;
   readonly currentApprovals: number;
   readonly currentRejections: number;
+  readonly authorized: boolean;
   readonly governance: ProposalGovernance;
 }
 
@@ -80,6 +81,7 @@ export function decodeProposals(body: unknown): ProposalRow[] {
       voteState: text(record.vote_state),
       currentApprovals: num(record.current_superagent_approvals) ?? 0,
       currentRejections: num(record.current_superagent_rejections) ?? 0,
+      authorized: bool(record.authorized) ?? false,
       governance: {
         requiredApprovals: num(governanceRaw.required_approvals),
         superagentApprovals: num(governanceRaw.superagent_approvals),
@@ -93,12 +95,24 @@ export function decodeProposals(body: unknown): ProposalRow[] {
   return rows;
 }
 
+export function canAuthorizeProposal(row: ProposalRow): boolean {
+  return (
+    !row.authorized &&
+    row.applied === false &&
+    row.currentRejections === 0 &&
+    row.currentApprovals >= 4 &&
+    row.governance.canApply === false
+  );
+}
+
 export function ProposalsPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
   const [status, setStatus] = useState<Status>('idle');
   const [rows, setRows] = useState<readonly ProposalRow[]>([]);
   const [votePath, setVotePath] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [authorizing, setAuthorizing] = useState(false);
 
   useEffect(() => {
     if (runId === null) {
@@ -138,6 +152,35 @@ export function ProposalsPanel() {
     };
   }, [runId]);
 
+  async function authorize(row: ProposalRow): Promise<void> {
+    const proposalId = row.proposalKey.replace(/^improvement:/, '');
+    if (runId === null || proposalId.length === 0) {
+      return;
+    }
+    setAuthorizing(true);
+    setActionError(null);
+    try {
+      const response = await fetch(
+        `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposalId)}/authorize`,
+        { method: 'POST', headers: { Accept: 'application/json' } },
+      );
+      if (!response.ok) {
+        throw await httpFailure(response, 'POST proposal authorization');
+      }
+      setRows((previous) =>
+        previous.map((candidate) =>
+          candidate.proposalKey === row.proposalKey
+            ? { ...candidate, authorized: true, voteState: 'authorized_not_applied' }
+            : candidate,
+        ),
+      );
+    } catch (error: unknown) {
+      setActionError(failureText(error, 'The five-seat authorization was refused.'));
+    } finally {
+      setAuthorizing(false);
+    }
+  }
+
   return (
     <section
       aria-label="Self-evolution proposals"
@@ -149,6 +192,9 @@ export function ProposalsPanel() {
       </div>
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading proposals…</p> : null}
       {status === 'error' ? <p className="type-mono-meta mt-1 text-signal">{failure}</p> : null}
+      {actionError === null ? null : (
+        <p className="type-mono-meta mt-1 text-signal">{actionError}</p>
+      )}
       {status === 'ok' && rows.length === 0 ? (
         <EmptyState message="No self-evolution proposals recorded in this run." />
       ) : null}
@@ -177,6 +223,19 @@ export function ProposalsPanel() {
                   {String(row.governance.unanimous)})
                 </span>
               </div>
+              {canAuthorizeProposal(row) ? (
+                <button
+                  type="button"
+                  className="type-label mt-2 rounded-[var(--radius-button)] bg-honey-300 px-3 py-1.5 text-ink-900 disabled:opacity-50"
+                  disabled={authorizing}
+                  onClick={() => {
+                    void authorize(row);
+                  }}
+                  title="Requires four distinct SuperAgent approvals; records operator authorization only, never applies code"
+                >
+                  Authorize with operator (5th seat)
+                </button>
+              ) : null}
             </li>
           ))}
         </ul>

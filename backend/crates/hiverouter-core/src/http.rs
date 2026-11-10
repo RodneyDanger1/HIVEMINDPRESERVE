@@ -631,6 +631,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/agents/runs/{run_id}/proposals",
             get(run_evolution_proposals),
         )
+        .route(
+            "/api/agents/runs/{run_id}/proposals/{proposal_id}/authorize",
+            post(authorize_evolution_proposal),
+        )
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
@@ -2348,6 +2352,10 @@ async fn run_evolution_proposals(
         Ok(entries) => entries,
         Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     };
+    let authorizations: std::collections::HashSet<String> = entries
+        .iter()
+        .filter_map(|entry| entry.key.strip_prefix("evolution_authorization:").map(str::to_owned))
+        .collect();
     let votes: Vec<(String, serde_json::Value)> = entries
         .iter()
         .filter(|entry| entry.key.starts_with("evolution_vote:"))
@@ -2380,7 +2388,10 @@ async fn run_evolution_proposals(
                 .iter()
                 .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("reject"))
                 .count();
-            let vote_state = if rejections > 0 {
+            let authorized = authorizations.contains(&proposal_id);
+            let vote_state = if authorized {
+                "authorized_not_applied"
+            } else if rejections > 0 {
                 "rejected_by_superagent"
             } else if approvals >= 4 {
                 "awaiting_operator"
@@ -2401,6 +2412,7 @@ async fn run_evolution_proposals(
                 "current_superagent_approvals": approvals,
                 "current_superagent_rejections": rejections,
                 "vote_state": vote_state,
+                "authorized": authorized,
                 "can_apply": false,
             }))
         })
@@ -2414,6 +2426,115 @@ async fn run_evolution_proposals(
             "applied": false,
             "vote_path": "superagent_votes_recorded; operator_apply_not_implemented",
             "proposals": proposals,
+        })),
+    )
+        .into_response()
+}
+
+/// `POST /api/agents/runs/{run_id}/proposals/{proposal_id}/authorize` — the
+/// operator's fifth seat. Requires exactly four distinct SuperAgent approvals,
+/// zero rejections, and records an authorization only; it never applies code.
+async fn authorize_evolution_proposal(
+    State(state): State<Arc<AppState>>,
+    Path((run_id, proposal_id)): Path<(String, String)>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(proposal_uuid) = proposal_id.parse::<uuid::Uuid>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    let entries = match state.engine.store.memory_hyper_summary(run_id, 256) {
+        Ok(entries) => entries,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let proposal_key = format!("improvement:{proposal_uuid}");
+    let Some(proposal_value) = entries
+        .iter()
+        .find(|entry| entry.key == proposal_key)
+        .and_then(|entry| serde_json::from_str::<serde_json::Value>(&entry.value).ok())
+    else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::ToolNotFound);
+    };
+    if proposal_value.get("applied").and_then(serde_json::Value::as_bool) == Some(true) {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+    }
+    let prefix = format!("evolution_vote:{proposal_uuid}:");
+    let votes: Vec<serde_json::Value> = entries
+        .iter()
+        .filter(|entry| entry.key.starts_with(&prefix))
+        .filter_map(|entry| serde_json::from_str(&entry.value).ok())
+        .collect();
+    let mut voters = std::collections::HashSet::new();
+    let mut approvals = 0usize;
+    let mut rejections = 0usize;
+    for vote in &votes {
+        let Some(voter) = vote.get("voter_task_id").and_then(serde_json::Value::as_str) else {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid);
+        };
+        if !voters.insert(voter.to_owned()) {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+        }
+        match vote.get("vote").and_then(serde_json::Value::as_str) {
+            Some("approve") => approvals += 1,
+            Some("reject") => rejections += 1,
+            _ => return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid),
+        }
+    }
+    if voters.len() != 4 || approvals != 4 || rejections != 0 {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
+    }
+    let root_task_id = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks
+            .into_iter()
+            .find(|task| task.parent_task_id.is_none())
+            .map(|task| task.id),
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let Some(root_task_id) = root_task_id else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
+    };
+    let authorization_key = format!("evolution_authorization:{proposal_uuid}");
+    if entries.iter().any(|entry| entry.key == authorization_key) {
+        return (StatusCode::OK, Json(serde_json::json!({
+            "already_authorized": true,
+            "proposal_id": proposal_uuid.to_string(),
+            "state": "authorized_not_applied",
+            "applied": false,
+        })))
+        .into_response();
+    }
+    let payload = serde_json::json!({
+        "proposal_id": proposal_uuid.to_string(),
+        "operator_approved": true,
+        "superagent_approvals": 4,
+        "superagent_rejections": 0,
+        "unanimous": true,
+        "state": "authorized_not_applied",
+        "applied": false,
+    });
+    if let Err(refusal) = state.engine.store.record_agent_memory_scoped(
+        "hyper",
+        &authorization_key,
+        &payload.to_string(),
+        run_id,
+        root_task_id,
+        "run",
+    ) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "authorized": true,
+            "proposal_id": proposal_uuid.to_string(),
+            "state": "authorized_not_applied",
+            "applied": false,
+            "operator_approved": true,
+            "superagent_approvals": 4,
         })),
     )
         .into_response()
