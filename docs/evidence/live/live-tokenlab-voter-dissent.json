@@ -1,0 +1,19 @@
+{
+    "auto_spawned_superagents":  4,
+    "run_id":  "01a1c78b-4c16-72d5-9056-b890ad038e09",
+    "note":  "One SuperAgent rejected; another approved; two did not vote. The dissent blocks authorization.",
+    "proposal_id":  "01a1c78b-5ca5-742e-9d39-9dbe92119f8e",
+    "observed_at":  "2026-11-10T22:18:00Z",
+    "provider":  "tokenlab",
+    "vote_state":  "rejected_by_superagent",
+    "rejections":  1,
+    "usage":  {
+                  "total_tokens":  34364,
+                  "prompt_tokens":  29444,
+                  "completion_tokens":  4920
+              },
+    "approvals":  1,
+    "authorize_http":  409,
+    "apply_http":  409,
+    "votes_recorded":  2
+}

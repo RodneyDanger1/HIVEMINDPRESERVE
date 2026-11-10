@@ -435,3 +435,13 @@ Evidence: `docs/evidence/live/live-tokenlab-auto-voters-five-seat.json`.
 The proposal `truthful_scope.side_effects_while_awaiting` now names the real
 side effects: one memory row, one root-control audit row, four spawned SuperAgent
 voter tasks, and four A2A vote requests.
+## Test AE — live SuperAgent dissent blocks apply
+
+Run `01a1c78b-…` auto-spawned four SuperAgents for one proposal (four depth-1
+`super` tasks). Only two voted: one reject, one approve. The proposal state became
+`rejected_by_superagent`; `POST .../authorize` returned **409** and apply also
+**409**. No lesson was written. Evidence:
+`docs/evidence/live/live-tokenlab-voter-dissent.json`.
+
+This is the required single-dissent block, demonstrated with real model-spawned
+voters.
