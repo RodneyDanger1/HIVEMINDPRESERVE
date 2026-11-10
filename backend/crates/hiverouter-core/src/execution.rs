@@ -654,8 +654,9 @@ pub struct RunEngine {
     pub templates: Arc<TemplateRegistry>,
     /// Boot-loaded personas keyed by role/template id.
     personas: std::sync::RwLock<HashMap<String, Persona>>,
-    /// Authorized lesson lines loaded once at boot; data, never instructions.
-    authorized_lessons: Vec<String>,
+    /// Authorized lesson lines; reloaded after an apply/rollback so a running
+    /// process sees the current ledger. Data, never instructions.
+    authorized_lessons: std::sync::RwLock<Vec<String>>,
     /// Hard caps.
     pub caps: Caps,
     /// Durable snapshot store; when present a snapshot is written after every
@@ -749,7 +750,7 @@ impl RunEngine {
             executor,
             templates,
             personas: std::sync::RwLock::new(HashMap::new()),
-            authorized_lessons: Vec::new(),
+            authorized_lessons: std::sync::RwLock::new(Vec::new()),
             caps: Caps::default(),
             snapshots: None,
             tool_workspace: None,
@@ -800,9 +801,28 @@ impl RunEngine {
 
     /// Attaches boot-loaded authorized lessons. They are data, not instructions.
     #[must_use]
-    pub fn with_authorized_lessons(mut self, lessons: Vec<String>) -> Self {
-        self.authorized_lessons = lessons;
+    pub fn with_authorized_lessons(self, lessons: Vec<String>) -> Self {
+        if let Ok(mut current) = self.authorized_lessons.write() {
+            *current = lessons;
+        }
         self
+    }
+
+    /// Current bounded lesson list (cloned so a prompt build never holds the lock).
+    fn authorized_lessons_snapshot(&self) -> Vec<String> {
+        self.authorized_lessons
+            .read()
+            .map(|lessons| lessons.clone())
+            .unwrap_or_default()
+    }
+
+    /// Reloads the lesson ledger after an authorized apply or rollback. The
+    /// running process must see the change without a restart.
+    pub fn reload_authorized_lessons(&self, path: &std::path::Path) {
+        let lessons = load_authorized_lessons(path);
+        if let Ok(mut current) = self.authorized_lessons.write() {
+            *current = lessons;
+        }
     }
 
     /// Attaches the durable snapshot store (boot path).
@@ -983,7 +1003,7 @@ impl RunEngine {
             executor,
             templates,
             personas: std::sync::RwLock::new(HashMap::new()),
-            authorized_lessons: Vec::new(),
+            authorized_lessons: std::sync::RwLock::new(Vec::new()),
             caps,
             snapshots: None,
             tool_workspace: None,
@@ -2406,10 +2426,10 @@ impl RunEngine {
                     .map(|message| format!("{:?}: {}", message.role, message.content))
                     .collect::<Vec<_>>()
                     .join("\n");
-                return prompt_with_authorized_lessons(&rendered, &self.authorized_lessons);
+                return prompt_with_authorized_lessons(&rendered, &self.authorized_lessons_snapshot());
             }
         }
-        prompt_with_authorized_lessons(&run.prompt, &self.authorized_lessons)
+        prompt_with_authorized_lessons(&run.prompt, &self.authorized_lessons_snapshot())
     }
 
     /// Executes the read-only tool calls returned in one assistant turn and
@@ -4127,7 +4147,7 @@ impl RunEngine {
         let context = self.refresh_a2a_inbox(task, context)?;
         let prompt = prompt_with_authorized_lessons(
             &prompt_with_context(prompt, context.as_ref()),
-            &self.authorized_lessons,
+            &self.authorized_lessons_snapshot(),
         );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, true, false)
@@ -4152,7 +4172,7 @@ impl RunEngine {
         let context = self.refresh_a2a_inbox(task, context)?;
         let prompt = prompt_with_authorized_lessons(
             &prompt_with_context(prompt, context.as_ref()),
-            &self.authorized_lessons,
+            &self.authorized_lessons_snapshot(),
         );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, false, true)
@@ -4204,7 +4224,7 @@ impl RunEngine {
         let mut control_results = String::new();
         let mut root_all_names: HashSet<String> = HashSet::new();
         let mut root_super_spawned = false;
-        let prompt = prompt_with_authorized_lessons(&prompt, &self.authorized_lessons);
+        let prompt = prompt_with_authorized_lessons(&prompt, &self.authorized_lessons_snapshot());
         for turn in 0..2 {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);

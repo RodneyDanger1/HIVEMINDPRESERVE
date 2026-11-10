@@ -1,8 +1,9 @@
 /**
- * Read-only self-evolution proposal projection. Proposals are recorded by the
- * root tool; this panel never votes, applies, or mutates them. The server's
- * `vote_path` and `applied` fields are rendered verbatim so a proposal is never
- * presented as adopted when it is only awaiting authorization.
+ * Operator-gated self-evolution proposal projection. Proposals are recorded by
+ * the root tool; four SuperAgents vote, the operator authorizes, and apply or
+ * rollback changes only the lesson ledger. This panel cannot change code,
+ * prompts, tools, personas, or gates, and it reloads server truth after every
+ * mutation instead of patching rows optimistically.
  */
 import { useEffect, useState } from 'react';
 import { apiBaseUrl } from '../api/client';
@@ -126,6 +127,7 @@ export function ProposalsPanel() {
   const [failure, setFailure] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (runId === null) {
@@ -163,7 +165,7 @@ export function ProposalsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [runId]);
+  }, [runId, reloadToken]);
 
   async function authorize(row: ProposalRow): Promise<void> {
     const proposalId = row.proposalKey.replace(/^improvement:/, '');
@@ -186,13 +188,8 @@ export function ProposalsPanel() {
       if (!response.ok) {
         throw await httpFailure(response, 'POST proposal authorization');
       }
-      setRows((previous) =>
-        previous.map((candidate) =>
-          candidate.proposalKey === row.proposalKey
-            ? { ...candidate, authorized: true, voteState: 'authorized_not_applied' }
-            : candidate,
-        ),
-      );
+      window.dispatchEvent(new Event('hivemind:evolution-changed'));
+      setReloadToken((value) => value + 1);
     } catch (error: unknown) {
       setActionError(failureText(error, 'The five-seat authorization was refused.'));
     } finally {
@@ -221,17 +218,8 @@ export function ProposalsPanel() {
       if (!response.ok) {
         throw await httpFailure(response, `POST proposal ${action}`);
       }
-      setRows((previous) =>
-        previous.map((candidate) =>
-          candidate.proposalKey === row.proposalKey
-            ? {
-                ...candidate,
-                lessonApplied: action === 'apply',
-                voteState: action === 'apply' ? 'applied_lesson' : 'authorized_not_applied',
-              }
-            : candidate,
-        ),
-      );
+      window.dispatchEvent(new Event('hivemind:evolution-changed'));
+      setReloadToken((value) => value + 1);
     } catch (error: unknown) {
       setActionError(failureText(error, `The ${action} request was refused.`));
     } finally {
@@ -246,7 +234,7 @@ export function ProposalsPanel() {
     >
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="type-heading-h4 text-ink-900">Self-evolution proposals</h3>
-        <span className="type-mono-meta text-meta">read-only</span>
+        <span className="type-mono-meta text-meta">operator-gated · lesson only</span>
       </div>
       {status === 'loading' ? <p className="type-mono-meta mt-1 text-meta">Loading proposals…</p> : null}
       {status === 'error' ? <p className="type-mono-meta mt-1 text-signal">{failure}</p> : null}
@@ -325,8 +313,8 @@ export function ProposalsPanel() {
       ) : null}
       <p className="type-mono-meta mt-2 text-meta">
         {votePath === null
-          ? 'Vote path: unknown — this panel never applies a proposal.'
-          : `Vote path: ${votePath} — this panel never applies a proposal.`}
+          ? 'Vote path: unknown — Apply and rollback change only the lesson ledger, never code.'
+          : `Vote path: ${votePath} — Apply and rollback change only the lesson ledger, never code.`}
       </p>
     </section>
   );

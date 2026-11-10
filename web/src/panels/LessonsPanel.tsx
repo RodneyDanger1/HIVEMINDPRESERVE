@@ -50,6 +50,13 @@ export function LessonsPanel() {
   const [status, setStatus] = useState<Status>('loading');
   const [rows, setRows] = useState<readonly LessonRow[]>([]);
   const [failure, setFailure] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    const refresh = (): void => setReloadToken((value) => value + 1);
+    window.addEventListener('hivemind:evolution-changed', refresh);
+    return () => window.removeEventListener('hivemind:evolution-changed', refresh);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +85,7 @@ export function LessonsPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadToken]);
 
   return (
     <section

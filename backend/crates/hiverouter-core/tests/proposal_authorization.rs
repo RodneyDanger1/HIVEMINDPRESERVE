@@ -12,6 +12,25 @@ use serde_json::Value;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+async fn get_json(addr: std::net::SocketAddr, path: &str) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).await.expect("connect");
+    let request = format!(
+        "GET {path} HTTP/1.1\r\nHost: {addr}\r\nAccept: application/json\r\nConnection: close\r\n\r\n"
+    );
+    stream.write_all(request.as_bytes()).await.expect("write");
+    let mut raw = Vec::new();
+    let _ = tokio::time::timeout(Duration::from_secs(5), stream.read_to_end(&mut raw)).await;
+    let text = String::from_utf8_lossy(&raw).into_owned();
+    let status = text
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+        .expect("status");
+    let body = text.split("\r\n\r\n").nth(1).unwrap_or_default().to_owned();
+    (status, body)
+}
+
 async fn post_json(addr: std::net::SocketAddr, path: &str, token: &str) -> (u16, String) {
     let mut stream = TcpStream::connect(addr).await.expect("connect");
     let request = format!(
@@ -138,13 +157,16 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     let lessons = String::from_utf8(applied_bytes.clone()).expect("utf8 lessons");
     assert!(lessons.contains(&proposal_id.to_string()));
 
-    // A tampered ledger must refuse rollback and leave the tamper untouched.
-    let mut tampered = applied_bytes.clone();
-    tampered.extend_from_slice(b"{\"tampered\":true}\n");
-    std::fs::write(&lessons_path, &tampered).expect("tamper");
+    // A tampered target line must refuse rollback and leave the tamper untouched.
+    let tampered = lessons.replace("\"applied_lesson\"", "\"tampered_lesson\"");
+    assert_ne!(tampered, lessons);
+    std::fs::write(&lessons_path, tampered.as_bytes()).expect("tamper");
     let (status, body) = post_json(server.addr, &format!("{base}/rollback"), support::TEST_TOKEN).await;
     assert_eq!(status, 409, "tampered rollback: {body}");
-    assert_eq!(std::fs::read(&lessons_path).expect("tamper kept"), tampered);
+    assert_eq!(
+        std::fs::read_to_string(&lessons_path).expect("tamper kept"),
+        tampered
+    );
 
     // Restore the exact applied bytes, then rollback must succeed.
     std::fs::write(&lessons_path, &applied_bytes).expect("restore");
@@ -154,4 +176,16 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     assert_eq!(rolled["rolled_back"], true);
     let lessons = std::fs::read_to_string(&lessons_path).expect("lesson file");
     assert!(!lessons.contains(&proposal_id.to_string()));
+
+    // The projection must not claim the lesson is still applied after rollback.
+    let (status, body) = get_json(
+        server.addr,
+        &format!("/api/agents/runs/{}/proposals", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "proposals after rollback: {body}");
+    let projection: Value = serde_json::from_str(&body).expect("proposal projection JSON");
+    let row = &projection["proposals"][0];
+    assert_eq!(row["lesson_applied"], false, "row: {row}");
+    assert_eq!(row["lesson_state"], "rolled_back", "row: {row}");
 }

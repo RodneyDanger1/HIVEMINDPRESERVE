@@ -2376,6 +2376,10 @@ async fn run_evolution_proposals(
             Some((proposal_id, value))
         })
         .collect();
+    let rolled_back: std::collections::HashSet<String> = entries
+        .iter()
+        .filter_map(|entry| entry.key.strip_prefix("evolution_rollback:").map(str::to_owned))
+        .collect();
     let votes: Vec<(String, serde_json::Value)> = entries
         .iter()
         .filter(|entry| entry.key.starts_with("evolution_vote:"))
@@ -2413,11 +2417,19 @@ async fn run_evolution_proposals(
             let lesson_applied = lesson
                 .and_then(|value| value.get("applied"))
                 .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false);
+                .unwrap_or(false)
+                && !rolled_back.contains(&proposal_id);
             let lesson_sha256 = lesson
                 .and_then(|value| value.get("sha256"))
                 .cloned()
                 .unwrap_or(serde_json::Value::Null);
+            let lesson_state = if rolled_back.contains(&proposal_id) {
+                "rolled_back"
+            } else if lesson_applied {
+                "applied_lesson"
+            } else {
+                "not_applied"
+            };
             let vote_state = if authorized {
                 "authorized_not_applied"
             } else if rejections > 0 {
@@ -2443,6 +2455,7 @@ async fn run_evolution_proposals(
                 "vote_state": vote_state,
                 "authorized": authorized,
                 "lesson_applied": lesson_applied,
+                "lesson_state": lesson_state,
                 "lesson_sha256": lesson_sha256,
                 "can_apply": false,
             }))
@@ -2455,7 +2468,7 @@ async fn run_evolution_proposals(
             "run_id": run_id.to_string(),
             "count": proposals.len(),
             "applied": false,
-            "vote_path": "superagent_votes_recorded; operator_apply_not_implemented",
+            "vote_path": "superagent_votes; operator_authorize; lesson_apply; lesson_rollback; code_apply_not_implemented",
             "proposals": proposals,
         })),
     )
@@ -2713,7 +2726,9 @@ async fn apply_evolution_lesson(
         "evidence": proposal.get("evidence").cloned().unwrap_or(serde_json::Value::Null),
         "state": "applied_lesson",
     });
-    lines.push(lesson.to_string());
+    let lesson_line = lesson.to_string();
+    let line_sha256 = hiverouter_tools::sha256_hex(lesson_line.as_bytes());
+    lines.push(lesson_line);
     let mut next = lines.join("\n");
     next.push('\n');
     if let Err(refusal) = write_lesson_atomic(&path, next.as_bytes()) {
@@ -2726,6 +2741,7 @@ async fn apply_evolution_lesson(
         "applied": true,
         "artifact": "evolution/LESSONS.jsonl",
         "sha256": sha256,
+        "line_sha256": line_sha256,
         "previous_sha256": previous_sha256,
     });
     if let Err(refusal) = state.engine.store.record_agent_memory_scoped(
@@ -2736,14 +2752,17 @@ async fn apply_evolution_lesson(
         root_task_id,
         "run",
     ) {
+        let _ = write_lesson_atomic(&path, &existing);
         return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
     }
+    state.engine.reload_authorized_lessons(&path);
     (StatusCode::OK, Json(serde_json::json!({
         "applied": true,
         "scope": "lesson_artifact_only",
         "proposal_id": proposal_uuid.to_string(),
         "artifact": "evolution/LESSONS.jsonl",
         "sha256": sha256,
+        "line_sha256": line_sha256,
         "state": "applied_lesson",
     }))).into_response()
 }
@@ -2775,30 +2794,69 @@ async fn rollback_evolution_lesson(
     let Some(expected_sha) = apply_value.get("sha256").and_then(serde_json::Value::as_str) else {
         return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
     };
+    let line_sha = apply_value
+        .get("line_sha256")
+        .and_then(serde_json::Value::as_str);
     let path = evolution_lesson_path(&state);
     let existing = match read_lesson_bytes(&path) {
         Ok(bytes) => bytes,
         Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     };
-    if hiverouter_tools::sha256_hex(&existing) != expected_sha {
-        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
-    }
     let mut lines: Vec<String> = String::from_utf8_lossy(&existing)
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(str::to_owned)
         .collect();
-    let before = lines.len();
-    lines.retain(|line| {
-        serde_json::from_str::<serde_json::Value>(line)
+    let removed = if let Some(line_sha) = line_sha {
+        let mut removed = None;
+        lines.retain(|line| {
+            if hiverouter_tools::sha256_hex(line.as_bytes()) == line_sha {
+                removed = Some(line.clone());
+                false
+            } else {
+                true
+            }
+        });
+        let Some(line) = removed else {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+        };
+        let matches_proposal = serde_json::from_str::<serde_json::Value>(&line)
             .ok()
-            .and_then(|value| value.get("proposal_id").and_then(serde_json::Value::as_str).map(str::to_owned))
+            .and_then(|value| {
+                value
+                    .get("proposal_id")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_owned)
+            })
             .as_deref()
-            != Some(proposal_uuid.to_string().as_str())
-    });
-    if lines.len() == before {
-        return refusal_response(StatusCode::CONFLICT, &Refusal::ToolNotFound);
-    }
+            == Some(proposal_uuid.to_string().as_str());
+        if !matches_proposal {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+        }
+        line
+    } else {
+        if hiverouter_tools::sha256_hex(&existing) != expected_sha {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+        }
+        let before = lines.len();
+        lines.retain(|line| {
+            serde_json::from_str::<serde_json::Value>(line)
+                .ok()
+                .and_then(|value| {
+                    value
+                        .get("proposal_id")
+                        .and_then(serde_json::Value::as_str)
+                        .map(str::to_owned)
+                })
+                .as_deref()
+                != Some(proposal_uuid.to_string().as_str())
+        });
+        if lines.len() == before {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ToolNotFound);
+        }
+        String::new()
+    };
+    let _ = removed;
     let mut next = lines.join("\n");
     if !next.is_empty() {
         next.push('\n');
@@ -2832,8 +2890,10 @@ async fn rollback_evolution_lesson(
         root_task_id,
         "run",
     ) {
+        let _ = write_lesson_atomic(&path, &existing);
         return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
     }
+    state.engine.reload_authorized_lessons(&path);
     (StatusCode::OK, Json(serde_json::json!({
         "rolled_back": true,
         "proposal_id": proposal_uuid.to_string(),
