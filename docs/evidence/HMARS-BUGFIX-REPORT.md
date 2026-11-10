@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `fc88323`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321`  
-Portable package: `dist/HiveMind.zip` SHA-256 `4D7B7A7D0BDEC3F2AF7A41A684019795BF5A45770E1999883BF4B6E46DB8ED27`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321`
+Final repair HEAD at report write: `bc5ab0d`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `E1FB02E407D16CD9EEE0929F520EB68AA664A2FB33FEAEFEDE6AB4F8AE4127AC`  
+Portable package: `dist/HiveMind.zip` SHA-256 `BBB7EAA155A8FEB18EE3C607968358943929B330F36E786BAE9C6077C40DE1FE`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `E1FB02E407D16CD9EEE0929F520EB68AA664A2FB33FEAEFEDE6AB4F8AE4127AC`
 
 ## 1. What HiveMind is supposed to be
 
@@ -124,6 +124,7 @@ TRUTH:
 | `ea49218` | Daemon | allowlisted `.exe`/`.ps1` jobs run outside the DB lock with bounded args/output and timeout tree-kill |
 | `68ff3c4` | Launcher | boot-timeout path stops the child process instead of leaving a server running |
 | `fc88323` | Security | launcher/start script create a per-launch token; `/api/session` refuses a request without a matching `x-hivemind-launch` header |
+| `bc5ab0d` | Security | all `/api/*` reads require the launcher token when configured; UI wraps same-origin API fetch to send it |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -143,8 +144,8 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321
-  size 36,307,968 bytes
+  target/release/hiverouter.exe SHA-256 E1FB02E407D16CD9EEE0929F520EB68AA664A2FB33FEAEFEDE6AB4F8AE4127AC
+  size 36,315,136 bytes
 
 Smoke (no provider key, deliberately degraded):
   GET /health -> status "degraded", schema 22
@@ -212,10 +213,10 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 - **A2A attempt counter:** persisted attempts and atomic audit rows exist
   (schema v23); duplicate open questions are refused and attempts are capped at
   2. The operator UI shows the persisted count.
-- **Session token exposure:** the session bootstrap now requires the
-  launcher-issued `x-hivemind-launch` token when `HIVEROUTER_LAUNCH_TOKEN` is
-  set; without it `/api/session` is 403. Read routes remain loopback/Host-gated
-  but un-tokenized, which is the local same-user threat model.
+- **Session token exposure:** the session bootstrap and every `/api/*` read
+  require the launcher-issued `x-hivemind-launch` token when
+  `HIVEROUTER_LAUNCH_TOKEN` is set; without it the route is 403. `/health` and
+  static UI assets remain tokenless by design.
 - **Remote transports:** in-process fixture only; network remotes are not
   implemented. Audit actor uses `system`/`supervisor` for sweeps.
 - **Browser automation:** `tools/qa/ui-e2e.mjs` now drives Edge over CDP,
