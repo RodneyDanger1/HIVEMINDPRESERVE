@@ -2468,6 +2468,19 @@ async fn authorize_evolution_proposal(
         .filter(|entry| entry.key.starts_with(&prefix))
         .filter_map(|entry| serde_json::from_str(&entry.value).ok())
         .collect();
+    let tasks = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let root_task_id = tasks
+        .iter()
+        .find(|task| task.parent_task_id.is_none())
+        .map(|task| task.id);
+    let Some(root_task_id) = root_task_id else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
+    };
+    let by_id: std::collections::HashMap<_, _> =
+        tasks.into_iter().map(|task| (task.id, task)).collect();
     let mut voters = std::collections::HashSet::new();
     let mut approvals = 0usize;
     let mut rejections = 0usize;
@@ -2475,6 +2488,19 @@ async fn authorize_evolution_proposal(
         let Some(voter) = vote.get("voter_task_id").and_then(serde_json::Value::as_str) else {
             return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid);
         };
+        let Ok(voter_id) = voter.parse::<hiverouter_contract::TaskId>() else {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid);
+        };
+        let Some(voter_task) = by_id.get(&voter_id) else {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::TaskNotFound);
+        };
+        if voter_task.run_id != run_id
+            || crate::execution::task_agent_tier(voter_task)
+                != hiverouter_tools::tool::AgentTier::SuperAgent
+            || voter_task.state != hiverouter_contract::AgentState::Completed
+        {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::ToolNotAllowed);
+        }
         if !voters.insert(voter.to_owned()) {
             return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
         }
@@ -2487,16 +2513,6 @@ async fn authorize_evolution_proposal(
     if voters.len() != 4 || approvals != 4 || rejections != 0 {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
     }
-    let root_task_id = match state.engine.store.tasks_for_run(run_id) {
-        Ok(tasks) => tasks
-            .into_iter()
-            .find(|task| task.parent_task_id.is_none())
-            .map(|task| task.id),
-        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
-    };
-    let Some(root_task_id) = root_task_id else {
-        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
-    };
     let authorization_key = format!("evolution_authorization:{proposal_uuid}");
     if entries.iter().any(|entry| entry.key == authorization_key) {
         return (StatusCode::OK, Json(serde_json::json!({
