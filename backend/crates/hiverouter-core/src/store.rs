@@ -874,6 +874,43 @@ impl RunStore {
         Ok(id)
     }
 
+    /// Finds an already-open identical question so a model cannot burn the
+    /// parent answer budget on the same text twice.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn find_open_agent_message(
+        &self,
+        run_id: RunId,
+        from_task_id: TaskId,
+        to_task_id: TaskId,
+        kind: &str,
+        text: &str,
+    ) -> Result<Option<Uuid>, Refusal> {
+        let raw: Option<String> = self
+            .db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT id FROM agent_messages
+                         WHERE run_id = ?1 AND from_task_id = ?2 AND to_task_id = ?3
+                           AND kind = ?4 AND text = ?5 AND status = 'open'
+                         ORDER BY created_at DESC, rowid DESC LIMIT 1",
+                        params![
+                            run_id.to_string(),
+                            from_task_id.to_string(),
+                            to_task_id.to_string(),
+                            kind,
+                            text
+                        ],
+                        |row| row.get(0),
+                    )
+                    .optional()
+            })
+            .map_err(map)?;
+        Ok(raw.and_then(|value| value.parse::<Uuid>().ok()))
+    }
+
     /// Records one answer attempt and its audit row atomically.
     ///
     /// # Errors
@@ -886,10 +923,11 @@ impl RunStore {
         actor: &str,
         action: &str,
         detail_json: &str,
+        max_attempts: i64,
     ) -> Result<(), Refusal> {
         let actor = actor.trim();
         let action = action.trim();
-        if actor.is_empty() || action.is_empty() {
+        if actor.is_empty() || action.is_empty() || max_attempts < 1 {
             return Err(Refusal::SchemaInvalid);
         }
         let changed = self
@@ -899,11 +937,12 @@ impl RunStore {
                 let changed = tx.execute(
                     "UPDATE agent_messages
                      SET attempts = attempts + 1, last_attempt_at = ?3
-                     WHERE run_id = ?1 AND id = ?2 AND status = 'open'",
+                     WHERE run_id = ?1 AND id = ?2 AND status = 'open' AND attempts < ?4",
                     params![
                         run_id.to_string(),
                         message_id.to_string(),
-                        Timestamp::now().as_str()
+                        Timestamp::now().as_str(),
+                        max_attempts
                     ],
                 )?;
                 if changed == 1 {
@@ -931,6 +970,7 @@ impl RunStore {
         let status = self.agent_message_status(run_id, message_id)?;
         match status {
             None => Err(Refusal::TaskNotFound),
+            Some(status) if status == "open" => Err(Refusal::CallLimit),
             Some(_) => Err(Refusal::TaskTerminal),
         }
     }
@@ -2986,6 +3026,40 @@ mod tests {
     }
 
     #[test]
+    fn open_duplicate_question_is_findable_until_answered() {
+        let store = store();
+        let run = store
+            .create_run("p", "duplicate", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        let id = store
+            .record_agent_message(run.id, from, to, "ask_parent", "same?")
+            .expect("message");
+        assert_eq!(
+            store
+                .find_open_agent_message(run.id, from, to, "ask_parent", "same?")
+                .expect("find"),
+            Some(id)
+        );
+        assert_eq!(
+            store
+                .find_open_agent_message(run.id, from, to, "ask_parent", "different?")
+                .expect("find"),
+            None
+        );
+        store
+            .answer_agent_message(run.id, id, "operator", "answer")
+            .expect("answer");
+        assert_eq!(
+            store
+                .find_open_agent_message(run.id, from, to, "ask_parent", "same?")
+                .expect("find"),
+            None
+        );
+    }
+
+    #[test]
     fn a2a_attempts_and_audit_are_recorded_once_per_transition() {
         let store = store();
         let run = store
@@ -2997,10 +3071,10 @@ mod tests {
             .record_agent_message(run.id, from, to, "ask_parent", "question")
             .expect("message");
         store
-            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}")
+            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}", 2)
             .expect("first attempt");
         store
-            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}")
+            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}", 2)
             .expect("second attempt");
         let message = store
             .agent_messages_for_run(run.id)
@@ -3023,12 +3097,17 @@ mod tests {
                 .expect("audit count")
         };
         assert_eq!(count(&store), 2);
+        assert_eq!(
+            store.record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}", 2),
+            Err(Refusal::CallLimit),
+            "the persisted attempt cap must refuse a third attempt"
+        );
         store
             .answer_agent_message(run.id, id, "operator", "answer")
             .expect("answer");
         assert_eq!(count(&store), 3);
         assert_eq!(
-            store.record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}"),
+            store.record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}", 2),
             Err(Refusal::TaskTerminal)
         );
         assert_eq!(

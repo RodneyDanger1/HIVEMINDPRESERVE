@@ -93,6 +93,8 @@ const MAX_AGENT_MESSAGE_CHARS: usize = 2_000;
 const MAX_AGENT_MESSAGES_PER_RUN: u64 = 32;
 /// Maximum wait for an operator answer to an `ask_parent` question.
 const A2A_ANSWER_TIMEOUT_SECS: u64 = 120;
+/// Bound on persisted answer attempts for one question.
+const MAX_A2A_ATTEMPTS: i64 = 2;
 
 /// One time source for approval timestamps/CAS (tests inject a fixed clock).
 pub type Clock = Arc<dyn Fn() -> u64 + Send + Sync>;
@@ -3183,6 +3185,21 @@ impl RunEngine {
                 );
             }
         };
+        // A model can repeat the same question while the first answer is still
+        // pending. Refuse the duplicate before it spends another parent call.
+        if let Ok(Some(existing)) =
+            self.store
+                .find_open_agent_message(run.id, task.id, parent, "ask_parent", text)
+        {
+            return ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::CallLimit.code(),
+                format!(
+                    "ask_parent refused: an identical question is already open ({existing}); \
+                     no duplicate parent call was made"
+                ),
+            );
+        }
         let message_id = match self.store.record_agent_message_limited(
             run.id,
             task.id,
@@ -3232,6 +3249,7 @@ impl RunEngine {
                 &format!("parent:{parent}"),
                 "parent_answer",
                 "{}",
+                MAX_A2A_ATTEMPTS,
             ) {
                 return ToolExecution::refused(
                     plan.tool_call_id.clone(),
