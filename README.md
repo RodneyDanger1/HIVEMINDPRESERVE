@@ -310,3 +310,30 @@ stability, self-modifying code, and AGI remain explicitly out of scope.
 | Exact hierarchy | verified live (7-task exact-two) |
 
 The tool battery evidence is under `docs/evidence/live/`.
+---
+
+## 12. Authorized self-evolution gate
+
+The root may record an improvement proposal, but it cannot apply one. The proposal
+payload states the missing authority explicitly:
+
+```json
+"governance": {
+  "required_approvals": 5,
+  "operator_approvals": 1,
+  "superagent_approvals": 4,
+  "unanimous": true,
+  "current_approvals": 0,
+  "state": "awaiting_votes",
+  "can_apply": false
+}
+```
+
+`truthful_scope` also states what would change, what would **not** change, and the
+one memory + one audit side effect of merely recording it. Current code records
+proposals and audits them; it does **not** implement vote submission, SuperAgent
+spawning for the vote, or automatic application. Test:
+`root_can_record_but_never_auto_apply_an_improvement_proposal`.
+
+This is authorized self-evolution, not autonomy: four spawned SuperAgents plus the
+operator must be unanimous, and nothing applies before all five approvals exist.
