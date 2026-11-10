@@ -392,3 +392,10 @@ the new loader parsed the record, skipped foreign lines, and injected it inside
 `<<<AUTHORIZED_LESSONS_DATA … >>>`; run `01a1c740-…` completed and returned
 **HONEYCOMB** (3,478 tokens). Evidence:
 `docs/evidence/live/live-tokenlab-lesson-retrieval-parsed.json`.
+## Test AA — projection and authorize use the same voter validation
+
+Before authorize, GET proposals reports `current_superagent_approvals=4` and
+`vote_state="awaiting_operator"` only when the four votes belong to completed
+same-run SuperAgent tasks. Invalid voters are no longer counted in the UI
+projection, so the button cannot be offered on votes the authorize route would
+reject. Backend gate: 51 suites / 636 passed.
