@@ -2190,6 +2190,7 @@ impl RunEngine {
         // spawn_agent that was not already joined inline) are executed to a
         // terminal state before the root orchestrator turn.
         self.dispatch_spawned_tasks(run, token).await?;
+        self.settle_unfinished_tasks(run, root.id, token).await?;
 
         // Phase 3: for a hierarchical plan, the HyperAgent root produces the
         // run's authoritative answer after every planned/spawned task has a
@@ -2419,6 +2420,38 @@ impl RunEngine {
             );
         }
         Ok(prompt)
+    }
+
+    /// Last-resort settlement before the root's final answer: no non-root task
+    /// may remain Queued/Running when the run is about to become terminal. A
+    /// Queued task is executed; a stale Running task is reset to Queued and
+    /// executed. If a task still cannot settle, the run fails loudly.
+    async fn settle_unfinished_tasks(
+        &self,
+        run: &Run,
+        root_id: TaskId,
+        token: &CancellationToken,
+    ) -> Result<(), Refusal> {
+        for _ in 0..64 {
+            let tasks = self.store.tasks_for_run(run.id)?;
+            let pending: Vec<TaskRecord> = tasks
+                .into_iter()
+                .filter(|task| {
+                    task.id != root_id
+                        && matches!(task.state, AgentState::Queued | AgentState::Running)
+                })
+                .collect();
+            if pending.is_empty() {
+                return Ok(());
+            }
+            for task in pending {
+                if task.state == AgentState::Running {
+                    self.store.update_task_state(task.id, AgentState::Queued)?;
+                }
+                self.execute_task(run, &task, token).await?;
+            }
+        }
+        Err(Refusal::InternalError)
     }
 
     async fn dispatch_spawned_tasks(
