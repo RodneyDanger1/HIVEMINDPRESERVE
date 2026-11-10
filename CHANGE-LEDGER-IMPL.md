@@ -1,4 +1,4 @@
-﻿# CHANGE-LEDGER-IMPL — implementation deviations and contract changes
+# CHANGE-LEDGER-IMPL — implementation deviations and contract changes
 
 Every deviation from the blueprint or the frozen UI contract gets a row here before it can gate a phase
 (EXECUTION-PROMPT §5.6). Status values: `applied`, `applied-pending-evidence`, `blocked`.
@@ -11,3 +11,5 @@ Every deviation from the blueprint or the frozen UI contract gets a row here bef
 | CL-I-004 | 2026-11-06 | Web milestone 1: tokens (20 swatches, corrected contrast), 15-state enum, frozen contract types, string table, App shell; `typecheck` + `vite build` pass | Blueprint Phase 7/8/10; UI-WIRING-GUIDE | Frontend | applied (quoted in FRONTEND-STATUS.md) |
 | CL-I-005 | 2026-11-06 | Five Mermaid diagrams (architecture, agent lifecycle, run sequence, UI event, ER) exported `.mmd`+png+svg | EXECUTION-PROMPT §2 (mermaid-skill), blueprint §6/§9 | Verifier | applied (mmdc exit 0 each) |
 | CL-I-006 | 2026-11-06 | Claim register extended with toolchain/contract/UI/build claims; W0 stale environment rows marked superseded | Verifier baseline D-8/C-003/C-006 findings | Lead | applied-pending-register-evidence |
+| CL-I-007 | 2026-11-10 | Tool registry adds `request_detached` (SuperAgent/WorkerAgent), `PermissionClass::Control`, and refusals `E_DETACHED_CONFLICT` / `E_DETACHED_CAP`; census exposes 10 tools / 5 permission classes | HMARS lower-level detached request → HyperAgent admission path (Remote-permission audit G1-G3); operator-approved deterministic policy, not a second LLM turn | Lead | applied (evidence: run_lifecycle lower_level_request_detached allow/duplicate tests; tool crate tests) |
+| CL-I-008 | 2026-11-10 | HyperAgent root control is two bounded turns with result feedback; root `root_control` audit rows; proposal-only `propose_improvement`; lower-level daemon admission audit; 20 documented improvements | Governance audit findings; safe alternative to self-modifying HyperAgent; no auto-apply | Lead | applied (evidence: 50 backend suites / 627 passed; hyperagent_governance 4 passed; live lower-level Lantern run) |

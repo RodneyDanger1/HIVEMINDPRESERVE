@@ -306,6 +306,7 @@ pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<Appro
         "mutate" => PermissionClass::Mutate,
         "execute" => PermissionClass::Execute,
         "network" => PermissionClass::Network,
+        "control" => PermissionClass::Control,
         other => {
             return Err(ToolError::new(
                 Refusal::InternalError,

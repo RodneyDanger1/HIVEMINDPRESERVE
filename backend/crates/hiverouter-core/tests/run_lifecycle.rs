@@ -14,7 +14,7 @@ use hiverouter_core::daemon::DaemonStore;
 use hiverouter_core::db::Database;
 use hiverouter_core::entities::TaskRecord;
 use hiverouter_core::execution::{
-    DeltaSink, ProviderExecutor, RunEngine, StreamedReply, UnconfiguredExecutor,
+    DeltaSink, ProviderExecutor, RunEngine, StreamedReply, ToolTurnTranscript, UnconfiguredExecutor,
 };
 use hiverouter_core::graph::GraphAuthority;
 use hiverouter_core::planner::{Plan, PlanNode};
@@ -263,12 +263,14 @@ impl ProviderExecutor for RootRemoteExecutor {
 
 struct RootSuperExecutor {
     orchestrations: AtomicUsize,
+    prompts: Mutex<Vec<String>>,
 }
 
 impl RootSuperExecutor {
     fn new() -> Arc<Self> {
         Arc::new(Self {
             orchestrations: AtomicUsize::new(0),
+            prompts: Mutex::new(Vec::new()),
         })
     }
 }
@@ -306,10 +308,13 @@ impl ProviderExecutor for RootSuperExecutor {
         &self,
         _run_id: RunId,
         _task: &TaskRecord,
-        _prompt: &str,
+        prompt: &str,
         _cancel: &CancellationToken,
         _on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
+        if let Ok(mut prompts) = self.prompts.lock() {
+            prompts.push(prompt.to_owned());
+        }
         let name = if self.orchestrations.fetch_add(1, Ordering::SeqCst) == 0 {
             "spawn_superagent"
         } else {
@@ -323,6 +328,240 @@ impl ProviderExecutor for RootSuperExecutor {
                 id: format!("call-{name}"),
                 name: name.to_owned(),
                 arguments: json!({}),
+            }],
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "root answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
+struct DetachedRequestExecutor {
+    calls: AtomicUsize,
+    duplicate: bool,
+    kind: String,
+}
+
+impl DetachedRequestExecutor {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            calls: AtomicUsize::new(0),
+            duplicate: false,
+            kind: "remote".to_owned(),
+        })
+    }
+
+    fn daemon() -> Arc<Self> {
+        Arc::new(Self {
+            calls: AtomicUsize::new(0),
+            duplicate: false,
+            kind: "daemon".to_owned(),
+        })
+    }
+
+    fn duplicate() -> Arc<Self> {
+        Arc::new(Self {
+            calls: AtomicUsize::new(0),
+            duplicate: true,
+            kind: "remote".to_owned(),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for DetachedRequestExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(1, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+            let call = AssembledToolCall {
+                index: 0,
+                id: "call-detached".to_owned(),
+                name: "request_detached".to_owned(),
+                arguments: json!({
+                    "kind": self.kind,
+                    "display_name": "Branch light",
+                    "reason": "branch needs a detached indicator light"
+                }),
+            };
+            return Ok(StreamedReply {
+                deltas: Vec::new(),
+                usage: Usage::default(),
+                tool_calls: if self.duplicate {
+                    let mut second = call.clone();
+                    second.id = "call-detached-2".to_owned();
+                    vec![call, second]
+                } else {
+                    vec![call]
+                },
+                reasoning: String::new(),
+            });
+        }
+        let text = format!("requested for {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn orchestrate_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn continue_with_tools(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+        _transcript: &[ToolTurnTranscript],
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "detached request continuation";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "root answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
+struct RootProposalExecutor {
+    orchestrations: AtomicUsize,
+}
+
+impl RootProposalExecutor {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            orchestrations: AtomicUsize::new(0),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for RootProposalExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(1, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = format!("branch {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn orchestrate_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let name = if self.orchestrations.fetch_add(1, Ordering::SeqCst) == 0 {
+            "propose_improvement"
+        } else {
+            "finish"
+        };
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: vec![AssembledToolCall {
+                index: 0,
+                id: format!("call-{name}"),
+                name: name.to_owned(),
+                arguments: if name == "propose_improvement" {
+                    json!({
+                        "area": "root governance",
+                        "problem": "root decisions need a durable proposal archive",
+                        "proposal": "record a reviewed improvement candidate in the run bank",
+                        "evidence": "test-only proposal"
+                    })
+                } else {
+                    json!({})
+                },
             }],
             reasoning: String::new(),
         })
@@ -445,6 +684,7 @@ struct TestEngine {
     engine: Arc<RunEngine>,
     bus: Arc<EventBus>,
     store: RunStore,
+    db: Arc<Database>,
     remote: Arc<RemoteStore>,
     daemons: Arc<DaemonStore>,
     _temp: tempfile::TempDir,
@@ -480,7 +720,8 @@ fn test_engine_with_personas(
     TestEngine {
         engine,
         bus,
-        store: RunStore::new(db),
+        store: RunStore::new(db.clone()),
+        db,
         remote,
         daemons,
         _temp: temp,
@@ -635,8 +876,133 @@ async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
 }
 
 #[tokio::test]
+async fn lower_level_request_detached_is_admitted_by_hyper_gate() {
+    let harness = test_engine(DetachedRequestExecutor::new());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("ask for a detached light", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+
+    let remotes = harness.remote.list_remotes().expect("remotes");
+    assert_eq!(remotes.len(), 1, "the admission gate creates one remote");
+    assert_eq!(remotes[0].display_name, "Branch light");
+    assert_eq!(remotes[0].owner_id, run.id.to_string());
+    assert!(
+        remotes[0].created_by.starts_with("agent:"),
+        "requesting task must be the actor: {}",
+        remotes[0].created_by
+    );
+    assert_eq!(
+        harness
+            .remote
+            .list_devices(&remotes[0].remote_id)
+            .expect("devices")
+            .len(),
+        1
+    );
+    assert_eq!(
+        harness
+            .remote
+            .list_grants(&remotes[0].remote_id)
+            .expect("grants")
+            .len(),
+        1
+    );
+    let audit = harness
+        .remote
+        .list_audit(Some(&remotes[0].remote_id), 50)
+        .expect("audit");
+    assert!(audit.iter().any(|row| {
+        row.action == "remote_created"
+            && row.actor_kind == "system"
+            && row.actor_id == remotes[0].created_by
+    }));
+    assert!(audit.iter().any(|row| {
+        row.action == "hyper_admission"
+            && row.actor_kind == "system"
+            && row.actor_id == remotes[0].created_by
+            && row.detail_json.contains("\"decision\":\"allow\"")
+    }));
+    assert!(audit.iter().any(|row| {
+        row.action == "device_created"
+            && row.actor_kind == "system"
+            && row.actor_id == remotes[0].created_by
+    }));
+}
+
+#[tokio::test]
+async fn lower_level_request_detached_daemon_is_admitted_and_audited() {
+    let harness = test_engine(DetachedRequestExecutor::daemon());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("ask for a detached daemon", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+
+    let daemons = harness.daemons.list().expect("daemons");
+    assert_eq!(daemons.len(), 1, "one daemon admitted");
+    assert_eq!(daemons[0].display_name, "Branch light");
+    assert!(daemons[0].created_by.starts_with("agent:"));
+    let audit = harness
+        .remote
+        .list_audit(None, 50)
+        .expect("control audit");
+    assert!(audit.iter().any(|row| {
+        row.action == "root_control"
+            && row.actor_kind == "system"
+            && row.actor_id == daemons[0].created_by
+            && row.detail_json.contains("\"daemon_id\"")
+    }));
+    assert_eq!(harness.store.tasks_for_run(run.id).expect("tasks").len(), 2);
+}
+
+#[tokio::test]
+async fn lower_level_request_detached_duplicate_is_refused_without_a_second_row() {
+    let harness = test_engine(DetachedRequestExecutor::duplicate());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("ask twice for the same detached light", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+
+    assert_eq!(
+        harness.remote.list_remotes().expect("remotes").len(),
+        1,
+        "the duplicate admission must not create a second remote"
+    );
+    let turns = harness
+        .db
+        .tool_turns_for_run(run.id)
+        .expect("tool turns");
+    assert!(
+        turns
+            .iter()
+            .any(|turn| turn.tool == "request_detached"
+                && turn.code.as_deref() == Some(Refusal::DetachedConflict.code())),
+        "duplicate must be recorded as a named detached conflict: {turns:?}"
+    );
+}
+
+#[tokio::test]
 async fn hyperagent_checkpoint_refuses_an_extra_branch_when_the_planner_has_one() {
-    let harness = test_engine(RootSuperExecutor::new());
+    let executor = RootSuperExecutor::new();
+    let harness = test_engine(executor.clone());
     let mut receiver = harness.bus.subscribe();
     let run = harness
         .engine
@@ -665,6 +1031,50 @@ async fn hyperagent_checkpoint_refuses_an_extra_branch_when_the_planner_has_one(
         .collect();
     assert_eq!(supers.len(), 1, "only the planned branch lead exists");
     assert_eq!(supers[0].parent_task_id, Some(root.id));
+    let gate_rows = harness
+        .store
+        .memory_hyper_summary(run.id, 8)
+        .expect("root gate memory");
+    assert!(
+        gate_rows.iter().any(|entry| {
+            entry.key.starts_with("root_gate:")
+                && entry.value.contains("\"action\":\"spawn_superagent\"")
+                && entry.value.contains("\"decision\":\"refused\"")
+        }),
+        "root gate decision must be durable: {gate_rows:?}"
+    );
+    let prompts = executor.prompts.lock().expect("root prompts");
+    assert!(prompts.len() >= 2, "root control must take a second bounded turn");
+    assert!(
+        prompts[1].contains("Prior root-control results"),
+        "the second control turn must receive the first round's durable result"
+    );
+}
+
+#[tokio::test]
+async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
+    let harness = test_engine(RootProposalExecutor::new());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("propose an improvement", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    let rows = harness
+        .store
+        .memory_hyper_summary(run.id, 16)
+        .expect("proposal rows");
+    let proposal = rows
+        .iter()
+        .find(|entry| entry.key.starts_with("improvement:"))
+        .expect("proposal memory row");
+    assert!(proposal.value.contains("\"applied\":false"));
+    assert!(proposal.value.contains("\"requires_human_review\":true"));
+    assert_eq!(harness.store.tasks_for_run(run.id).expect("tasks").len(), 2);
 }
 
 #[tokio::test]

@@ -40,7 +40,8 @@ const ROOT_CONTROL_SYSTEM: &str = "You are the HiveMind HyperAgent controller. Y
 the operator goal and the plan. Return only tool calls: spawn_superagent to add one branch lead, \
 spawn_remote_agent to create one tree-free remote principal (light switch, garage controller, or \
 daemon relay), spawn_daemon to enroll one tree-free watchdog/relay record, \
-read_memory_summary for bounded summaries, or finish. Never spawn a direct Agent \
+read_memory_summary for bounded summaries, propose_improvement to record one safe
+self-improvement proposal without editing code, or finish. Never spawn a direct Agent
 or Subagent. Do not answer the user in this turn.";
 
 const ROOT_SYSTEM: &str = "You are the HiveMind HyperAgent orchestrator. You receive the \
@@ -629,6 +630,24 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                         "limit": { "type": "integer", "minimum": 1, "maximum": 8 }
                     },
                     "required": ["scope"],
+                    "additionalProperties": false
+                }),
+            }),
+            ToolSpec::function(FunctionDefinition {
+                name: "propose_improvement".to_owned(),
+                description: Some(
+                    "Record one bounded self-improvement proposal in the run bank. This never edits or executes code; it is a proposal for human review."
+                        .to_owned(),
+                ),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "area": { "type": "string", "minLength": 1, "maxLength": 80 },
+                        "problem": { "type": "string", "minLength": 8, "maxLength": 800 },
+                        "proposal": { "type": "string", "minLength": 8, "maxLength": 2000 },
+                        "evidence": { "type": "string", "maxLength": 800 }
+                    },
+                    "required": ["area", "problem", "proposal"],
                     "additionalProperties": false
                 }),
             }),

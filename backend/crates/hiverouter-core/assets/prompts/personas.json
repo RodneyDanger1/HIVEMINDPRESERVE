@@ -22,7 +22,7 @@
     "display_name": "HiveMind SuperAgent",
     "tier": "super",
     "template_id": "superagent",
-    "allowed_tool_ids": ["spawn_agent", "ask_parent", "send_to_sibling", "file_read", "file_list", "report_result", "finish"],
+    "allowed_tool_ids": ["spawn_agent", "ask_parent", "send_to_sibling", "file_read", "file_list", "report_result", "finish", "request_detached"],
     "output_schema_id": null,
     "refusal_policy": "strict",
     "max_children": 8,
@@ -69,7 +69,7 @@
     "display_name": "HiveMind Agent",
     "tier": "worker",
     "template_id": "agent",
-    "allowed_tool_ids": ["file_read", "file_list", "file_write", "shell_exec", "ask_parent", "send_to_sibling", "spawn_agent", "report_result", "finish"],
+    "allowed_tool_ids": ["file_read", "file_list", "file_write", "shell_exec", "ask_parent", "send_to_sibling", "spawn_agent", "report_result", "finish", "request_detached"],
     "output_schema_id": null,
     "refusal_policy": "strict"
   }

@@ -1,0 +1,37 @@
+{
+    "usage":  {
+                  "total_tokens":  6079,
+                  "prompt_tokens":  5818,
+                  "completion_tokens":  261
+              },
+    "audit":  [
+                  "remote_created:system:agent",
+                  "device_created:system:agent",
+                  "grant_created:system:agent",
+                  "hyper_admission:system:agent:allow"
+              ],
+    "hierarchy":  {
+                      "superagent":  1,
+                      "agent":  1,
+                      "hyper":  1
+                  },
+    "tool":  {
+                 "name":  "request_detached",
+                 "outcome":  "ok"
+             },
+    "remote":  {
+                   "state":  "enrolled",
+                   "created_by":  "agent:01a1c472-8bcc-779c-abe9-dd14b43416fb",
+                   "owner_id":  "01a1c472-23f4-71b8-a86f-d5bc2bf2753d",
+                   "grant_count":  1,
+                   "device_count":  1,
+                   "adapter_kind":  "light",
+                   "owner_kind":  "hive",
+                   "display_name":  "Lantern"
+               },
+    "observed_at":  "2026-11-10T07:54:00Z",
+    "status":  "completed",
+    "run_id":  "01a1c472-23f4-71b8-a86f-d5bc2bf2753d",
+    "provider":  "tokenlab",
+    "tasks":  3
+}

@@ -615,3 +615,30 @@ Evidence limits:
 | Written | this file only |
 | Top gaps | G1 no lower-level request; G2 root bypasses approval/audit attribution; G3 duplicate root requests unsafe; G4 root gate allow path unreachable/unaudited; G5 A2A duplicate/late; G6 revocation incomplete; G7 idempotency conflict silent |
 | Minimal fix order | 1 request/decision contract → 2 one admission + atomic create → 3 duplicate/late semantics → 4 root gate decision + record → 5 A2A deadline/audit → 6 revocation/idempotency → 7 evidence |
+
+## 12. Post-audit addendum (2026-11-10)
+
+The audit above is pinned to `919c339`. A later implementation wave added a
+governed lower-level admission path:
+
+- New tool `request_detached` for SuperAgent and Agent tiers; Subagent and
+  HyperAgent cannot call it.
+- The caller supplies `kind`, `display_name`, and a reason of at least 12
+  characters.
+- The HyperAgent admission gate is deterministic and runs in the engine. It
+  checks caller tier, reason presence, name conflict across remotes/daemons, and
+  a cap of 4 lower-level detached principals per run.
+- Allow creates the remote/device/grant or daemon with `created_by=agent:<task>`
+  and writes a `hyper_admission` audit row plus the normal creation row.
+- Refuse is a named tool result (`E_DETACHED_CONFLICT`, `E_DETACHED_CAP`,
+  `E_SCHEMA_INVALID`, `E_TOOL_NOT_ALLOWED`), with the decision recorded in the
+  per-run tool-turn table.
+- Tests: `lower_level_request_detached_is_admitted_by_hyper_gate` and
+  `lower_level_request_detached_duplicate_is_refused_without_a_second_row`.
+
+This is **not** an asynchronous LLM approval: the HyperAgent does not wake up to
+reason about the request. It is a deterministic policy gate installed by the
+root HyperAgent run. The authority-model choice is now explicit: lower levels
+may request, the HyperAgent gate admits or refuses, and the root-control path
+remains an alternative. Network transport, late/revoked approvals, and a true
+second LLM decision turn remain open.

@@ -309,6 +309,12 @@ refusal_table! {
     RemoteTransport => ("E_REMOTE_TRANSPORT", false,
         "The remote transport is not supported or is unavailable in this build.",
         "Use the in-process fixture adapter or enable a supported transport."),
+    DetachedConflict => ("E_DETACHED_CONFLICT", false,
+        "A detached remote or daemon with that display name already exists in this hive.",
+        "Choose a different display name or retire the existing principal first."),
+    DetachedCap => ("E_DETACHED_CAP", false,
+        "The run's lower-level detached-principal admission cap is reached.",
+        "Retire an existing detached principal or use the HyperAgent root-control path."),
 
     // --- internal -----------------------------------------------------------
     InternalError => ("E_INTERNAL_ERROR", true,

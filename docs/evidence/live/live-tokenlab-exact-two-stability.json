@@ -1,0 +1,28 @@
+[
+    {
+        "tasks":  7,
+        "counts":  {
+                       "superagent":  2,
+                       "subagent":  2,
+                       "agent":  2,
+                       "hyper":  1
+                   },
+        "note":  "exact topology held",
+        "usage":  {
+                      "total_tokens":  13751
+                  },
+        "status":  "completed",
+        "run_id":  "01a1c46d-1717-7391-89e9-9ca18ee5142a"
+    },
+    {
+        "tasks":  0,
+        "counts":  {
+
+                   },
+        "note":  "planner provider timeout; no tasks; not a topology failure",
+        "error_code":  "E_PROVIDER_TIMEOUT",
+        "usage":  null,
+        "status":  "failed",
+        "run_id":  "01a1c46d-ba2c-7344-8109-08e9890e9ec1"
+    }
+]

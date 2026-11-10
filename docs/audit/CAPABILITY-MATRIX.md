@@ -426,3 +426,21 @@ The per-finding tests are in Tables 11A/11B. The highest-value new tests are:
 - **Skill availability.** `capability-auditor` and `integration-logic` are not installed in this workspace; only `skills/hivemind/SKILL.md` exists. The audit is a direct code audit, not a skill-driven one.
 - **Overlap with prior audits.** `docs/audit/AGENT-TAXONOMY-VERIFICATION.md` (task-17) and `docs/audit/REMOTE-PERMISSION-GAPS.md` (task-19) cover adjacent ground at the same HEAD. This document independently derives the matrix and **corrects** task-17's G04: the `spawn_superagent` allow path is unreachable, not "up to 4 branch leads"; the root-control gate is unconditionally refused for every valid plan.
 - **Unreachable paths are marked as such.** A finding that depends on direct DB insertion or a hypothetical future insert path is labelled latent (M-06, M-27) rather than presented as a live capability.
+
+## Post-audit addendum (2026-11-10)
+
+The matrix above was pinned to `919c339`. Later changes:
+
+- Tool count is now **10**, permission classes **5** (`Control` added), grant count
+  **32** (SuperAgent 10, WorkerAgent 10).
+- `request_detached` is callable by SuperAgent/WorkerAgent. It does not create
+  directly; it enters the deterministic HyperAgent admission gate, which checks
+  caller tier, a >=12-character reason, display-name conflict, and a per-run cap
+  of 4 lower-level detached principals.
+- Persona aliases (`super` -> superagent, `worker` -> agent, `hyper` -> planner)
+  now resolve prompts and the advertised tool list is tier ∩ persona.
+- `REWIRE_TASK` now refuses a foreign-run parent before any graph/context write.
+- HyperAgent memory writes to `bank:run:<run>`; detached root records are audited
+  as `system` with the actual `hyper:` or `agent:` creator id.
+- Root branch `spawn_superagent` remains a dead allow path for every validated
+  plan; this is a known open gap, not a working capability.

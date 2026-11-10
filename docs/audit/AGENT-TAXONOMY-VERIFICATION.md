@@ -820,3 +820,36 @@ The accurate description is: **a deterministic, run-scoped, multi-agent task orc
 ---
 
 *End of audit — task-17.*
+
+## Post-audit addendum (2026-11-10)
+
+The taxonomy audit was pinned to `919c339`. Later changes: personas now resolve
+`super`/`worker`/`hyper` aliases; the provider advertises tier ∩ persona tools;
+HyperAgent memory writes to the run bank; foreign-run rewire is refused; and the
+lower-level `request_detached` path now goes through a deterministic
+HyperAgent admission gate (caller tier, reason, name conflict, cap 4) with a
+`hyper_admission` audit row. The HyperAgent is still a root planner/synthesizer,
+not a continuous Meta-style self-modifying hyperagent; the admission gate is
+policy, not a second LLM turn. The root `spawn_superagent` allow path remains dead.
+## Scientific paper check (2026-11-10)
+
+Two papers supplied on the Desktop were read (first pages and abstracts):
+
+1. **Meta, “HyperAgents” (arXiv:2603.19461v1/v2, 60 pages).** The abstract
+   describes self-referential agents that integrate a task agent and a meta agent
+   into **one editable program**; the meta-level modification procedure is itself
+   editable, enabling metacognitive self-modification and an archive of
+   self-modified variants. This is **not** what HiveMind implements: HiveMind has
+   a root planner/synthesizer and persisted memory, but no self-modifying task+meta
+   program, no editable improvement procedure, no variant archive, and no
+   evolution sandbox.
+2. **“HyperAgent: Generalist Software Engineering Agents…” (arXiv:2409.16299v3).**
+   This is a four-agent SE system (Planner, Navigator, Code Editor, Executor) for
+   SWE-Bench/RepoExec/Defects4J. HiveMind is a hierarchical HMARS orchestration
+   framework, not that system, and makes no SWE-bench claim.
+
+Conclusion: the name overlap is conceptual, not implementation equivalence. The
+honest claim remains "genuine hierarchical HMAS with a governing root", not
+"Meta HyperAgent" and not AGI. The useful borrowable mechanism from the
+pseudocode is the **durable root admission/audit log**, now implemented as a
+run-bank `root_gate` entry and a remote `hyper_admission` audit row.

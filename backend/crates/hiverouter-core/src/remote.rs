@@ -351,7 +351,9 @@ impl RemoteStore {
                 )?;
                 audit(
                     connection,
-                    if input.created_by.starts_with("hyper:") {
+                    if input.created_by.starts_with("hyper:")
+                        || input.created_by.starts_with("agent:")
+                    {
                         "system"
                     } else {
                         "operator"
@@ -490,10 +492,17 @@ impl RemoteStore {
                         input.safety_class,
                     ],
                 )?;
+                let actor_kind = if remote.created_by.starts_with("hyper:")
+                    || remote.created_by.starts_with("agent:")
+                {
+                    "system"
+                } else {
+                    "operator"
+                };
                 audit(
                     connection,
-                    "operator",
-                    "operator",
+                    actor_kind,
+                    &remote.created_by,
                     Some(&input.remote_id),
                     Some(&device_id),
                     "device_created",
@@ -569,7 +578,9 @@ impl RemoteStore {
         let now = Timestamp::now().as_str().to_owned();
         self.db
             .with_connection(|connection| {
-                let actor_kind = if remote.created_by.starts_with("hyper:") {
+                let actor_kind = if remote.created_by.starts_with("hyper:")
+                    || remote.created_by.starts_with("agent:")
+                {
                     "system"
                 } else {
                     "operator"
@@ -1319,6 +1330,71 @@ impl RemoteStore {
                         action_from_row,
                     )
                     .optional()
+            })
+            .map_err(map)
+    }
+
+    /// Records one HyperAgent control decision in the audit table even when the
+    /// decision is not about a remote. This gives root gate actions an
+    /// exportable audit row rather than only a memory-bank entry.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_control_decision(
+        &self,
+        actor_id: &str,
+        _action: &str,
+        decision: &str,
+        detail_json: &str,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                audit(
+                    connection,
+                    "system",
+                    actor_id,
+                    None,
+                    None,
+                    "root_control",
+                    None,
+                    None,
+                    None,
+                    decision,
+                    None,
+                    detail_json,
+                )
+            })
+            .map_err(map)
+    }
+
+    /// Records one HyperAgent admission decision for a detached request. The
+    /// remote row's own creation audit remains separate; this row names the
+    /// approving gate and the caller's reason.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn record_admission(
+        &self,
+        remote_id: &str,
+        actor_id: &str,
+        detail_json: &str,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                audit(
+                    connection,
+                    "system",
+                    actor_id,
+                    Some(remote_id),
+                    None,
+                    "hyper_admission",
+                    None,
+                    None,
+                    None,
+                    "ok",
+                    None,
+                    detail_json,
+                )
             })
             .map_err(map)
     }

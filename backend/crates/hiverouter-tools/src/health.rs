@@ -418,7 +418,7 @@ mod tests {
         assert_eq!(body["agent_tiers"].as_array().expect("tiers").len(), 5);
         assert_eq!(
             body["permission_classes"].as_array().expect("classes").len(),
-            4
+            5
         );
     }
 

@@ -36,6 +36,9 @@ pub enum PermissionClass {
     Execute,
     /// Performs a network request.
     Network,
+    /// Requests a governed control-plane action; the HyperAgent admission gate
+    /// decides it and records the outcome. It is not a direct workspace mutation.
+    Control,
 }
 
 impl PermissionClass {
@@ -47,13 +50,14 @@ impl PermissionClass {
             PermissionClass::Mutate => "mutate",
             PermissionClass::Execute => "execute",
             PermissionClass::Network => "network",
+            PermissionClass::Control => "control",
         }
     }
 
     /// Whether an approval is required before execution.
     #[must_use]
     pub fn requires_approval(self) -> bool {
-        !matches!(self, PermissionClass::Read)
+        !matches!(self, PermissionClass::Read | PermissionClass::Control)
     }
 
     /// Every class, in declaration order (census input).
@@ -127,6 +131,8 @@ pub enum ToolId {
     FileWrite,
     /// Execute an allowlisted program in the workspace jail.
     ShellExec,
+    /// Request a governed detached remote/daemon; HyperAgent admission decides.
+    RequestDetached,
 }
 
 impl ToolId {
@@ -143,6 +149,7 @@ impl ToolId {
             ToolId::FileList => "file_list",
             ToolId::FileWrite => "file_write",
             ToolId::ShellExec => "shell_exec",
+            ToolId::RequestDetached => "request_detached",
         }
     }
 
@@ -302,6 +309,18 @@ pub struct ShellExecArgs {
     pub cwd: Option<String>,
 }
 
+/// Arguments for `request_detached`.
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct RequestDetachedArgs {
+    /// `remote` or `daemon`.
+    pub kind: String,
+    /// Stable display name, unique inside the run's hive.
+    pub display_name: String,
+    /// Why the caller needs this detached principal; the admission gate records it.
+    pub reason: String,
+}
+
 /// The one tool registry (contracts + per-tier allowlists).
 #[derive(Debug, Clone)]
 pub struct ToolRegistry {
@@ -387,6 +406,12 @@ impl ToolRegistry {
                 PermissionClass::Execute,
                 schema_of!(ShellExecArgs),
             ),
+            contract(
+                ToolId::RequestDetached,
+                "Request one detached remote or daemon. HyperAgent admission checks caller authority, name conflict, run cap, and reason, then records the decision.",
+                PermissionClass::Control,
+                schema_of!(RequestDetachedArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -408,6 +433,7 @@ impl ToolRegistry {
                 ToolId::FileList,
                 ToolId::FileWrite,
                 ToolId::ShellExec,
+                ToolId::RequestDetached,
             ],
         );
         allowlists.insert(
@@ -422,6 +448,7 @@ impl ToolRegistry {
                 ToolId::FileList,
                 ToolId::FileWrite,
                 ToolId::ShellExec,
+                ToolId::RequestDetached,
             ],
         );
         allowlists.insert(
@@ -643,7 +670,7 @@ mod tests {
         for id in ToolId::all() {
             let contract = registry.contract(id).expect("contract");
             let expected = match contract.permission_class {
-                PermissionClass::Read => false,
+                PermissionClass::Read | PermissionClass::Control => false,
                 PermissionClass::Mutate | PermissionClass::Execute | PermissionClass::Network => true,
             };
             assert_eq!(contract.requires_approval(), expected, "{id:?}");

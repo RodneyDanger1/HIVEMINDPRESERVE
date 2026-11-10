@@ -170,14 +170,15 @@ This is the required behavior for API-burn honesty.
 | A2A attempts are durable/audited | Evidence supports |
 | No hidden provider spend on interrupted run | Evidence supports after checkpoint |
 | Network remote transport | NOT IMPLEMENTED |
-| Lower-level request → HyperAgent approval | NOT IMPLEMENTED as a separate protocol |
+| Lower-level request → HyperAgent approval | IMPLEMENTED as a deterministic admission gate; not an asynchronous LLM decision |
 
 ## Next tests
 
 1. Parent scheduling: ensure a SuperAgent is not finalized while an Agent child
    is still running and depending on it.
-2. Lower-level remote request: Agent asks HyperAgent for a satellite; test
-   approve/refuse and audit.
+2. Lower-level remote request: Agent calls `request_detached`; test the
+   deterministic HyperAgent admission allow/duplicate paths and audit (unit
+   tests now pass; live provider test remains).
 3. Memory Venn: prove no sibling/foreign-run bleed under a real branch tree.
 4. Repeat exact-two three times; assert stable task count and no extra branch.
 5. Full 40-node offline / bounded live probe with measured dispatch.
@@ -189,3 +190,32 @@ This is the required behavior for API-burn honesty.
 - `docs/evidence/live/live-tokenlab-remote-daemon.json`
 - `docs/evidence/live/live-tokenlab-rate-limit.json`
 - `docs/evidence/live/live-tokenlab-kill-usage.json`
+
+## Test F — repeat stability (2026-11-10)
+
+Two additional exact-two runs were executed against the rebuilt release binary:
+
+| Attempt | Result | Tasks | Usage |
+|---|---|---|---|
+| 1 | completed | 7 (1 Hyper, 2 Super, 2 Agent, 2 Subagent) | 13,751 |
+| 2 | failed `E_PROVIDER_TIMEOUT` before the first task row | 0 | unknown |
+
+The completed attempt reproduced the exact topology. The timeout is an
+upstream/provider failure at planning, not a topology violation; it is counted
+as a failure, and two of three attempts are not yet enough for a stability
+claim. Evidence: `docs/evidence/live/live-tokenlab-exact-two-stability.json`.
+## Test G — lower-level detached request, live
+
+**Prompt:** one SuperAgent with one Agent; the Agent must call
+`request_detached` once for a detached remote named `Lantern`.
+
+**Observed:** completed; 3 tasks (HyperAgent, SuperAgent, Agent); usage
+5,818 / 261 / 6,079. Tool turn `request_detached` outcome `ok`. Remote `Lantern`
+was created with `owner_id=<run>`, `created_by=agent:<agent task>`, adapter
+`light`, one device and one grant. Audit rows: `remote_created`,
+`device_created`, `grant_created`, and `hyper_admission` with
+`decision:allow`, all attributed to `system` / `agent:<task>`.
+
+This proves the **deterministic HyperAgent admission path** end to end. It does
+not prove an asynchronous LLM HyperAgent decision, and no network satellite was
+created. Evidence: `docs/evidence/live/live-tokenlab-detached-request.json`.

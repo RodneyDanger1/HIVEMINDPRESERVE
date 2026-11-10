@@ -76,7 +76,7 @@ Artifact identity used by this plan (verified by file hash at design time):
 
 | Item | Value |
 |---|---|
-| `target/release/hiverouter.exe` | 36,340,736 bytes; SHA-256 `EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC` |
+| `target/release/hiverouter.exe` | 36,356,096 bytes; SHA-256 `52E946DBD2A6978ED4F9B62F2CE4CBA6104D7B18C5B8E6EC2A0F333BF2145092` |
 | `dist/HiveMind/hiverouter.exe` | same size/hash as above |
 | Source after release | `git log f988ef2..197ee28 -- backend web tools` is empty; both `919c339` and `197ee28` are docs-only after the release build. The **uncommitted** edits in §1.1 are not in either commit. |
 | Inconsistent older hash | `docs/evidence/HMARS-BUGFIX-REPORT.md:150` lists a different build hash (`E1FB...`) than line 8 and the current file. Use the hash above for this run; record the actual preflight hash and flag the report inconsistency in the evidence. |
@@ -256,7 +256,7 @@ Per scenario: `docs/evidence/agentic/task-20/<id>/` with the raw JSON captures a
   "task": "task-20",
   "scenario": "S1",
   "head": "919c3398c5bf47b4deb9ed9fd2004d2a0916cb9a",
-  "binary_sha256": "EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC",
+  "binary_sha256": "52E946DBD2A6978ED4F9B62F2CE4CBA6104D7B18C5B8E6EC2A0F333BF2145092",
   "started_at": "2026-11-10T...Z",
   "wall_seconds": 0,
   "prompt_sha256": "64-hex",

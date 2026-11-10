@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `a53ddc3`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC`  
-Portable package: `dist/HiveMind.zip` SHA-256 `A6C536804E21111C326ABB7D6D66F233DECD77AF37C00D100490A45AEC0B8AA6`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC`
+Release binary: `target/release/hiverouter.exe` SHA-256 `FB1EA570F2DBB7DE8425CDE3F5F74F020AF80AA7B1630557CB51493CDE95B896`  
+Portable package: `dist/HiveMind.zip` SHA-256 `AEB637E394C9725BC419B80395D408FD2F9C43338BD08CDCA35FE6DDC45193B5`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `FB1EA570F2DBB7DE8425CDE3F5F74F020AF80AA7B1630557CB51493CDE95B896`
 
 ## 1. What HiveMind is supposed to be
 
@@ -315,8 +315,10 @@ Detailed pseudocode and per-test analysis: `docs/audit/AGENTIC-LIVE-TESTS.md`.
 | Exact-two hierarchy | completed; 7 tasks (1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents); 15,551 tokens; no extra root branch |
 | A2A ask_parent | completed; 3 tasks; `ask_parent` answered once; attempts=1; `answer_actor=parent:<superagent>` |
 | Root-created remote + daemon | completed; 3 tasks; remote Porch/light with 1 device + 1 grant; daemon Pulse/watchdog with `{"check":"db"}` |
+| Lower-level request_detached | completed; 3 tasks; Agent tool equest_detached ok; remote Lantern with agent attribution, 1 device, 1 grant, hyper_admission allow |
 | Local rate governor | `E_LLM_RATE_LIMIT` in 0s with 0 tasks before provider send; succeeded after one window |
 | Hard-kill usage | 449 tokens checkpointed; restart `interrupted` with 7 recovered tasks and usage retained |
+| Exact-two stability | 2 of 3 attempts completed with 7 tasks (13,751 tokens on the repeat); one attempt failed `E_PROVIDER_TIMEOUT` with 0 tasks |
 | Root remote/daemon first attempt | failed `E_PROVIDER_TIMEOUT` after 129s, 0 tasks; retry succeeded; not counted as a success |
 
 Evidence: `docs/evidence/live/live-tokenlab-hierarchy.json`,
@@ -363,11 +365,16 @@ remote is an in-process fixture principal, not a network satellite.
   with a sibling result.
 - **Tool description truth:** the root remote tool now says it creates a fixture
   device and narrow grant, not "no grant".
+- **Governed lower-level detached request:** SuperAgent/Agent can call
+  `request_detached`; a deterministic HyperAgent admission gate checks caller
+  tier, a >=12-character reason, name conflict, and a per-run cap of 4, then
+  creates with `agent:<task>` attribution and a `hyper_admission` audit row.
+  Duplicate requests are refused as `E_DETACHED_CONFLICT` with no second row.
 
 ### Remaining honest gaps
 
-1. No lower-level request -> HyperAgent approval protocol for detached agents;
-   the authority model must be chosen before implementation.
+1. Lower-level `request_detached` now exists, but approval is a deterministic
+   HyperAgent admission policy, not an asynchronous LLM decision turn.
 2. Root `spawn_superagent` is unconditional refusal for valid plans (dead allow
    path); either remove it or define a valid no-branch plan.
 3. Remote transport is still `in_process`; no network satellite.
@@ -379,6 +386,23 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **49 suites, 619 passed, 0 failed, 2 ignored**.
+- Backend: **50 suites, 627 passed, 0 failed, 2 ignored**.
 - Web: 225 tests, typecheck 0, production build 0; UI unchanged by this round.
 - Release binary and package hashes are recorded at the top of this report.
+## 14. Final HyperAgent governance upgrades (2026-11-10)
+
+- `request_detached` adds a governed lower-level admission path for SuperAgent
+  and Agent, with deterministic tier/reason/name/cap checks and audited
+  `created_by=agent:<task>` attribution.
+- `root_control` audit rows and durable `root_gate:` run-bank decisions now
+  record root choices; root control has a second bounded turn that receives the
+  first turn's results instead of discarding them.
+- `propose_improvement` records a proposal-only, `applied:false`,
+  `requires_human_review:true` entry. No self-modifying code path exists.
+- Daemon admission is audited; duplicate root names are guarded across remotes
+  and daemons; a root control run can add at most one extra branch.
+- Final gates: 50 backend suites, 627 passed, 0 failed, 2 ignored; web typecheck
+  0 and 225 tests passed. Final package hashes are at the top of this report.
+- No paid calls were made in the final documentation pass because the DeepSeek
+  key was not available to check balance; live evidence above is from the
+  previously measured runs.

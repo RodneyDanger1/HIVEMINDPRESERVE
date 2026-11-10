@@ -27,6 +27,7 @@ pub const PROMPT_CLAIMED_TOOL_IDS: &[&str] = &[
     "file_list",
     "file_write",
     "shell_exec",
+    "request_detached",
 ];
 
 /// Every advertised tool must have a declared execution lane. The census below
@@ -42,6 +43,7 @@ pub const EXECUTOR_DISPOSITIONS: &[(&str, &str)] = &[
     ("spawn_agent", "loop_owned"),
     ("ask_parent", "loop_owned"),
     ("send_to_sibling", "loop_owned"),
+    ("request_detached", "loop_owned"),
 ];
 
 /// Schema id of the census payload.
@@ -224,8 +226,8 @@ mod tests {
         assert_eq!(census.refusal_count, Refusal::ALL.len());
         assert!(census.refusal_count >= 40, "the frozen table is complete");
         assert_eq!(census.tier_count, 5);
-        assert_eq!(census.permission_class_count, 4);
-        assert_eq!(census.grant_count(), 3 + 9 + 9 + 5 + 4);
+        assert_eq!(census.permission_class_count, 5);
+        assert_eq!(census.grant_count(), 3 + 10 + 10 + 5 + 4);
         assert!(census.tools_by_tier.contains_key("hyper_agent"));
         assert_eq!(census.executor_dispositions.len(), census.registry_tool_ids.len());
         assert_eq!(
