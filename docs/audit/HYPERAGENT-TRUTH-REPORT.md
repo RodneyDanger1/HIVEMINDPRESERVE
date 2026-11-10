@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 631 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3060FBD18E7D79C5370B15BE851E402FC65CD29739C12312B456EEF3DD209F86` |
-| T4 | Server binary hash | **VERIFIED** | `3A9DA982C6764622187300D67F6ED229EC6047C8FDC92D8AB0F4BDB3A17FF656` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3E37A0992862806346678118117D329E7F229CA0FB57E81E42314216AD6C1835` |
+| T4 | Server binary hash | **VERIFIED** | `B924C3ED5EB45BB6D527E411F3C2A3344367E0E1EC745051A42989212E70BB87` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -324,6 +324,10 @@ if let (Some(request_id), Some(store)) = (request_id, self.remote.as_ref()) {
   `system`), never silently `operator`.
 - `execution.rs` lower-level remote branch writes `hyper_admission` with
   `decision:"allow"` and the caller/reason.
+- Every lower-level `request_detached` refusal also writes a `root_control`
+  audit row with decision `refused` through the same admission closure; a
+  duplicate name and a payload-mismatched request id are attributable, not
+  silent.
 
 ### Tool surface (10 tools, 5 permission classes)
 

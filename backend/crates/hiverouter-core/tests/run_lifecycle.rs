@@ -1166,6 +1166,12 @@ async fn lower_level_request_detached_duplicate_is_refused_without_a_second_row(
                 && turn.code.as_deref() == Some(Refusal::DetachedConflict.code())),
         "duplicate must be recorded as a named detached conflict: {turns:?}"
     );
+    let audit = harness.remote.list_audit(None, 50).expect("control audit");
+    assert!(audit.iter().any(|row| {
+        row.action == "root_control"
+            && row.actor_id.starts_with("agent:")
+            && row.detail_json.contains("already exists")
+    }));
 }
 
 #[tokio::test]

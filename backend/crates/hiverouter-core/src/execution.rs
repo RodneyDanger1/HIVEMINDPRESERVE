@@ -4218,6 +4218,14 @@ impl RunEngine {
         plan: &ToolCallPlan,
     ) -> ToolExecution {
         let refused = |code: &str, detail: &str| {
+            if let Some(store) = self.remote.as_ref() {
+                let _ = store.record_control_decision(
+                    &format!("agent:{}", task.id),
+                    "request_detached",
+                    "refused",
+                    detail,
+                );
+            }
             ToolExecution::refused(plan.tool_call_id.clone(), code, detail.to_owned())
         };
         let tier = task_agent_tier(task);
