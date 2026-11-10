@@ -13,7 +13,7 @@
     "display_name": "Content Writer",
     "tier": "worker",
     "template_id": "content-writer",
-    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish"],
+    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish", "web_fetch"],
     "output_schema_id": null,
     "refusal_policy": "strict"
   },
@@ -22,7 +22,7 @@
     "display_name": "HiveMind SuperAgent",
     "tier": "super",
     "template_id": "superagent",
-    "allowed_tool_ids": ["spawn_agent", "ask_parent", "send_to_sibling", "file_read", "file_list", "report_result", "finish", "request_detached"],
+    "allowed_tool_ids": ["spawn_agent", "ask_parent", "send_to_sibling", "file_read", "file_list", "report_result", "finish", "request_detached", "web_fetch"],
     "output_schema_id": null,
     "refusal_policy": "strict",
     "max_children": 8,
@@ -42,7 +42,7 @@
     "display_name": "Data Analyst",
     "tier": "worker",
     "template_id": "data-analyst",
-    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish"],
+    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish", "web_fetch"],
     "output_schema_id": null,
     "refusal_policy": "strict"
   },
@@ -51,7 +51,7 @@
     "display_name": "Code Reviewer",
     "tier": "worker",
     "template_id": "code-reviewer",
-    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish"],
+    "allowed_tool_ids": ["file_read", "file_list", "ask_parent", "send_to_sibling", "report_result", "finish", "web_fetch"],
     "output_schema_id": null,
     "refusal_policy": "strict"
   },
@@ -69,7 +69,7 @@
     "display_name": "HiveMind Agent",
     "tier": "worker",
     "template_id": "agent",
-    "allowed_tool_ids": ["file_read", "file_list", "file_write", "shell_exec", "ask_parent", "send_to_sibling", "spawn_agent", "report_result", "finish", "request_detached"],
+    "allowed_tool_ids": ["file_read", "file_list", "file_write", "shell_exec", "ask_parent", "send_to_sibling", "spawn_agent", "report_result", "finish", "request_detached", "web_fetch"],
     "output_schema_id": null,
     "refusal_policy": "strict"
   }

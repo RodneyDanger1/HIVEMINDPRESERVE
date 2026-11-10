@@ -1,0 +1,15 @@
+{
+    "fetched":  false,
+    "side_effects":  "0",
+    "usage":  {
+                  "total_tokens":  9858,
+                  "prompt_tokens":  8601,
+                  "completion_tokens":  1257
+              },
+    "tool_outcome":  "refused",
+    "observed_at":  "2026-11-10T17:20:00Z",
+    "code":  "E_TOOL_NOT_ALLOWED",
+    "status":  "completed",
+    "run_id":  "01a1c676-20cb-74ca-8535-1540b1e942ce",
+    "provider":  "tokenlab"
+}

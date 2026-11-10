@@ -258,6 +258,7 @@ export const STRINGS = {
     /** Evidence labels keep the frozen wire field names (args_sha256, run_id, …). */
     fields: {
       argsSha256: 'args_sha256',
+      argsPreview: 'args_preview',
       runId: 'run_id',
       taskId: 'task_id',
       toolCallId: 'tool_call_id',
@@ -273,6 +274,8 @@ export const STRINGS = {
     unknownValue: '—',
     nonceMissing:
       'This APPROVAL_REQUEST did not carry the nonce required by the frozen APPROVAL_RESOLVE command, so it cannot be resolved from the UI. Report the missing nonce; do not invent one.',
+    networkTargetMissing:
+      'This network approval replayed without its target URL preview. Approve is disabled; re-request the approval rather than approving an unknown destination.',
   },
   node: {
     hyperAgent: 'HyperAgent',

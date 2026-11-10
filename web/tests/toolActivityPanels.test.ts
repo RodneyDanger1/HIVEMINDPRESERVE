@@ -5,6 +5,7 @@ import {
   approvalAriaLabel,
   canResolveApproval,
   formatArgsSha256,
+  networkApprovalTargetKnown,
   formatExpiry,
   truncateId,
 } from '../src/panels/ApprovalOverlay';
@@ -66,6 +67,23 @@ describe('ApprovalOverlay view model (W12)', () => {
     expect(approvalAriaLabel('file_write')).toContain('file_write');
     expect(approvalActionAriaLabel('approve', 'file_write')).toMatch(/approve.*file_write/i);
     expect(approvalActionAriaLabel('deny', 'file_write')).toMatch(/deny.*file_write/i);
+  });
+  it('renders web_fetch through the generic approval and activity model', () => {
+    expect(approvalAriaLabel('web_fetch')).toContain('web_fetch');
+    expect(approvalActionAriaLabel('approve', 'web_fetch')).toMatch(/web_fetch/i);
+    const webEntry = entry({ tool: 'web_fetch', toolCallId: 'call-web-1', outcome: 'ok' });
+    expect(toolActivityAriaLabel(webEntry)).toContain('web_fetch');
+    expect(toolActivitySummary([webEntry])).toEqual({
+      total: 1,
+      counts: { pending: 0, ok: 1, refused: 0, denied: 0, timeout: 0, cancelled: 0 },
+    });
+  });
+
+  it('fails closed when a replayed web_fetch approval has no target preview', () => {
+    expect(networkApprovalTargetKnown('web_fetch', '{"url":"https://example.com"}')).toBe(true);
+    expect(networkApprovalTargetKnown('web_fetch', null)).toBe(false);
+    expect(networkApprovalTargetKnown('web_fetch', '')).toBe(false);
+    expect(networkApprovalTargetKnown('file_write', null)).toBe(true);
   });
 });
 

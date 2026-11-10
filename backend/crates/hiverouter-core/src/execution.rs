@@ -249,6 +249,36 @@ pub(crate) fn task_agent_tier(task: &TaskRecord) -> AgentTier {
     }
 }
 
+/// Denies SSRF-ish destinations even after DNS resolution. Literal IPs and
+/// every resolved address are checked before the request is sent.
+fn is_forbidden_fetch_ip(ip: &std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(ip) => {
+            let octets = ip.octets();
+            ip.is_private()
+                || ip.is_loopback()
+                || ip.is_link_local()
+                || ip.is_unspecified()
+                || ip.is_multicast()
+                || ip.is_broadcast()
+                || octets[0] == 0
+                || (octets[0] == 100 && (64..=127).contains(&octets[1]))
+                || octets[0] >= 240
+        }
+        std::net::IpAddr::V6(ip) => {
+            let segments = ip.segments();
+            ip.is_loopback()
+                || ip.is_unspecified()
+                || ip.is_multicast()
+                || ip.is_unique_local()
+                || ip.is_unicast_link_local()
+                || ip.to_ipv4_mapped().is_some_and(|v4| is_forbidden_fetch_ip(&v4.into()))
+                // NAT64 well-known prefix 64:ff9b::/96.
+                || (segments[0] == 0x0064 && segments[1] == 0xff9b)
+        }
+    }
+}
+
 /// Template used for the one planning call; the raw prompt is used when the
 /// registry has no such template.
 pub const PLANNER_TEMPLATE_ID: &str = "planner";
@@ -2620,6 +2650,185 @@ impl RunEngine {
     /// Read-only is a property of the frozen registry contract: a non-read tool
     /// is refused here and never reaches the executor or the jail. Without a
     /// configured jail a read call is refused as `E_FILE_TREE_UNAVAILABLE`.
+    /// Executes one already-approved `web_fetch` call. The URL must be public
+    /// HTTPS, redirects are not followed, credentials are not accepted, and
+    /// the body is capped. Network capability is approval-gated, not implicit.
+    async fn execute_web_fetch(
+        &self,
+        plan: &ToolCallPlan,
+        token: &CancellationToken,
+    ) -> ToolExecution {
+        const MAX_BODY_BYTES: usize = 1_048_576;
+        let refused = |code: &str, detail: String| {
+            ToolExecution::refused(plan.tool_call_id.clone(), code, detail)
+        };
+        let Some(raw_url) = plan.args.get("url").and_then(serde_json::Value::as_str) else {
+            return refused(Refusal::SchemaInvalid.code(), "url is required".to_owned());
+        };
+        let parsed = match reqwest::Url::parse(raw_url) {
+            Ok(url) => url,
+            Err(error) => {
+                return refused(
+                    Refusal::SchemaInvalid.code(),
+                    format!("url is not a valid absolute URL: {error}"),
+                )
+            }
+        };
+        if parsed.scheme() != "https" {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch permits https only".to_owned(),
+            );
+        }
+        if parsed.port().is_some_and(|port| port != 443) {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch permits the default HTTPS port only".to_owned(),
+            );
+        }
+        if !parsed.username().is_empty() || parsed.password().is_some() {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch does not accept credentials in the URL".to_owned(),
+            );
+        }
+        let Some(host) = parsed.host_str().map(str::to_owned) else {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch requires a host".to_owned(),
+            );
+        };
+        if host.eq_ignore_ascii_case("localhost") {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch does not permit localhost".to_owned(),
+            );
+        }
+        let mut resolved = Vec::new();
+        if let Ok(ip) = host.parse::<std::net::IpAddr>() {
+            resolved.push(ip);
+        } else {
+            let Some(port) = parsed.port_or_known_default() else {
+                return refused(
+                    Refusal::RemoteTransport.code(),
+                    "web_fetch could not determine the HTTPS port".to_owned(),
+                );
+            };
+            let lookup = tokio::time::timeout(
+                std::time::Duration::from_secs(10),
+                tokio::net::lookup_host((host.as_str(), port)),
+            );
+            let lookup = tokio::select! {
+                biased;
+                _ = token.cancelled() => {
+                    return refused(Refusal::ToolCancelled.code(), "web_fetch was cancelled".to_owned());
+                }
+                result = lookup => result,
+            };
+            match lookup {
+                Ok(Ok(addresses)) => resolved.extend(addresses.map(|address| address.ip())),
+                Ok(Err(error)) => {
+                    return refused(
+                        Refusal::RemoteTransport.code(),
+                        format!("web_fetch DNS resolution failed: {error}"),
+                    )
+                }
+                Err(_) => {
+                    return refused(
+                        Refusal::ToolTimeout.code(),
+                        "web_fetch DNS resolution timed out".to_owned(),
+                    )
+                }
+            }
+        }
+        if resolved.is_empty() || resolved.iter().any(is_forbidden_fetch_ip) {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                "web_fetch refuses private, loopback, link-local, or unspecified destinations"
+                    .to_owned(),
+            );
+        }
+        let Ok(client) = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .timeout(std::time::Duration::from_secs(15))
+            .user_agent("HiveMind/1.2 web_fetch (+https://github.com/RodneyDanger1/HiveMind)")
+            .build()
+        else {
+            return refused(
+                Refusal::InternalError.code(),
+                "web_fetch could not create an HTTP client".to_owned(),
+            );
+        };
+        let mut response = tokio::select! {
+            biased;
+            _ = token.cancelled() => {
+                return refused(Refusal::ToolCancelled.code(), "web_fetch was cancelled".to_owned());
+            }
+            result = client.get(parsed).send() => match result {
+                Ok(response) => response,
+                Err(error) if error.is_timeout() => {
+                    return refused(Refusal::ToolTimeout.code(), "web_fetch timed out".to_owned());
+                }
+                Err(error) => {
+                    return refused(
+                        Refusal::RemoteTransport.code(),
+                        format!("web_fetch transport failed: {error}"),
+                    );
+                }
+            }
+        };
+        let status = response.status();
+        if !status.is_success() {
+            return refused(
+                Refusal::RemoteTransport.code(),
+                format!("web_fetch received HTTP {status}"),
+            );
+        }
+        if response
+            .content_length()
+            .is_some_and(|length| length > MAX_BODY_BYTES as u64)
+        {
+            return refused(
+                Refusal::FileTooLarge.code(),
+                format!("web_fetch body exceeds {MAX_BODY_BYTES} bytes"),
+            );
+        }
+        let mut bytes = Vec::new();
+        loop {
+            let chunk = tokio::select! {
+                biased;
+                _ = token.cancelled() => {
+                    return refused(Refusal::ToolCancelled.code(), "web_fetch was cancelled".to_owned());
+                }
+                result = response.chunk() => match result {
+                    Ok(chunk) => chunk,
+                    Err(error) if error.is_timeout() => {
+                        return refused(Refusal::ToolTimeout.code(), "web_fetch body timed out".to_owned());
+                    }
+                    Err(error) => {
+                        return refused(
+                            Refusal::RemoteTransport.code(),
+                            format!("web_fetch body failed: {error}"),
+                        );
+                    }
+                }
+            };
+            let Some(chunk) = chunk else { break };
+            if bytes.len().saturating_add(chunk.len()) > MAX_BODY_BYTES {
+                return refused(
+                    Refusal::FileTooLarge.code(),
+                    format!("web_fetch body exceeds {MAX_BODY_BYTES} bytes"),
+                );
+            }
+            bytes.extend_from_slice(&chunk);
+        }
+        let body = String::from_utf8_lossy(&bytes);
+        ToolExecution::ok(
+            plan.tool_call_id.clone(),
+            tool_loop::bounded_tool_text(&format!("HTTP {status}; {} bytes\n{body}", bytes.len())),
+        )
+    }
+
     fn execute_tool_plan(&self, plan: &ToolCallPlan, tier: AgentTier) -> ToolExecution {
         if tool_loop::permission_for(&self.tool_registry, &plan.tool)
             != Some(PermissionClass::Read)
@@ -2792,7 +3001,7 @@ impl RunEngine {
                 "approval bridge is not wired; the side effect did not execute".to_owned(),
             ));
         };
-        if self.tool_workspace.is_none() {
+        if self.tool_workspace.is_none() && plan.tool != "web_fetch" {
             return Ok(ToolExecution::refused(
                 plan.tool_call_id.clone(),
                 Refusal::FileTreeUnavailable.code(),
@@ -2980,6 +3189,23 @@ impl RunEngine {
         if plan.tool == "send_to_sibling" {
             // The approval row is the gate; the message write is the effect.
             return Ok(self.execute_send_to_sibling(run, task, plan, true));
+        }
+        if plan.tool == "web_fetch" {
+            // The approval row is the gate; the HTTP request is the effect.
+            // Honor the same global kill switch as file_write/shell_exec.
+            if !self
+                .tools
+                .as_ref()
+                .is_some_and(|tools| tools.side_effects_enabled())
+            {
+                return Ok(ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::ToolNotAllowed.code(),
+                    "HIVEROUTER_SIDE_EFFECTS=0 disables approved web_fetch; nothing was fetched"
+                        .to_owned(),
+                ));
+            }
+            return Ok(self.execute_web_fetch(plan, token).await);
         }
         let executed = tools
             .execute_approved(
@@ -4906,6 +5132,31 @@ mod prompt_context_tests {
         assert!(prompt.contains("do the work"));
         assert!(prompt.contains("honeycomb"));
         assert!(!prompt.contains("do-not-send"));
+    }
+
+    #[test]
+    fn ssrf_policy_blocks_private_and_loopback_destinations() {
+        use std::net::IpAddr;
+        for blocked in [
+            "127.0.0.1",
+            "10.0.0.1",
+            "172.16.0.1",
+            "192.168.1.1",
+            "169.254.1.1",
+            "0.0.0.0",
+            "100.64.0.1",
+            "240.0.0.1",
+            "::1",
+            "fc00::1",
+            "fe80::1",
+            "::ffff:127.0.0.1",
+            "64:ff9b::7f00:1",
+        ] {
+            let ip: IpAddr = blocked.parse().expect("test ip");
+            assert!(is_forbidden_fetch_ip(&ip), "{blocked} must be blocked");
+        }
+        let public: IpAddr = "1.1.1.1".parse().expect("public ip");
+        assert!(!is_forbidden_fetch_ip(&public));
     }
 
     #[test]

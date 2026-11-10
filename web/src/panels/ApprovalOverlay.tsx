@@ -143,6 +143,21 @@ export function prunePendingResolutions(
   return changed ? next : pending;
 }
 
+/**
+ * A network approval without a replayed target is not safe to approve: the
+ * server persists only the args digest, so a replay can omit args_preview.
+ * Non-network tools are unaffected by this rule.
+ */
+export function networkApprovalTargetKnown(
+  tool: string,
+  argsPreview: string | null | undefined,
+): boolean {
+  if (tool !== 'web_fetch') {
+    return true;
+  }
+  return typeof argsPreview === 'string' && argsPreview.trim().length > 0;
+}
+
 /** Accessible name for the dialog; includes the tool so screen readers get context. */
 export function approvalAriaLabel(tool: string): string {
   return `${STRINGS.approval.title}: ${tool}`;
@@ -215,6 +230,12 @@ export function ApprovalOverlay() {
     });
     const enabled = decision === APPROVAL_DECISIONS.approve ? actions.approve : actions.deny;
     if (!enabled) {
+      return;
+    }
+    if (
+      decision === APPROVAL_DECISIONS.approve &&
+      !networkApprovalTargetKnown(view.tool, view.argsPreview)
+    ) {
       return;
     }
     await resolveApproval(
@@ -311,7 +332,7 @@ export function ApprovalOverlay() {
                   {argsHash}
                 </dd>
 
-                <dt className="type-mono-meta text-meta">args_preview</dt>
+                <dt className="type-mono-meta text-meta">{STRINGS.approval.fields.argsPreview}</dt>
                 <dd
                   className="type-mono-code max-h-28 overflow-auto whitespace-pre-wrap break-words text-ink-900"
                   title={view.argsPreview ?? UNKNOWN_VALUE}
@@ -404,6 +425,12 @@ export function ApprovalOverlay() {
                 </div>
               ) : null}
 
+              {!networkApprovalTargetKnown(view.tool, view.argsPreview) ? (
+                <p role="status" className="mt-2 type-label text-signal">
+                  {STRINGS.approval.networkTargetMissing}
+                </p>
+              ) : null}
+
               <div className="mt-3 flex justify-end gap-2">
                 <button
                   type="button"
@@ -419,7 +446,7 @@ export function ApprovalOverlay() {
                 <button
                   type="button"
                   className="type-label rounded-[var(--radius-button)] bg-honey-300 px-3 py-1.5 text-ink-900 disabled:opacity-50"
-                  disabled={!actions.approve}
+                  disabled={!actions.approve || !networkApprovalTargetKnown(view.tool, view.argsPreview)}
                   aria-label={approvalActionAriaLabel(APPROVAL_DECISIONS.approve, view.tool)}
                   onClick={() => {
                     void submit(view, APPROVAL_DECISIONS.approve);

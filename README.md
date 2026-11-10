@@ -27,13 +27,13 @@ system. The honest comparison, evidence, and gaps are in
 | **Daemon** | Tree-free enrolled record; `watchdog` has a real DB-check job. | Be enrolled and report a DB check when its tick path is driven. | Run as a continuously scheduled OS process in this build; no live tick proof. |
 | **ToolAgent** | Tier exists in the census. | Nothing in production. | No shipped producer; **label only**. |
 
-Tool surface (10 registered tools, 5 permission classes):
+Tool surface (11 registered tools, 5 permission classes):
 
 | Tier | Registered allowlist |
 |---|---|
 | HyperAgent | `spawn_agent`, `report_result`, `finish` (root control is a separate, non-registry tool surface) |
-| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached` |
-| WorkerAgent | same 10 as SuperAgent |
+| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch` |
+| WorkerAgent | same 11 as SuperAgent |
 | Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
 | ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` |
 
@@ -166,12 +166,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **50 suites, 631 passed, 0 failed, 2 ignored**
-- Web: typecheck **0**, **225 tests passed**, production build **0**
+- Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
+- Web: typecheck **0**, **227 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `FB975266D7EB5701DCF3AC4C189B3396FE4C6B702D0BC9C813B19C37925493D0`
+  `98A179DD58C41DC27AC5343B912EF78E198C8003D076698D3A032D264034C615`
 - Packaged server / release binary: SHA-256
-  `C4B29C47DD8B351EA96D877E69AA76FF815E9852B6B8A9C6646294B702FD7C85`
+  `53CE2EC5709BD44FD69C51EAE88B14106A098250658D64F593BC09F7D2037214`
 
 ---
 
@@ -288,8 +288,8 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
   admission, duplicate refusal, root-gate durability, foreign-run rewire.
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
-- Full gate: **50 suites, 631 passed, 0 failed, 2 ignored**; web typecheck 0,
-  225 tests passed.
+- Full gate: **50 suites, 633 passed, 0 failed, 2 ignored**; web typecheck 0,
+  227 tests passed.
 
 ### Not implemented
 
@@ -303,13 +303,27 @@ stability, self-modifying code, and AGI remain explicitly out of scope.
 |---|---|
 | Read-only file tool | **verified live**: `file_read` returned the exact `# HiveMind HMARS Bug-Fix Report` heading |
 | Approval-gated file write | **verified live**: `file_write` suspended, operator approved the nonce, run completed, `write-test.txt` contained `APPROVED_WRITE_OK` in an isolated temp workspace |
-| Web research | **absent**: no web tool exists in the registry; this is a missing capability, not a pass |
-| Shell | approval-gated and allowlisted; not exercised in this battery |
+| Web research | **verified live**: approval-gated `web_fetch` fetched `https://example.com` once (HTTP 200, 577 bytes) and the Agent reported `Example Domain`; `web_fetch` is granted to SuperAgent/WorkerAgent, not HyperAgent/Subagent |
+| Web-fetch kill switch | **verified live**: with `HIVEROUTER_SIDE_EFFECTS=0`, the same approved call was refused `E_TOOL_NOT_ALLOWED`; no fetch |
+| Shell | **verified live**: approval-gated `cmd.exe /c echo shell-ok` returned exit 0 and stdout `shell-ok` |
 | Detached admission | verified live (Lantern) and test-backed |
 | A2A ask_parent | verified live (one answered question) |
 | Exact hierarchy | verified live (7-task exact-two) |
 
 The tool battery evidence is under `docs/evidence/live/`.
+### `web_fetch` safety boundary
+
+`web_fetch` is the 11th registry tool and the only network egress seam. It is
+approval-gated (`Network` permission), HTTPS-only, default-port-only, rejects URL
+credentials and localhost, and resolves then rejects loopback/private/link-local/
+CGNAT/240/4/IPv4-mapped/NAT64 destinations. Redirects are not followed, DNS has
+a 10s timeout and cancellation, the response is streamed and capped at 1 MiB
+before buffering, and the request has a 15s timeout. The global
+`HIVEROUTER_SIDE_EFFECTS=0` switch covers it.
+
+Live evidence: `docs/evidence/live/live-tokenlab-web-fetch.json` and
+`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`. Unit tests cover
+the SSRF policy and census lane; full gate is 633 backend / 227 web.
 ---
 
 ## 12. Authorized self-evolution gate

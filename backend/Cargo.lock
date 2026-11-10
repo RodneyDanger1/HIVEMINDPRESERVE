@@ -1001,6 +1001,7 @@ dependencies = [
  "hiverouter-tools",
  "petgraph",
  "prompty",
+ "reqwest",
  "rusqlite",
  "rust-embed",
  "serde",

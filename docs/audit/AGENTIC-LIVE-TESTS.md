@@ -271,3 +271,37 @@ This proves the full write path: tool request → approval row/nonce → operato
 approval → execution → artifact content. It used an isolated temporary
 workspace, not the repository. Evidence:
 `docs/evidence/live/live-tokenlab-file-write-approval.json`.
+## Test L — approval-gated web_fetch, live
+
+Prompt required one Agent to `web_fetch https://example.com` once. The run
+suspended on a real approval, the operator approved it, and the run completed.
+The tool row is `web_fetch: ok`; the final answer confirmed the fetched body
+contains `Example Domain` (HTTP 200, 577 bytes). No shell/file tool was used.
+
+Usage: 8,047 prompt / 554 completion / 8,601 total. Evidence:
+`docs/evidence/live/live-tokenlab-web-fetch.json`.
+## Test M — web_fetch blocked by the global side-effect kill switch
+
+Started with `HIVEROUTER_SIDE_EFFECTS=0`; the run requested `web_fetch`,
+the operator approved, and the tool executed **zero** network effects and was
+refused with `E_TOOL_NOT_ALLOWED`. The only tool rows were
+`web_fetch: refused` and `report_result: ok`.
+
+Usage: 8,601 / 1,257 / 9,858. Evidence:
+`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.
+## Test N — hardened web_fetch, live
+
+On the hardened build (DNS timeout, streamed 1 MiB cap, kill-switch check),
+the approval-gated `web_fetch https://example.com` completed: exactly one
+`web_fetch: ok` row, HTTP 200, 577 bytes, and the Agent reported
+`Example Domain`. Usage 8,411 / 940 / 9,351.
+
+Evidence: `docs/evidence/live/live-tokenlab-web-fetch.json`; the disabled
+negative case is `docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.
+## Test O — approval-gated shell_exec, live
+
+Run `01a1c678-fcbb-7182-9bfa-8f04218520ff` requested `shell_exec` with
+`cmd.exe /c echo shell-ok`; the operator approved it, the tool row was
+`shell_exec: ok`, and the Agent reported stdout `shell-ok` with exit code 0.
+This is the live shell path, not just a unit test. Evidence:
+`docs/evidence/live/live-tokenlab-shell-exec.json`.

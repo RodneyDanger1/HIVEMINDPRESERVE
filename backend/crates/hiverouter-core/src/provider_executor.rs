@@ -169,7 +169,10 @@ impl ProviderExecutorAdapter {
             "worker" => "agent".to_owned(),
             "planner" | "hyper" => "planner".to_owned(),
             "sub" => "subagent".to_owned(),
-            _ => lower.replace(['-', ' '], "_"),
+            // Persona ids are stable hyphenated ids (`content-writer`); do
+            // not rewrite them to underscores or the lookup silently falls
+            // back to the full tier tool list and generic prompt.
+            _ => lower,
         }
     }
 
@@ -980,7 +983,7 @@ mod tests {
         assert_eq!(ProviderExecutorAdapter::persona_key("sub"), "subagent");
         assert_eq!(
             ProviderExecutorAdapter::persona_key("content-writer"),
-            "content_writer"
+            "content-writer"
         );
     }
 

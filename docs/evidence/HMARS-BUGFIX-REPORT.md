@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `943263d`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `C4B29C47DD8B351EA96D877E69AA76FF815E9852B6B8A9C6646294B702FD7C85`  
-Portable package: `dist/HiveMind.zip` SHA-256 `FB975266D7EB5701DCF3AC4C189B3396FE4C6B702D0BC9C813B19C37925493D0`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `C4B29C47DD8B351EA96D877E69AA76FF815E9852B6B8A9C6646294B702FD7C85`
+Release binary: `target/release/hiverouter.exe` SHA-256 `53CE2EC5709BD44FD69C51EAE88B14106A098250658D64F593BC09F7D2037214`  
+Portable package: `dist/HiveMind.zip` SHA-256 `98A179DD58C41DC27AC5343B912EF78E198C8003D076698D3A032D264034C615`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `53CE2EC5709BD44FD69C51EAE88B14106A098250658D64F593BC09F7D2037214`
 
 ## 1. What HiveMind is supposed to be
 
@@ -142,7 +142,7 @@ Backend:
 
 Web:
   npm.cmd run typecheck  -> exit 0
-  npm.cmd test           -> 29 files, 225 tests passed, exit 0
+  npm.cmd test           -> 29 files, 227 tests passed, exit 0
   npm.cmd run build      -> exit 0 (531 modules; pre-existing >500 kB chunk warning)
 
 Release:
@@ -386,8 +386,8 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **50 suites, 631 passed, 0 failed, 2 ignored**.
-- Web: 225 tests, typecheck 0, production build 0; UI unchanged by this round.
+- Backend: **50 suites, 633 passed, 0 failed, 2 ignored**.
+- Web: 227 tests, typecheck 0, production build 0; UI gained the replayed-network-approval fail-closed gate.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)
 
@@ -401,8 +401,8 @@ remote is an in-process fixture principal, not a network satellite.
   `requires_human_review:true` entry. No self-modifying code path exists.
 - Daemon admission is audited; duplicate root names are guarded across remotes
   and daemons; a root control run can add at most one extra branch.
-- Final gates: 50 backend suites, 631 passed, 0 failed, 2 ignored; web typecheck
-  0 and 225 tests passed. Final package hashes are at the top of this report.
+- Final gates: 50 backend suites, 633 passed, 0 failed, 2 ignored; web typecheck
+  0 and 227 tests passed. Final package hashes are at the top of this report.
 - No paid calls were made in the final documentation pass because the DeepSeek
   key was not available to check balance; live evidence above is from the
   previously measured runs.
@@ -430,9 +430,14 @@ regression on the final refusal-auditing build, not a reuse of the earlier run.
   suspended on `file_write`, the operator approved with the single-use nonce,
   the run completed, and `write-test.txt` contained exactly
   `APPROVED_WRITE_OK` in an isolated temp workspace.
-- **Web research:** no web tool exists in the registry; this capability is
-  absent, not "tested and passed".
-- **Shell:** not exercised in this battery; shell remains approval-gated and
-  allowlisted.
+- **Web research:** approval-gated `web_fetch` fetched `https://example.com`
+  once (HTTP 200, 577 bytes) and the Agent reported `Example Domain`. With
+  `HIVEROUTER_SIDE_EFFECTS=0`, the same approval was refused with
+  `E_TOOL_NOT_ALLOWED` and no fetch occurred.
+- **Shell:** approval-gated `shell_exec` via `cmd.exe /c echo shell-ok`
+  completed with exit 0 and stdout `shell-ok` on run
+  `01a1c678-fcbb-7182-9bfa-8f04218520ff`; no file fallback was used.
 
-Evidence: `docs/evidence/live/live-tokenlab-file-write-approval.json`.
+Evidence: `docs/evidence/live/live-tokenlab-file-write-approval.json`,
+`docs/evidence/live/live-tokenlab-web-fetch.json`, and
+`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.

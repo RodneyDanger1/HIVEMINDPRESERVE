@@ -133,6 +133,8 @@ pub enum ToolId {
     ShellExec,
     /// Request a governed detached remote/daemon; HyperAgent admission decides.
     RequestDetached,
+    /// Fetch one public HTTPS URL through the approval-gated network seam.
+    WebFetch,
 }
 
 impl ToolId {
@@ -150,6 +152,7 @@ impl ToolId {
             ToolId::FileWrite => "file_write",
             ToolId::ShellExec => "shell_exec",
             ToolId::RequestDetached => "request_detached",
+            ToolId::WebFetch => "web_fetch",
         }
     }
 
@@ -266,8 +269,16 @@ pub struct FinishArgs {
     pub verdict: String,
 }
 
-/// Arguments for `file_read`.
+/// Arguments for `web_fetch`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct WebFetchArgs {
+    /// Public HTTPS URL to fetch once; redirects are not followed.
+    pub url: String,
+}
+
+/// Arguments for [`ToolId::FileRead`].
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct FileReadArgs {
     /// Workspace-relative path.
@@ -415,6 +426,12 @@ impl ToolRegistry {
                 PermissionClass::Control,
                 schema_of!(RequestDetachedArgs),
             ),
+            contract(
+                ToolId::WebFetch,
+                "Fetch one public HTTPS URL (requires operator approval). Redirects, credentials, private networks, and bodies over 1 MiB are refused.",
+                PermissionClass::Network,
+                schema_of!(WebFetchArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -437,6 +454,7 @@ impl ToolRegistry {
                 ToolId::FileWrite,
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
+                ToolId::WebFetch,
             ],
         );
         allowlists.insert(
@@ -452,6 +470,7 @@ impl ToolRegistry {
                 ToolId::FileWrite,
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
+                ToolId::WebFetch,
             ],
         );
         allowlists.insert(
@@ -615,6 +634,17 @@ mod tests {
         assert!(!registry.is_allowed(AgentTier::HyperAgent, ToolId::ShellExec));
         assert!(!registry.is_allowed(AgentTier::HyperAgent, ToolId::FileWrite));
         assert!(registry.is_allowed(AgentTier::WorkerAgent, ToolId::ShellExec));
+        assert!(registry.is_allowed(AgentTier::WorkerAgent, ToolId::WebFetch));
+        assert!(registry.is_allowed(AgentTier::SuperAgent, ToolId::WebFetch));
+        assert!(!registry.is_allowed(AgentTier::HyperAgent, ToolId::WebFetch));
+        assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::WebFetch));
+        assert_eq!(
+            registry
+                .contract(ToolId::WebFetch)
+                .expect("web_fetch contract")
+                .permission_class,
+            PermissionClass::Network
+        );
         assert!(!registry.is_allowed(AgentTier::ToolAgent, ToolId::SpawnAgent));
         assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::SpawnAgent));
         assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::FileWrite));

@@ -118,6 +118,12 @@ impl ToolsBridge {
         self
     }
 
+    /// Whether the global side-effect kill switch is enabled.
+    #[must_use]
+    pub fn side_effects_enabled(&self) -> bool {
+        self.side_effects_enabled
+    }
+
     /// Marks one pending approval expired (live-wait timeout).
     ///
     /// # Errors

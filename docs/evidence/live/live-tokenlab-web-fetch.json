@@ -1,0 +1,23 @@
+{
+    "url":  "https://example.com",
+    "body_bytes":  577,
+    "contains":  "Example Domain",
+    "http_status":  200,
+    "approval":  {
+                     "decision":  "approve",
+                     "tool":  "web_fetch"
+                 },
+    "usage":  {
+                  "total_tokens":  9351,
+                  "prompt_tokens":  8411,
+                  "completion_tokens":  940
+              },
+    "observed_at":  "2026-11-10T17:10:00Z",
+    "tools":  [
+                  "web_fetch:ok"
+              ],
+    "status":  "completed",
+    "run_id":  "01a1c675-1afd-71c8-afa2-0ef0a202ba8c",
+    "provider":  "tokenlab",
+    "tasks":  2
+}

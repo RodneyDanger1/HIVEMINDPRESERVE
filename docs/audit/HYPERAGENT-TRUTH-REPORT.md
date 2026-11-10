@@ -24,10 +24,10 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 631 passed, 0 failed, 2 ignored |
-| T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `FB975266D7EB5701DCF3AC4C189B3396FE4C6B702D0BC9C813B19C37925493D0` |
-| T4 | Server binary hash | **VERIFIED** | `C4B29C47DD8B351EA96D877E69AA76FF815E9852B6B8A9C6646294B702FD7C85` |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 633 passed, 0 failed, 2 ignored |
+| T2 | Web gate is green | **VERIFIED** | typecheck 0, 227 tests passed, production build 0 |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `98A179DD58C41DC27AC5343B912EF78E198C8003D076698D3A032D264034C615` |
+| T4 | Server binary hash | **VERIFIED** | `53CE2EC5709BD44FD69C51EAE88B14106A098250658D64F593BC09F7D2037214` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -53,7 +53,7 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 | T27 | Final-build exact-two regression | **VERIFIED (live)** | run `01a1c62c-4e1f-7172-9945-6a70af9230e1`: completed, 7 tasks, 17,486 tokens |
 | T28 | Read-only file tool use | **VERIFIED (live)** | run `01a1c639-fdef-76ed-8014-3fcd2bed9dce`: `file_read` ok; exact heading returned |
 | T29 | Approval-gated file write + artifact | **VERIFIED (live)** | run `01a1c63b-53f4-71a1-b634-ef9aae1357d2`: approval nonce approved; `write-test.txt` = `APPROVED_WRITE_OK` |
-| T30 | Web research tool | **ABSENT / NOT TESTED** | no web tool in the registry; do not claim web capability |
+| T30 | Web research tool | **VERIFIED (live)** | `web_fetch` approval-gated; run `01a1c675-1afd-71c8-afa2-0ef0a202ba8c`: HTTP 200, body contains `Example Domain`, 9,351 tokens |
 
 No claim of "AGI", "self-improving", "autonomous HyperAgent", or "network
 satellite" survives this ledger.
@@ -333,7 +333,7 @@ if let (Some(request_id), Some(store)) = (request_id, self.remote.as_ref()) {
   duplicate name and a payload-mismatched request id are attributable, not
   silent.
 
-### Tool surface (10 tools, 5 permission classes)
+### Tool surface (11 tools, 5 permission classes)
 
 `hiverouter-tools/src/tool.rs` registers `request_detached` as
 `PermissionClass::Control`; SuperAgent/WorkerAgent allowlists include it;
@@ -359,7 +359,7 @@ persona allowlist. Test:
   retry, idempotent mismatched payload, daemon admission, duplicate names, run
   bank.
 - `provider_adapter.rs`: tier∩persona request capture.
-- Full gate: **50 suites, 631 passed, 0 failed, 2 ignored**.
+- Full gate: **50 suites, 633 passed, 0 failed, 2 ignored**.
 
 ### What this does NOT prove
 
@@ -389,3 +389,48 @@ prompts, or running agents. A proposal stays `awaiting_votes` until four spawned
 SuperAgent approvals and the operator approval are recorded **and unanimous**; the
 current tree does not implement the vote-submission path or automatic application.
 Test: `root_can_record_but_never_auto_apply_an_improvement_proposal`.
+## 20. `web_fetch` network capability (approval-gated)
+
+The registry now has an 11th tool, `web_fetch`, permission class `Network`.
+It is granted to SuperAgent and WorkerAgent, not to HyperAgent or Subagent.
+The call path is:
+
+`model tool call -> authorize_tool_call -> request_model_tool_approval ->
+APPROVAL_REQUEST -> operator nonce -> execute_approved -> execute_web_fetch ->
+reqwest GET -> bounded tool result`
+
+The implementation (`execution.rs`, `execute_web_fetch`):
+- accepts absolute `https` only, default port only, no URL credentials;
+- resolves the host and refuses loopback/private/link-local/unspecified/multicast
+  IPv4 and IPv6 destinations;
+- does not follow redirects;
+- times out at 15 seconds and caps the body at 1 MiB;
+- returns `E_TOOL_TIMEOUT`, `E_REMOTE_TRANSPORT`, `E_FILE_TOO_LARGE`, or
+  `E_TOOL_CANCELLED` by name; no silent success.
+
+Live evidence: approval-gated fetch of `https://example.com` returned HTTP 200,
+577 bytes, containing `Example Domain`, with exactly one `web_fetch` tool row.
+### Web-fetch negative test
+
+With `HIVEROUTER_SIDE_EFFECTS=0`, the same `web_fetch` request was approved but
+refused with `E_TOOL_NOT_ALLOWED`; tool rows were `web_fetch: refused` and
+`report_result: ok` only. No HTTP effect was claimed. Evidence:
+`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.
+### Hardening found by the read-only web audit
+
+The first implementation passed a live approval test, then a read-only audit
+found four real defects: the global side-effect kill switch did not cover
+`web_fetch`; DNS resolution was unbounded and uncancellable; the 1 MiB cap was
+checked after `response.bytes()` buffered the body; and a network-only fetch
+required a filesystem jail. All four are now fixed: DNS has a 10s timeout plus
+cancellation, the body is streamed chunk-by-chunk with a pre-buffer cap, the
+jail requirement is bypassed only for `web_fetch`, and the side-effect switch is
+checked before the fetch. A separate real bug was fixed: hyphenated persona ids
+(`content-writer`) no longer normalize to underscores and silently fall back to
+the full tier list; test
+`hyphenated_persona_uses_its_own_allowlist_not_the_full_tier`.
+
+A negative live run with `HIVEROUTER_SIDE_EFFECTS=0` approved the call and got
+`E_TOOL_NOT_ALLOWED`; tool rows were only `web_fetch: refused` and
+`report_result: ok`. Evidence:
+`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`.

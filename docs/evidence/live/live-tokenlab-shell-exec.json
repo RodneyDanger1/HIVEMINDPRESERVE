@@ -1,0 +1,23 @@
+{
+    "approval":  {
+                     "decision":  "approve",
+                     "tool":  "shell_exec"
+                 },
+    "args":  [
+                 "/c",
+                 "echo shell-ok"
+             ],
+    "observed_at":  "2026-11-10T17:26:00Z",
+    "stdout":  "shell-ok",
+    "usage":  {
+                  "total_tokens":  8846,
+                  "prompt_tokens":  7816,
+                  "completion_tokens":  1030
+              },
+    "tool_outcome":  "ok",
+    "exit_code":  0,
+    "status":  "completed",
+    "run_id":  "01a1c678-fcbb-7182-9bfa-8f04218520ff",
+    "provider":  "tokenlab",
+    "program":  "cmd.exe"
+}

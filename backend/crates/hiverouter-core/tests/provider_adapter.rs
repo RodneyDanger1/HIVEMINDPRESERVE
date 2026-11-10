@@ -183,6 +183,67 @@ async fn superagent_request_advertises_tier_persona_intersection_only() {
 }
 
 #[tokio::test]
+async fn hyphenated_persona_uses_its_own_allowlist_not_the_full_tier() {
+    let server = MockServer::start().await;
+    let body = concat!(
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":null}]}\n\n",
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":2,\"total_tokens\":12,\"prompt_cache_hit_tokens\":0,\"prompt_cache_miss_tokens\":10}}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(body),
+        )
+        .mount(&server)
+        .await;
+
+    let mut allowlists = std::collections::HashMap::new();
+    allowlists.insert(
+        "content-writer".to_owned(),
+        vec!["file_read".to_owned(), "report_result".to_owned()],
+    );
+    let adapter = adapter(&server).with_persona_tool_allowlists(allowlists);
+    let task = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: RunId::new(),
+        parent_task_id: None,
+        role: "content-writer".to_owned(),
+        depth: 2,
+        spawn_seq: 3,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    let sink: DeltaSink = Arc::new(|_| {});
+    adapter
+        .execute(
+            RunId::new(),
+            &task,
+            "write one line",
+            &CancellationToken::new(),
+            &sink,
+        )
+        .await
+        .expect("leaf execute");
+
+    let requests = server.received_requests().await.expect("captured requests");
+    let first = requests.first().expect("one request");
+    let body: serde_json::Value = serde_json::from_slice(&first.body).expect("request JSON");
+    let tools: Vec<&str> = body
+        .get("tools")
+        .and_then(|value| value.as_array())
+        .expect("tools array")
+        .iter()
+        .filter_map(|tool| tool.get("function").and_then(|f| f.get("name")).and_then(|n| n.as_str()))
+        .collect();
+    assert!(tools.contains(&"file_read"));
+    assert!(!tools.contains(&"shell_exec"), "hyphenated persona leaked its tier list: {tools:?}");
+    assert!(!tools.contains(&"web_fetch"));
+}
+
+#[tokio::test]
 async fn auth_status_is_mapped_to_provider_auth() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
