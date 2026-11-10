@@ -302,3 +302,28 @@ RapidTool's phase pipeline, evidence-hashed DoD gate, Agent Packet, and unified
 ledger remain **not implemented**. HiveMind now has a real approval-gated
 network tool and a truthful five-seat proposal contract, but no implemented
 SuperAgent vote submission or self-apply path.
+---
+
+## 5. Proposal surface verification (2026-11-10)
+
+```text
+root_control two turns:
+  turn 1: propose_improvement A -> dedupe scan run bank -> record improvement:<uuid>
+  turn 2: same A -> dedupe scan finds content-identical entry -> record root_control
+          deduplicated; do not create a second proposal
+proposal API:
+  GET /api/agents/runs/{id}/proposals
+  -> { count, applied:false, vote_path:not_implemented,
+       proposals:[{proposal_id, area, problem, proposal,
+                   governance:{required_approvals:5, operator:1, superagents:4,
+                               unanimous:true, state:awaiting_votes, can_apply:false}}] }
+ui ProposalsPanel:
+  read-only; no approve/apply control; renders awaiting_votes and can_apply:false
+```
+
+Live: run `01a1c6a2-6c25-7333-a970-8ef8d6a61a0c` produced exactly one proposal
+after two identical root-control attempts; `applied=false`, `vote_path=not_implemented`.
+Backend 50 suites / 633 passed; web 229 passed. Package hashes are in README.
+
+Still absent: four spawned SuperAgent voters, operator authorization, apply, and
+rollback. The dedupe proves idempotent recording, not self-evolution.

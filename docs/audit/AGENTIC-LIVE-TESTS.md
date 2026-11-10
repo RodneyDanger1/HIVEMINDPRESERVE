@@ -312,3 +312,10 @@ one `web_fetch: ok` row (9,257 tokens). The durable single-use grant is now
 verified/consumed before the HTTP request, so an approval cannot be replayed
 from an in-memory waiter alone. Evidence:
 `docs/evidence/live/live-tokenlab-web-fetch.json`.
+## Test Q — proposal dedupe and read-only ledger
+
+Final build run `01a1c6a2-6c25-7333-a970-8ef8d6a61a0c` proposed the same
+improvement twice across the two root-control turns. The proposal ledger returned
+**count=1**, `applied=false`, `vote_path="not_implemented"`, and
+`state="awaiting_votes"`. The duplicate was deduplicated by content, not by a new
+UUID. Evidence: `docs/evidence/live/live-tokenlab-proposal-dedupe.json`.

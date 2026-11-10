@@ -1,0 +1,23 @@
+{
+    "proposal_count":  1,
+    "proposal_id":  "01a1c6a2-83fc-76d7-ab07-e1edba35e98e",
+    "vote_path":  "not_implemented",
+    "usage":  {
+                  "total_tokens":  5844,
+                  "prompt_tokens":  4757,
+                  "completion_tokens":  1087
+              },
+    "observed_at":  "2026-11-10T18:02:00Z",
+    "applied":  false,
+    "status":  "completed",
+    "run_id":  "01a1c6a2-6c25-7333-a970-8ef8d6a61a0c",
+    "provider":  "tokenlab",
+    "governance":  {
+                       "unanimous":  true,
+                       "required_approvals":  5,
+                       "operator_approvals":  1,
+                       "state":  "awaiting_votes",
+                       "can_apply":  false,
+                       "superagent_approvals":  4
+                   }
+}

@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `851ada2`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `85CE8423B36AC8FE940E49D445BDF87AA156F7DEEBBF8308CC43F00EB42F54F1`  
-Portable package: `dist/HiveMind.zip` SHA-256 `51AB1F4B21B0EDA2105221ABE418B1C09C28F06313862401D3638C3E9A3182C7`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `85CE8423B36AC8FE940E49D445BDF87AA156F7DEEBBF8308CC43F00EB42F54F1`
+Release binary: `target/release/hiverouter.exe` SHA-256 `D6F245EA9DAA1300F1A19F5D64E164143824EA618065A89A7F59CEBAA05F15D5`  
+Portable package: `dist/HiveMind.zip` SHA-256 `D8CEF455E7C910244A4E31D92C5721E316281229CCF760F72491A0C1654700D1`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `D6F245EA9DAA1300F1A19F5D64E164143824EA618065A89A7F59CEBAA05F15D5`
 
 ## 1. What HiveMind is supposed to be
 
@@ -142,7 +142,7 @@ Backend:
 
 Web:
   npm.cmd run typecheck  -> exit 0
-  npm.cmd test           -> 29 files, 227 tests passed, exit 0
+  npm.cmd test           -> 29 files, 229 tests passed, exit 0
   npm.cmd run build      -> exit 0 (531 modules; pre-existing >500 kB chunk warning)
 
 Release:
@@ -402,7 +402,7 @@ remote is an in-process fixture principal, not a network satellite.
 - Daemon admission is audited; duplicate root names are guarded across remotes
   and daemons; a root control run can add at most one extra branch.
 - Final gates: 50 backend suites, 633 passed, 0 failed, 2 ignored; web typecheck
-  0 and 227 tests passed. Final package hashes are at the top of this report.
+  0 and 229 tests passed. Final package hashes are at the top of this report.
 - No paid calls were made in the final documentation pass because the DeepSeek
   key was not available to check balance; live evidence above is from the
   previously measured runs.

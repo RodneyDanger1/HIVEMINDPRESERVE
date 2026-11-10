@@ -167,11 +167,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 Current gates (this tree, 2026-11-10):
 
 - Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
-- Web: typecheck **0**, **227 tests passed**, production build **0**
+- Web: typecheck **0**, **229 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `51AB1F4B21B0EDA2105221ABE418B1C09C28F06313862401D3638C3E9A3182C7`
+  `D8CEF455E7C910244A4E31D92C5721E316281229CCF760F72491A0C1654700D1`
 - Packaged server / release binary: SHA-256
-  `85CE8423B36AC8FE940E49D445BDF87AA156F7DEEBBF8308CC43F00EB42F54F1`
+  `D6F245EA9DAA1300F1A19F5D64E164143824EA618065A89A7F59CEBAA05F15D5`
 
 ---
 
@@ -289,7 +289,7 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
 - Full gate: **50 suites, 633 passed, 0 failed, 2 ignored**; web typecheck 0,
-  227 tests passed.
+  229 tests passed.
 
 ### Not implemented
 
