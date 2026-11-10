@@ -344,3 +344,9 @@ Final build, run `01a1c6bc-…`, proposal `01a1c6bc-d355-…`:
 `POST .../apply` without five-seat authorization returned **409**; no lesson
 artifact and no `evolution_apply` row were written. Apply is scoped to a lesson
 artifact only. Evidence: `docs/evidence/live/live-tokenlab-lesson-apply-refusal.json`.
+## Test V — read-only authorized lesson surface
+
+Final build served `GET /api/evolution/lessons` with `count=0` and
+`artifact="evolution/LESSONS.jsonl"` before any authorized apply. The route is
+read-only; it cannot apply or roll back. Evidence:
+`docs/evidence/live/live-tokenlab-lessons-empty.json`.

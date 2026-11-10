@@ -409,3 +409,9 @@ POST .../rollback
 Live negative: unauthorized `POST .../apply` returned **409**, wrote no lesson.
 This is a real authorized learning artifact with rollback, not code
 self-modification. Backend 633 passed; web 229 passed.
+## 9. Read-only authorized-lesson surface
+
+`GET /api/evolution/lessons` parses the fixed `<data_dir>/evolution/LESSONS.jsonl`
+and returns at most 200 rows; it never applies or removes one. The web
+`LessonsPanel` renders the applied lesson rows read-only. Live check returned
+`count=0` before any authorized apply. Backend 633 passed; web 231 passed.

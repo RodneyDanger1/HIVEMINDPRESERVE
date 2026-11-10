@@ -1,0 +1,8 @@
+{
+    "artifact":  "evolution/LESSONS.jsonl",
+    "provider":  "tokenlab",
+    "state":  "read_only",
+    "observed_at":  "2026-11-10T19:25:00Z",
+    "count":  0,
+    "endpoint":  "/api/evolution/lessons"
+}

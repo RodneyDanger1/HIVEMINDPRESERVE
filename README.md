@@ -167,11 +167,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 Current gates (this tree, 2026-11-10):
 
 - Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
-- Web: typecheck **0**, **229 tests passed**, production build **0**
+- Web: typecheck **0**, **231 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `3669BC97BBE9FC623B5BC1761E2F6859512FCABA4280FFC98F472468EE71BE18`
+  `B95F2BA5DD559AC00B66FB9E0656C4AC57586C03A97F3358FD0E292FD996FF28`
 - Packaged server / release binary: SHA-256
-  `BB238173B8913D943BF27D64119850CAAA57B632C34B8C5A37CB7797C2489034`
+  `ACBAD87E2721F02CCCB513A764A6D16C4F9CAF7EB45A879DAC7AC4863A86B74C`
 
 ---
 
@@ -289,7 +289,7 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
 - Full gate: **50 suites, 633 passed, 0 failed, 2 ignored**; web typecheck 0,
-  229 tests passed.
+  231 tests passed.
 
 ### Not implemented
 
@@ -367,3 +367,6 @@ records `authorized_not_applied`. After that, `POST .../apply` appends one durab
 lesson line to `evolution/LESSONS.jsonl` and `POST .../rollback` removes it.
 **Scope is lesson artifact only**; there is no code/schema/prompt/tool/persona
 mutation and `can_apply` remains false.
+The applied lesson ledger is also readable at `GET /api/evolution/lessons` and
+rendered read-only by `LessonsPanel`. It is a lesson artifact viewer, not a
+behavioral learning loop; no future run retrieves it automatically.
