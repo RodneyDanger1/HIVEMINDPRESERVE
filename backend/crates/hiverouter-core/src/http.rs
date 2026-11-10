@@ -340,7 +340,10 @@ fn build_engine(
         .with_tools(tools)
         .with_remote_store(remote)
         .with_daemon_store(daemons)
-        .with_root_orchestrator();
+        .with_root_orchestrator()
+        .with_authorized_lessons(crate::execution::load_authorized_lessons(
+            &config.data_dir.join("evolution").join("LESSONS.jsonl"),
+        ));
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
             Ok(jail) => engine = engine.with_tool_workspace(jail),
