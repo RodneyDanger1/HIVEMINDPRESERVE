@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `cca1e34`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7`  
-Portable package: `dist/HiveMind.zip` SHA-256 `BDB35071309F96D8932983C039E458C4B832A5F8D322105431503821E6A6AA22`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7`
+Final repair HEAD at report write: `cc90b4c`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `94C77315481ACAFAF8544A50056C8650B356EEFA38580C668328BB0D50FE7E70`  
+Portable package: `dist/HiveMind.zip` SHA-256 `154D221D130011D1147DFBB3C1D73CE0BF2DA633C9F644977956B2CDA25E64C5`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `94C77315481ACAFAF8544A50056C8650B356EEFA38580C668328BB0D50FE7E70`
 
 ## 1. What HiveMind is supposed to be
 
@@ -120,6 +120,7 @@ TRUTH:
 | `c3ec90f` | Remote | HyperAgent-spawned relay gets a switch device + narrow grant instead of an inert record |
 | `bb0b133` | Provider | complete saved `api_type` (`deepseek`/`tokenlabs`) and per-type key env (`DEEPSEEK_API_KEY`/`HIVEROUTER_API_KEY`); launcher/start script select the key env; UI selector |
 | `717944c` | A2A | schema v23 adds persisted attempts/last-attempt plus `a2a_audit`; parent attempts and answers are audited atomically |
+| `cc90b4c` | A2A | duplicate open questions are refused before a second parent call; persisted attempts are capped at 2 |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -130,7 +131,7 @@ the runtime `billing`/`endpoint`/`parallel_dispatch` fields.
 ```text
 Backend:
   cargo test --workspace --locked
-  EXIT=0  SUITES=49  PASSED=612  FAILED=0  IGNORED=2
+  EXIT=0  SUITES=49  PASSED=613  FAILED=0  IGNORED=2
 
 Web:
   npm.cmd run typecheck  -> exit 0
@@ -139,8 +140,8 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7
-  size 36,281,344 bytes
+  target/release/hiverouter.exe SHA-256 94C77315481ACAFAF8544A50056C8650B356EEFA38580C668328BB0D50FE7E70
+  size 36,284,416 bytes
 
 Smoke (no provider key, deliberately degraded):
   GET /health -> status "degraded", schema 22
@@ -203,8 +204,9 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 - **Daemon script runtime:** daemons execute the real DB-health job
   (`{"check":"db"}`), but arbitrary operator scripts are still not a supported
   runtime. Unknown jobs degrade by name; no fake `alive` is reported.
-- **A2A attempt counter:** persisted attempts and atomic audit rows now exist
-  (schema v23); a hard attempt cap is not yet enforced.
+- **A2A attempt counter:** persisted attempts and atomic audit rows exist
+  (schema v23); duplicate open questions are refused and attempts are capped at
+  2. The operator UI shows the persisted count.
 - **Session token exposure:** `/api/session` still returns the token to a
   loopback peer with no Origin; read routes remain un-tokenized. This is the
   local same-user threat model, not a hardened multi-user boundary.
