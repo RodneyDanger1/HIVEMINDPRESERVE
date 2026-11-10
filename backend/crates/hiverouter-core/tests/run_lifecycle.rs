@@ -1249,6 +1249,10 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
         .expect("proposal memory row");
     assert!(proposal.value.contains("\"applied\":false"));
     assert!(proposal.value.contains("\"requires_human_review\":true"));
+    assert!(proposal.value.contains("\"required_approvals\":5"));
+    assert!(proposal.value.contains("\"superagent_approvals\":4"));
+    assert!(proposal.value.contains("\"state\":\"awaiting_votes\""));
+    assert!(proposal.value.contains("\"can_apply\":false"));
     assert_eq!(harness.store.tasks_for_run(run.id).expect("tasks").len(), 2);
 }
 

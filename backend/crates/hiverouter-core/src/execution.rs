@@ -4172,6 +4172,27 @@ impl RunEngine {
                             "applied": false,
                             "requires_human_review": true,
                             "root_task_id": root.id.to_string(),
+                            // Authorized self-evolution is a five-seat unanimous
+                            // gate: four spawned SuperAgents plus the operator.
+                            // Recording a proposal never applies it; this payload
+                            // states the exact authority still missing.
+                            "governance": {
+                                "required_approvals": 5,
+                                "operator_approvals": 1,
+                                "superagent_approvals": 4,
+                                "unanimous": true,
+                                "current_approvals": 0,
+                                "state": "awaiting_votes",
+                                "can_apply": false,
+                            },
+                            "truthful_scope": {
+                                "what_changes": proposal,
+                                "what_does_not_change":
+                                    "no code, schema, tool grant, prompt, gate, or running \
+                                     agent changes until all five approvals are recorded",
+                                "side_effects_while_awaiting":
+                                    "one run-bank memory entry and one root_control audit row",
+                            },
                         });
                         let key = format!("improvement:{}", Uuid::now_v7());
                         self.store.record_agent_memory_scoped(

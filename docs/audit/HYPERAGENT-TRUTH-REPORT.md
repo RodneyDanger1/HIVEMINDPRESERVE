@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 631 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3CFCCD41D9151091299A38D64D872EB6E15080449400C2FCFB0C21FA9BCF4F3F` |
-| T4 | Server binary hash | **VERIFIED** | `881821DC268BE5204CA1297A3965A79E48A68E79919261E3F8CC142F92AB2DF7` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `FB975266D7EB5701DCF3AC4C189B3396FE4C6B702D0BC9C813B19C37925493D0` |
+| T4 | Server binary hash | **VERIFIED** | `C4B29C47DD8B351EA96D877E69AA76FF815E9852B6B8A9C6646294B702FD7C85` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -366,3 +366,26 @@ persona allowlist. Test:
 No network transport. No daemon live tick. No 40-node live scale. No 3/3
 exact-two stability. No self-modification or AGI. The detached remote is still
 an `in_process` fixture; the daemon is an enrolled record.
+## 19. Authorized self-evolution contract
+
+HiveMind distinguishes a **recorded proposal** from an **applied change**. The root
+`propose_improvement` payload now carries an explicit five-seat gate:
+
+```json
+"governance": {
+  "required_approvals": 5,
+  "operator_approvals": 1,
+  "superagent_approvals": 4,
+  "unanimous": true,
+  "current_approvals": 0,
+  "state": "awaiting_votes",
+  "can_apply": false
+}
+```
+
+It also carries `truthful_scope.what_changes`, `what_does_not_change`, and
+`side_effects_while_awaiting`. Recording never mutates code, schema, tool grants,
+prompts, or running agents. A proposal stays `awaiting_votes` until four spawned
+SuperAgent approvals and the operator approval are recorded **and unanimous**; the
+current tree does not implement the vote-submission path or automatic application.
+Test: `root_can_record_but_never_auto_apply_an_improvement_proposal`.
