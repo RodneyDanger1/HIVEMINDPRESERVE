@@ -386,7 +386,7 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **50 suites, 627 passed, 0 failed, 2 ignored**.
+- Backend: **50 suites, 628 passed, 0 failed, 2 ignored**.
 - Web: 225 tests, typecheck 0, production build 0; UI unchanged by this round.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)
@@ -401,7 +401,7 @@ remote is an in-process fixture principal, not a network satellite.
   `requires_human_review:true` entry. No self-modifying code path exists.
 - Daemon admission is audited; duplicate root names are guarded across remotes
   and daemons; a root control run can add at most one extra branch.
-- Final gates: 50 backend suites, 627 passed, 0 failed, 2 ignored; web typecheck
+- Final gates: 50 backend suites, 628 passed, 0 failed, 2 ignored; web typecheck
   0 and 225 tests passed. Final package hashes are at the top of this report.
 - No paid calls were made in the final documentation pass because the DeepSeek
   key was not available to check balance; live evidence above is from the

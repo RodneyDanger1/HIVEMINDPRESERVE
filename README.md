@@ -166,7 +166,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **50 suites, 627 passed, 0 failed, 2 ignored**
+- Backend: **50 suites, 628 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **225 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
   `AEB637E394C9725BC419B80395D408FD2F9C43338BD08CDCA35FE6DDC45193B5`

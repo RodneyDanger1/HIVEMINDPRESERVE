@@ -120,6 +120,69 @@ async fn leaf_execute_advertises_tools_on_the_first_request() {
 }
 
 #[tokio::test]
+async fn superagent_request_advertises_tier_persona_intersection_only() {
+    let server = MockServer::start().await;
+    let body = concat!(
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"ok\"},\"finish_reason\":null}]}\n\n",
+        "data: {\"id\":\"c1\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":2,\"total_tokens\":12,\"prompt_cache_hit_tokens\":0,\"prompt_cache_miss_tokens\":10}}\n\n",
+        "data: [DONE]\n\n",
+    );
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_string(body),
+        )
+        .mount(&server)
+        .await;
+
+    let allowed = vec![
+        "spawn_agent".to_owned(),
+        "ask_parent".to_owned(),
+        "send_to_sibling".to_owned(),
+        "report_result".to_owned(),
+        "finish".to_owned(),
+        "file_read".to_owned(),
+        "file_list".to_owned(),
+        "request_detached".to_owned(),
+    ];
+    let mut allowlists = std::collections::HashMap::new();
+    allowlists.insert("superagent".to_owned(), allowed);
+    let adapter = adapter(&server).with_persona_tool_allowlists(allowlists);
+    let task = hiverouter_core::entities::TaskRecord {
+        id: TaskId::new(),
+        run_id: RunId::new(),
+        parent_task_id: None,
+        role: "superagent".to_owned(),
+        depth: 1,
+        spawn_seq: 1,
+        state: AgentState::Running,
+        rev: 0,
+    };
+    let cancel = CancellationToken::new();
+    let sink: DeltaSink = Arc::new(|_| {});
+    adapter
+        .execute(RunId::new(), &task, "lead the branch", &cancel, &sink)
+        .await
+        .expect("leaf execute");
+
+    let requests = server.received_requests().await.expect("captured requests");
+    let first = requests.first().expect("one request");
+    let body: serde_json::Value = serde_json::from_slice(&first.body).expect("request JSON");
+    let tools: Vec<&str> = body
+        .get("tools")
+        .and_then(|value| value.as_array())
+        .expect("tools array")
+        .iter()
+        .filter_map(|tool| tool.get("function").and_then(|f| f.get("name")).and_then(|n| n.as_str()))
+        .collect();
+    assert!(tools.contains(&"request_detached"));
+    assert!(!tools.contains(&"file_write"), "persona must not advertise file_write: {tools:?}");
+    assert!(!tools.contains(&"shell_exec"), "persona must not advertise shell_exec: {tools:?}");
+}
+
+#[tokio::test]
 async fn auth_status_is_mapped_to_provider_auth() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))

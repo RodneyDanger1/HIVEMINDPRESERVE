@@ -24,7 +24,7 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 627 passed, 0 failed, 2 ignored |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 628 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
 | T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `AEB637E394C9725BC419B80395D408FD2F9C43338BD08CDCA35FE6DDC45193B5` |
 | T4 | Server binary hash | **VERIFIED** | `FB1EA570F2DBB7DE8425CDE3F5F74F020AF80AA7B1630557CB51493CDE95B896` |
@@ -38,7 +38,7 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 | T12 | Root decisions are durable | **VERIFIED (test)** | run-bank `root_gate:` entry + `root_control` audit row |
 | T13 | Same-run rewire guard | **VERIFIED (test)** | `rewire_to_a_foreign_run_parent_is_refused_before_mutation` |
 | T14 | HyperAgent memory writes to run bank | **VERIFIED (test)** | `hyperagent_can_spawn...` asserts run bank, not branch bank |
-| T15 | Provider advertises tier∩persona tools | **READ / UNVERIFIED at runtime** | `provider_executor.rs` filter + `http.rs` wiring; no focused request capture test |
+| T15 | Provider advertises tier∩persona tools | **VERIFIED (test)** | `superagent_request_advertises_tier_persona_intersection_only` captures the request and asserts no `file_write`/`shell_exec` |
 | T16 | Persona aliases resolve | **READ** | alias unit test exists; no live provider proof |
 | T17 | Root `spawn_superagent` allow path | **READ / DEAD** | every validated plan has depth-1; allow branch unreachable |
 | T18 | Network remote / satellite | **UNVERIFIED / ABSENT** | `in_process` only |
@@ -138,7 +138,7 @@ Status labels: **APPLIED-EVIDENCED** (test or live), **APPLIED-UNTESTED**
 | 13 | Cross-run rewire refused before mutation | APPLIED-EVIDENCED | `same_run_rewire`; WS test |
 | 14 | HyperAgent memory writes to run bank | APPLIED-EVIDENCED | run-bank vs branch-bank test |
 | 15 | Persona aliases (`super`/`worker`/`hyper`) | APPLIED-UNTESTED | alias unit test; no live request capture |
-| 16 | Provider advertises tier ∩ persona tools | APPLIED-UNTESTED | source filter; no focused test |
+| 16 | Provider advertises tier ∩ persona tools | APPLIED-EVIDENCED | focused request-capture test |
 | 17 | Child result explicitly labelled direct child | APPLIED-UNTESTED | prompt construction; no model-quality test |
 | 18 | Root memory summary honors scope and limit | APPLIED-UNTESTED | source; no focused test |
 | 19 | A2A duplicate attempt audited | APPLIED-UNTESTED | source; no duplicate-refusal audit test |
