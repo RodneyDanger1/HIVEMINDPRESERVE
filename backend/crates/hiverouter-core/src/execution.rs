@@ -4125,7 +4125,10 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_context(prompt, context.as_ref());
+        let prompt = prompt_with_authorized_lessons(
+            &prompt_with_context(prompt, context.as_ref()),
+            &self.authorized_lessons,
+        );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, true, false)
             .await;
@@ -4147,7 +4150,10 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_context(prompt, context.as_ref());
+        let prompt = prompt_with_authorized_lessons(
+            &prompt_with_context(prompt, context.as_ref()),
+            &self.authorized_lessons,
+        );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, false, true)
             .await;
