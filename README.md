@@ -295,3 +295,18 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
 
 Network remote transport, daemon live tick, 40-node live scale, 3/3 exact-two
 stability, self-modifying code, and AGI remain explicitly out of scope.
+---
+
+## 11. Live tool-use battery
+
+| Capability | Result |
+|---|---|
+| Read-only file tool | **verified live**: `file_read` returned the exact `# HiveMind HMARS Bug-Fix Report` heading |
+| Approval-gated file write | **verified live**: `file_write` suspended, operator approved the nonce, run completed, `write-test.txt` contained `APPROVED_WRITE_OK` in an isolated temp workspace |
+| Web research | **absent**: no web tool exists in the registry; this is a missing capability, not a pass |
+| Shell | approval-gated and allowlisted; not exercised in this battery |
+| Detached admission | verified live (Lantern) and test-backed |
+| A2A ask_parent | verified live (one answered question) |
+| Exact hierarchy | verified live (7-task exact-two) |
+
+The tool battery evidence is under `docs/evidence/live/`.

@@ -1,0 +1,20 @@
+{
+    "approval":  {
+                     "approval_id":  "01a1c63b-9835-7186-8d77-00232e7d0a4d",
+                     "tool":  "file_write",
+                     "decision":  "approve"
+                 },
+    "workspace":  "temp isolated workspace",
+    "usage":  null,
+    "observed_at":  "2026-11-10T16:13:00Z",
+    "artifact":  {
+                     "content":  "APPROVED_WRITE_OK",
+                     "file":  "write-test.txt",
+                     "exists":  true
+                 },
+    "status":  "completed",
+    "run_id":  "01a1c63b-53f4-71a1-b634-ef9aae1357d2",
+    "provider":  "tokenlab",
+    "tasks":  3,
+    "note":  "Provider usage was not captured by this shell run; run completed with file content verified."
+}

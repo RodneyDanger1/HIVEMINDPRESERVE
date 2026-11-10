@@ -421,3 +421,18 @@ Run `01a1c62c-4e1f-7172-9945-6a70af9230e1` completed with 7 tasks
 (1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents) and 17,486 tokens
 (16,510 prompt / 976 completion). No extra branch lead. This is a fresh
 regression on the final refusal-auditing build, not a reuse of the earlier run.
+## 18. Live tool-use battery (2026-11-10)
+
+- **Read-only tool use:** run `01a1c639-fdef-76ed-8014-3fcd2bed9dce`
+  completed; Agent called `file_read`; result was the exact first heading
+  `# HiveMind HMARS Bug-Fix Report`.
+- **Approval-gated write:** run `01a1c63b-53f4-71a1-b634-ef9aae1357d2`
+  suspended on `file_write`, the operator approved with the single-use nonce,
+  the run completed, and `write-test.txt` contained exactly
+  `APPROVED_WRITE_OK` in an isolated temp workspace.
+- **Web research:** no web tool exists in the registry; this capability is
+  absent, not "tested and passed".
+- **Shell:** not exercised in this battery; shell remains approval-gated and
+  allowlisted.
+
+Evidence: `docs/evidence/live/live-tokenlab-file-write-approval.json`.

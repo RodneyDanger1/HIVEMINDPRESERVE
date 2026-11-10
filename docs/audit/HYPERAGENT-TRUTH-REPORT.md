@@ -51,6 +51,9 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 | T25 | Live request_id persisted | **VERIFIED (live)** | run `01a1c619-5ab9-7208-9691-7a73c543bd36`: 8,415 tokens; `remote_created` carries `live-final-1`; one remote/device/grant |
 | T26 | Turn-2 cannot create boundaries | **VERIFIED (test)** | `root_second_control_turn_cannot_create_boundaries`; audit `turn_authority` refusal |
 | T27 | Final-build exact-two regression | **VERIFIED (live)** | run `01a1c62c-4e1f-7172-9945-6a70af9230e1`: completed, 7 tasks, 17,486 tokens |
+| T28 | Read-only file tool use | **VERIFIED (live)** | run `01a1c639-fdef-76ed-8014-3fcd2bed9dce`: `file_read` ok; exact heading returned |
+| T29 | Approval-gated file write + artifact | **VERIFIED (live)** | run `01a1c63b-53f4-71a1-b634-ef9aae1357d2`: approval nonce approved; `write-test.txt` = `APPROVED_WRITE_OK` |
+| T30 | Web research tool | **ABSENT / NOT TESTED** | no web tool in the registry; do not claim web capability |
 
 No claim of "AGI", "self-improving", "autonomous HyperAgent", or "network
 satellite" survives this ledger.

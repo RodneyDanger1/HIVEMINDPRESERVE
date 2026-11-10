@@ -260,3 +260,14 @@ Evidence: `docs/evidence/live/live-tokenlab-request-id-final.json`.
 Final build (refusal auditing + fingerprint idempotency): **completed**, 7 tasks
 (1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents), 17,486 tokens. No extra
 branch lead. Evidence: `docs/evidence/live/live-tokenlab-final-exact-two.json`.
+## Test K — approval-gated file_write, live
+
+Prompt required one Agent to call `file_write` for `write-test.txt` with
+`APPROVED_WRITE_OK`. The run suspended on a real approval; the operator approved
+via the CLI with the single-use nonce; the run completed and the file existed
+with exactly `APPROVED_WRITE_OK`.
+
+This proves the full write path: tool request → approval row/nonce → operator
+approval → execution → artifact content. It used an isolated temporary
+workspace, not the repository. Evidence:
+`docs/evidence/live/live-tokenlab-file-write-approval.json`.
