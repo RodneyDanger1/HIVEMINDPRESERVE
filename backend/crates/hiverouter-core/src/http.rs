@@ -2718,6 +2718,15 @@ async fn apply_evolution_lesson(
     }) {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
     }
+    for field in ["area", "problem", "proposal", "evidence"] {
+        if let Some(text) = proposal.get(field).and_then(serde_json::Value::as_str) {
+            if !crate::execution::memory_text_is_safe(text)
+                || text.chars().any(char::is_control)
+            {
+                return refusal_response(StatusCode::UNPROCESSABLE_ENTITY, &Refusal::SchemaInvalid);
+            }
+        }
+    }
     let lesson = serde_json::json!({
         "proposal_id": proposal_uuid.to_string(),
         "area": proposal.get("area").cloned().unwrap_or(serde_json::Value::Null),
