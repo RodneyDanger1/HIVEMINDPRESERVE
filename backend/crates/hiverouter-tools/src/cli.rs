@@ -500,7 +500,8 @@ fn version_outcome() -> CliOutcome {
 fn preflight_outcome() -> CliOutcome {
     let node = version_probe("node");
     let rustc = version_probe("rustc");
-    let key_present = ApiKey::present_in_env();
+    let key_present = ApiKey::present_in_env()
+        || ApiKey::present_in_env_named("HIVEROUTER_API_KEY");
 
     let node_info = node.as_ref().ok().map(|(program, version)| (program.clone(), version.clone()));
     let mut checks = Vec::new();
@@ -539,7 +540,7 @@ fn preflight_outcome() -> CliOutcome {
         "code": if rust_ok { serde_json::Value::Null } else { serde_json::Value::String(Refusal::ToolchainMsrv.code().to_owned()) },
     }));
     checks.push(serde_json::json!({
-        "name": "deepseek_api_key",
+        "name": "provider_key",
         "ok": true,
         "present": key_present,
         "required": "present for live provider calls",
@@ -562,7 +563,7 @@ fn preflight_outcome() -> CliOutcome {
     let human = vec![
         format!("node: {} ({})", if node_ok { "ok" } else { "MISSING/TOO OLD" }, NODE_FLOOR),
         format!("rustc: {} ({})", if rust_ok { "ok" } else { "MISSING/TOO OLD" }, MSRV),
-        format!("DEEPSEEK_API_KEY present: {key_present}"),
+        format!("provider key present (DEEPSEEK_API_KEY or HIVEROUTER_API_KEY): {key_present}"),
     ];
     if ready {
         CliOutcome::success("preflight", data, human)

@@ -28,13 +28,35 @@ impl ApiKey {
     /// Returns [`Refusal::KeyMissing`] when the variable is absent or contains
     /// only whitespace. The value itself is never echoed.
     pub fn from_env() -> Result<Self, ProviderError> {
-        let raw = env::var(API_KEY_ENV).map_err(|_| {
+        Self::from_env_named(API_KEY_ENV)
+    }
+
+    /// Reads the key from a named environment variable.
+    ///
+    /// # Errors
+    /// Returns [`Refusal::KeyMissing`] when the variable is absent or contains
+    /// only whitespace. The value itself is never echoed.
+    pub fn from_env_named(env_name: &str) -> Result<Self, ProviderError> {
+        let raw = env::var(env_name).map_err(|_| {
             ProviderError::new(
                 Refusal::KeyMissing,
-                format!("{API_KEY_ENV} is not set in the process environment"),
+                format!("{env_name} is not set in the process environment"),
             )
         })?;
-        Self::from_secret(&raw)
+        Self::from_value(&raw, env_name)
+    }
+
+    fn from_value(value: &str, env_name: &str) -> Result<Self, ProviderError> {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            return Err(ProviderError::new(
+                Refusal::KeyMissing,
+                format!("{env_name} is present but empty"),
+            ));
+        }
+        Ok(Self {
+            value: Zeroizing::new(trimmed.to_owned()),
+        })
     }
 
     /// Builds a key from an already-read secret.
@@ -44,16 +66,15 @@ impl ApiKey {
     /// # Errors
     /// Returns [`Refusal::KeyMissing`] when `value` is empty or whitespace.
     pub fn from_secret(value: &str) -> Result<Self, ProviderError> {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            return Err(ProviderError::new(
-                Refusal::KeyMissing,
-                format!("{API_KEY_ENV} is present but empty"),
-            ));
-        }
-        Ok(Self {
-            value: Zeroizing::new(trimmed.to_owned()),
-        })
+        Self::from_value(value, API_KEY_ENV)
+    }
+
+    /// Whether a named environment variable carries a usable key.
+    #[must_use]
+    pub fn present_in_env_named(env_name: &str) -> bool {
+        env::var(env_name)
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false)
     }
 
     /// Whether the process environment carries a usable key (no value exposed).

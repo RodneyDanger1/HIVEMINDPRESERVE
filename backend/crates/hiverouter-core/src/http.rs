@@ -2543,8 +2543,9 @@ async fn provider_models(State(state): State<Arc<AppState>>, headers: HeaderMap)
     if !provider_origin_allowed(&state, &headers) {
         return refusal_response(StatusCode::FORBIDDEN, &Refusal::OriginRejected);
     }
-    let client = match DeepSeekClient::from_env(
+    let client = match DeepSeekClient::from_env_with_key_env(
         ClientConfig::default().with_base_url(state.config.provider.base_url.clone()),
+        state.config.provider.key_env_name(),
     ) {
         Ok(client) => client,
         Err(error) => return provider_error_response(&error),
@@ -2582,8 +2583,9 @@ async fn provider_balance(State(state): State<Arc<AppState>>, headers: HeaderMap
         )
             .into_response();
     }
-    let client = match DeepSeekClient::from_env(
+    let client = match DeepSeekClient::from_env_with_key_env(
         ClientConfig::default().with_base_url(state.config.provider.base_url.clone()),
+        state.config.provider.key_env_name(),
     ) {
         Ok(client) => client,
         Err(error) => return provider_error_response(&error),
@@ -2609,12 +2611,15 @@ async fn provider_profile_get(State(state): State<Arc<AppState>>) -> Response {
     let current = path
         .as_deref()
         .and_then(|path| std::fs::read_to_string(path).ok())
-        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .and_then(|text| {
+            serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')).ok()
+        })
         .map(|value| {
             // Never echo unknown fields from the file: the profile is defined as
             // a non-secret endpoint record, not a general JSON store.
             serde_json::json!({
                 "name": value.get("name").and_then(|item| item.as_str()),
+                "api_type": value.get("api_type").and_then(|item| item.as_str()),
                 "base_url": value.get("base_url").and_then(|item| item.as_str()),
                 "model": value.get("model").and_then(|item| item.as_str()),
                 "wire_model": value.get("wire_model").and_then(|item| item.as_str()),
@@ -2627,9 +2632,11 @@ async fn provider_profile_get(State(state): State<Arc<AppState>>) -> Response {
             "profile": current,
             "path": path.as_ref().map(|path| path.display().to_string()),
             "active": {
+                "api_type": state.config.provider.api_type,
                 "base_url": state.config.provider.base_url,
                 "wire_model": state.config.provider.wire_model_id(),
                 "model": state.config.provider.model.id(),
+                "key_env": state.config.provider.key_env_name(),
                 "endpoint": if state.config.provider.is_external_endpoint() { "external" } else { "deepseek" },
             },
             "restart_required_after_save": true,
@@ -2662,16 +2669,30 @@ async fn provider_profile_set(
     if hiverouter_provider::Model::from_id(model).is_none() {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     }
+    let api_type = match body.get("api_type").and_then(|value| value.as_str()) {
+        Some(value) => match crate::config::parse_api_type(value) {
+            Ok(value) => value,
+            Err(_) => return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid),
+        },
+        None if base_url != hiverouter_provider::DEFAULT_BASE_URL => "tokenlabs".to_owned(),
+        None => "deepseek".to_owned(),
+    };
     let wire_model = body
         .get("wire_model")
         .and_then(|value| value.as_str())
         .map(str::trim)
         .filter(|value| !value.is_empty());
-    if base_url != hiverouter_provider::DEFAULT_BASE_URL && wire_model.is_none() {
+    if (api_type == "tokenlabs" || base_url != hiverouter_provider::DEFAULT_BASE_URL)
+        && wire_model.is_none()
+    {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    if api_type == "tokenlabs" && base_url == hiverouter_provider::DEFAULT_BASE_URL {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     }
     let profile = serde_json::json!({
         "name": body.get("name").and_then(|value| value.as_str()).unwrap_or("custom"),
+        "api_type": api_type,
         "base_url": base_url,
         "model": model,
         "wire_model": wire_model,
@@ -2774,8 +2795,10 @@ async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
             },
             "provider": {
                 "enabled": state.config.provider.enabled,
+                "api_type": state.config.provider.api_type,
                 "model": state.config.provider.model.id(),
                 "wire_model": state.config.provider.wire_model_id(),
+                "key_env": state.config.provider.key_env_name(),
                 "endpoint": if state.config.provider.is_external_endpoint() { "external" } else { "deepseek" },
                 "billing": if state.config.provider.is_external_endpoint() { "external_unverified" } else { "deepseek_usd" },
                 "key_present": key_present,

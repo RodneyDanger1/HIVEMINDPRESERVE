@@ -979,6 +979,7 @@ async fn handle_client_text(
         }
         Command::SettingsStatus(_) => {
             let mut result = state.tools.settings_status();
+            result.key_present = state.config.provider.key_present();
             result.provider = if state.config.provider.is_external_endpoint() {
                 "openai-compatible".to_owned()
             } else {

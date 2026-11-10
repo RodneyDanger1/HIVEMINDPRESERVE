@@ -141,6 +141,12 @@ pub fn run_checks() -> Vec<Check> {
 /// only `present` is supplied by the caller.
 #[must_use]
 pub fn provider_key_check(enabled: bool, present: bool) -> Option<Check> {
+    provider_key_check_for(enabled, present, hiverouter_provider::API_KEY_ENV)
+}
+
+/// Optional provider-key presence check for a selected key environment.
+#[must_use]
+pub fn provider_key_check_for(enabled: bool, present: bool, env_name: &str) -> Option<Check> {
     if !enabled {
         return None;
     }
@@ -148,13 +154,13 @@ pub fn provider_key_check(enabled: bool, present: bool) -> Option<Check> {
         Check::pass(
             "deepseek_api_key",
             false,
-            "DEEPSEEK_API_KEY is present (value never logged)".to_owned(),
+            format!("{env_name} is present (value never logged)"),
         )
     } else {
         Check::fail(
             "deepseek_api_key",
             false,
-            "DEEPSEEK_API_KEY is not set; live prompts will refuse E_KEY_MISSING".to_owned(),
+            format!("{env_name} is not set; live prompts will refuse E_KEY_MISSING"),
             "E_KEY_MISSING",
         )
     })

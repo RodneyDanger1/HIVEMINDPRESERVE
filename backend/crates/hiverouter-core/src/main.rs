@@ -124,9 +124,10 @@ async fn run() -> Result<(), ExitCode> {
     }
 
     let mut checks = run_checks();
-    if let Some(key_check) = hiverouter_core::checks::provider_key_check(
+    if let Some(key_check) = hiverouter_core::checks::provider_key_check_for(
         config.provider.enabled,
-        hiverouter_provider::ApiKey::present_in_env(),
+        config.provider.key_present(),
+        config.provider.key_env_name(),
     ) {
         checks.push(key_check);
     }

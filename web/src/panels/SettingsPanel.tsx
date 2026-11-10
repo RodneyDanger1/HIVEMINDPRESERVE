@@ -114,9 +114,11 @@ function readAmbientPreference(): number {
 
 type ProviderProfile = {
   readonly name?: string;
+  readonly api_type?: string;
   readonly base_url?: string;
   readonly model?: string;
   readonly wire_model?: string;
+  readonly key_env?: string;
 };
 
 /**
@@ -126,6 +128,7 @@ type ProviderProfile = {
  */
 function ProviderProfileEditor() {
   const token = useUiStore((state) => state.session?.token ?? null);
+  const [apiType, setApiType] = useState('deepseek');
   const [baseUrl, setBaseUrl] = useState('');
   const [wireModel, setWireModel] = useState('');
   const [model, setModel] = useState('deepseek-flash');
@@ -146,6 +149,7 @@ function ProviderProfileEditor() {
         };
         const current = body.profile ?? body.active ?? null;
         if (cancelled || current === null) return;
+        if (current.api_type !== undefined) setApiType(current.api_type);
         setBaseUrl(current.base_url ?? '');
         setWireModel(current.wire_model ?? '');
         if (current.model !== undefined) setModel(current.model);
@@ -176,7 +180,8 @@ function ProviderProfileEditor() {
             'x-hivemind-token': token,
           },
           body: JSON.stringify({
-            name: 'custom',
+            name: apiType === 'tokenlabs' ? 'tokenlab' : 'deepseek',
+            api_type: apiType,
             base_url: baseUrl.trim(),
             wire_model: wireModel.trim(),
             model,
@@ -205,7 +210,18 @@ function ProviderProfileEditor() {
         here; an external endpoint needs its wire model id. The API key remains DPAPI-protected or
         in the process environment.
       </p>
-      <div className="mt-2 grid gap-2 md:grid-cols-3">
+      <div className="mt-2 grid gap-2 md:grid-cols-4">
+        <label className="type-mono-meta text-meta">
+          API type
+          <select
+            className="mt-1 w-full rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-[12px] text-ink-900"
+            value={apiType}
+            onChange={(event) => setApiType(event.target.value)}
+          >
+            <option value="deepseek">deepseek</option>
+            <option value="tokenlabs">tokenlabs</option>
+          </select>
+        </label>
         <label className="type-mono-meta text-meta">
           base URL
           <input

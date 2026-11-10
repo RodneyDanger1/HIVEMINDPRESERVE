@@ -76,7 +76,7 @@ impl ProviderExecutorAdapter {
     /// fall back to the honest unconfigured executor instead of panicking.
     pub fn from_env(settings: ProviderSettings) -> Result<Self, hiverouter_provider::ProviderError> {
         let config = ClientConfig::default().with_base_url(settings.base_url.clone());
-        let client = DeepSeekClient::from_env(config)?;
+        let client = DeepSeekClient::from_env_with_key_env(config, settings.key_env_name())?;
         Ok(Self::new(client, settings))
     }
 

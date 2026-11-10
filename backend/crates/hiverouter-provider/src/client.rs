@@ -275,6 +275,18 @@ impl DeepSeekClient {
         Self::new(config, ApiKey::from_env()?)
     }
 
+    /// Builds a client reading the key from a named environment variable
+    /// (`DEEPSEEK_API_KEY` for DeepSeek, `HIVEROUTER_API_KEY` for TokenLab).
+    ///
+    /// # Errors
+    /// [`Refusal::KeyMissing`] when the named environment has no key.
+    pub fn from_env_with_key_env(
+        config: ClientConfig,
+        key_env: &str,
+    ) -> Result<Self, ProviderError> {
+        Self::new(config, ApiKey::from_env_named(key_env)?)
+    }
+
     /// Configured base URL.
     #[must_use]
     pub fn base_url(&self) -> &str {

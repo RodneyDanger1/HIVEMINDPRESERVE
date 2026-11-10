@@ -128,20 +128,68 @@ namespace HiveMindLauncher
         /// </summary>
         private static void ApplyProviderKey(ProcessStartInfo start)
         {
-            var key = LoadProviderKey();
+            var data = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HiveMind");
+            var keyEnv = ResolveApiType(data) == "tokenlabs"
+                ? "HIVEROUTER_API_KEY"
+                : "DEEPSEEK_API_KEY";
+            var key = LoadProviderKey(data, keyEnv);
             if (!string.IsNullOrWhiteSpace(key))
             {
-                start.EnvironmentVariables["DEEPSEEK_API_KEY"] = key;
+                start.EnvironmentVariables[keyEnv] = key;
             }
         }
 
-        private static string LoadProviderKey()
+        private static string ResolveApiType(string data)
+        {
+            var configured = Environment.GetEnvironmentVariable("HIVEROUTER_API_TYPE");
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                return configured.Equals("tokenlabs", StringComparison.OrdinalIgnoreCase)
+                    || configured.Equals("tokenlab", StringComparison.OrdinalIgnoreCase)
+                    ? "tokenlabs"
+                    : "deepseek";
+            }
+            try
+            {
+                var profile = Path.Combine(data, "provider.json");
+                if (File.Exists(profile))
+                {
+                    var text = File.ReadAllText(profile);
+                    var marker = "\"api_type\"";
+                    var index = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                    if (index >= 0)
+                    {
+                        var colon = text.IndexOf(':', index + marker.Length);
+                        var first = colon < 0 ? -1 : text.IndexOf('"', colon + 1);
+                        var second = first < 0 ? -1 : text.IndexOf('"', first + 1);
+                        if (first >= 0 && second > first)
+                        {
+                            var value = text.Substring(first + 1, second - first - 1).Trim();
+                            return value.Equals("tokenlabs", StringComparison.OrdinalIgnoreCase)
+                                || value.Equals("tokenlab", StringComparison.OrdinalIgnoreCase)
+                                ? "tokenlabs"
+                                : "deepseek";
+                        }
+                    }
+                    if (text.IndexOf("\"tokenlab\"", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return "tokenlabs";
+                    }
+                }
+            }
+            catch
+            {
+                // A damaged profile falls back to the documented DeepSeek default.
+            }
+            return "deepseek";
+        }
+
+        private static string LoadProviderKey(string data, string keyEnv)
         {
             try
             {
-                var data = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "HiveMind");
                 var file = Path.Combine(data, "provider.key");
                 if (File.Exists(file))
                 {
@@ -157,7 +205,7 @@ namespace HiveMindLauncher
             {
                 // Fall through to the environment fallback; never print key material.
             }
-            return Environment.GetEnvironmentVariable("DEEPSEEK_API_KEY") ?? string.Empty;
+            return Environment.GetEnvironmentVariable(keyEnv) ?? string.Empty;
         }
 
         private static string ResolveWorkspaceRoot()

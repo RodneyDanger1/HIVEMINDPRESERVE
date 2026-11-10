@@ -33,7 +33,7 @@ $ErrorActionPreference = 'Stop'
 
 $profile = switch ($Name) {
     'deepseek' {
-        @{ name = 'deepseek'; base_url = 'https://api.deepseek.com'; model = $Model }
+        @{ name = 'deepseek'; api_type = 'deepseek'; base_url = 'https://api.deepseek.com'; model = $Model }
     }
     'tokenlab' {
         if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
@@ -42,7 +42,7 @@ $profile = switch ($Name) {
         if ([string]::IsNullOrWhiteSpace($WireModel)) {
             throw 'Token Lab requires -WireModel (for example DeepSeek-V4.1-Flash).'
         }
-        @{ name = 'tokenlab'; base_url = $BaseUrl.TrimEnd('/'); model = $Model; wire_model = $WireModel }
+        @{ name = 'tokenlab'; api_type = 'tokenlabs'; base_url = $BaseUrl.TrimEnd('/'); model = $Model; wire_model = $WireModel }
     }
     'custom' {
         if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
@@ -51,7 +51,7 @@ $profile = switch ($Name) {
         if ([string]::IsNullOrWhiteSpace($WireModel)) {
             throw 'A custom OpenAI-compatible provider requires -WireModel.'
         }
-        @{ name = 'custom'; base_url = $BaseUrl.TrimEnd('/'); model = $Model; wire_model = $WireModel }
+        @{ name = 'custom'; api_type = 'tokenlabs'; base_url = $BaseUrl.TrimEnd('/'); model = $Model; wire_model = $WireModel }
     }
 }
 

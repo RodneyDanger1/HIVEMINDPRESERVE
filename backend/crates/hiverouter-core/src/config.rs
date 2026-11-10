@@ -38,6 +38,10 @@ pub const BASE_URL_ENV: &str = "HIVEROUTER_BASE_URL";
 /// Optional wire model id when the endpoint's catalog name differs from the
 /// documented DeepSeek id used for local pricing/accounting.
 pub const WIRE_MODEL_ENV: &str = "HIVEROUTER_WIRE_MODEL";
+/// AMD/TokenLabs API key environment variable (selected by `api_type`).
+pub const API_KEY_ENV: &str = "HIVEROUTER_API_KEY";
+/// Optional provider API type: `deepseek` (default) or `tokenlabs`.
+pub const API_TYPE_ENV: &str = "HIVEROUTER_API_TYPE";
 /// Optional path to a saved provider profile JSON.
 pub const PROVIDER_FILE_ENV: &str = "HIVEROUTER_PROVIDER_FILE";
 
@@ -58,6 +62,8 @@ pub struct ProviderSettings {
     pub planner_max_tokens: u32,
     /// Leaf max output tokens.
     pub leaf_max_tokens: u32,
+    /// Provider type: `deepseek` (default) or `tokenlabs`.
+    pub api_type: String,
     /// OpenAI-compatible base URL; `None` means the documented DeepSeek URL.
     pub base_url: String,
     /// Wire model id override; accounting still uses `model`.
@@ -74,6 +80,7 @@ impl Default for ProviderSettings {
             planner_reasoning_effort: ReasoningEffort::High,
             planner_max_tokens: DEFAULT_PLANNER_MAX_TOKENS,
             leaf_max_tokens: DEFAULT_LEAF_MAX_TOKENS,
+            api_type: "deepseek".to_owned(),
             base_url: hiverouter_provider::DEFAULT_BASE_URL.to_owned(),
             wire_model: None,
         }
@@ -81,11 +88,30 @@ impl Default for ProviderSettings {
 }
 
 impl ProviderSettings {
-    /// True when the configured base URL is not the documented DeepSeek API.
+    /// True when the configured endpoint is not the documented DeepSeek API.
     /// Such endpoints are OpenAI-compatible transports, not DeepSeek accounts.
     #[must_use]
     pub fn is_external_endpoint(&self) -> bool {
-        self.base_url != hiverouter_provider::DEFAULT_BASE_URL
+        self.api_type != "deepseek"
+            || self.base_url != hiverouter_provider::DEFAULT_BASE_URL
+    }
+
+    /// Environment variable carrying the key for this provider type.
+    #[must_use]
+    pub fn key_env_name(&self) -> &'static str {
+        if self.api_type == "tokenlabs" {
+            API_KEY_ENV
+        } else {
+            hiverouter_provider::API_KEY_ENV
+        }
+    }
+
+    /// Whether the selected key environment carries a non-empty value.
+    #[must_use]
+    pub fn key_present(&self) -> bool {
+        std::env::var(self.key_env_name())
+            .map(|value| !value.trim().is_empty())
+            .unwrap_or(false)
     }
 
     /// Wire model id: the endpoint catalogue id, or the documented model id.
@@ -110,6 +136,22 @@ impl ProviderSettings {
                 .and_then(serde_json::Value::as_str)
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
+        };
+        let profile_api_type = match profile_str("api_type") {
+            Some(value) => Some(parse_api_type(value)?),
+            None => profile_str("name").map(|name| {
+                if name.eq_ignore_ascii_case("tokenlab")
+                    || name.eq_ignore_ascii_case("tokenlabs")
+                {
+                    "tokenlabs".to_owned()
+                } else {
+                    "deepseek".to_owned()
+                }
+            }),
+        };
+        let api_type = match std::env::var(API_TYPE_ENV) {
+            Ok(value) => parse_api_type(&value)?,
+            Err(_) => profile_api_type.unwrap_or_else(|| default.api_type.clone()),
         };
         let enabled = match std::env::var(PROVIDER_ENV) {
             Ok(value) => match value.trim().to_ascii_lowercase().as_str() {
@@ -175,9 +217,18 @@ impl ProviderSettings {
                 None => None,
             },
         };
-        if base_url != hiverouter_provider::DEFAULT_BASE_URL && wire_model.is_none() {
+        if api_type == "tokenlabs" && base_url == hiverouter_provider::DEFAULT_BASE_URL {
             return Err(ConfigError::ProviderSetting(
-                "an external OpenAI-compatible base URL requires a wire model id; set \
+                "tokenlabs requires an explicit OpenAI-compatible base URL; set \
+                 HIVEROUTER_BASE_URL or the provider profile's base_url"
+                    .to_owned(),
+            ));
+        }
+        if (api_type == "tokenlabs" || base_url != hiverouter_provider::DEFAULT_BASE_URL)
+            && wire_model.is_none()
+        {
+            return Err(ConfigError::ProviderSetting(
+                "an external OpenAI-compatible provider requires a wire model id; set \
                  HIVEROUTER_WIRE_MODEL or the provider profile's wire_model"
                     .to_owned(),
             ));
@@ -190,6 +241,7 @@ impl ProviderSettings {
             planner_reasoning_effort,
             planner_max_tokens,
             leaf_max_tokens,
+            api_type,
             base_url,
             wire_model,
         })
@@ -269,7 +321,23 @@ pub fn provider_profile_path() -> Option<std::path::PathBuf> {
 fn load_provider_profile() -> Option<serde_json::Value> {
     let path = provider_profile_path()?;
     let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(&text).ok()
+    parse_provider_profile_text(&text)
+}
+
+fn parse_provider_profile_text(text: &str) -> Option<serde_json::Value> {
+    serde_json::from_str(text.trim_start_matches('\u{feff}')).ok()
+}
+
+pub(crate) fn parse_api_type(raw: &str) -> Result<String, ConfigError> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "deepseek" | "deep" => Ok("deepseek".to_owned()),
+        "tokenlabs" | "tokenlab" | "amd" | "custom" | "external" => {
+            Ok("tokenlabs".to_owned())
+        }
+        other => Err(ConfigError::ProviderSetting(format!(
+            "unknown {API_TYPE_ENV} value `{other}` (expected deepseek|tokenlabs)"
+        ))),
+    }
 }
 
 fn validate_base_url(raw: &str) -> Result<String, ConfigError> {
@@ -557,6 +625,31 @@ fn resolve_allowed_origins(bind: SocketAddr) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn provider_profile_accepts_a_utf8_bom() {
+        let value = parse_provider_profile_text(
+            "\u{feff}{\"name\":\"tokenlab\",\"api_type\":\"tokenlabs\"}",
+        )
+        .expect("BOM-prefixed profile");
+        assert_eq!(value["api_type"], "tokenlabs");
+        assert!(parse_provider_profile_text("not json").is_none());
+    }
+
+    #[test]
+    fn provider_api_type_selects_the_key_environment() {
+        let mut settings = ProviderSettings::default();
+        assert_eq!(settings.api_type, "deepseek");
+        assert_eq!(settings.key_env_name(), hiverouter_provider::API_KEY_ENV);
+        assert!(!settings.is_external_endpoint());
+        settings.api_type = "tokenlabs".to_owned();
+        settings.wire_model = Some("DeepSeek-V4.1-Flash".to_owned());
+        assert_eq!(settings.key_env_name(), API_KEY_ENV);
+        assert!(settings.is_external_endpoint());
+        assert_eq!(parse_api_type("TokenLab").expect("alias"), "tokenlabs");
+        assert_eq!(parse_api_type("deepseek").expect("deepseek"), "deepseek");
+        assert!(parse_api_type("nonsense").is_err());
+    }
 
     #[test]
     fn provider_profile_write_is_replace_safe() {

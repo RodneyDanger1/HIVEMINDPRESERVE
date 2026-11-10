@@ -24,6 +24,25 @@ try {
 }
 
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+# Select the provider key environment from the saved non-secret profile.
+$apiType = 'deepseek'
+if (-not [string]::IsNullOrWhiteSpace($env:HIVEROUTER_API_TYPE)) {
+    $apiType = $env:HIVEROUTER_API_TYPE
+}
+$profileFile = Join-Path $DataDir 'provider.json'
+if (Test-Path $profileFile) {
+    try {
+        $providerProfile = Get-Content -LiteralPath $profileFile -Raw | ConvertFrom-Json
+        if (-not [string]::IsNullOrWhiteSpace($providerProfile.api_type)) {
+            $apiType = $providerProfile.api_type
+        } elseif ($providerProfile.name -match '^tokenlab') {
+            $apiType = 'tokenlabs'
+        }
+    } catch {
+        Write-Warning 'The provider profile could not be parsed; defaulting to DeepSeek.'
+    }
+}
+$keyEnv = if ($apiType -eq 'tokenlabs') { 'HIVEROUTER_API_KEY' } else { 'DEEPSEEK_API_KEY' }
 # Prefer the DPAPI-encrypted key written by tools\set-provider-key.ps1. The
 # decrypted value is put into the child process environment only; it is never
 # printed, logged, or embedded in a command line.
@@ -38,7 +57,9 @@ if (Test-Path $keyFile) {
             $entropy,
             [Security.Cryptography.DataProtectionScope]::CurrentUser
         )
-        $env:DEEPSEEK_API_KEY = [Text.Encoding]::UTF8.GetString($plainBytes).Trim()
+        $plain = [Text.Encoding]::UTF8.GetString($plainBytes).Trim()
+        Set-Item -Path "Env:$keyEnv" -Value $plain
+        $plain = $null
         [Array]::Clear($plainBytes, 0, $plainBytes.Length)
     } catch {
         Write-Warning 'The provider key file could not be decrypted; prompts will refuse E_KEY_MISSING.'
