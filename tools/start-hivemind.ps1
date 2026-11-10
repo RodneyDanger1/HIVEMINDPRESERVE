@@ -14,16 +14,30 @@ if (-not (Test-Path $exe)) {
 }
 
 $base = "http://$Bind"
+$launchFile = Join-Path $DataDir 'launch.token'
+$launchToken = $null
+if (Test-Path $launchFile) {
+    $launchToken = (Get-Content -LiteralPath $launchFile -Raw).Trim()
+}
 try {
     $health = Invoke-RestMethod -Uri "$base/health" -TimeoutSec 2
     Write-Host "HiveMind is already running at $base (schema $($health.database.schema_version))."
-    Start-Process $base
+    if ([string]::IsNullOrWhiteSpace($launchToken)) {
+        Start-Process $base
+    } else {
+        Start-Process "$base/?launch=$launchToken"
+    }
     exit 0
 } catch {
     # No healthy server on this address: start one.
 }
 
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+if ([string]::IsNullOrWhiteSpace($launchToken)) {
+    $launchToken = [guid]::NewGuid().ToString('N')
+    [IO.File]::WriteAllText($launchFile, $launchToken, (New-Object System.Text.UTF8Encoding($false)))
+}
+$env:HIVEROUTER_LAUNCH_TOKEN = $launchToken
 # Select the provider key environment from the saved non-secret profile.
 $apiType = 'deepseek'
 if (-not [string]::IsNullOrWhiteSpace($env:HIVEROUTER_API_TYPE)) {
@@ -96,4 +110,4 @@ if ($null -eq $health) {
 Write-Host "HiveMind running at $base (pid $($process.Id), health $($health.status))."
 Write-Host "Data: $DataDir"
 Write-Host "Stop: Stop-Process -Id $($process.Id)"
-Start-Process $base
+Start-Process "$base/?launch=$launchToken"

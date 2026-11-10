@@ -281,6 +281,14 @@ export class WsApiClient implements UiApi {
     };
     this.setStatus('connecting');
     const baseUrl = this.baseUrl ?? defaultBaseUrl();
+    let launchToken: string | null = null;
+    try {
+      if (typeof window !== 'undefined') {
+        launchToken = new URL(window.location.href).searchParams.get('launch');
+      }
+    } catch {
+      launchToken = null;
+    }
     let response: Response;
     try {
       response = await fetchWithBoundTimeout(`${baseUrl}/api/session`, {
@@ -289,7 +297,10 @@ export class WsApiClient implements UiApi {
         fetchImpl: this.fetchImpl,
         init: {
           credentials: 'same-origin',
-          headers: { accept: 'application/json' },
+          headers: {
+            accept: 'application/json',
+            ...(launchToken === null ? {} : { 'x-hivemind-launch': launchToken }),
+          },
         },
       });
       ensureCurrent();

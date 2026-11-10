@@ -69,7 +69,8 @@ async function main() {
     if (error instanceof Error && error.message.includes('already has')) throw error;
   }
 
-  const env = { ...process.env, HIVEROUTER_PROVIDER_FILE: profileFile };
+  const launchToken = 'e2elaunchtoken' + Date.now().toString(16);
+  const env = { ...process.env, HIVEROUTER_PROVIDER_FILE: profileFile, HIVEROUTER_LAUNCH_TOKEN: launchToken };
   delete env.DEEPSEEK_API_KEY;
   delete env.HIVEROUTER_API_KEY;
   delete env.HIVEROUTER_BASE_URL;
@@ -111,7 +112,7 @@ async function main() {
   };
 
   await send('Page.enable');
-  await send('Page.navigate', { url: `http://127.0.0.1:${port}/` });
+  await send('Page.navigate', { url: `http://127.0.0.1:${port}/?launch=${launchToken}` });
   await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
   const connectDeadline = Date.now() + 15_000;
   while (Date.now() < connectDeadline) {

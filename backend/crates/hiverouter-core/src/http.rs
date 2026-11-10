@@ -13,6 +13,10 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
+
+/// Optional per-launch secret; when set, `/api/session` requires the matching
+/// `x-hivemind-launch` header supplied by the launcher URL.
+const LAUNCH_TOKEN_ENV: &str = "HIVEROUTER_LAUNCH_TOKEN";
 use hiverouter_provider::{ClientConfig, DeepSeekClient};
 use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
@@ -2893,6 +2897,25 @@ async fn api_session(
     };
     if !allowed {
         return refusal_response(StatusCode::FORBIDDEN, &hiverouter_contract::Refusal::OriginRejected);
+    }
+    if let Ok(expected) = std::env::var(LAUNCH_TOKEN_ENV) {
+        let expected = expected.trim();
+        if !expected.is_empty() {
+            let supplied = headers
+                .get("x-hivemind-launch")
+                .and_then(|value| value.to_str().ok());
+            if supplied != Some(expected) {
+                return (
+                    StatusCode::FORBIDDEN,
+                    Json(serde_json::json!({
+                        "code": hiverouter_contract::Refusal::OriginRejected.code(),
+                        "message": "the launcher token is required to read the session",
+                        "how_to_fix": "open HiveMind through HiveMind.exe or start-hivemind.ps1",
+                    })),
+                )
+                    .into_response();
+            }
+        }
     }
     (
         StatusCode::OK,

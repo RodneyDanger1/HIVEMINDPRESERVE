@@ -39,6 +39,7 @@ namespace HiveMindLauncher
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "HiveMind");
                 Directory.CreateDirectory(data);
+                string launchToken = LoadOrCreateLaunchToken(data);
 
                 int port = PreferredPort;
                 Process serverProcess = null;
@@ -66,6 +67,7 @@ namespace HiveMindLauncher
                         RedirectStandardError = true,
                     };
                     ApplyProviderKey(start);
+                    start.EnvironmentVariables["HIVEROUTER_LAUNCH_TOKEN"] = launchToken;
                     serverProcess = Process.Start(start);
                     if (serverProcess == null || !WaitForHealth(port, 60000))
                     {
@@ -89,7 +91,8 @@ namespace HiveMindLauncher
                 {
                     FileName = browserPath,
                     Arguments = "--app=http://" + Host + ":" + port
-                        + "/ --window-size=1440,900 --user-data-dir=\"" + profile + "\"",
+                        + "/?launch=" + launchToken
+                        + " --window-size=1440,900 --user-data-dir=\"" + profile + "\"",
                     UseShellExecute = false,
                 };
                 Process window = Process.Start(browser);
@@ -126,6 +129,29 @@ namespace HiveMindLauncher
         /// injects it into the server child's environment. The key is never
         /// written to source, a command line, a log, or stdout/stderr.
         /// </summary>
+        private static string LoadOrCreateLaunchToken(string data)
+        {
+            var file = Path.Combine(data, "launch.token");
+            try
+            {
+                if (File.Exists(file))
+                {
+                    var existing = File.ReadAllText(file).Trim();
+                    if (existing.Length >= 16)
+                    {
+                        return existing;
+                    }
+                }
+            }
+            catch
+            {
+                // A damaged token file is replaced below.
+            }
+            var token = Guid.NewGuid().ToString("N");
+            File.WriteAllText(file, token, new UTF8Encoding(false));
+            return token;
+        }
+
         private static void ApplyProviderKey(ProcessStartInfo start)
         {
             var data = Path.Combine(
