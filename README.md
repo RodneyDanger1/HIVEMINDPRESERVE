@@ -323,7 +323,7 @@ before buffering, and the request has a 15s timeout. The global
 
 Live evidence: `docs/evidence/live/live-tokenlab-web-fetch.json` and
 `docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`. Unit tests cover
-the SSRF policy and census lane; full gate is 633 backend / 227 web.
+the SSRF policy and census lane; full gate is 634 backend / 231 web.
 ---
 
 ## 12. Authorized self-evolution gate
