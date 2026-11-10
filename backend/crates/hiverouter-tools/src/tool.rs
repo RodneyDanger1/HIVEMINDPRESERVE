@@ -135,6 +135,8 @@ pub enum ToolId {
     RequestDetached,
     /// Fetch one public HTTPS URL through the approval-gated network seam.
     WebFetch,
+    /// Record a SuperAgent vote on one self-evolution proposal.
+    VoteEvolution,
 }
 
 impl ToolId {
@@ -153,6 +155,7 @@ impl ToolId {
             ToolId::ShellExec => "shell_exec",
             ToolId::RequestDetached => "request_detached",
             ToolId::WebFetch => "web_fetch",
+            ToolId::VoteEvolution => "vote_evolution",
         }
     }
 
@@ -267,6 +270,18 @@ pub struct ReportResultArgs {
 pub struct FinishArgs {
     /// Final verdict text.
     pub verdict: String,
+}
+
+/// Arguments for `vote_evolution`.
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct VoteEvolutionArgs {
+    /// Proposal id from the read-only proposal ledger.
+    pub proposal_id: String,
+    /// `approve` or `reject`.
+    pub vote: String,
+    /// Short rationale (8..=400 characters).
+    pub rationale: String,
 }
 
 /// Arguments for `web_fetch`.
@@ -432,6 +447,12 @@ impl ToolRegistry {
                 PermissionClass::Network,
                 schema_of!(WebFetchArgs),
             ),
+            contract(
+                ToolId::VoteEvolution,
+                "Record this SuperAgent vote on one self-evolution proposal. Votes are data; they never apply code.",
+                PermissionClass::Control,
+                schema_of!(VoteEvolutionArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -455,6 +476,7 @@ impl ToolRegistry {
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
                 ToolId::WebFetch,
+                ToolId::VoteEvolution,
             ],
         );
         allowlists.insert(
@@ -471,6 +493,7 @@ impl ToolRegistry {
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
                 ToolId::WebFetch,
+                ToolId::VoteEvolution,
             ],
         );
         allowlists.insert(
@@ -638,6 +661,9 @@ mod tests {
         assert!(registry.is_allowed(AgentTier::SuperAgent, ToolId::WebFetch));
         assert!(!registry.is_allowed(AgentTier::HyperAgent, ToolId::WebFetch));
         assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::WebFetch));
+        assert!(registry.is_allowed(AgentTier::SuperAgent, ToolId::VoteEvolution));
+        assert!(!registry.is_allowed(AgentTier::WorkerAgent, ToolId::VoteEvolution));
+        assert!(!registry.is_allowed(AgentTier::Subagent, ToolId::VoteEvolution));
         assert_eq!(
             registry
                 .contract(ToolId::WebFetch)

@@ -25,6 +25,9 @@ export interface ProposalRow {
   readonly problem: string;
   readonly proposal: string;
   readonly applied: boolean;
+  readonly voteState: string | null;
+  readonly currentApprovals: number;
+  readonly currentRejections: number;
   readonly governance: ProposalGovernance;
 }
 
@@ -74,6 +77,9 @@ export function decodeProposals(body: unknown): ProposalRow[] {
       problem,
       proposal,
       applied: bool(record.applied) ?? false,
+      voteState: text(record.vote_state),
+      currentApprovals: num(record.current_superagent_approvals) ?? 0,
+      currentRejections: num(record.current_superagent_rejections) ?? 0,
       governance: {
         requiredApprovals: num(governanceRaw.required_approvals),
         superagentApprovals: num(governanceRaw.superagent_approvals),
@@ -153,13 +159,16 @@ export function ProposalsPanel() {
               <div className="flex flex-wrap justify-between gap-2">
                 <span className="type-label text-ink-900">{row.area}</span>
                 <span className="type-mono-meta text-meta">
-                  {row.governance.state ?? 'state unknown'}
+                  {row.voteState ?? row.governance.state ?? 'state unknown'}
                 </span>
               </div>
               <p className="type-mono-meta mt-1 text-ink-700">{row.problem}</p>
               <p className="type-body-sm mt-1 text-ink-900">{row.proposal}</p>
               <div className="type-mono-meta mt-2 flex flex-wrap gap-x-3 gap-y-1 text-meta">
                 <span>applied: {String(row.applied)}</span>
+                <span>
+                  superagent votes: {row.currentApprovals} approve / {row.currentRejections} reject
+                </span>
                 <span>can_apply: {String(row.governance.canApply)}</span>
                 <span>
                   votes required: {row.governance.requiredApprovals ?? 'unknown'} (operator{' '}

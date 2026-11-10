@@ -2527,6 +2527,8 @@ impl RunEngine {
                                     self.execute_send_to_sibling(run, task, &plan, false)
                                 } else if plan.tool == "request_detached" {
                                     self.execute_request_detached(run, task, &plan)
+                                } else if plan.tool == "vote_evolution" {
+                                    self.execute_vote_evolution(run, task, &plan)
                                 } else if tool_loop::requires_approval(&self.tool_registry, &plan.tool)
                                     && self.tools.is_some()
                                     && self.tool_workspace.is_some()
@@ -4512,6 +4514,110 @@ impl RunEngine {
             // scheduler, so the loop stops here.
         }
         Ok(())
+    }
+
+    /// Records one SuperAgent vote on a proposal. A vote is durable memory
+    /// data, never code mutation; duplicate voter/task pairs are refused.
+    fn execute_vote_evolution(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+    ) -> ToolExecution {
+        let refused = |code: &str, detail: &str| {
+            ToolExecution::refused(plan.tool_call_id.clone(), code, detail.to_owned())
+        };
+        if !matches!(task_agent_tier(task), AgentTier::SuperAgent) {
+            return refused(
+                Refusal::ToolNotAllowed.code(),
+                "only a SuperAgent may vote on a self-evolution proposal",
+            );
+        }
+        let Some(proposal_id) = plan
+            .args
+            .get("proposal_id")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty() && value.chars().count() <= 128)
+        else {
+            return refused(Refusal::SchemaInvalid.code(), "proposal_id is required");
+        };
+        let Some(vote) = plan
+            .args
+            .get("vote")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+        else {
+            return refused(Refusal::SchemaInvalid.code(), "vote is required");
+        };
+        if !matches!(vote, "approve" | "reject") {
+            return refused(Refusal::SchemaInvalid.code(), "vote must be approve or reject");
+        }
+        let Some(rationale) = plan
+            .args
+            .get("rationale")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| (8..=400).contains(&value.chars().count()))
+        else {
+            return refused(
+                Refusal::SchemaInvalid.code(),
+                "rationale must be 8..=400 characters",
+            );
+        };
+        let entries = match self.store.memory_hyper_summary(run.id, 128) {
+            Ok(entries) => entries,
+            Err(error) => return refused(error.code(), error.message()),
+        };
+        let proposal_key = format!("improvement:{proposal_id}");
+        if !entries.iter().any(|entry| entry.key == proposal_key) {
+            return refused(
+                Refusal::ToolNotFound.code(),
+                "proposal_id does not exist in this run",
+            );
+        }
+        let already_voted = entries.iter().any(|entry| {
+            entry.key.starts_with(&format!("evolution_vote:{proposal_id}:"))
+                && serde_json::from_str::<serde_json::Value>(&entry.value)
+                    .ok()
+                    .and_then(|value| {
+                        value
+                            .get("voter_task_id")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::to_owned)
+                    })
+                    .as_deref()
+                    == Some(task.id.to_string().as_str())
+        });
+        if already_voted {
+            return refused(
+                Refusal::ApprovalReplay.code(),
+                "this SuperAgent task already voted on the proposal",
+            );
+        }
+        let key = format!("evolution_vote:{proposal_id}:{}", task.id);
+        let payload = serde_json::json!({
+            "proposal_id": proposal_id,
+            "voter_task_id": task.id.to_string(),
+            "role": "superagent",
+            "vote": vote,
+            "rationale": rationale,
+            "applied": false,
+        });
+        if let Err(error) = self.store.record_agent_memory_scoped(
+            "hyper",
+            &key,
+            &payload.to_string(),
+            run.id,
+            task.id,
+            "run",
+        ) {
+            return refused(error.code(), error.message());
+        }
+        ToolExecution::ok(
+            plan.tool_call_id.clone(),
+            format!("recorded {vote} vote for proposal {proposal_id}; applied=false"),
+        )
     }
 
     /// Executes one lower-level `request_detached` call. This is the governed

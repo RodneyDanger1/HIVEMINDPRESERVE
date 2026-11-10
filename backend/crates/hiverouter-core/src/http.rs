@@ -2344,18 +2344,52 @@ async fn run_evolution_proposals(
     if state.engine.store.get_run(run_id).is_err() {
         return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
     }
-    let entries = match state.engine.store.memory_hyper_summary(run_id, 64) {
+    let entries = match state.engine.store.memory_hyper_summary(run_id, 256) {
         Ok(entries) => entries,
         Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     };
+    let votes: Vec<(String, serde_json::Value)> = entries
+        .iter()
+        .filter(|entry| entry.key.starts_with("evolution_vote:"))
+        .filter_map(|entry| {
+            let proposal_id = entry.key.split(':').nth(1)?.to_owned();
+            let value = serde_json::from_str(&entry.value).ok()?;
+            Some((proposal_id, value))
+        })
+        .collect();
     let proposals: Vec<serde_json::Value> = entries
         .into_iter()
         .filter(|entry| entry.key.starts_with("improvement:"))
         .filter_map(|entry| {
             let value: serde_json::Value = serde_json::from_str(&entry.value).ok()?;
+            let proposal_id = value
+                .get("proposal_id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            let proposal_votes: Vec<&serde_json::Value> = votes
+                .iter()
+                .filter(|(id, _)| id == &proposal_id)
+                .map(|(_, vote)| vote)
+                .collect();
+            let approvals = proposal_votes
+                .iter()
+                .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("approve"))
+                .count();
+            let rejections = proposal_votes
+                .iter()
+                .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("reject"))
+                .count();
+            let vote_state = if rejections > 0 {
+                "rejected_by_superagent"
+            } else if approvals >= 4 {
+                "awaiting_operator"
+            } else {
+                "awaiting_votes"
+            };
             Some(serde_json::json!({
                 "proposal_key": entry.key,
-                "proposal_id": value.get("proposal_id").cloned().unwrap_or(serde_json::Value::Null),
+                "proposal_id": proposal_id,
                 "area": value.get("area").cloned().unwrap_or(serde_json::Value::Null),
                 "problem": value.get("problem").cloned().unwrap_or(serde_json::Value::Null),
                 "proposal": value.get("proposal").cloned().unwrap_or(serde_json::Value::Null),
@@ -2363,6 +2397,11 @@ async fn run_evolution_proposals(
                 "applied": value.get("applied").cloned().unwrap_or(serde_json::json!(false)),
                 "governance": value.get("governance").cloned().unwrap_or(serde_json::Value::Null),
                 "truthful_scope": value.get("truthful_scope").cloned().unwrap_or(serde_json::Value::Null),
+                "votes": proposal_votes,
+                "current_superagent_approvals": approvals,
+                "current_superagent_rejections": rejections,
+                "vote_state": vote_state,
+                "can_apply": false,
             }))
         })
         .collect();
@@ -2373,7 +2412,7 @@ async fn run_evolution_proposals(
             "run_id": run_id.to_string(),
             "count": proposals.len(),
             "applied": false,
-            "vote_path": "not_implemented",
+            "vote_path": "superagent_votes_recorded; operator_apply_not_implemented",
             "proposals": proposals,
         })),
     )
