@@ -36,6 +36,7 @@ pub const MAX_READ_BYTES: u64 = 1024 * 1024;
 #[must_use]
 pub struct WorkspaceJail {
     root: PathBuf,
+    denied: Vec<PathBuf>,
 }
 
 impl std::fmt::Debug for WorkspaceJail {
@@ -73,13 +74,37 @@ impl WorkspaceJail {
                 format!("cannot canonicalise the workspace root: {error}"),
             )
         })?;
-        Ok(Self { root: canonical })
+        Ok(Self {
+            root: canonical,
+            denied: Vec::new(),
+        })
     }
 
     /// The canonical root.
     #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
+    }
+
+    /// Denies an additional canonical subtree (for example the database/data
+    /// directory). Non-canonicalisable paths are ignored: they cannot be a
+    /// reachable workspace target.
+    #[must_use]
+    pub fn deny_path(mut self, path: impl AsRef<Path>) -> Self {
+        if let Ok(canonical) = fs::canonicalize(path.as_ref()) {
+            self.denied.push(canonical);
+        }
+        self
+    }
+
+    fn is_denied(&self, canonical: &Path) -> bool {
+        self.denied.iter().any(|denied| {
+            let denied = denied.to_string_lossy().to_lowercase();
+            let candidate = canonical.to_string_lossy().to_lowercase();
+            candidate == denied
+                || candidate.starts_with(&format!("{denied}\\"))
+                || candidate.starts_with(&format!("{denied}/"))
+        })
     }
 
     /// Resolves a workspace-relative path, refusing every escape vector.
@@ -157,6 +182,9 @@ impl WorkspaceJail {
                     return Err(escape(
                         "resolved path (through a symlink/junction) is outside the workspace root",
                     ));
+                }
+                if self.is_denied(&canonical) {
+                    return Err(escape("path is inside a denied data subtree"));
                 }
                 return Ok(());
             }
@@ -425,6 +453,19 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].name, "note.txt");
         assert!(!entries[0].is_dir);
+    }
+
+    #[test]
+    fn denied_data_subtree_is_refused_even_inside_the_root() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let data = temp.path().join("data");
+        fs::create_dir_all(&data).expect("data dir");
+        fs::write(data.join("secret.txt"), b"should not be readable").expect("seed");
+        let jail = WorkspaceJail::open(temp.path())
+            .expect("jail")
+            .deny_path(&data);
+        let error = jail.read("data/secret.txt").expect_err("denied read");
+        assert_eq!(error.refusal(), Refusal::PathOutsideJail);
     }
 
     #[test]

@@ -346,7 +346,10 @@ fn build_engine(
         ));
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
-            Ok(jail) => engine = engine.with_tool_workspace(jail),
+            Ok(jail) => {
+                let jail = jail.deny_path(&config.data_dir);
+                engine = engine.with_tool_workspace(jail);
+            }
             Err(error) => {
                 tracing::warn!(
                     workspace_root = %config.workspace_root.display(),
