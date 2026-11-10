@@ -4612,7 +4612,10 @@ impl RunEngine {
                                     "no code, schema, tool grant, prompt, gate, or running \
                                      agent changes until all five approvals are recorded",
                                 "side_effects_while_awaiting":
-                                    "one run-bank memory entry and one root_control audit row",
+                                    "one run-bank memory entry, one root_control audit row, \
+                                     four spawned SuperAgent voter tasks, and four A2A vote \
+                                     requests; no code, schema, tool grant, prompt, gate, or \
+                                     running agent change",
                             },
                         });
                         let key = format!("improvement:{proposal_id}");
