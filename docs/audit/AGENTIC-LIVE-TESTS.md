@@ -233,3 +233,14 @@ created. Evidence: `docs/evidence/live/live-tokenlab-detached-request.json`.
 This proves the idempotency key is carried into the durable audit row in a live
 run. It does **not** prove the retry path live; that is covered by the offline
 idempotency test. Evidence: `docs/evidence/live/live-tokenlab-request-id.json`.
+### Test H — failed first attempt (honest)
+
+An earlier prompt asking for **two** idempotent `request_detached` calls did not
+exercise the path. The model chose `ask_parent` instead; that call timed out
+(`E_TOOL_TIMEOUT`), the Agent/Subagent finished, and the root remained running
+when the test was stopped. No remote was created. This run is recorded as a
+**failure/behavioral deviation**, not as an idempotency result:
+`docs/evidence/live/live-tokenlab-idempotent-attempt.json`.
+
+The successful live Test H used a simpler prompt that demanded one
+`request_detached` call and forbade `ask_parent`.

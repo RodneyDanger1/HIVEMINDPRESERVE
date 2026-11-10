@@ -1,0 +1,35 @@
+{
+    "usage":  null,
+    "remotes":  0,
+    "roles":  [
+                  "planner",
+                  "superagent",
+                  "agent",
+                  "subagent"
+              ],
+    "tool_turns":  [
+                       {
+                           "outcome":  "refused",
+                           "code":  "E_TOOL_TIMEOUT",
+                           "tool":  "ask_parent"
+                       },
+                       {
+                           "tool":  "report_result",
+                           "outcome":  "ok"
+                       },
+                       {
+                           "tool":  "finish",
+                           "outcome":  "ok"
+                       },
+                       {
+                           "tool":  "report_result",
+                           "outcome":  "ok"
+                       }
+                   ],
+    "error_code":  null,
+    "finding":  "The model used ask_parent instead of the required request_detached; no idempotency path was exercised. Run was stopped, not counted as success.",
+    "status":  "running_when_stopped",
+    "run_id":  "01a1c5f9-1ca4-754e-963d-cc2904917cad",
+    "provider":  "tokenlab",
+    "tasks":  4
+}
