@@ -166,12 +166,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
+- Backend: **50 suites, 634 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **231 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `B95F2BA5DD559AC00B66FB9E0656C4AC57586C03A97F3358FD0E292FD996FF28`
+  `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116`
 - Packaged server / release binary: SHA-256
-  `ACBAD87E2721F02CCCB513A764A6D16C4F9CAF7EB45A879DAC7AC4863A86B74C`
+  `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`
 
 ---
 
@@ -288,7 +288,7 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
   admission, duplicate refusal, root-gate durability, foreign-run rewire.
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
-- Full gate: **50 suites, 633 passed, 0 failed, 2 ignored**; web typecheck 0,
+- Full gate: **50 suites, 634 passed, 0 failed, 2 ignored**; web typecheck 0,
   231 tests passed.
 
 ### Not implemented
@@ -370,3 +370,8 @@ mutation and `can_apply` remains false.
 The applied lesson ledger is also readable at `GET /api/evolution/lessons` and
 rendered read-only by `LessonsPanel`. It is a lesson artifact viewer, not a
 behavioral learning loop; no future run retrieves it automatically.
+Boot retrieval: authorized lessons are loaded from `<data_dir>/evolution/LESSONS.jsonl`
+and appended to the planner, root-control, and task prompts as bounded, labelled
+data (8 lines, 400 chars each). A live seeded-lesson run returned the lesson token
+`HONEYCOMB` from both child and final answers. Lessons are data, never authority
+to change tools, caps, or gates.

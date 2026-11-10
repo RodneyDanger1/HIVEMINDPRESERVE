@@ -1,0 +1,15 @@
+{
+    "usage":  {
+                  "total_tokens":  7936,
+                  "prompt_tokens":  7694,
+                  "completion_tokens":  242
+              },
+    "note":  "Seeded authorized lesson file; final and child answers both returned HONEYCOMB.",
+    "lesson_token":  "HONEYCOMB",
+    "observed_at":  "2026-11-10T19:56:00Z",
+    "final_answer":  "HONEYCOMB",
+    "status":  "completed",
+    "run_id":  "01a1c710-756b-74c1-9ff1-25840e779229",
+    "provider":  "tokenlab",
+    "lesson_proposal_id":  "test-lesson-1"
+}

@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `63218e9`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `ACBAD87E2721F02CCCB513A764A6D16C4F9CAF7EB45A879DAC7AC4863A86B74C`  
-Portable package: `dist/HiveMind.zip` SHA-256 `B95F2BA5DD559AC00B66FB9E0656C4AC57586C03A97F3358FD0E292FD996FF28`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `ACBAD87E2721F02CCCB513A764A6D16C4F9CAF7EB45A879DAC7AC4863A86B74C`
+Release binary: `target/release/hiverouter.exe` SHA-256 `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`  
+Portable package: `dist/HiveMind.zip` SHA-256 `1D3B6897BB453D5D72867B35E921D06E2DF5134548419A018E74DE95B5233116`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `AE9E661458A5EC552E01DA9D52E5274B51FA80AD3B6EA262CDC741D81406DD68`
 
 ## 1. What HiveMind is supposed to be
 
@@ -386,7 +386,7 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **50 suites, 633 passed, 0 failed, 2 ignored**.
+- Backend: **50 suites, 634 passed, 0 failed, 2 ignored**.
 - Web: 227 tests, typecheck 0, production build 0; UI gained the replayed-network-approval fail-closed gate.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)
@@ -401,7 +401,7 @@ remote is an in-process fixture principal, not a network satellite.
   `requires_human_review:true` entry. No self-modifying code path exists.
 - Daemon admission is audited; duplicate root names are guarded across remotes
   and daemons; a root control run can add at most one extra branch.
-- Final gates: 50 backend suites, 633 passed, 0 failed, 2 ignored; web typecheck
+- Final gates: 50 backend suites, 634 passed, 0 failed, 2 ignored; web typecheck
   0 and 231 tests passed. Final package hashes are at the top of this report.
 - No paid calls were made in the final documentation pass because the DeepSeek
   key was not available to check balance; live evidence above is from the

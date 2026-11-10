@@ -350,3 +350,12 @@ Final build served `GET /api/evolution/lessons` with `count=0` and
 `artifact="evolution/LESSONS.jsonl"` before any authorized apply. The route is
 read-only; it cannot apply or roll back. Evidence:
 `docs/evidence/live/live-tokenlab-lessons-empty.json`.
+## Test W — cross-run authorized lesson retrieval
+
+Final build started with a seeded authorized lesson in
+`<data_dir>/evolution/LESSONS.jsonl`; the prompt asked for the lesson's token.
+The run completed and both the child and final answers returned **HONEYCOMB**
+(7,936 tokens). This proves the boot loader injects bounded lessons into the
+planner, root, and task prompts as labelled data.
+
+Evidence: `docs/evidence/live/live-tokenlab-lesson-retrieval.json`.
