@@ -4,10 +4,10 @@ Date: 2026-11-10
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `1d4f659`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `413C9858020D0C5C97399097C962AFF48691C5B0FD8763898A5A3BCB53D2C791`  
-Portable package: `dist/HiveMind.zip` SHA-256 `4803B3E3B20D9EEAC206A87C213B1D09C93B17534E836604BA124ADDBF2A10F5`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `413C9858020D0C5C97399097C962AFF48691C5B0FD8763898A5A3BCB53D2C791`
+Final repair HEAD at report write: `bb1f364`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `C631EAC321A3C575536F43EDFB5783C59680151F93F701743A002E214CF8957F`  
+Portable package: `dist/HiveMind.zip` SHA-256 `986D235C0B3F755320C8A2BD7A89D7D6BC6BCA96C7068F0B894B5A78C6AAE2A3`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `C631EAC321A3C575536F43EDFB5783C59680151F93F701743A002E214CF8957F`
 
 ## 1. What HiveMind is supposed to be
 
@@ -386,7 +386,7 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **51 suites, 636 passed, 0 failed, 2 ignored**.
+- Backend: **51 suites, 637 passed, 0 failed, 2 ignored**.
 - Web: 227 tests, typecheck 0, production build 0; UI gained the replayed-network-approval fail-closed gate.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)

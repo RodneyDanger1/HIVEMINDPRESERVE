@@ -445,3 +445,10 @@ Run `01a1c78b-…` auto-spawned four SuperAgents for one proposal (four depth-1
 
 This is the required single-dissent block, demonstrated with real model-spawned
 voters.
+## Test AF — data directory denied to workspace file tools
+
+`WorkspaceJail::deny_path` now refuses any resolved path under the canonical data
+directory. Production boot wires `config.data_dir` into the jail. Test
+`denied_data_subtree_is_refused_even_inside_the_root` proves a seeded
+`data/secret.txt` is refused with `E_PATH_OUTSIDE_JAIL`. Backend gate: 51 suites /
+637 passed.
