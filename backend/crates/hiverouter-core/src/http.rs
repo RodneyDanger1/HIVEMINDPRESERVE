@@ -2592,7 +2592,7 @@ async fn authorize_evolution_proposal(
             _ => return refusal_response(StatusCode::CONFLICT, &Refusal::SchemaInvalid),
         }
     }
-    if voters.len() != 4 || approvals != 4 || rejections != 0 {
+    if voters.len() < 4 || approvals < 4 || rejections != 0 {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
     }
     let authorization_key = format!("evolution_authorization:{proposal_uuid}");

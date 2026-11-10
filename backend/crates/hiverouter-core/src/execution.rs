@@ -1622,6 +1622,47 @@ impl RunEngine {
         Ok(task)
     }
 
+    /// Spawns exactly four SuperAgent voters and sends each an A2A vote
+    /// request. The proposal is already recorded; this only creates the
+    /// electorate. It refuses before creating anything when the caps would be
+    /// exceeded.
+    fn spawn_evolution_voters(
+        &self,
+        root: &TaskRecord,
+        proposal_id: &str,
+    ) -> Result<Vec<TaskId>, Refusal> {
+        let all_tasks = self.store.tasks_for_run(root.run_id)?;
+        let direct = all_tasks
+            .iter()
+            .filter(|task| task.parent_task_id == Some(root.id))
+            .count();
+        let agents = all_tasks.len();
+        self.caps.check_spawn(
+            1,
+            direct.saturating_add(3),
+            agents.saturating_add(4) as u64,
+        )?;
+        let mut voters = Vec::new();
+        for _ in 0..4 {
+            let child = self.spawn_sub_hive(root.id, "super")?;
+            let request = format!(
+                "Authorized evolution vote request. proposal_id={proposal_id}. \
+                 Call vote_evolution with this proposal_id and vote approve or reject \
+                 with an 8-400 character rationale. You may not apply; only the operator \
+                 can authorize and apply a lesson."
+            );
+            self.store.record_agent_message(
+                root.run_id,
+                root.id,
+                child.id,
+                "evolution_vote_request",
+                &request,
+            )?;
+            voters.push(child.id);
+        }
+        Ok(voters)
+    }
+
     /// Handles `CANCEL_RUN`.
     ///
     /// # Errors
@@ -4590,6 +4631,43 @@ impl RunEngine {
                             "recorded",
                             &format!("{key} area={area} applied=false"),
                         )?;
+                        if turn == 0 && !root_voters_spawned {
+                            match self.spawn_evolution_voters(root, &proposal_id) {
+                                Ok(voters) => {
+                                    root_voters_spawned = true;
+                                    let ids = voters
+                                        .iter()
+                                        .map(ToString::to_string)
+                                        .collect::<Vec<_>>()
+                                        .join(",");
+                                    self.record_root_gate_decision(
+                                        run,
+                                        root,
+                                        "convene_evolution_vote",
+                                        "recorded",
+                                        &format!(
+                                            "proposal={proposal_id} voters={ids}"
+                                        ),
+                                    )?;
+                                    _result_text.push_str(&format!(
+                                        "- convened four SuperAgent voters for {proposal_id}: {ids}\n"
+                                    ));
+                                }
+                                Err(refusal) => {
+                                    self.record_root_gate_decision(
+                                        run,
+                                        root,
+                                        "convene_evolution_vote",
+                                        "refused",
+                                        refusal.code(),
+                                    )?;
+                                    _result_text.push_str(&format!(
+                                        "- proposal recorded, but voters were refused: {}\n",
+                                        refusal.code()
+                                    ));
+                                }
+                            }
+                        }
                         _result_text.push_str(&format!(
                             "- recorded improvement proposal {key} area={area}; applied=false\n"
                         ));
