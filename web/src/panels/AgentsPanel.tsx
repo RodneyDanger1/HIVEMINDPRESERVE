@@ -18,6 +18,7 @@ import { AgentProfilesPanel } from './AgentProfilesPanel';
 import { AgentMemoryPanel } from './AgentMemoryPanel';
 import { MemoryBanksPanel } from './MemoryBanksPanel';
 import { ProposalsPanel } from './ProposalsPanel';
+import { LessonsPanel } from './LessonsPanel';
 import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
 import { A2AInboxPanel } from './A2AInboxPanel';
@@ -78,6 +79,7 @@ export function AgentsPanel() {
       <AgentRosterPanel />
       <A2AInboxPanel />
       <ProposalsPanel />
+      <LessonsPanel />
       <AgentMemoryPanel />
       <MemoryBanksPanel />
       <AgentMessagesPanel />

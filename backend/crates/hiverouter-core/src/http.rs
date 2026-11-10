@@ -643,6 +643,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/agents/runs/{run_id}/proposals/{proposal_id}/rollback",
             post(rollback_evolution_lesson),
         )
+        .route("/api/evolution/lessons", get(evolution_lessons))
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
@@ -2578,6 +2579,32 @@ async fn authorize_evolution_proposal(
             "applied": false,
             "operator_approved": true,
             "superagent_approvals": 4,
+        })),
+    )
+        .into_response()
+}
+
+/// `GET /api/evolution/lessons` — read-only projection of the authorized
+/// lesson ledger. It never applies, removes, or mutates a lesson.
+async fn evolution_lessons(State(state): State<Arc<AppState>>) -> Response {
+    let path = evolution_lesson_path(&state);
+    let bytes = match read_lesson_bytes(&path) {
+        Ok(bytes) => bytes,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let lessons: Vec<serde_json::Value> = String::from_utf8_lossy(&bytes)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .take(200)
+        .collect();
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "schema": "hivemind.evolution-lessons.v1",
+            "count": lessons.len(),
+            "artifact": "evolution/LESSONS.jsonl",
+            "lessons": lessons,
         })),
     )
         .into_response()
