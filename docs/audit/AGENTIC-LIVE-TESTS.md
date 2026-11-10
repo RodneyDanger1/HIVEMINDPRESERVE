@@ -1,0 +1,191 @@
+# Agentic Live Tests — HMARS Behavior on Token Lab
+
+Date: 2026-11-10
+Provider: Token Lab `https://api.tokenlab.amd.com/v1`, wire model `DeepSeek-V4.1-Flash`
+Billing: `external_unverified` (no DeepSeek USD claim)
+
+These are observed runs, not simulated transcripts. Each test uses a fresh
+SQLite data directory. The provider key stayed in the child environment and is
+not present in this file.
+
+## Test A — exact-two hierarchy and root branch governance
+
+**Prompt**
+
+> Use exactly two SuperAgents. Each SuperAgent must spawn exactly one Agent.
+> Each Agent must spawn exactly one temporary Subagent. Do not add extra branch
+> leads. Do not inspect the repository. Each branch returns one short sentence
+> about a launch checklist; the HyperAgent synthesizes both sentences.
+
+**Observed**
+
+- `completed`; 7 tasks total.
+- Root `planner` class `hyper` depth 0.
+- Two `superagent` class `super` depth 1.
+- Two `agent` class `agent` depth 2.
+- Two `subagent` class `subagent` depth 3.
+- Usage 14,407 prompt / 1,144 completion / 15,551 total.
+- ~106 s wall.
+
+**Pseudocode of what happened**
+
+```text
+planner(prompt) -> 2 super leads, each with 1 child agent + 1 child subagent
+root_checkpoint -> requested spawn_superagent
+if plan already has depth-1 leads:
+    root request refused with no new task row
+dispatch children in depth order
+root_final -> synthesize 2 branch sentences
+status = completed
+```
+
+**What was right**
+
+- Class matrix held at every depth.
+- Root did not add extra branch leads after the fix.
+- Final answer used both branches.
+
+**What can still fail**
+
+- The model can still ignore exact counts inside the planner response; the root
+  gate only protects the root-control turn.
+- No assertion yet that two independent runs produce the same count.
+
+## Test B — A2A ask_parent
+
+**Prompt**
+
+> Create exactly one SuperAgent and one Agent under it. The Agent must call
+> ask_parent exactly once to ask its SuperAgent which launch-checklist item to
+> verify, then report the parent's answer in one sentence. Do not inspect the
+> repository.
+
+**Observed**
+
+- `completed`; 3 tasks: HyperAgent → SuperAgent → Agent.
+- Agent used `ask_parent` once.
+- A2A row: `status=answered`, `attempts=1`,
+  `answer_actor=parent:<superagent>`.
+- Parent answer: “Pre-launch verification item: confirm the release’s
+  rollback/abort plan is defined and documented before launch.”
+- Usage 6,169 / 755 / 6,924.
+
+**Pseudocode**
+
+```text
+agent.execute:
+  ask_parent(text)
+  record open message + deadline
+  record attempt(parent, parent_answer)  -> attempts=1, audit row
+  parent.answer_escalation -> JSON answer
+  CAS answer_agent_message -> answered + audit row
+  return answer to agent
+```
+
+**What was right**
+
+- One durable message, one attempt, one parent answer.
+- Attempt and answer audit rows exist; no duplicate answer.
+- Parent context path worked live.
+
+**What was wrong or weak**
+
+- One SuperAgent message said it had no children when it emitted a result. The
+  dispatch readiness code does require every direct child to be complete before
+  a parent is collected, so this is not yet proven to be a scheduler violation;
+  it may be a task with a different branch or a wording artifact. A targeted
+  test must assert parent-after-child ordering explicitly rather than infer it
+  from prose.
+
+## Test C — root-created detached remote and daemon
+
+**Prompt**
+
+> Create one SuperAgent with one Agent. In your root control turn, create one
+> detached remote light named Porch and one watchdog daemon named Pulse. Answer
+> with one sentence.
+
+**Observed**
+
+- `completed`; 3 tasks; 162 s.
+- Remote: `Porch`, adapter `light`, `in_process`, `enrolled`, **device_count 1**,
+  **grant_count 1**, created by `hyper:<root>`, audit action `remote_created`.
+- Daemon: `Pulse`, `watchdog`, job `{"check":"db"}`, `enrolled`.
+- Usage 5,305 / 250 / 5,555.
+
+**Pseudocode**
+
+```text
+root_checkpoint:
+  spawn_remote_agent(display_name=Porch, kind=light)
+    -> remote row + device + narrow grant + audit
+  spawn_daemon(display_name=Pulse, kind=watchdog)
+    -> daemon row job={"check":"db"} state=enrolled
+dispatch planned children
+root_final -> one sentence
+```
+
+**What was right**
+
+- Detached records are tree-free: no task rows, no graph children.
+- Remote has a real device/grant, not just a label.
+- Daemon is enrolled with a real DB-check job.
+- Telemetry preserved the hyper actor id.
+
+**Boundary**
+
+- Remote transport remains in-process fixture. It is not a network satellite.
+- Daemon starts enrolled, not running; that is the honest default.
+
+## Test D — local rate governor refuses before provider spend
+
+An earlier identical A2A request returned `E_LLM_RATE_LIMIT` in 0 s with 0 tasks
+while the Token Lab 20 RPM window was exhausted. No provider request was made by
+the app. After one window wait, the same prompt completed. This validates the
+local governor, not a provider guarantee.
+
+## Test E — usage accounting survives hard kill
+
+After a measured reply, the process was hard-killed. Restart recovery reported
+`interrupted` with 7 tasks, and the measured usage remained:
+
+```text
+checkpoint: 319 prompt / 130 completion / 449 total
+after restart: 319 prompt / 130 completion / 449 total
+```
+
+This is the required behavior for API-burn honesty.
+
+## Cross-test conclusions
+
+| Claim | Verdict |
+|---|---|
+| HyperAgent governs the run | Evidence supports |
+| SuperAgent is a branch lead | Evidence supports |
+| Agent can ask its parent | Evidence supports |
+| Subagent is depth-3 terminal | Evidence supports in exact-two run |
+| Remote light is detached and actuable | Evidence supports fixture device/grant |
+| Daemon is detached and has a real job | Evidence supports DB-check job |
+| Root cannot add branches when planner supplied them | Evidence supports |
+| A2A attempts are durable/audited | Evidence supports |
+| No hidden provider spend on interrupted run | Evidence supports after checkpoint |
+| Network remote transport | NOT IMPLEMENTED |
+| Lower-level request → HyperAgent approval | NOT IMPLEMENTED as a separate protocol |
+
+## Next tests
+
+1. Parent scheduling: ensure a SuperAgent is not finalized while an Agent child
+   is still running and depending on it.
+2. Lower-level remote request: Agent asks HyperAgent for a satellite; test
+   approve/refuse and audit.
+3. Memory Venn: prove no sibling/foreign-run bleed under a real branch tree.
+4. Repeat exact-two three times; assert stable task count and no extra branch.
+5. Full 40-node offline / bounded live probe with measured dispatch.
+
+## Evidence files
+
+- `docs/evidence/live/live-tokenlab-hierarchy.json`
+- `docs/evidence/live/live-tokenlab-a2a.json`
+- `docs/evidence/live/live-tokenlab-remote-daemon.json`
+- `docs/evidence/live/live-tokenlab-rate-limit.json`
+- `docs/evidence/live/live-tokenlab-kill-usage.json`

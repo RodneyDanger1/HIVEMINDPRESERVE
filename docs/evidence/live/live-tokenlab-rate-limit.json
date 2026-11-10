@@ -1,0 +1,11 @@
+{
+    "provider_call_made":  false,
+    "observed_at":  "2026-11-10T06:10:00Z",
+    "error_code":  "E_LLM_RATE_LIMIT",
+    "meaning":  "local RPM governor refused before provider send; retry after one window succeeded",
+    "observed_wall_seconds":  0,
+    "status":  "failed",
+    "run_id":  "01a1c414-ce18-7130-9d6c-04980ce4e2bf",
+    "provider":  "tokenlab",
+    "tasks":  0
+}

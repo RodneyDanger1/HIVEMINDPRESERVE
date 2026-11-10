@@ -1,0 +1,30 @@
+{
+    "usage":  {
+                  "total_tokens":  5555,
+                  "prompt_tokens":  5305,
+                  "completion_tokens":  250
+              },
+    "daemon":  {
+                   "state":  "enrolled",
+                   "job":  {
+                               "check":  "db"
+                           },
+                   "display_name":  "Pulse",
+                   "kind":  "watchdog"
+               },
+    "wall_seconds":  162,
+    "remote":  {
+                   "transport_kind":  "in_process",
+                   "adapter_kind":  "light",
+                   "device_count":  1,
+                   "grant_count":  1,
+                   "created_by":  "hyper root-control",
+                   "state":  "enrolled",
+                   "display_name":  "Porch"
+               },
+    "observed_at":  "2026-11-10T06:20:00Z",
+    "status":  "completed",
+    "run_id":  "01a1c41c-abd6-76ac-ae83-e888513332eb",
+    "provider":  "tokenlab",
+    "tasks":  3
+}

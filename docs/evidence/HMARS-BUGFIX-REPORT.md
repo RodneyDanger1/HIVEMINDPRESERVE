@@ -306,3 +306,23 @@ no key material is stored in the repository or the saved non-secret profile.
 - `docs/evidence/live/ui-splash-375.png` - 375x812 CDP-emulated splash proof.
 - `docs/evidence/live/live-tokenlab-kill-usage.json` - checkpoint survives hard kill and restart.
 - `docs/evidence/live/ui-polished-final.png` - connected workspace after polish.
+## 12. Live agentic tests (2026-11-10)
+
+Detailed pseudocode and per-test analysis: `docs/audit/AGENTIC-LIVE-TESTS.md`.
+
+| Test | Result |
+|---|---|
+| Exact-two hierarchy | completed; 7 tasks (1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents); 15,551 tokens; no extra root branch |
+| A2A ask_parent | completed; 3 tasks; `ask_parent` answered once; attempts=1; `answer_actor=parent:<superagent>` |
+| Root-created remote + daemon | completed; 3 tasks; remote Porch/light with 1 device + 1 grant; daemon Pulse/watchdog with `{"check":"db"}` |
+| Local rate governor | `E_LLM_RATE_LIMIT` in 0s with 0 tasks before provider send; succeeded after one window |
+| Hard-kill usage | 449 tokens checkpointed; restart `interrupted` with 7 recovered tasks and usage retained |
+| Root remote/daemon first attempt | failed `E_PROVIDER_TIMEOUT` after 129s, 0 tasks; retry succeeded; not counted as a success |
+
+Evidence: `docs/evidence/live/live-tokenlab-hierarchy.json`,
+`live-tokenlab-a2a.json`, `live-tokenlab-remote-daemon.json`,
+`live-tokenlab-rate-limit.json`, `live-tokenlab-kill-usage.json`.
+
+Important boundary: the remote transport is still `in_process`; the device/grant
+are real fixture records, not a network satellite. Lower-level request -> HyperAgent
+approval is not implemented as a separate protocol.

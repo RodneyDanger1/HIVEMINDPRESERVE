@@ -1,0 +1,24 @@
+{
+    "run_id":  "01a1c416-367a-72fa-8562-5d365e120256",
+    "observed_at":  "2026-11-10T06:16:00Z",
+    "provider":  "tokenlab",
+    "a2a":  {
+                "answer":  "Pre-launch verification item: confirm the release rollback/abort plan is defined and documented before launch.",
+                "status":  "answered",
+                "attempts":  1,
+                "answer_actor":  "parent:01a1c416-551d-7407-aeae-a9f5f5dd1492",
+                "kind":  "ask_parent"
+            },
+    "status":  "completed",
+    "usage":  {
+                  "total_tokens":  6924,
+                  "prompt_tokens":  6169,
+                  "completion_tokens":  755
+              },
+    "hierarchy":  {
+                      "superagent":  1,
+                      "agent":  1,
+                      "hyper":  1
+                  },
+    "tasks":  3
+}
