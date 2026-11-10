@@ -4408,8 +4408,10 @@ impl RunEngine {
                             .and_then(serde_json::Value::as_str)
                             .map(str::trim)
                             .unwrap_or_default();
+                        let proposal_id = Uuid::now_v7().to_string();
                         let payload = serde_json::json!({
                             "status": "proposed",
+                            "proposal_id": proposal_id,
                             "area": area,
                             "problem": problem,
                             "proposal": proposal,
@@ -4439,7 +4441,7 @@ impl RunEngine {
                                     "one run-bank memory entry and one root_control audit row",
                             },
                         });
-                        let key = format!("improvement:{}", Uuid::now_v7());
+                        let key = format!("improvement:{proposal_id}");
                         self.store.record_agent_memory_scoped(
                             "hyper",
                             &key,

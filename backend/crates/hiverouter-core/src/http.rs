@@ -627,6 +627,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/memory/trust", post(promote_memory))
         .route("/api/memory/journal", get(memory_journal))
         .route("/api/memory/journal/verify", get(verify_memory_journal))
+        .route(
+            "/api/agents/runs/{run_id}/proposals",
+            get(run_evolution_proposals),
+        )
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
@@ -2325,6 +2329,55 @@ async fn memory_summary(
             .into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+/// `GET /api/agents/runs/{run_id}/proposals` — recorded self-evolution
+/// proposals and their explicit governance state. This is a read projection;
+/// it never votes, applies, or mutates memory.
+async fn run_evolution_proposals(
+    State(state): State<Arc<AppState>>,
+    Path(run_id): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    let entries = match state.engine.store.memory_hyper_summary(run_id, 64) {
+        Ok(entries) => entries,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let proposals: Vec<serde_json::Value> = entries
+        .into_iter()
+        .filter(|entry| entry.key.starts_with("improvement:"))
+        .filter_map(|entry| {
+            let value: serde_json::Value = serde_json::from_str(&entry.value).ok()?;
+            Some(serde_json::json!({
+                "proposal_key": entry.key,
+                "proposal_id": value.get("proposal_id").cloned().unwrap_or(serde_json::Value::Null),
+                "area": value.get("area").cloned().unwrap_or(serde_json::Value::Null),
+                "problem": value.get("problem").cloned().unwrap_or(serde_json::Value::Null),
+                "proposal": value.get("proposal").cloned().unwrap_or(serde_json::Value::Null),
+                "evidence": value.get("evidence").cloned().unwrap_or(serde_json::Value::Null),
+                "applied": value.get("applied").cloned().unwrap_or(serde_json::json!(false)),
+                "governance": value.get("governance").cloned().unwrap_or(serde_json::Value::Null),
+                "truthful_scope": value.get("truthful_scope").cloned().unwrap_or(serde_json::Value::Null),
+            }))
+        })
+        .collect();
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "schema": "hivemind.proposals.v1",
+            "run_id": run_id.to_string(),
+            "count": proposals.len(),
+            "applied": false,
+            "vote_path": "not_implemented",
+            "proposals": proposals,
+        })),
+    )
+        .into_response()
 }
 
 /// `GET /api/memory/banks/{bank_id}/entries?limit=` — active bank entries.
