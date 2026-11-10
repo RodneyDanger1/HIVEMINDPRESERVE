@@ -690,6 +690,33 @@ async fn mutation_auth(
     request: Request,
     next: Next,
 ) -> Response {
+    let launch_gate = std::env::var(LAUNCH_TOKEN_ENV)
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty());
+    if let Some(expected) = launch_gate {
+        if request.method() == axum::http::Method::GET
+            && request.uri().path().starts_with("/api/")
+            && request.uri().path() != "/api/session"
+        {
+            let supplied = request
+                .headers()
+                .get("x-hivemind-launch")
+                .and_then(|value| value.to_str().ok());
+            if supplied != Some(expected.as_str()) {
+                return (
+                    StatusCode::FORBIDDEN,
+                    [(header::CACHE_CONTROL, "no-store")],
+                    Json(serde_json::json!({
+                        "code": Refusal::OriginRejected.code(),
+                        "message": "this read route requires the launcher token",
+                        "how_to_fix": "open HiveMind through HiveMind.exe or start-hivemind.ps1",
+                    })),
+                )
+                    .into_response();
+            }
+        }
+    }
     if matches!(request.method().as_str(), "GET" | "HEAD" | "OPTIONS") {
         return next.run(request).await;
     }
