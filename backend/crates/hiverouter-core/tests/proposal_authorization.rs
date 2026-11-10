@@ -128,29 +128,30 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     assert_eq!(applied["applied"], true);
     assert_eq!(applied["scope"], "lesson_artifact_only");
 
-    let lessons = std::fs::read_to_string(
-        server
-            .state
-            .config
-            .data_dir
-            .join("evolution")
-            .join("LESSONS.jsonl"),
-    )
-    .expect("lesson file");
+    let lessons_path = server
+        .state
+        .config
+        .data_dir
+        .join("evolution")
+        .join("LESSONS.jsonl");
+    let applied_bytes = std::fs::read(&lessons_path).expect("applied lesson bytes");
+    let lessons = String::from_utf8(applied_bytes.clone()).expect("utf8 lessons");
     assert!(lessons.contains(&proposal_id.to_string()));
 
+    // A tampered ledger must refuse rollback and leave the tamper untouched.
+    let mut tampered = applied_bytes.clone();
+    tampered.extend_from_slice(b"{\"tampered\":true}\n");
+    std::fs::write(&lessons_path, &tampered).expect("tamper");
+    let (status, body) = post_json(server.addr, &format!("{base}/rollback"), support::TEST_TOKEN).await;
+    assert_eq!(status, 409, "tampered rollback: {body}");
+    assert_eq!(std::fs::read(&lessons_path).expect("tamper kept"), tampered);
+
+    // Restore the exact applied bytes, then rollback must succeed.
+    std::fs::write(&lessons_path, &applied_bytes).expect("restore");
     let (status, body) = post_json(server.addr, &format!("{base}/rollback"), support::TEST_TOKEN).await;
     assert_eq!(status, 200, "rollback: {body}");
     let rolled: Value = serde_json::from_str(&body).expect("rollback JSON");
     assert_eq!(rolled["rolled_back"], true);
-    let lessons = std::fs::read_to_string(
-        server
-            .state
-            .config
-            .data_dir
-            .join("evolution")
-            .join("LESSONS.jsonl"),
-    )
-    .expect("lesson file");
+    let lessons = std::fs::read_to_string(&lessons_path).expect("lesson file");
     assert!(!lessons.contains(&proposal_id.to_string()));
 }
