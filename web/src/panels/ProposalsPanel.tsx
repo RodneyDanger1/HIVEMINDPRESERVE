@@ -29,6 +29,8 @@ export interface ProposalRow {
   readonly currentApprovals: number;
   readonly currentRejections: number;
   readonly authorized: boolean;
+  readonly lessonApplied: boolean;
+  readonly lessonSha256: string | null;
   readonly governance: ProposalGovernance;
 }
 
@@ -82,6 +84,8 @@ export function decodeProposals(body: unknown): ProposalRow[] {
       currentApprovals: num(record.current_superagent_approvals) ?? 0,
       currentRejections: num(record.current_superagent_rejections) ?? 0,
       authorized: bool(record.authorized) ?? false,
+      lessonApplied: bool(record.lesson_applied) ?? false,
+      lessonSha256: text(record.lesson_sha256),
       governance: {
         requiredApprovals: num(governanceRaw.required_approvals),
         superagentApprovals: num(governanceRaw.superagent_approvals),
@@ -103,6 +107,14 @@ export function canAuthorizeProposal(row: ProposalRow): boolean {
     row.currentApprovals >= 4 &&
     row.governance.canApply === false
   );
+}
+
+export function canApplyLesson(row: ProposalRow): boolean {
+  return row.authorized && !row.lessonApplied;
+}
+
+export function canRollbackLesson(row: ProposalRow): boolean {
+  return row.lessonApplied;
 }
 
 export function ProposalsPanel() {
@@ -188,6 +200,45 @@ export function ProposalsPanel() {
     }
   }
 
+  async function applyOrRollback(row: ProposalRow, action: 'apply' | 'rollback'): Promise<void> {
+    const proposalId = row.proposalKey.replace(/^improvement:/, '');
+    if (runId === null || proposalId.length === 0) {
+      return;
+    }
+    setAuthorizing(true);
+    setActionError(null);
+    try {
+      const response = await fetch(
+        `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposalId)}/${action}`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+          },
+        },
+      );
+      if (!response.ok) {
+        throw await httpFailure(response, `POST proposal ${action}`);
+      }
+      setRows((previous) =>
+        previous.map((candidate) =>
+          candidate.proposalKey === row.proposalKey
+            ? {
+                ...candidate,
+                lessonApplied: action === 'apply',
+                voteState: action === 'apply' ? 'applied_lesson' : 'authorized_not_applied',
+              }
+            : candidate,
+        ),
+      );
+    } catch (error: unknown) {
+      setActionError(failureText(error, `The ${action} request was refused.`));
+    } finally {
+      setAuthorizing(false);
+    }
+  }
+
   return (
     <section
       aria-label="Self-evolution proposals"
@@ -241,6 +292,31 @@ export function ProposalsPanel() {
                   title="Requires four distinct SuperAgent approvals; records operator authorization only, never applies code"
                 >
                   Authorize with operator (5th seat)
+                </button>
+              ) : null}
+              {canApplyLesson(row) ? (
+                <button
+                  type="button"
+                  className="type-label mt-2 ml-2 rounded-[var(--radius-button)] border border-hairline px-3 py-1.5 text-ink-800 disabled:opacity-50"
+                  disabled={authorizing}
+                  onClick={() => {
+                    void applyOrRollback(row, 'apply');
+                  }}
+                  title="Applies a durable lesson note only; it never changes code, prompts, tool grants, personas, or gates"
+                >
+                  Apply authorized lesson
+                </button>
+              ) : null}
+              {canRollbackLesson(row) ? (
+                <button
+                  type="button"
+                  className="type-label mt-2 ml-2 rounded-[var(--radius-button)] border border-signal px-3 py-1.5 text-signal disabled:opacity-50"
+                  disabled={authorizing}
+                  onClick={() => {
+                    void applyOrRollback(row, 'rollback');
+                  }}
+                >
+                  Roll back lesson
                 </button>
               ) : null}
             </li>

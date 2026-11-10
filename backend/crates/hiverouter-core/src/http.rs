@@ -635,6 +635,14 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/agents/runs/{run_id}/proposals/{proposal_id}/authorize",
             post(authorize_evolution_proposal),
         )
+        .route(
+            "/api/agents/runs/{run_id}/proposals/{proposal_id}/apply",
+            post(apply_evolution_lesson),
+        )
+        .route(
+            "/api/agents/runs/{run_id}/proposals/{proposal_id}/rollback",
+            post(rollback_evolution_lesson),
+        )
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
@@ -2356,6 +2364,14 @@ async fn run_evolution_proposals(
         .iter()
         .filter_map(|entry| entry.key.strip_prefix("evolution_authorization:").map(str::to_owned))
         .collect();
+    let applied_lessons: std::collections::HashMap<String, serde_json::Value> = entries
+        .iter()
+        .filter_map(|entry| {
+            let proposal_id = entry.key.strip_prefix("evolution_apply:")?.to_owned();
+            let value = serde_json::from_str::<serde_json::Value>(&entry.value).ok()?;
+            Some((proposal_id, value))
+        })
+        .collect();
     let votes: Vec<(String, serde_json::Value)> = entries
         .iter()
         .filter(|entry| entry.key.starts_with("evolution_vote:"))
@@ -2389,6 +2405,15 @@ async fn run_evolution_proposals(
                 .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("reject"))
                 .count();
             let authorized = authorizations.contains(&proposal_id);
+            let lesson = applied_lessons.get(&proposal_id);
+            let lesson_applied = lesson
+                .and_then(|value| value.get("applied"))
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
+            let lesson_sha256 = lesson
+                .and_then(|value| value.get("sha256"))
+                .cloned()
+                .unwrap_or(serde_json::Value::Null);
             let vote_state = if authorized {
                 "authorized_not_applied"
             } else if rejections > 0 {
@@ -2413,6 +2438,8 @@ async fn run_evolution_proposals(
                 "current_superagent_rejections": rejections,
                 "vote_state": vote_state,
                 "authorized": authorized,
+                "lesson_applied": lesson_applied,
+                "lesson_sha256": lesson_sha256,
                 "can_apply": false,
             }))
         })
@@ -2554,6 +2581,236 @@ async fn authorize_evolution_proposal(
         })),
     )
         .into_response()
+}
+
+/// Fixed, non-agent-writable lesson path used by the authorized evolution apply.
+fn evolution_lesson_path(state: &AppState) -> std::path::PathBuf {
+    state.config.data_dir.join("evolution").join("LESSONS.jsonl")
+}
+
+fn read_lesson_bytes(path: &std::path::Path) -> Result<Vec<u8>, Refusal> {
+    match std::fs::read(path) {
+        Ok(bytes) => Ok(bytes),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(_) => Err(Refusal::InternalError),
+    }
+}
+
+fn write_lesson_atomic(path: &std::path::Path, bytes: &[u8]) -> Result<(), Refusal> {
+    let Some(parent) = path.parent() else {
+        return Err(Refusal::InternalError);
+    };
+    std::fs::create_dir_all(parent).map_err(|_| Refusal::InternalError)?;
+    let temp = parent.join(format!(".LESSONS.{}.tmp", uuid::Uuid::now_v7()));
+    std::fs::write(&temp, bytes).map_err(|_| Refusal::InternalError)?;
+    std::fs::rename(&temp, path).map_err(|_| {
+        let _ = std::fs::remove_file(&temp);
+        Refusal::InternalError
+    })
+}
+
+/// `POST .../proposals/{proposal_id}/apply` — applies only a durable lesson
+/// artifact after the five-seat authorization. It never mutates code, prompts,
+/// tool grants, personas, or gates.
+async fn apply_evolution_lesson(
+    State(state): State<Arc<AppState>>,
+    Path((run_id, proposal_id)): Path<(String, String)>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(proposal_uuid) = proposal_id.parse::<uuid::Uuid>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if state.engine.store.get_run(run_id).is_err() {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    }
+    let entries = match state.engine.store.memory_hyper_summary(run_id, 256) {
+        Ok(entries) => entries,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let authorization_key = format!("evolution_authorization:{proposal_uuid}");
+    if !entries.iter().any(|entry| entry.key == authorization_key) {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
+    }
+    let apply_key = format!("evolution_apply:{proposal_uuid}");
+    if entries.iter().any(|entry| entry.key == apply_key) {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+    }
+    let proposal_key = format!("improvement:{proposal_uuid}");
+    let Some(proposal) = entries
+        .iter()
+        .find(|entry| entry.key == proposal_key)
+        .and_then(|entry| serde_json::from_str::<serde_json::Value>(&entry.value).ok())
+    else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::ToolNotFound);
+    };
+    let root_task_id = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks
+            .into_iter()
+            .find(|task| task.parent_task_id.is_none())
+            .map(|task| task.id),
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let Some(root_task_id) = root_task_id else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
+    };
+    let path = evolution_lesson_path(&state);
+    let existing = match read_lesson_bytes(&path) {
+        Ok(bytes) => bytes,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let previous_sha256 = hiverouter_tools::sha256_hex(&existing);
+    let mut lines: Vec<String> = String::from_utf8_lossy(&existing)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(str::to_owned)
+        .collect();
+    if lines.iter().any(|line| {
+        serde_json::from_str::<serde_json::Value>(line)
+            .ok()
+            .and_then(|value| value.get("proposal_id").and_then(serde_json::Value::as_str).map(str::to_owned))
+            .as_deref()
+            == Some(proposal_uuid.to_string().as_str())
+    }) {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+    }
+    let lesson = serde_json::json!({
+        "proposal_id": proposal_uuid.to_string(),
+        "area": proposal.get("area").cloned().unwrap_or(serde_json::Value::Null),
+        "problem": proposal.get("problem").cloned().unwrap_or(serde_json::Value::Null),
+        "proposal": proposal.get("proposal").cloned().unwrap_or(serde_json::Value::Null),
+        "evidence": proposal.get("evidence").cloned().unwrap_or(serde_json::Value::Null),
+        "state": "applied_lesson",
+    });
+    lines.push(lesson.to_string());
+    let mut next = lines.join("\n");
+    next.push('\n');
+    if let Err(refusal) = write_lesson_atomic(&path, next.as_bytes()) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    let sha256 = hiverouter_tools::sha256_hex(next.as_bytes());
+    let memory_value = serde_json::json!({
+        "proposal_id": proposal_uuid.to_string(),
+        "state": "applied_lesson",
+        "applied": true,
+        "artifact": "evolution/LESSONS.jsonl",
+        "sha256": sha256,
+        "previous_sha256": previous_sha256,
+    });
+    if let Err(refusal) = state.engine.store.record_agent_memory_scoped(
+        "hyper",
+        &apply_key,
+        &memory_value.to_string(),
+        run_id,
+        root_task_id,
+        "run",
+    ) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    (StatusCode::OK, Json(serde_json::json!({
+        "applied": true,
+        "scope": "lesson_artifact_only",
+        "proposal_id": proposal_uuid.to_string(),
+        "artifact": "evolution/LESSONS.jsonl",
+        "sha256": sha256,
+        "state": "applied_lesson",
+    }))).into_response()
+}
+
+/// `POST .../proposals/{proposal_id}/rollback` — removes exactly the applied
+/// lesson line after verifying the current file hash matches the apply record.
+async fn rollback_evolution_lesson(
+    State(state): State<Arc<AppState>>,
+    Path((run_id, proposal_id)): Path<(String, String)>,
+) -> Response {
+    let Ok(run_id) = run_id.parse::<hiverouter_contract::RunId>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Ok(proposal_uuid) = proposal_id.parse::<uuid::Uuid>() else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let entries = match state.engine.store.memory_hyper_summary(run_id, 256) {
+        Ok(entries) => entries,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let apply_key = format!("evolution_apply:{proposal_uuid}");
+    let Some(apply_value) = entries
+        .iter()
+        .find(|entry| entry.key == apply_key)
+        .and_then(|entry| serde_json::from_str::<serde_json::Value>(&entry.value).ok())
+    else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalRequired);
+    };
+    let Some(expected_sha) = apply_value.get("sha256").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
+    };
+    let path = evolution_lesson_path(&state);
+    let existing = match read_lesson_bytes(&path) {
+        Ok(bytes) => bytes,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    if hiverouter_tools::sha256_hex(&existing) != expected_sha {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
+    }
+    let mut lines: Vec<String> = String::from_utf8_lossy(&existing)
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(str::to_owned)
+        .collect();
+    let before = lines.len();
+    lines.retain(|line| {
+        serde_json::from_str::<serde_json::Value>(line)
+            .ok()
+            .and_then(|value| value.get("proposal_id").and_then(serde_json::Value::as_str).map(str::to_owned))
+            .as_deref()
+            != Some(proposal_uuid.to_string().as_str())
+    });
+    if lines.len() == before {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::ToolNotFound);
+    }
+    let mut next = lines.join("\n");
+    if !next.is_empty() {
+        next.push('\n');
+    }
+    if let Err(refusal) = write_lesson_atomic(&path, next.as_bytes()) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    let sha256 = hiverouter_tools::sha256_hex(next.as_bytes());
+    let rollback_key = format!("evolution_rollback:{proposal_uuid}");
+    let root_task_id = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks
+            .into_iter()
+            .find(|task| task.parent_task_id.is_none())
+            .map(|task| task.id),
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let Some(root_task_id) = root_task_id else {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::InternalError);
+    };
+    let value = serde_json::json!({
+        "proposal_id": proposal_uuid.to_string(),
+        "state": "rolled_back",
+        "applied": false,
+        "sha256": sha256,
+    });
+    if let Err(refusal) = state.engine.store.record_agent_memory_scoped(
+        "hyper",
+        &rollback_key,
+        &value.to_string(),
+        run_id,
+        root_task_id,
+        "run",
+    ) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    (StatusCode::OK, Json(serde_json::json!({
+        "rolled_back": true,
+        "proposal_id": proposal_uuid.to_string(),
+        "artifact": "evolution/LESSONS.jsonl",
+        "sha256": sha256,
+        "state": "rolled_back",
+    }))).into_response()
 }
 
 /// `GET /api/memory/banks/{bank_id}/entries?limit=` — active bank entries.
