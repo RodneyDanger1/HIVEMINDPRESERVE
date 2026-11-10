@@ -473,6 +473,16 @@ export const STRINGS = {
       howToFix: 'Use the in-process fixture adapter; network adapters are not enabled.',
       retryable: false,
     },
+    E_DETACHED_CONFLICT: {
+      message: 'That detached display name or request id is already in use.',
+      howToFix: 'Choose a different display name or payload, or retry with the original request id.',
+      retryable: false,
+    },
+    E_DETACHED_CAP: {
+      message: 'The lower-level detached-principal cap is reached.',
+      howToFix: 'Retire an existing detached principal or use the HyperAgent root-control path.',
+      retryable: false,
+    },
   },
 } as const;
 

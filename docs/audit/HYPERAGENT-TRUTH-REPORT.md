@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 631 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `254521149A21D1D2E423E83B13F77A03E6DE10E10B790AFBB492A67E7077951A` |
-| T4 | Server binary hash | **VERIFIED** | `AE34D2376CE8D46C73296067886D0F09C284560519C887526B5DE0661ECB637F` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3060FBD18E7D79C5370B15BE851E402FC65CD29739C12312B456EEF3DD209F86` |
+| T4 | Server binary hash | **VERIFIED** | `3A9DA982C6764622187300D67F6ED229EC6047C8FDC92D8AB0F4BDB3A17FF656` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |

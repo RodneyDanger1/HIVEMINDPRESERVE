@@ -500,6 +500,8 @@ export const KNOWN_REFUSAL_CODES = [
   'E_DEVICE_APPROVAL_REQUIRED',
   'E_DEVICE_APPROVAL_INVALID',
   'E_REMOTE_TRANSPORT',
+  'E_DETACHED_CONFLICT',
+  'E_DETACHED_CAP',
 ] as const;
 
 export type RefusalCode = (typeof KNOWN_REFUSAL_CODES)[number];
