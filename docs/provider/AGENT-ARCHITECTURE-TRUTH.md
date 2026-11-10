@@ -72,6 +72,11 @@ pins the request shape.
 JSON mode, function tools + tool result turns, streaming SSE, usage/cache counters, model list,
 account balance, DPAPI key injection, 5xx retry, finish-reason handling, per-parent fan-out.
 
+**Provider option:** the saved non-secret profile supports
+`api_type: deepseek|tokenlabs`, an explicit base URL and wire model. DeepSeek
+uses `DEEPSEEK_API_KEY`; TokenLab uses `HIVEROUTER_API_KEY`. External endpoints
+are compatibility-translated and never priced as DeepSeek USD.
+
 **Not wired:** Files API, Search, Fetch, Responses API, Anthropic Messages API, FIM/Prefix Beta,
 vision images, strict tools, server-side web search. These are documented gaps, not silent features.
 The local HMAS does not need Anthropic; DeepSeek-only is correct.

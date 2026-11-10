@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `c3ec90f`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `221FE4A5EC253D28FFE287E1CFB18311A39E135C0AF845B550674577277A1881`  
-Portable package: `dist/HiveMind.zip` SHA-256 `19FE249C81BB49FAF1756D2C51C2C0B532A7ED0CC499FDAE4157B87FCFDD04AB`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `FB62E6C70B7F6A3AAC61B3A46DEE9CAC2BA8CE13FAD4DF38CA0235F3B78E6402`
+Final repair HEAD at report write: `717944c`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7`  
+Portable package: `dist/HiveMind.zip` SHA-256 `BDB35071309F96D8932983C039E458C4B832A5F8D322105431503821E6A6AA22`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7`
 
 ## 1. What HiveMind is supposed to be
 
@@ -118,6 +118,8 @@ TRUTH:
 | `8d99f79` | Provider settings | profile replacement keeps a backup, restores on failure, removes temp/backup on success |
 | `40ba553` | Engine hygiene | task-context store is bounded to 1024 entries with oldest-first eviction |
 | `c3ec90f` | Remote | HyperAgent-spawned relay gets a switch device + narrow grant instead of an inert record |
+| `bb0b133` | Provider | complete saved `api_type` (`deepseek`/`tokenlabs`) and per-type key env (`DEEPSEEK_API_KEY`/`HIVEROUTER_API_KEY`); launcher/start script select the key env; UI selector |
+| `717944c` | A2A | schema v23 adds persisted attempts/last-attempt plus `a2a_audit`; parent attempts and answers are audited atomically |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -128,7 +130,7 @@ the runtime `billing`/`endpoint`/`parallel_dispatch` fields.
 ```text
 Backend:
   cargo test --workspace --locked
-  EXIT=0  SUITES=49  PASSED=609  FAILED=0  IGNORED=2
+  EXIT=0  SUITES=49  PASSED=612  FAILED=0  IGNORED=2
 
 Web:
   npm.cmd run typecheck  -> exit 0
@@ -137,8 +139,8 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 221FE4A5EC253D28FFE287E1CFB18311A39E135C0AF845B550674577277A1881
-  size 36,217,856 bytes
+  target/release/hiverouter.exe SHA-256 ACA64B32F896EB466A448BC27D92A03601EA99FADC751AD824BCFA1B1E3DE4D7
+  size 36,281,344 bytes
 
 Smoke (no provider key, deliberately degraded):
   GET /health -> status "degraded", schema 22
@@ -181,8 +183,15 @@ powershell -ExecutionPolicy Bypass -File tools\set-provider-key.ps1
 ```
 
 Environment variables still override the saved profile:
-`HIVEROUTER_BASE_URL`, `HIVEROUTER_WIRE_MODEL`, `HIVEROUTER_MODEL`,
-`DEEPSEEK_API_KEY`. An external base URL requires a wire model.
+`HIVEROUTER_API_TYPE`, `HIVEROUTER_BASE_URL`, `HIVEROUTER_WIRE_MODEL`,
+`HIVEROUTER_MODEL`. The key environment is selected by API type:
+`DEEPSEEK_API_KEY` for `deepseek`, `HIVEROUTER_API_KEY` for `tokenlabs`.
+The launcher and `start-hivemind.ps1` read the saved profile and inject only
+the selected key environment. An external endpoint requires a wire model and
+an explicit base URL.
+
+A2A rows now persist `attempts`/`last_attempt_at`, and every parent-answer
+attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 
 ## 6. Remaining / unverified
 
@@ -191,26 +200,19 @@ Environment variables still override the saved profile:
   test. The smoke above used no key.
 - **Live end-to-end run after all fixes:** not run against a fresh key. The
   last provider call was before the final repair commits.
-- **Daemon script runtime:** daemons still have no job executor. They now
-  report `degraded`/`executed:false` instead of fake `alive`. Root-spawned
-  `daemon_relay` has no device/grant.
-- **A2A audit/attempt counter:** parent answer now receives the parent scoped
-  context and counts against the run call cap, but there is no A2A audit row
-  or persisted attempt counter (needs a migration).
-- **Memory HTTP scoping:** the bank entry route now requires `run_id` and uses
-  `memory_entries_for_bank_scoped`; raw full access remains a loopback operator
-  surface. Summary returns bounded values with `bounded_values:true` and
-  `value_truncated_at:512`.
-- **Run transition resurrection:** `set_run_status` now refuses any
-  terminal-to-nonterminal transition with `E_RUN_TERMINAL` and is idempotent
-  for the same terminal status.
+- **Daemon script runtime:** daemons execute the real DB-health job
+  (`{"check":"db"}`), but arbitrary operator scripts are still not a supported
+  runtime. Unknown jobs degrade by name; no fake `alive` is reported.
+- **A2A attempt counter:** persisted attempts and atomic audit rows now exist
+  (schema v23); a hard attempt cap is not yet enforced.
 - **Session token exposure:** `/api/session` still returns the token to a
-  loopback peer with no Origin; read routes remain un-tokenized. Host guard is
-  present. Needs a launcher-secret design.
+  loopback peer with no Origin; read routes remain un-tokenized. This is the
+  local same-user threat model, not a hardened multi-user boundary.
 - **Remote transports:** in-process fixture only; network remotes are not
   implemented. Audit actor uses `system`/`supervisor` for sweeps.
-- **Browser automation:** visual layout and drag were verified by a headless
-  screenshot plus deterministic layout tests; no Playwright interaction run.
+- **Browser automation:** CDP screenshots verify the connected workspace,
+  Settings → Provider tab, API-type selector, and key-missing state. No
+  automated drag/spawn interaction suite yet.
 - **Scale:** accepted 40-node plan cap, 64 provider-call cap, 32-way dispatch
   bound. No 50–150/300–600 claim.
 - **No mock/stub product code added.** Test doubles remain confined to tests;
@@ -218,9 +220,12 @@ Environment variables still override the saved profile:
 
 ## 7. Evidence files
 
-- `docs/evidence/live/ui-initial.png` — first live Token Lab UI
-- `docs/evidence/live/ui-final2.png` — final no-key smoke UI
+- `docs/evidence/live/ui-api-type-connected.png` — connected workspace with no key
+- `docs/evidence/live/ui-provider-settings.png` — Settings → Provider, API type and key status
+- `docs/evidence/live/ui-api-type.png` — initial no-key workspace
 - `tools/qa/provider-test.log` — provider subagent raw test log (untracked)
+- Portable package: `dist/HiveMind/{HiveMind.exe,hiverouter.exe,README.txt}` + `dist/HiveMind.zip`
+- Package smoke: `/health` `degraded`, schema **23**, caps 64/32, key absent, port closed after stop
 
 ## 8. Security note
 

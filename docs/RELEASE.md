@@ -21,8 +21,10 @@ released, built, or end-to-end verified.
   snapshot nodes/edges and the replay layout is browser-proven in the 1.1 wave (live canvas never mutates).
 - **State parity.** Backend and web vocabularies are 16 states including `interrupted`.
 - **Provider wiring, budget and key custody.** `hiverouter-provider` is a dependency of `hiverouter-core`; a missing
-  key or disabled provider falls back to the honest `E_KEY_MISSING` executor. `DEEPSEEK_API_KEY` is environment-only,
-  never stored/logged/echoed; zeroized/redacted provider type; child processes receive an allowlisted environment.
+  key or disabled provider falls back to the honest `E_KEY_MISSING` executor. The key is environment-only
+  (`DEEPSEEK_API_KEY` for DeepSeek, `HIVEROUTER_API_KEY` for TokenLab), never stored/logged/echoed;
+  zeroized/redacted provider type; child processes receive an allowlisted environment. The non-secret provider profile
+  supports `api_type: deepseek|tokenlabs`, base URL and wire model; the launcher injects the selected key.
 - **Reasoning controls.** `HIVEROUTER_MODEL`, `HIVEROUTER_THINKING`, `HIVEROUTER_LEAF_THINKING`,
   `HIVEROUTER_REASONING_EFFORT`, `HIVEROUTER_MAX_OUTPUT_TOKENS`, `HIVEROUTER_PLANNER_MAX_OUTPUT_TOKENS`,
   `HIVEROUTER_PROVIDER` (auto/disabled). Settings shows model, thinking, effort and key presence read-only.
