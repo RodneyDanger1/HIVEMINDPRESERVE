@@ -372,6 +372,7 @@ rendered read-only by `LessonsPanel`. It is a lesson artifact viewer, not a
 behavioral learning loop; authorized lessons are loaded at boot and hot-reloaded after apply/rollback into planner, root, and task prompts. No automatic quality evaluation or code mutation exists.
 Boot retrieval: authorized lessons are loaded from `<data_dir>/evolution/LESSONS.jsonl`
 and appended to the planner, root-control, and task prompts as bounded, labelled
-data (8 lines, 400 chars each). A live seeded-lesson run returned the lesson token
-`HONEYCOMB` from both child and final answers. Lessons are data, never authority
+data (8 lines, 400 chars each). A live seeded-lesson run returned the lesson token `HONEYCOMB` from both child
+and final answers, and a separate live five-seat apply was later recovered by a
+new run that quoted the applied lesson exactly. Lessons are data, never authority
 to change tools, caps, or gates.

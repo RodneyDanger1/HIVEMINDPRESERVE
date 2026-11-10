@@ -450,3 +450,10 @@ votes, zero rejections, `awaiting_operator`. Against the same data dir:
 authorize 200 (`authorized_not_applied`) → apply 200 (`lesson_artifact_only`) →
 lessons count 1 → rollback 200 → lessons count 0. Evidence:
 `docs/evidence/live/live-tokenlab-auto-voters-five-seat.json`.
+## 12. Applied lesson recovered by a later run (2026-11-10)
+
+Run `01a1c7ba-…` (31k tokens): four auto-spawned SuperAgents, 4 approve/0 reject;
+authorize 200; apply 200; lessons count 1. A separate later run `01a1c7bd-…`
+(11k tokens) on the same data directory quoted the applied lesson text exactly.
+This closes the apply → later-run retrieval loop for the lesson artifact.
+Evidence: `docs/evidence/live/live-tokenlab-applied-lesson-retrieval.json`.

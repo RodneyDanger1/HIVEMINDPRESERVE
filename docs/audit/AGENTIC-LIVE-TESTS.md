@@ -458,3 +458,13 @@ The dispatch path now calls `settle_unfinished_tasks` after draining the spawn
 queue and before the root’s final answer. It executes Queued tasks, resets stale
 Running tasks to Queued, and fails the run with `E_INTERNAL_ERROR` if a non-root
 task still cannot settle after 64 passes. Backend gate: 51 suites / 637 passed.
+## Test AH — applied lesson recovered by a later run
+
+Run `01a1c7ba-…` auto-spawned four SuperAgents, recorded 4 approve/0 reject,
+was authorized and applied (`lesson_artifact_only`), leaving one lesson. A
+separate later run `01a1c7bd-…` on the same data directory quoted the authorized
+lesson text exactly: "[learning] Record a retrieval receipt with the lesson ids
+and block sha256 whenever authorized lessons are injected into a prompt
+(problem: authorized lessons are not receipted for the run)".
+
+Evidence: `docs/evidence/live/live-tokenlab-applied-lesson-retrieval.json`.

@@ -1,0 +1,24 @@
+{
+    "lesson_count_after_apply":  1,
+    "superagent_approvals":  4,
+    "retrieval_run_id":  "01a1c7bd-b083-729f-bc49-7ad48ace766b",
+    "proposal_id":  "01a1c7bb-061a-716f-997e-8a0dfd9fa416",
+    "usage_apply":  {
+                        "total_tokens":  30915,
+                        "prompt_tokens":  27622,
+                        "completion_tokens":  3293
+                    },
+    "provider":  "tokenlab",
+    "usage_retrieval":  {
+                            "total_tokens":  11338,
+                            "prompt_tokens":  10474,
+                            "completion_tokens":  864
+                        },
+    "apply_run_id":  "01a1c7ba-f16e-712e-aea6-6a232780a51a",
+    "rejections":  0,
+    "retrieval_answer":  "[learning] Record a retrieval receipt with the lesson ids and block sha256 whenever authorized lessons are injected into a prompt (problem: authorized lessons are not receipted for the run)",
+    "observed_at":  "2026-11-10T23:14:00Z",
+    "authorize_http":  200,
+    "apply_http":  200,
+    "apply_scope":  "lesson_artifact_only"
+}
