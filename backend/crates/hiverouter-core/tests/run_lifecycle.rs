@@ -357,6 +357,7 @@ struct DetachedRequestExecutor {
     duplicate: bool,
     kind: String,
     request_id: Option<String>,
+    second_display: Option<String>,
 }
 
 impl DetachedRequestExecutor {
@@ -366,6 +367,7 @@ impl DetachedRequestExecutor {
             duplicate: false,
             kind: "remote".to_owned(),
             request_id: None,
+            second_display: None,
         })
     }
 
@@ -375,6 +377,7 @@ impl DetachedRequestExecutor {
             duplicate: true,
             kind: "remote".to_owned(),
             request_id: Some("req-detached-1".to_owned()),
+            second_display: None,
         })
     }
 
@@ -384,6 +387,17 @@ impl DetachedRequestExecutor {
             duplicate: false,
             kind: "daemon".to_owned(),
             request_id: None,
+            second_display: None,
+        })
+    }
+
+    fn idempotent_mismatch() -> Arc<Self> {
+        Arc::new(Self {
+            calls: AtomicUsize::new(0),
+            duplicate: true,
+            kind: "remote".to_owned(),
+            request_id: Some("req-detached-1".to_owned()),
+            second_display: Some("Other light".to_owned()),
         })
     }
 
@@ -393,6 +407,7 @@ impl DetachedRequestExecutor {
             duplicate: true,
             kind: "remote".to_owned(),
             request_id: None,
+            second_display: None,
         })
     }
 }
@@ -437,6 +452,9 @@ impl ProviderExecutor for DetachedRequestExecutor {
                 tool_calls: if self.duplicate {
                     let mut second = call.clone();
                     second.id = "call-detached-2".to_owned();
+                    if let Some(display) = &self.second_display {
+                        second.arguments["display_name"] = json!(display);
+                    }
                     vec![call, second]
                 } else {
                     vec![call]
@@ -1064,6 +1082,27 @@ async fn lower_level_request_detached_is_idempotent_with_a_request_id() {
     assert_eq!(turns.len(), 2, "both retries are recorded");
     assert!(turns.iter().all(|turn| turn.code.is_none()));
     assert!(turns.iter().any(|turn| turn.tool == "request_detached"));
+}
+
+#[tokio::test]
+async fn request_id_reuse_with_different_payload_is_a_conflict() {
+    let harness = test_engine(DetachedRequestExecutor::idempotent_mismatch());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("reuse a request id with another name", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    assert_eq!(harness.remote.list_remotes().expect("remotes").len(), 1);
+    let turns = harness.db.tool_turns_for_run(run.id).expect("tool turns");
+    assert!(turns.iter().any(|turn| {
+        turn.tool == "request_detached"
+            && turn.code.as_deref() == Some(Refusal::DetachedConflict.code())
+    }));
 }
 
 #[tokio::test]

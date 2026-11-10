@@ -1,0 +1,28 @@
+{
+    "usage":  {
+                  "total_tokens":  8415,
+                  "prompt_tokens":  7908,
+                  "completion_tokens":  507
+              },
+    "audit":  [
+                  "remote_created:request_id=live-final-1",
+                  "device_created",
+                  "grant_created",
+                  "hyper_admission"
+              ],
+    "tool":  "request_detached:ok",
+    "remote":  {
+                   "device_count":  1,
+                   "owner_id":  "01a1c619-5ab9-7208-9691-7a73c543bd36",
+                   "grant_count":  1,
+                   "created_by":  "agent:01a1c619-69f5-72e0-9891-15286de7d64d",
+                   "adapter_kind":  "light",
+                   "display_name":  "Lantern"
+               },
+    "observed_at":  "2026-11-10T15:36:00Z",
+    "request_id":  "live-final-1",
+    "status":  "completed",
+    "run_id":  "01a1c619-5ab9-7208-9691-7a73c543bd36",
+    "provider":  "tokenlab",
+    "tasks":  3
+}

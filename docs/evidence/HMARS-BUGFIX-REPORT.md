@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `24eda19`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `6AE3FED34BC50CEBA01C3BC0142E17430313D7EFA2041A8939E5EC32CF58CE05`  
-Portable package: `dist/HiveMind.zip` SHA-256 `8895211694242CE2BBFB90CD8D2E8ECBD0283D13FBE38F1CFC6658E4D6039DFD`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `6AE3FED34BC50CEBA01C3BC0142E17430313D7EFA2041A8939E5EC32CF58CE05`
+Release binary: `target/release/hiverouter.exe` SHA-256 `AE34D2376CE8D46C73296067886D0F09C284560519C887526B5DE0661ECB637F`  
+Portable package: `dist/HiveMind.zip` SHA-256 `254521149A21D1D2E423E83B13F77A03E6DE10E10B790AFBB492A67E7077951A`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `AE34D2376CE8D46C73296067886D0F09C284560519C887526B5DE0661ECB637F`
 
 ## 1. What HiveMind is supposed to be
 
@@ -386,7 +386,7 @@ remote is an in-process fixture principal, not a network satellite.
 
 ### Gate and artifact
 
-- Backend: **50 suites, 630 passed, 0 failed, 2 ignored**.
+- Backend: **50 suites, 631 passed, 0 failed, 2 ignored**.
 - Web: 225 tests, typecheck 0, production build 0; UI unchanged by this round.
 - Release binary and package hashes are recorded at the top of this report.
 ## 14. Final HyperAgent governance upgrades (2026-11-10)
@@ -401,7 +401,7 @@ remote is an in-process fixture principal, not a network satellite.
   `requires_human_review:true` entry. No self-modifying code path exists.
 - Daemon admission is audited; duplicate root names are guarded across remotes
   and daemons; a root control run can add at most one extra branch.
-- Final gates: 50 backend suites, 630 passed, 0 failed, 2 ignored; web typecheck
+- Final gates: 50 backend suites, 631 passed, 0 failed, 2 ignored; web typecheck
   0 and 225 tests passed. Final package hashes are at the top of this report.
 - No paid calls were made in the final documentation pass because the DeepSeek
   key was not available to check balance; live evidence above is from the

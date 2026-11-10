@@ -27,6 +27,7 @@ fn remote_light(store: &RemoteStore) -> (RemoteAgent, Device) {
             capabilities_json: "[]".to_owned(),
             created_by: "operator".to_owned(),
                 request_id: None,
+                request_fingerprint: None,
         })
         .expect("remote");
     let device = store

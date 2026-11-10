@@ -244,3 +244,14 @@ when the test was stopped. No remote was created. This run is recorded as a
 
 The successful live Test H used a simpler prompt that demanded one
 `request_detached` call and forbade `ask_parent`.
+## Test I — final build, request_id persisted live
+
+**Prompt:** one SuperAgent + one Agent; Agent calls `request_detached` once with
+`request_id="live-final-1"` and reason `"status light for run state"`.
+
+**Observed:** completed; 3 tasks; usage 7,908 / 507 / 8,415. Tool
+`request_detached` outcome `ok`. Remote `Lantern` with one device, one grant, and
+`request_id=live-final-1` in `remote_created`. This was run against the final
+fingerprint-binding build.
+
+Evidence: `docs/evidence/live/live-tokenlab-request-id-final.json`.
