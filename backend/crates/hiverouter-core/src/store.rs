@@ -148,6 +148,10 @@ pub struct PendingAgentMessage {
     pub text: String,
     /// Deadline, when set.
     pub deadline_at: Option<String>,
+    /// Recorded answer attempts.
+    pub attempts: i64,
+    /// Last attempt time.
+    pub last_attempt_at: Option<String>,
     /// Creation time.
     pub created_at: String,
 }
@@ -288,6 +292,10 @@ pub struct AgentMessageRecord {
     pub answer_actor: Option<String>,
     /// Optional message this row replies to.
     pub in_reply_to: Option<String>,
+    /// Number of recorded answer attempts.
+    pub attempts: i64,
+    /// Last attempt time (RFC3339), if any.
+    pub last_attempt_at: Option<String>,
     /// RFC3339 creation time.
     pub created_at: String,
 }
@@ -866,6 +874,67 @@ impl RunStore {
         Ok(id)
     }
 
+    /// Records one answer attempt and its audit row atomically.
+    ///
+    /// # Errors
+    /// `E_TASK_NOT_FOUND` when the message is missing; `E_TASK_TERMINAL` when it
+    /// is no longer open; database refusal otherwise.
+    pub fn record_agent_message_attempt(
+        &self,
+        run_id: RunId,
+        message_id: Uuid,
+        actor: &str,
+        action: &str,
+        detail_json: &str,
+    ) -> Result<(), Refusal> {
+        let actor = actor.trim();
+        let action = action.trim();
+        if actor.is_empty() || action.is_empty() {
+            return Err(Refusal::SchemaInvalid);
+        }
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                let tx = connection.unchecked_transaction()?;
+                let changed = tx.execute(
+                    "UPDATE agent_messages
+                     SET attempts = attempts + 1, last_attempt_at = ?3
+                     WHERE run_id = ?1 AND id = ?2 AND status = 'open'",
+                    params![
+                        run_id.to_string(),
+                        message_id.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                if changed == 1 {
+                    tx.execute(
+                        "INSERT INTO a2a_audit(audit_id, run_id, message_id, actor, action, detail_json, created_at)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                        params![
+                            Uuid::now_v7().to_string(),
+                            run_id.to_string(),
+                            message_id.to_string(),
+                            actor,
+                            action,
+                            detail_json,
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                    tx.commit()?;
+                }
+                Ok(changed)
+            })
+            .map_err(map)?;
+        if changed == 1 {
+            return Ok(());
+        }
+        let status = self.agent_message_status(run_id, message_id)?;
+        match status {
+            None => Err(Refusal::TaskNotFound),
+            Some(_) => Err(Refusal::TaskTerminal),
+        }
+    }
+
     /// Answers one open A2A message with a compare-and-set transition.
     ///
     /// # Errors
@@ -881,7 +950,8 @@ impl RunStore {
         let changed = self
             .db
             .with_connection(|connection| {
-                connection.execute(
+                let tx = connection.unchecked_transaction()?;
+                let changed = tx.execute(
                     "UPDATE agent_messages
                      SET status = 'answered', answered_at = ?3, answer_text = ?4,
                          answer_actor = ?5
@@ -893,7 +963,23 @@ impl RunStore {
                         answer,
                         actor
                     ],
-                )
+                )?;
+                if changed == 1 {
+                    tx.execute(
+                        "INSERT INTO a2a_audit(audit_id, run_id, message_id, actor, action, detail_json, created_at)
+                         VALUES (?1, ?2, ?3, ?4, 'answered', ?5, ?6)",
+                        params![
+                            Uuid::now_v7().to_string(),
+                            run_id.to_string(),
+                            message_id.to_string(),
+                            actor,
+                            serde_json::json!({"answer_chars": answer.chars().count()}).to_string(),
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                    tx.commit()?;
+                }
+                Ok(changed)
             })
             .map_err(map)?;
         if changed == 1 {
@@ -1093,7 +1179,8 @@ impl RunStore {
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
                     "SELECT id, from_task_id, to_task_id, kind, text, created_at,
-                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to
+                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to,
+                            attempts, last_attempt_at
                      FROM agent_messages WHERE run_id = ?1 ORDER BY created_at ASC, rowid ASC",
                 )?;
                 let rows = statement.query_map(params![run_id.to_string()], |row| {
@@ -1110,6 +1197,8 @@ impl RunStore {
                         answer_text: row.get(9)?,
                         answer_actor: row.get(10)?,
                         in_reply_to: row.get(11)?,
+                        attempts: row.get(12)?,
+                        last_attempt_at: row.get(13)?,
                     })
                 })?;
                 let mut messages = Vec::new();
@@ -1136,7 +1225,8 @@ impl RunStore {
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
                     "SELECT id, from_task_id, to_task_id, kind, text, created_at,
-                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to
+                            status, deadline_at, answered_at, answer_text, answer_actor, in_reply_to,
+                            attempts, last_attempt_at
                      FROM agent_messages
                      WHERE run_id = ?1 AND to_task_id = ?2
                      ORDER BY created_at DESC, rowid DESC LIMIT ?3",
@@ -1161,6 +1251,8 @@ impl RunStore {
                             answer_text: row.get(9)?,
                             answer_actor: row.get(10)?,
                             in_reply_to: row.get(11)?,
+                            attempts: row.get(12)?,
+                            last_attempt_at: row.get(13)?,
                         })
                     },
                 )?;
@@ -1677,7 +1769,7 @@ impl RunStore {
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
                     "SELECT run_id, id, from_task_id, to_task_id, kind, text,
-                            deadline_at, created_at
+                            deadline_at, attempts, last_attempt_at, created_at
                      FROM agent_messages
                      WHERE status = 'open'
                      ORDER BY created_at DESC, rowid DESC LIMIT ?1",
@@ -1693,7 +1785,9 @@ impl RunStore {
                             kind: row.get(4)?,
                             text: row.get(5)?,
                             deadline_at: row.get(6)?,
-                            created_at: row.get(7)?,
+                            attempts: row.get(7)?,
+                            last_attempt_at: row.get(8)?,
+                            created_at: row.get(9)?,
                         })
                     },
                 )?;
@@ -2889,6 +2983,58 @@ mod tests {
         assert_ne!(message_id, Uuid::nil());
         assert_eq!(store.agent_message_count(run.id).expect("count"), 1);
         assert_eq!(store.agent_message_count(RunId::new()).expect("other"), 0);
+    }
+
+    #[test]
+    fn a2a_attempts_and_audit_are_recorded_once_per_transition() {
+        let store = store();
+        let run = store
+            .create_run("p", "attempts", AgentState::Running)
+            .expect("run");
+        let from = TaskId::new();
+        let to = TaskId::new();
+        let id = store
+            .record_agent_message(run.id, from, to, "ask_parent", "question")
+            .expect("message");
+        store
+            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}")
+            .expect("first attempt");
+        store
+            .record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}")
+            .expect("second attempt");
+        let message = store
+            .agent_messages_for_run(run.id)
+            .expect("messages")
+            .into_iter()
+            .find(|message| message.id == id.to_string())
+            .expect("message row");
+        assert_eq!(message.attempts, 2);
+        assert!(message.last_attempt_at.is_some());
+        let count = |store: &RunStore| -> i64 {
+            store
+                .db
+                .with_connection(|connection| {
+                    connection.query_row(
+                        "SELECT COUNT(*) FROM a2a_audit WHERE run_id = ?1",
+                        params![run.id.to_string()],
+                        |row| row.get(0),
+                    )
+                })
+                .expect("audit count")
+        };
+        assert_eq!(count(&store), 2);
+        store
+            .answer_agent_message(run.id, id, "operator", "answer")
+            .expect("answer");
+        assert_eq!(count(&store), 3);
+        assert_eq!(
+            store.record_agent_message_attempt(run.id, id, "parent:test", "parent_answer", "{}"),
+            Err(Refusal::TaskTerminal)
+        );
+        assert_eq!(
+            store.answer_agent_message(run.id, id, "operator", "again"),
+            Err(Refusal::TaskTerminal)
+        );
     }
 
     #[test]

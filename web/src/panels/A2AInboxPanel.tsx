@@ -19,6 +19,7 @@ interface PendingQuestion {
   readonly kind: string;
   readonly text: string;
   readonly deadline_at: string | null;
+  readonly attempts?: number;
   readonly created_at: string;
 }
 
@@ -27,6 +28,7 @@ interface HistoryRow {
   readonly status: string;
   readonly answer_text: string | null;
   readonly answer_actor: string | null;
+  readonly attempts?: number;
   readonly from_task_id: string;
   readonly to_task_id: string;
 }
@@ -109,6 +111,7 @@ export function A2AInboxPanel() {
             kind: item.kind,
             text: item.text,
             deadline_at: typeof item.deadline_at === 'string' ? item.deadline_at : null,
+            attempts: typeof item.attempts === 'number' ? item.attempts : 0,
             created_at: typeof item.created_at === 'string' ? item.created_at : '',
           });
         }
@@ -161,6 +164,7 @@ export function A2AInboxPanel() {
             status: item.status,
             answer_text: typeof item.answer_text === 'string' ? item.answer_text : null,
             answer_actor: typeof item.answer_actor === 'string' ? item.answer_actor : null,
+            attempts: typeof item.attempts === 'number' ? item.attempts : 0,
             from_task_id: item.from_task_id,
             to_task_id: item.to_task_id,
           });
@@ -283,6 +287,7 @@ export function A2AInboxPanel() {
             <div className="type-mono-meta text-meta">
               {question.kind} · {question.from_task_id.slice(0, 8)} → {question.to_task_id.slice(0, 8)}
               {question.deadline_at ? ` · deadline ${question.deadline_at}` : ''}
+              {question.attempts ? ` (${question.attempts} attempts)` : ''}
             </div>
             <div className="type-body-l mt-1 break-words text-ink-900">{question.text}</div>
             <input
@@ -325,6 +330,7 @@ export function A2AInboxPanel() {
               <li key={row.id} className="type-mono-meta text-[11px] text-meta">
                 {row.status} · {row.from_task_id.slice(0, 8)} → {row.to_task_id.slice(0, 8)}
                 {row.answer_actor ? ` · by ${row.answer_actor}` : ''}
+                {row.attempts ? ` (${row.attempts} attempts)` : ''}
                 {row.answer_text ? ` · ${row.answer_text.slice(0, 120)}` : ''}
               </li>
             ))}

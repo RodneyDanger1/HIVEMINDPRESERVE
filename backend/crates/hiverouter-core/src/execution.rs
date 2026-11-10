@@ -3226,6 +3226,19 @@ impl RunEngine {
         // A failure never fabricates an answer: it falls through to the
         // operator mailbox and the same durable deadline.
         if !token.is_cancelled() {
+            if let Err(refusal) = self.store.record_agent_message_attempt(
+                run.id,
+                message_id,
+                &format!("parent:{parent}"),
+                "parent_answer",
+                "{}",
+            ) {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    "ask_parent refused: the answer attempt could not be audited".to_owned(),
+                );
+            }
             if self.claim_provider_call(run.id).is_ok() {
                 let parent_context = self.contexts.get(parent_task.id).ok().flatten();
                 match self
