@@ -135,6 +135,16 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
     assert_eq!(voters.len(), 4);
 
     let base = format!("/api/agents/runs/{}/proposals/{}", run.id, proposal_id);
+    let (status, body) = get_json(
+        server.addr,
+        &format!("/api/agents/runs/{}/proposals", run.id),
+    )
+    .await;
+    assert_eq!(status, 200, "proposals before authorize: {body}");
+    let projection: Value = serde_json::from_str(&body).expect("proposal projection JSON");
+    assert_eq!(projection["proposals"][0]["current_superagent_approvals"], 4);
+    assert_eq!(projection["proposals"][0]["vote_state"], "awaiting_operator");
+
     let (status, body) = post_json(server.addr, &format!("{base}/authorize"), support::TEST_TOKEN).await;
     assert_eq!(status, 200, "authorize: {body}");
     let value: Value = serde_json::from_str(&body).expect("authorize JSON");

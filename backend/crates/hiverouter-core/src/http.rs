@@ -2389,6 +2389,19 @@ async fn run_evolution_proposals(
             Some((proposal_id, value))
         })
         .collect();
+    let valid_voters: std::collections::HashSet<String> = match state.engine.store.tasks_for_run(run_id) {
+        Ok(tasks) => tasks
+            .into_iter()
+            .filter(|task| {
+                task.run_id == run_id
+                    && crate::execution::task_agent_tier(task)
+                        == hiverouter_tools::tool::AgentTier::SuperAgent
+                    && task.state == hiverouter_contract::AgentState::Completed
+            })
+            .map(|task| task.id.to_string())
+            .collect(),
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
     let proposals: Vec<serde_json::Value> = entries
         .into_iter()
         .filter(|entry| entry.key.starts_with("improvement:"))
@@ -2404,13 +2417,25 @@ async fn run_evolution_proposals(
                 .filter(|(id, _)| id == &proposal_id)
                 .map(|(_, vote)| vote)
                 .collect();
+            let is_valid_vote = |vote: &&serde_json::Value| {
+                vote.get("voter_task_id")
+                    .and_then(serde_json::Value::as_str)
+                    .map(|id| valid_voters.contains(id))
+                    .unwrap_or(false)
+            };
             let approvals = proposal_votes
                 .iter()
-                .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("approve"))
+                .filter(|vote| {
+                    is_valid_vote(vote)
+                        && vote.get("vote").and_then(serde_json::Value::as_str) == Some("approve")
+                })
                 .count();
             let rejections = proposal_votes
                 .iter()
-                .filter(|vote| vote.get("vote").and_then(serde_json::Value::as_str) == Some("reject"))
+                .filter(|vote| {
+                    is_valid_vote(vote)
+                        && vote.get("vote").and_then(serde_json::Value::as_str) == Some("reject")
+                })
                 .count();
             let authorized = authorizations.contains(&proposal_id);
             let lesson = applied_lessons.get(&proposal_id);

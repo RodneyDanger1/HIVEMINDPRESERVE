@@ -4653,7 +4653,7 @@ impl RunEngine {
                 "rationale must be 8..=400 characters",
             );
         };
-        let entries = match self.store.memory_hyper_summary(run.id, 128) {
+        let entries = match self.store.memory_hyper_summary(run.id, 256) {
             Ok(entries) => entries,
             Err(error) => return refused(error.code(), error.message()),
         };
