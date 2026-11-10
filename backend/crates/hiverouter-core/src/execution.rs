@@ -4220,6 +4220,9 @@ impl RunEngine {
             "{}\n\nYou are the HyperAgent orchestrator. The planner proposed this DAG: {}. \
              You may call one or more of: spawn_superagent (extra branch lead), \
              spawn_remote_agent (detached light/garage/daemon principal), \
+             propose_improvement (record a lesson proposal; never applies it), \
+             convene_evolution_vote (after propose_improvement, spawn exactly four \
+             SuperAgent voters for that proposal), \
              read_memory_summary (bounded summaries only), finish. \
              Never spawn a direct Agent or Subagent. Return no prose in this control turn.\n",
             run.prompt, plan_digest
@@ -4240,6 +4243,7 @@ impl RunEngine {
         let mut control_results = String::new();
         let mut root_all_names: HashSet<String> = HashSet::new();
         let mut root_super_spawned = false;
+        let mut root_voters_spawned = false;
         let prompt = prompt_with_authorized_lessons(&prompt, &self.authorized_lessons_snapshot());
         for turn in 0..2 {
             if token.is_cancelled() {
@@ -4279,6 +4283,7 @@ impl RunEngine {
                     && matches!(
                         call.name.as_str(),
                         "spawn_superagent" | "spawn_remote_agent" | "spawn_daemon"
+                            | "convene_evolution_vote"
                     )
                 {
                     _result_text.push_str(
@@ -4587,6 +4592,96 @@ impl RunEngine {
                         )?;
                         _result_text.push_str(&format!(
                             "- recorded improvement proposal {key} area={area}; applied=false\n"
+                        ));
+                    }
+                    "convene_evolution_vote" => {
+                        if root_voters_spawned {
+                            _result_text.push_str(
+                                "- refused: voters were already convened for this control turn\n",
+                            );
+                            continue;
+                        }
+                        let proposal_id = call
+                            .arguments
+                            .get("proposal_id")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
+                            .ok_or(Refusal::SchemaInvalid)?;
+                        let proposal_key = format!("improvement:{proposal_id}");
+                        let proposal_exists = self
+                            .store
+                            .memory_hyper_summary(run.id, 256)?
+                            .iter()
+                            .any(|entry| entry.key == proposal_key);
+                        if !proposal_exists {
+                            self.record_root_gate_decision(
+                                run,
+                                root,
+                                "convene_evolution_vote",
+                                "refused",
+                                "proposal id not found in this run",
+                            )?;
+                            _result_text.push_str(
+                                "- refused: that proposal id is not recorded in this run\n",
+                            );
+                            continue;
+                        }
+                        let all_tasks = self.store.tasks_for_run(run.id)?;
+                        let direct = all_tasks
+                            .iter()
+                            .filter(|task| task.parent_task_id == Some(root.id))
+                            .count();
+                        let agents = all_tasks.len();
+                        if let Err(refusal) = self.caps.check_spawn(
+                            1,
+                            direct.saturating_add(3),
+                            agents.saturating_add(4) as u64,
+                        ) {
+                            self.record_root_gate_decision(
+                                run,
+                                root,
+                                "convene_evolution_vote",
+                                "refused",
+                                refusal.code(),
+                            )?;
+                            _result_text.push_str(&format!(
+                                "- refused: four voters would exceed a cap ({})\n",
+                                refusal.code()
+                            ));
+                            continue;
+                        }
+                        let mut voters = Vec::new();
+                        for _ in 0..4 {
+                            let child = self.spawn_sub_hive(root.id, "super")?;
+                            let request = format!(
+                                "Authorized evolution vote request. proposal_id={proposal_id}. \
+                                 Call vote_evolution with this proposal_id and vote approve or \
+                                 reject with an 8-400 character rationale. You may not apply; \
+                                 only the operator can authorize and apply a lesson."
+                            );
+                            self.store.record_agent_message(
+                                run.id,
+                                root.id,
+                                child.id,
+                                "evolution_vote_request",
+                                &request,
+                            )?;
+                            voters.push(child.id.to_string());
+                        }
+                        root_voters_spawned = true;
+                        self.record_root_gate_decision(
+                            run,
+                            root,
+                            "convene_evolution_vote",
+                            "recorded",
+                            &format!(
+                                "proposal={proposal_id} voters={}",
+                                voters.join(",")
+                            ),
+                        )?;
+                        _result_text.push_str(&format!(
+                            "- convened four SuperAgent voters for {proposal_id}\n"
                         ));
                     }
                     "finish" => return Ok(()),
