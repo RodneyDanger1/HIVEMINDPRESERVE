@@ -50,6 +50,7 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 | T24 | AGI | **FALSE** | six-condition test below fails five conditions |
 | T25 | Live request_id persisted | **VERIFIED (live)** | run `01a1c619-5ab9-7208-9691-7a73c543bd36`: 8,415 tokens; `remote_created` carries `live-final-1`; one remote/device/grant |
 | T26 | Turn-2 cannot create boundaries | **VERIFIED (test)** | `root_second_control_turn_cannot_create_boundaries`; audit `turn_authority` refusal |
+| T27 | Final-build exact-two regression | **VERIFIED (live)** | run `01a1c62c-4e1f-7172-9945-6a70af9230e1`: completed, 7 tasks, 17,486 tokens |
 
 No claim of "AGI", "self-improving", "autonomous HyperAgent", or "network
 satellite" survives this ledger.

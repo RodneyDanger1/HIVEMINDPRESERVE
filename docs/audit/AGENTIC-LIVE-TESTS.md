@@ -255,3 +255,8 @@ The successful live Test H used a simpler prompt that demanded one
 fingerprint-binding build.
 
 Evidence: `docs/evidence/live/live-tokenlab-request-id-final.json`.
+## Test J — final-build exact-two regression
+
+Final build (refusal auditing + fingerprint idempotency): **completed**, 7 tasks
+(1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents), 17,486 tokens. No extra
+branch lead. Evidence: `docs/evidence/live/live-tokenlab-final-exact-two.json`.

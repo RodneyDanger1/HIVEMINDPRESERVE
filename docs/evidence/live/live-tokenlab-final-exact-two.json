@@ -1,0 +1,18 @@
+{
+    "provider":  "tokenlab",
+    "tasks":  7,
+    "observed_at":  "2026-11-10T15:56:00Z",
+    "usage":  {
+                  "total_tokens":  17486,
+                  "prompt_tokens":  16510,
+                  "completion_tokens":  976
+              },
+    "counts":  {
+                   "superagent":  2,
+                   "subagent":  2,
+                   "agent":  2,
+                   "hyper":  1
+               },
+    "status":  "completed",
+    "run_id":  "01a1c62c-4e1f-7172-9945-6a70af9230e1"
+}

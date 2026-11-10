@@ -415,3 +415,9 @@ request id, with one fixture device, one narrow grant, and a
 `hyper_admission` allow. The root-control `spawn_superagent` refusal was also
 recorded. This proves the idempotency identity reaches the audit ledger live;
 the replay/no-second-row path remains offline-tested.
+## 16. Final-build exact-two regression (2026-11-10)
+
+Run `01a1c62c-4e1f-7172-9945-6a70af9230e1` completed with 7 tasks
+(1 HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents) and 17,486 tokens
+(16,510 prompt / 976 completion). No extra branch lead. This is a fresh
+regression on the final refusal-auditing build, not a reuse of the earlier run.
