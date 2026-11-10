@@ -24,10 +24,10 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 628 passed, 0 failed, 2 ignored |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 629 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 225 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `AEB637E394C9725BC419B80395D408FD2F9C43338BD08CDCA35FE6DDC45193B5` |
-| T4 | Server binary hash | **VERIFIED** | `FB1EA570F2DBB7DE8425CDE3F5F74F020AF80AA7B1630557CB51493CDE95B896` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `10B15980E028822C4689D88A713A8599C69D05FCDC0552B2E2A6536C061899CE` |
+| T4 | Server binary hash | **VERIFIED** | `B733B509FDA1BFE175F53416D47A1DA305B7F8493639AD0408EFA4A6ED94D359` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -143,6 +143,7 @@ Status labels: **APPLIED-EVIDENCED** (test or live), **APPLIED-UNTESTED**
 | 18 | Root memory summary honors scope and limit | APPLIED-UNTESTED | source; no focused test |
 | 19 | A2A duplicate attempt audited | APPLIED-UNTESTED | source; no duplicate-refusal audit test |
 | 20 | Root detached duplicate guards (remote/daemon) | APPLIED-EVIDENCED | guards + duplicate tests |
+| 21 | `request_id` idempotent remote admission | APPLIED-EVIDENCED | same-key retry test; different payload refuses |
 
 Also present from earlier waves: exact-two root gate, planner repair, usage
 checkpoint/hard-kill recovery, rate governor, JSON contract, HoneyGlass UI.

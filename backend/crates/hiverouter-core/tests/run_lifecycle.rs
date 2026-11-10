@@ -356,6 +356,7 @@ struct DetachedRequestExecutor {
     calls: AtomicUsize,
     duplicate: bool,
     kind: String,
+    request_id: Option<String>,
 }
 
 impl DetachedRequestExecutor {
@@ -364,6 +365,16 @@ impl DetachedRequestExecutor {
             calls: AtomicUsize::new(0),
             duplicate: false,
             kind: "remote".to_owned(),
+            request_id: None,
+        })
+    }
+
+    fn idempotent() -> Arc<Self> {
+        Arc::new(Self {
+            calls: AtomicUsize::new(0),
+            duplicate: true,
+            kind: "remote".to_owned(),
+            request_id: Some("req-detached-1".to_owned()),
         })
     }
 
@@ -372,6 +383,7 @@ impl DetachedRequestExecutor {
             calls: AtomicUsize::new(0),
             duplicate: false,
             kind: "daemon".to_owned(),
+            request_id: None,
         })
     }
 
@@ -380,6 +392,7 @@ impl DetachedRequestExecutor {
             calls: AtomicUsize::new(0),
             duplicate: true,
             kind: "remote".to_owned(),
+            request_id: None,
         })
     }
 }
@@ -404,15 +417,19 @@ impl ProviderExecutor for DetachedRequestExecutor {
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+            let mut arguments = json!({
+                "kind": self.kind,
+                "display_name": "Branch light",
+                "reason": "branch needs a detached indicator light"
+            });
+            if let Some(request_id) = &self.request_id {
+                arguments["request_id"] = json!(request_id);
+            }
             let call = AssembledToolCall {
                 index: 0,
                 id: "call-detached".to_owned(),
                 name: "request_detached".to_owned(),
-                arguments: json!({
-                    "kind": self.kind,
-                    "display_name": "Branch light",
-                    "reason": "branch needs a detached indicator light"
-                }),
+                arguments,
             };
             return Ok(StreamedReply {
                 deltas: Vec::new(),
@@ -934,6 +951,27 @@ async fn lower_level_request_detached_is_admitted_by_hyper_gate() {
             && row.actor_kind == "system"
             && row.actor_id == remotes[0].created_by
     }));
+}
+
+#[tokio::test]
+async fn lower_level_request_detached_is_idempotent_with_a_request_id() {
+    let harness = test_engine(DetachedRequestExecutor::idempotent());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("retry the same detached request", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+
+    assert_eq!(harness.remote.list_remotes().expect("remotes").len(), 1);
+    let turns = harness.db.tool_turns_for_run(run.id).expect("tool turns");
+    assert_eq!(turns.len(), 2, "both retries are recorded");
+    assert!(turns.iter().all(|turn| turn.code.is_none()));
+    assert!(turns.iter().any(|turn| turn.tool == "request_detached"));
 }
 
 #[tokio::test]

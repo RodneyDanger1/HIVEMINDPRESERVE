@@ -213,6 +213,7 @@ mod tests {
                 credential_ref: None,
                 capabilities_json: "[]".to_owned(),
                 created_by: "operator".to_owned(),
+                request_id: None,
             })
             .expect("remote");
         supervisor

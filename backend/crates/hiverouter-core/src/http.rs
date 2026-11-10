@@ -1789,6 +1789,7 @@ async fn remote_create(
         credential_ref: None,
         capabilities_json: "[]".to_owned(),
         created_by: "operator".to_owned(),
+                request_id: None,
     }) {
         Ok(remote) => (StatusCode::CREATED, Json(remote_json(&remote))).into_response(),
         Err(refusal) => remote_refusal_response(&refusal),

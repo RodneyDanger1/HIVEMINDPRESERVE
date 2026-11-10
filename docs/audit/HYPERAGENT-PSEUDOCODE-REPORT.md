@@ -194,14 +194,15 @@ after: requested_scope filter + clamp 1..8
 ```
 Evidence: source; no focused test.
 
-### 17. Request idempotency (PROPOSED)
+### 17. Request idempotency (APPLIED)
 ```text
-request(key, caller, kind, name, reason)
-if ledger[key] exists: return prior result (idempotent)
-else admit once; ledger[key]=result
+request_detached(..., request_id)
+  -> if remote_audit has this request_id:
+       same display_name + adapter -> return existing remote (no second row)
+       different payload -> E_DETACHED_CONFLICT
+  -> otherwise run the normal admission gate and create once
 ```
-Not implemented; duplicate same name currently refuses rather than replays.
-Safe next step; requires a request ledger.
+Evidence: `lower_level_request_detached_is_idempotent_with_a_request_id`.
 
 ### 18. Dedicated control ledger (PROPOSED)
 ```text

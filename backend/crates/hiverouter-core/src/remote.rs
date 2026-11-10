@@ -123,6 +123,8 @@ pub struct NewRemote {
     pub credential_ref: Option<String>,
     pub capabilities_json: String,
     pub created_by: String,
+    /// Optional idempotency key for a caller retry.
+    pub request_id: Option<String>,
 }
 
 /// Input for registering a device.
@@ -362,7 +364,7 @@ impl RemoteStore {
                     Some(&remote_id),
                     None,
                     "remote_created",
-                    None,
+                    input.request_id.as_deref(),
                     None,
                     None,
                     "ok",
@@ -411,6 +413,31 @@ impl RemoteStore {
                     .optional()
             })
             .map_err(map)
+    }
+
+    /// Finds the remote created by one idempotent request key, if any.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn find_by_request_id(&self, request_id: &str) -> Result<Option<RemoteAgent>, Refusal> {
+        let remote_id: Option<String> = self
+            .db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT remote_id FROM remote_audit
+                         WHERE request_id = ?1 AND action = 'remote_created' AND outcome = 'ok'
+                         ORDER BY at DESC LIMIT 1",
+                        params![request_id],
+                        |row| row.get(0),
+                    )
+                    .optional()
+            })
+            .map_err(map)?;
+        match remote_id {
+            Some(remote_id) => self.get_remote(&remote_id),
+            None => Ok(None),
+        }
     }
 
     /// Revokes a remote; its grants/actions become unusable immediately.
@@ -1507,6 +1534,7 @@ mod tests {
                 credential_ref: None,
                 capabilities_json: "[]".to_owned(),
                 created_by: "operator".to_owned(),
+                request_id: None,
             })
             .expect("remote");
         let device = store

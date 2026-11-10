@@ -4236,6 +4236,31 @@ impl RunEngine {
                 "reason must be at least 12 characters",
             );
         }
+        let request_id = plan
+            .args
+            .get("request_id")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty() && value.chars().count() <= 128);
+        if let (Some(request_id), Some(store)) = (request_id, self.remote.as_ref()) {
+            if let Ok(Some(existing)) = store.find_by_request_id(request_id) {
+                if existing.display_name.eq_ignore_ascii_case(display_name)
+                    && existing.adapter_kind == "light"
+                {
+                    return ToolExecution::ok(
+                        plan.tool_call_id.clone(),
+                        format!(
+                            "idempotent replay: remote {} ({}) already admitted; no second row created",
+                            existing.remote_id, existing.display_name
+                        ),
+                    );
+                }
+                return refused(
+                    Refusal::DetachedConflict.code(),
+                    "request_id was reused with a different detached payload",
+                );
+            }
+        }
         if !matches!(kind, "remote" | "daemon") {
             return refused(
                 Refusal::SchemaInvalid.code(),
@@ -4281,7 +4306,7 @@ impl RunEngine {
         }
         let created_by = format!("agent:{}", task.id);
         let outcome = if kind == "remote" {
-            self.create_detached_remote(&owner_id, display_name, "light", &created_by)
+            self.create_detached_remote(&owner_id, display_name, "light", &created_by, request_id)
                 .map(|remote| {
                     if let Some(store) = self.remote.as_ref() {
                         let detail = serde_json::json!({
@@ -4378,6 +4403,7 @@ impl RunEngine {
         display_name: &str,
         kind: &str,
         created_by: &str,
+        request_id: Option<&str>,
     ) -> Result<crate::remote::RemoteAgent, Refusal> {
         if !matches!(kind, "light" | "garage" | "daemon_relay") {
             return Err(Refusal::SchemaInvalid);
@@ -4393,6 +4419,7 @@ impl RunEngine {
             credential_ref: None,
             capabilities_json: "[]".to_owned(),
             created_by: created_by.to_owned(),
+            request_id: request_id.map(str::to_owned),
         })?;
         let (class, capability, action, caps) = match kind {
             "light" => (
@@ -4500,6 +4527,7 @@ impl RunEngine {
             display_name,
             kind,
             &format!("hyper:{}", task.id),
+            None,
         )?;
         Ok(format!(
             "spawned remote {} ({}) state={}",

@@ -319,6 +319,9 @@ pub struct RequestDetachedArgs {
     pub display_name: String,
     /// Why the caller needs this detached principal; the admission gate records it.
     pub reason: String,
+    /// Optional idempotency key; a retry with the same key returns the existing principal.
+    #[serde(default)]
+    pub request_id: Option<String>,
 }
 
 /// The one tool registry (contracts + per-tier allowlists).
