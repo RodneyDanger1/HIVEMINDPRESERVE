@@ -3205,6 +3205,25 @@ impl RunEngine {
                         .to_owned(),
                 ));
             }
+            let Some(tools) = self.tools.as_ref() else {
+                return Ok(ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::InternalError.code(),
+                    "approval bridge disappeared before web_fetch; nothing was fetched".to_owned(),
+                ));
+            };
+            if let Err(error) = tools.verify_tool_grant(
+                run.id,
+                hiverouter_tools::ToolId::WebFetch,
+                &plan.args,
+                self.now_unix_secs(),
+            ) {
+                return Ok(ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    error.code(),
+                    error.message().to_owned(),
+                ));
+            }
             return Ok(self.execute_web_fetch(plan, token).await);
         }
         let executed = tools
