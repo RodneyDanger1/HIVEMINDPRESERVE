@@ -6,7 +6,11 @@
 //! advances due daemons and records bounded reports; durable rows survive a
 //! restart without turning into tasks.
 
+use std::io::Read;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use hiverouter_contract::{Refusal, Timestamp};
 use rusqlite::{params, OptionalExtension};
@@ -43,6 +47,38 @@ pub struct DaemonReport {
     pub outcome: String,
     pub detail_json: String,
     pub created_at: String,
+}
+
+struct JobOutcome {
+    outcome: &'static str,
+    error_code: Option<&'static str>,
+    detail: serde_json::Value,
+}
+
+impl JobOutcome {
+    fn ok(detail: serde_json::Value) -> Self {
+        Self {
+            outcome: "ok",
+            error_code: None,
+            detail,
+        }
+    }
+
+    fn failed(code: &'static str, detail: serde_json::Value) -> Self {
+        Self {
+            outcome: "failed",
+            error_code: Some(code),
+            detail,
+        }
+    }
+
+    fn degraded(code: &'static str, detail: serde_json::Value) -> Self {
+        Self {
+            outcome: "degraded",
+            error_code: Some(code),
+            detail,
+        }
+    }
 }
 
 /// Input for creating a daemon.
@@ -86,12 +122,25 @@ fn daemon_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Daemon> {
 #[derive(Debug)]
 pub struct DaemonStore {
     db: Arc<Database>,
+    /// Operator-owned allowlist root for script daemons. Without it, script
+    /// jobs are refused/degraded rather than executed from an arbitrary path.
+    script_root: Option<PathBuf>,
 }
 
 impl DaemonStore {
     #[must_use]
     pub fn new(db: Arc<Database>) -> Self {
-        Self { db }
+        Self {
+            db,
+            script_root: None,
+        }
+    }
+
+    /// Enables allowlisted daemon scripts rooted at `root`.
+    #[must_use]
+    pub fn with_script_root(mut self, root: PathBuf) -> Self {
+        self.script_root = Some(root);
+        self
     }
 
     /// Creates one daemon. It starts `enrolled`; only an explicit switch starts
@@ -218,130 +267,286 @@ impl DaemonStore {
     /// Advances every due daemon exactly once. The supervisor owns the cadence;
     /// this method is deterministic and never calls a model.
     ///
-    /// No daemon job runner exists yet. A tick therefore marks the daemon
-    /// `degraded` and records that fact instead of fabricating an `alive`
-    /// success for work that never ran.
+    /// The row is selected first, then the job runs outside the database lock.
+    /// DB checks and allowlisted scripts report only what actually ran.
     pub fn tick_due(&self, limit: usize) -> Result<usize, Refusal> {
         let now_secs = Timestamp::now()
             .unix_secs()
             .map_err(|_| Refusal::InternalError)?;
         let now = Timestamp::from_unix_secs(now_secs).as_str().to_owned();
+        let due: Vec<(String, i64, String)> = self
+            .db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT daemon_id, interval_secs, job_json FROM daemons
+                     WHERE state = 'running'
+                       AND (next_tick_at IS NULL OR next_tick_at <= ?1)
+                     ORDER BY next_tick_at ASC LIMIT ?2",
+                )?;
+                let rows = statement.query_map(
+                    params![now, i64::try_from(limit).unwrap_or(10)],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                )?;
+                let mut due = Vec::new();
+                for row in rows {
+                    due.push(row?);
+                }
+                Ok(due)
+            })
+            .map_err(map)?;
+        for (daemon_id, interval, job_json) in &due {
+            let outcome = self.execute_daemon_job(job_json);
+            self.record_daemon_tick(daemon_id, *interval, now_secs, &outcome)?;
+        }
+        Ok(due.len())
+    }
+
+    fn execute_daemon_job(&self, job_json: &str) -> JobOutcome {
+        let job: serde_json::Value =
+            serde_json::from_str(job_json).unwrap_or(serde_json::Value::Null);
+        if job.get("check").and_then(|value| value.as_str()) == Some("db") {
+            return match self
+                .db
+                .with_connection(|connection| connection.query_row("SELECT 1", [], |row| row.get::<_, i64>(0)))
+            {
+                Ok(_) => JobOutcome::ok(serde_json::json!({"executed": true, "check": "db"})),
+                Err(error) => JobOutcome::failed(
+                    "E_DAEMON_DB_CHECK",
+                    serde_json::json!({"executed": true, "check": "db", "error": error.to_string()}),
+                ),
+            };
+        }
+        if job.get("kind").and_then(|value| value.as_str()) == Some("script") {
+            return self.execute_script_job(&job);
+        }
+        let reason = if job_json.trim().is_empty() || job_json.trim() == "{}" {
+            "daemon has no executable job"
+        } else {
+            "daemon job runtime is not implemented for this job kind"
+        };
+        JobOutcome::degraded(
+            "E_DAEMON_JOB_UNIMPLEMENTED",
+            serde_json::json!({"executed": false, "reason": reason, "job": job_json}),
+        )
+    }
+
+    fn execute_script_job(&self, job: &serde_json::Value) -> JobOutcome {
+        let Some(root) = self.script_root.as_deref() else {
+            return JobOutcome::degraded(
+                "E_DAEMON_SCRIPT_UNCONFIGURED",
+                serde_json::json!({"executed": false, "reason": "no daemon script root is configured"}),
+            );
+        };
+        let root = match root.canonicalize() {
+            Ok(root) => root,
+            Err(error) => {
+                return JobOutcome::degraded(
+                    "E_DAEMON_SCRIPT_REFUSED",
+                    serde_json::json!({"executed": false, "error": error.to_string()}),
+                )
+            }
+        };
+        let Some(program) = job.get("program").and_then(|value| value.as_str()) else {
+            return JobOutcome::degraded(
+                "E_DAEMON_SCRIPT_REFUSED",
+                serde_json::json!({"executed": false, "reason": "script job has no program"}),
+            );
+        };
+        if program.is_empty()
+            || program.chars().count() > 200
+            || program.contains('/')
+            || program.contains('\\')
+            || program.contains("..")
+            || program.contains('\0')
+        {
+            return JobOutcome::degraded(
+                "E_DAEMON_SCRIPT_REFUSED",
+                serde_json::json!({"executed": false, "reason": "program must be a plain file name"}),
+            );
+        }
+        let canonical = match root.join(program).canonicalize() {
+            Ok(path) if path.starts_with(&root) && path.is_file() => path,
+            Ok(_) => {
+                return JobOutcome::degraded(
+                    "E_DAEMON_SCRIPT_REFUSED",
+                    serde_json::json!({"executed": false, "reason": "program is outside the allowlist root"}),
+                )
+            }
+            Err(error) => {
+                return JobOutcome::degraded(
+                    "E_DAEMON_SCRIPT_REFUSED",
+                    serde_json::json!({"executed": false, "error": error.to_string()}),
+                )
+            }
+        };
+        let extension = canonical
+            .extension()
+            .and_then(|value| value.to_str())
+            .map(str::to_ascii_lowercase)
+            .unwrap_or_default();
+        if extension != "exe" && extension != "ps1" {
+            return JobOutcome::degraded(
+                "E_DAEMON_SCRIPT_REFUSED",
+                serde_json::json!({"executed": false, "reason": "only .exe and .ps1 scripts are allowed"}),
+            );
+        }
+        let mut args: Vec<String> = Vec::new();
+        if let Some(raw) = job.get("args") {
+            let Some(values) = raw.as_array() else {
+                return JobOutcome::degraded(
+                    "E_DAEMON_SCRIPT_REFUSED",
+                    serde_json::json!({"executed": false, "reason": "args must be an array"}),
+                );
+            };
+            if values.len() > 16 {
+                return JobOutcome::degraded(
+                    "E_DAEMON_SCRIPT_REFUSED",
+                    serde_json::json!({"executed": false, "reason": "too many script arguments"}),
+                );
+            }
+            for value in values {
+                let Some(value) = value.as_str() else {
+                    return JobOutcome::degraded(
+                        "E_DAEMON_SCRIPT_REFUSED",
+                        serde_json::json!({"executed": false, "reason": "script arguments must be strings"}),
+                    );
+                };
+                if value.chars().count() > 512 || value.contains('\0') {
+                    return JobOutcome::degraded(
+                        "E_DAEMON_SCRIPT_REFUSED",
+                        serde_json::json!({"executed": false, "reason": "script argument is too long or invalid"}),
+                    );
+                }
+                args.push(value.to_owned());
+            }
+        }
+        let timeout_secs = job
+            .get("timeout_secs")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(15)
+            .clamp(1, 60);
+        let mut command = if extension == "exe" {
+            Command::new(&canonical)
+        } else {
+            let mut command = Command::new("powershell.exe");
+            command.args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"]);
+            command.arg(&canonical);
+            command
+        };
+        command
+            .args(&args)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+        let mut child = match command.spawn() {
+            Ok(child) => child,
+            Err(error) => {
+                return JobOutcome::failed(
+                    "E_DAEMON_SCRIPT_FAILED",
+                    serde_json::json!({"executed": true, "error": error.to_string()}),
+                )
+            }
+        };
+        let stdout_handle = child.stdout.take().map(drain_capped);
+        let stderr_handle = child.stderr.take().map(drain_capped);
+        let deadline = Instant::now() + Duration::from_secs(timeout_secs);
+        let mut timed_out = false;
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break Some(status),
+                Ok(None) if Instant::now() >= deadline => {
+                    timed_out = true;
+                    kill_process_tree(&mut child);
+                    break child.wait().ok();
+                }
+                Ok(None) => std::thread::sleep(Duration::from_millis(25)),
+                Err(error) => {
+                    return JobOutcome::failed(
+                        "E_DAEMON_SCRIPT_FAILED",
+                        serde_json::json!({"executed": true, "error": error.to_string()}),
+                    )
+                }
+            }
+        };
+        let (stdout, stdout_truncated) = join_reader(stdout_handle);
+        let (stderr, stderr_truncated) = join_reader(stderr_handle);
+        let exit_code = status.and_then(|status| status.code());
+        let detail = serde_json::json!({
+            "executed": true,
+            "kind": "script",
+            "program": program,
+            "exit_code": exit_code,
+            "timed_out": timed_out,
+            "stdout": stdout,
+            "stderr": stderr,
+            "stdout_truncated": stdout_truncated,
+            "stderr_truncated": stderr_truncated,
+        });
+        if timed_out {
+            return JobOutcome::failed("E_DAEMON_SCRIPT_TIMEOUT", detail);
+        }
+        if status.is_some_and(|status| status.success()) {
+            JobOutcome::ok(detail)
+        } else {
+            JobOutcome::failed("E_DAEMON_SCRIPT_FAILED", detail)
+        }
+    }
+
+    fn record_daemon_tick(
+        &self,
+        daemon_id: &str,
+        interval: i64,
+        now_secs: u64,
+        outcome: &JobOutcome,
+    ) -> Result<(), Refusal> {
+        let now = Timestamp::from_unix_secs(now_secs).as_str().to_owned();
+        let next = Timestamp::from_unix_secs(
+            now_secs.saturating_add(u64::try_from(interval).unwrap_or(5)),
+        )
+        .as_str()
+        .to_owned();
+        let detail = outcome.detail.to_string();
         self.db
             .with_connection(|connection| {
-                let tx = connection.transaction()?;
-                let mut ids: Vec<(String, i64, String)> = Vec::new();
-                {
-                    let mut statement = tx.prepare(
-                        "SELECT daemon_id, interval_secs, job_json FROM daemons
-                         WHERE state = 'running'
-                           AND (next_tick_at IS NULL OR next_tick_at <= ?1)
-                         ORDER BY next_tick_at ASC LIMIT ?2",
+                let tx = connection.unchecked_transaction()?;
+                if outcome.outcome == "ok" {
+                    tx.execute(
+                        "UPDATE daemons SET last_tick_at = ?2, last_report_at = ?2,
+                            next_tick_at = ?3, last_error_code = NULL
+                         WHERE daemon_id = ?1 AND state = 'running'",
+                        params![daemon_id, now, next],
                     )?;
-                    let rows = statement.query_map(
-                        params![now, i64::try_from(limit).unwrap_or(10)],
-                        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-                    )?;
-                    for row in rows {
-                        ids.push(row?);
-                    }
-                }
-                for (daemon_id, interval, job_json) in &ids {
-                    let next = Timestamp::from_unix_secs(
-                        now_secs.saturating_add(u64::try_from(*interval).unwrap_or(5)),
-                    )
-                    .as_str()
-                    .to_owned();
-                    let job: serde_json::Value =
-                        serde_json::from_str(job_json).unwrap_or(serde_json::Value::Null);
-                    let db_check = job.get("check").and_then(|value| value.as_str()) == Some("db");
-                    if db_check {
-                        let result: Result<i64, _> =
-                            tx.query_row("SELECT 1", [], |row| row.get(0));
-                        match result {
-                            Ok(_) => {
-                                tx.execute(
-                                    "UPDATE daemons SET last_tick_at = ?2, last_report_at = ?2,
-                                        next_tick_at = ?3, last_error_code = NULL
-                                     WHERE daemon_id = ?1 AND state = 'running'",
-                                    params![daemon_id, now, next],
-                                )?;
-                                tx.execute(
-                                    "INSERT INTO daemon_reports
-                                     (report_id, daemon_id, outcome, detail_json, created_at)
-                                     VALUES (?1, ?2, 'ok', ?3, ?4)",
-                                    params![
-                                        format!("report:{}", Uuid::now_v7()),
-                                        daemon_id,
-                                        serde_json::json!({"executed": true, "check": "db"})
-                                            .to_string(),
-                                        now
-                                    ],
-                                )?;
-                                continue;
-                            }
-                            Err(error) => {
-                                tx.execute(
-                                    "UPDATE daemons SET state = 'degraded', last_tick_at = ?2,
-                                        last_report_at = ?2, next_tick_at = NULL,
-                                        last_error_code = 'E_DAEMON_DB_CHECK'
-                                     WHERE daemon_id = ?1 AND state = 'running'",
-                                    params![daemon_id, now],
-                                )?;
-                                tx.execute(
-                                    "INSERT INTO daemon_reports
-                                     (report_id, daemon_id, outcome, detail_json, created_at)
-                                     VALUES (?1, ?2, 'failed', ?3, ?4)",
-                                    params![
-                                        format!("report:{}", Uuid::now_v7()),
-                                        daemon_id,
-                                        serde_json::json!({
-                                            "executed": true,
-                                            "check": "db",
-                                            "error": error.to_string(),
-                                        })
-                                        .to_string(),
-                                        now
-                                    ],
-                                )?;
-                                continue;
-                            }
-                        }
-                    }
-                    let reason = if job_json.trim().is_empty() || job_json.trim() == "{}" {
-                        "daemon has no executable job"
-                    } else {
-                        "daemon job runtime is not implemented"
-                    };
+                } else {
                     tx.execute(
                         "UPDATE daemons SET state = 'degraded', last_tick_at = ?2,
                             last_report_at = ?2, next_tick_at = NULL,
-                            last_error_code = 'E_DAEMON_JOB_UNIMPLEMENTED'
+                            last_error_code = ?3
                          WHERE daemon_id = ?1 AND state = 'running'",
-                        params![daemon_id, now],
-                    )?;
-                    tx.execute(
-                        "INSERT INTO daemon_reports
-                         (report_id, daemon_id, outcome, detail_json, created_at)
-                         VALUES (?1, ?2, 'degraded', ?3, ?4)",
-                        params![
-                            format!("report:{}", Uuid::now_v7()),
-                            daemon_id,
-                            serde_json::json!({
-                                "executed": false,
-                                "reason": reason,
-                                "job": job_json,
-                            })
-                            .to_string(),
-                            now
-                        ],
+                        params![daemon_id, now, outcome.error_code],
                     )?;
                 }
+                tx.execute(
+                    "INSERT INTO daemon_reports
+                     (report_id, daemon_id, outcome, detail_json, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    params![
+                        format!("report:{}", Uuid::now_v7()),
+                        daemon_id,
+                        outcome.outcome,
+                        detail,
+                        now
+                    ],
+                )?;
                 tx.commit()?;
-                Ok(ids.len())
+                Ok(())
             })
             .map_err(map)
     }
-
     pub fn reports(&self, daemon_id: &str, limit: usize) -> Result<Vec<DaemonReport>, Refusal> {
         self.db
             .with_connection(|connection| {
@@ -370,6 +575,57 @@ impl DaemonStore {
             })
             .map_err(map)
     }
+}
+
+fn join_reader(
+    handle: Option<std::thread::JoinHandle<(String, bool)>>,
+) -> (String, bool) {
+    match handle {
+        Some(handle) => handle.join().unwrap_or_default(),
+        None => (String::new(), false),
+    }
+}
+
+fn drain_capped(mut reader: impl Read + Send + 'static) -> std::thread::JoinHandle<(String, bool)> {
+    std::thread::spawn(move || {
+        const CAP: usize = 8 * 1024;
+        let mut captured = Vec::new();
+        let mut truncated = false;
+        let mut buffer = [0_u8; 4096];
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(read) => {
+                    if captured.len() < CAP {
+                        let remaining = CAP - captured.len();
+                        captured.extend_from_slice(&buffer[..read.min(remaining)]);
+                    }
+                    if captured.len() >= CAP {
+                        truncated = true;
+                    }
+                }
+                Err(_) => break,
+            }
+        }
+        (String::from_utf8_lossy(&captured).into_owned(), truncated)
+    })
+}
+
+fn kill_process_tree(child: &mut std::process::Child) {
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill")
+            .args([
+                "/PID",
+                &child.id().to_string(),
+                "/T",
+                "/F",
+            ])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    let _ = child.kill();
 }
 
 fn map(error: crate::db::DbError) -> Refusal {
@@ -455,6 +711,106 @@ mod tests {
             .expect("daemon");
         assert_eq!(fresh.state, "running");
         assert_eq!(fresh.last_error_code, None);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn allowlisted_script_job_executes_and_reports_measured_output() {
+        let (db_store, _db) = fixture();
+        let root = tempfile::tempdir().expect("script root");
+        std::fs::write(
+            root.path().join("ok.ps1"),
+            "param([string]$Message)\nWrite-Output $Message\nexit 0\n",
+        )
+        .expect("script");
+        let store = db_store.with_script_root(root.path().to_path_buf());
+        let daemon = store
+            .create(NewDaemon {
+                display_name: "Script".to_owned(),
+                owner_kind: "operator".to_owned(),
+                owner_id: "operator".to_owned(),
+                kind: "watchdog".to_owned(),
+                job_json: serde_json::json!({
+                    "kind": "script",
+                    "program": "ok.ps1",
+                    "args": ["hello-from-script"],
+                    "timeout_secs": 15
+                })
+                .to_string(),
+                interval_secs: 60,
+                created_by: "operator".to_owned(),
+            })
+            .expect("create");
+        store.set_enabled(&daemon.daemon_id, true).expect("start");
+        assert_eq!(store.tick_due(10).expect("tick"), 1);
+        let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
+        assert_eq!(reports[0].outcome, "ok");
+        assert!(reports[0].detail_json.contains("hello-from-script"));
+        assert!(reports[0].detail_json.contains("\"timed_out\":false"));
+        let fresh = store.get(&daemon.daemon_id).expect("get").expect("daemon");
+        assert_eq!(fresh.state, "running");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn script_job_cannot_escape_the_allowlist_root() {
+        let (db_store, _db) = fixture();
+        let root = tempfile::tempdir().expect("script root");
+        let store = db_store.with_script_root(root.path().to_path_buf());
+        let daemon = store
+            .create(NewDaemon {
+                display_name: "Escape".to_owned(),
+                owner_kind: "operator".to_owned(),
+                owner_id: "operator".to_owned(),
+                kind: "watchdog".to_owned(),
+                job_json: r#"{"kind":"script","program":"../escape.ps1"}"#.to_owned(),
+                interval_secs: 60,
+                created_by: "operator".to_owned(),
+            })
+            .expect("create");
+        store.set_enabled(&daemon.daemon_id, true).expect("start");
+        store.tick_due(10).expect("tick");
+        let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
+        assert_eq!(reports[0].outcome, "degraded");
+        let fresh = store.get(&daemon.daemon_id).expect("get").expect("daemon");
+        assert_eq!(
+            fresh.last_error_code.as_deref(),
+            Some("E_DAEMON_SCRIPT_REFUSED")
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn timed_out_script_is_killed_and_reported() {
+        let (db_store, _db) = fixture();
+        let root = tempfile::tempdir().expect("script root");
+        std::fs::write(
+            root.path().join("slow.ps1"),
+            "Start-Sleep -Seconds 10\nexit 0\n",
+        )
+        .expect("script");
+        let store = db_store.with_script_root(root.path().to_path_buf());
+        let daemon = store
+            .create(NewDaemon {
+                display_name: "Slow".to_owned(),
+                owner_kind: "operator".to_owned(),
+                owner_id: "operator".to_owned(),
+                kind: "watchdog".to_owned(),
+                job_json: r#"{"kind":"script","program":"slow.ps1","timeout_secs":1}"#.to_owned(),
+                interval_secs: 60,
+                created_by: "operator".to_owned(),
+            })
+            .expect("create");
+        store.set_enabled(&daemon.daemon_id, true).expect("start");
+        store.tick_due(10).expect("tick");
+        let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
+        assert_eq!(reports[0].outcome, "failed");
+        assert!(reports[0].detail_json.contains("\"timed_out\":true"));
+        let fresh = store.get(&daemon.daemon_id).expect("get").expect("daemon");
+        assert_eq!(
+            fresh.last_error_code.as_deref(),
+            Some("E_DAEMON_SCRIPT_TIMEOUT")
+        );
     }
 
     #[test]

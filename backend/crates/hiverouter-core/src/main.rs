@@ -186,7 +186,7 @@ async fn run() -> Result<(), ExitCode> {
     let supervisor = RemoteSupervisor::new(
         state.db.clone(),
         Arc::new(RemoteStore::new(state.db.clone())),
-        Arc::new(DaemonStore::new(state.db.clone())),
+        Arc::new(DaemonStore::new(state.db.clone()).with_script_root(config.workspace_root.clone())),
         std::time::Duration::from_secs(2),
         shutdown.clone(),
     );
