@@ -107,6 +107,7 @@ export function canAuthorizeProposal(row: ProposalRow): boolean {
 
 export function ProposalsPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
+  const sessionToken = useUiStore((state) => state.session?.token ?? null);
   const [status, setStatus] = useState<Status>('idle');
   const [rows, setRows] = useState<readonly ProposalRow[]>([]);
   const [votePath, setVotePath] = useState<string | null>(null);
@@ -162,7 +163,13 @@ export function ProposalsPanel() {
     try {
       const response = await fetch(
         `${apiBaseUrl()}/api/agents/runs/${encodeURIComponent(runId)}/proposals/${encodeURIComponent(proposalId)}/authorize`,
-        { method: 'POST', headers: { Accept: 'application/json' } },
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
+          },
+        },
       );
       if (!response.ok) {
         throw await httpFailure(response, 'POST proposal authorization');
