@@ -374,3 +374,7 @@ HTTP routes against an in-process server and real SQLite rows:
 This proves the positive five-seat authorization plus lesson apply/rollback path
 at the route/database level. The four voter tasks are seeded test doubles, not
 model-spawned agents.
+Tamper branch (same test): after apply, append one foreign line to
+`evolution/LESSONS.jsonl`; rollback returns **409** and the tampered bytes remain
+unchanged. Restoring the exact applied bytes makes rollback succeed and removes
+only the proposal line.
