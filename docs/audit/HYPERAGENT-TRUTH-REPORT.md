@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 633 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 229 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `F60D277192089B47E2C008EA52CFB9B735489F0FC9D8D14204DACFA7CC11DE72` |
-| T4 | Server binary hash | **VERIFIED** | `C885E7DCF478944AE10E33CBD3C968D6053B5B495F7172D3E7364974E02BFF65` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3669BC97BBE9FC623B5BC1761E2F6859512FCABA4280FFC98F472468EE71BE18` |
+| T4 | Server binary hash | **VERIFIED** | `BB238173B8913D943BF27D64119850CAAA57B632C34B8C5A37CB7797C2489034` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -446,8 +446,10 @@ record a durable `approve`/`reject` vote with `vote_evolution` (SuperAgent-only,
 one vote per task, no code effect). The API aggregates votes into
 `awaiting_votes`, `awaiting_operator`, or `rejected_by_superagent`. The operator
 has a fifth-seat authorization endpoint/UI; it requires four distinct approvals
-and zero rejections, and records `authorized_not_applied`. Apply/rollback remain
-unimplemented; `can_apply` is false.
+and zero rejections, and records `authorized_not_applied`. `POST .../apply`
+appends one lesson line to `evolution/LESSONS.jsonl`; `POST .../rollback` removes
+it after verifying the apply hash. Scope is lesson artifact only; no code,
+schema, prompt, tool, or persona mutation exists and `can_apply` is false.
 Live verification of the proposal surface: run `01a1c6a2-6c25-7333-a970-8ef8d6a61a0c`
 proposed the same content twice across the two root-control turns; the ledger
 returned **count=1**, `applied=false`, `awaiting_votes`, and a SuperAgent vote path that records votes but never applies them. Content dedupe is enforced, but this is still not an

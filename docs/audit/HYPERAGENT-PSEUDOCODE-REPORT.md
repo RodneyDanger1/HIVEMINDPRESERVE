@@ -385,3 +385,27 @@ four voter task ids to belong to this run, map to `AgentTier::SuperAgent`, and b
 `Completed`; unknown/worker/subagent/foreign-run voters are refused. A final-build
 no-vote `POST .../authorize` returned **409**. This is still authorization only —
 `applied:false` and no rollback/apply path.
+---
+
+## 8. Authorized lesson apply and rollback (2026-11-10)
+
+```text
+POST .../apply
+  require evolution_authorization:<proposal_id> exists
+  require no evolution_apply:<proposal_id>
+  fixed path <data_dir>/evolution/LESSONS.jsonl
+  append one JSON line {proposal_id, area, problem, proposal, evidence, state:applied_lesson}
+  atomic temp-file write + rename
+  record evolution_apply:<proposal_id> {applied:true, sha256, previous_sha256}
+  scope: lesson artifact only; no code, prompt, tool grant, persona, or gate change
+
+POST .../rollback
+  require evolution_apply:<proposal_id>
+  require current file sha256 == recorded sha256
+  remove exactly that proposal line; atomic rewrite
+  record evolution_rollback:<proposal_id> {applied:false, state:rolled_back}
+```
+
+Live negative: unauthorized `POST .../apply` returned **409**, wrote no lesson.
+This is a real authorized learning artifact with rollback, not code
+self-modification. Backend 633 passed; web 229 passed.

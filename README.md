@@ -169,9 +169,9 @@ Current gates (this tree, 2026-11-10):
 - Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **229 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `F60D277192089B47E2C008EA52CFB9B735489F0FC9D8D14204DACFA7CC11DE72`
+  `3669BC97BBE9FC623B5BC1761E2F6859512FCABA4280FFC98F472468EE71BE18`
 - Packaged server / release binary: SHA-256
-  `C885E7DCF478944AE10E33CBD3C968D6053B5B495F7172D3E7364974E02BFF65`
+  `BB238173B8913D943BF27D64119850CAAA57B632C34B8C5A37CB7797C2489034`
 
 ---
 
@@ -363,5 +363,7 @@ SuperAgents record `approve`/`reject` with `vote_evolution`; the API
 aggregates votes into `awaiting_votes`, `awaiting_operator`, or
 `rejected_by_superagent`. The operator has a fifth-seat authorization endpoint
 and UI button, enabled only with four distinct approvals and no rejection; it
-records `authorized_not_applied`. There is still **no apply path**; `can_apply`
-remains false.
+records `authorized_not_applied`. After that, `POST .../apply` appends one durable
+lesson line to `evolution/LESSONS.jsonl` and `POST .../rollback` removes it.
+**Scope is lesson artifact only**; there is no code/schema/prompt/tool/persona
+mutation and `can_apply` remains false.

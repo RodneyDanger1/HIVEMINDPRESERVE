@@ -338,3 +338,9 @@ Final build `C885…` started against the recorded proposal data; `POST
 .../authorize` with the session token and zero votes returned **409**. The
 endpoint now also rejects voters that are not completed SuperAgents in this run.
 No authorization row and no apply occurred.
+## Test U — unauthorized lesson apply refused
+
+Final build, run `01a1c6bc-…`, proposal `01a1c6bc-d355-…`:
+`POST .../apply` without five-seat authorization returned **409**; no lesson
+artifact and no `evolution_apply` row were written. Apply is scoped to a lesson
+artifact only. Evidence: `docs/evidence/live/live-tokenlab-lesson-apply-refusal.json`.
