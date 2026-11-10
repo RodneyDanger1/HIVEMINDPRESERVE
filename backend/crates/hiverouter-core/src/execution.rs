@@ -3906,7 +3906,7 @@ impl RunEngine {
         let mut control_results = String::new();
         let mut root_all_names: HashSet<String> = HashSet::new();
         let mut root_super_spawned = false;
-        for _turn in 0..2 {
+        for turn in 0..2 {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);
             }
@@ -3937,6 +3937,27 @@ impl RunEngine {
             }
             let mut _result_text = String::new();
             for call in reply.tool_calls.iter().take(MAX_ROOT_TOOL_CALLS) {
+                // Turn 1 owns creation. Turn 2 may only synthesize, record a
+                // proposal, read memory, or finish; this prevents a second-turn
+                // model from escalating into a second creation burst.
+                if turn > 0
+                    && matches!(
+                        call.name.as_str(),
+                        "spawn_superagent" | "spawn_remote_agent" | "spawn_daemon"
+                    )
+                {
+                    _result_text.push_str(
+                        "- refused: turn 2 may not create agents or detached principals\n",
+                    );
+                    self.record_root_gate_decision(
+                        run,
+                        root,
+                        "turn_authority",
+                        "refused",
+                        &format!("turn=2 attempted {}", call.name),
+                    )?;
+                    continue;
+                }
                 match call.name.as_str() {
                     "spawn_superagent" => {
                         if has_planned_branch || root_super_spawned {

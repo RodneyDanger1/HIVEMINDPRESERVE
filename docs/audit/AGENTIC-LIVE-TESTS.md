@@ -219,3 +219,17 @@ was created with `owner_id=<run>`, `created_by=agent:<agent task>`, adapter
 This proves the **deterministic HyperAgent admission path** end to end. It does
 not prove an asynchronous LLM HyperAgent decision, and no network satellite was
 created. Evidence: `docs/evidence/live/live-tokenlab-detached-request.json`.
+## Test H — request_id idempotency, live
+
+**Prompt:** one SuperAgent + one Agent; Agent calls `request_detached` once with
+`request_id="live-once-1"` and does not call ask_parent or spawn a Subagent.
+
+**Observed:** completed; 3 tasks (hyper, superagent, worker); usage 7,649 / 411 /
+8,060. Tool turn `request_detached` outcome `ok`. Remote `Lantern` created with
+`request_id=live-once-1` in `remote_created`, one device + one grant,
+`hyper_admission` allow, and `created_by=agent:<task>`. Root control recorded one
+`spawn_superagent` refusal (the planner already supplied a branch).
+
+This proves the idempotency key is carried into the durable audit row in a live
+run. It does **not** prove the retry path live; that is covered by the offline
+idempotency test. Evidence: `docs/evidence/live/live-tokenlab-request-id.json`.

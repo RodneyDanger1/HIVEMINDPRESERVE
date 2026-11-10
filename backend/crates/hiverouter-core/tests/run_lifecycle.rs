@@ -603,6 +603,98 @@ impl ProviderExecutor for RootProposalExecutor {
     }
 }
 
+struct RootSecondTurnSpawnExecutor {
+    orchestrations: AtomicUsize,
+}
+
+impl RootSecondTurnSpawnExecutor {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            orchestrations: AtomicUsize::new(0),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for RootSecondTurnSpawnExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(leaf_plan(1, 1))
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = format!("branch {}", task.id);
+        on_delta(&text);
+        Ok(StreamedReply {
+            deltas: vec![text],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn orchestrate_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let turn = self.orchestrations.fetch_add(1, Ordering::SeqCst);
+        let call = if turn == 0 {
+            AssembledToolCall {
+                index: 0,
+                id: "read-memory".to_owned(),
+                name: "read_memory_summary".to_owned(),
+                arguments: json!({"scope": "run", "limit": 8}),
+            }
+        } else {
+            AssembledToolCall {
+                index: 0,
+                id: "late-spawn".to_owned(),
+                name: "spawn_remote_agent".to_owned(),
+                arguments: json!({"display_name": "late", "kind": "light"}),
+            }
+        };
+        Ok(StreamedReply {
+            deltas: Vec::new(),
+            usage: Usage::default(),
+            tool_calls: vec![call],
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "root answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
 struct RootToolExecutor {
     orchestrations: AtomicUsize,
     tool: &'static str,
@@ -1112,6 +1204,33 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
         .expect("proposal memory row");
     assert!(proposal.value.contains("\"applied\":false"));
     assert!(proposal.value.contains("\"requires_human_review\":true"));
+    assert_eq!(harness.store.tasks_for_run(run.id).expect("tasks").len(), 2);
+}
+
+#[tokio::test]
+async fn root_second_control_turn_cannot_create_boundaries() {
+    let harness = test_engine(RootSecondTurnSpawnExecutor::new());
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("try a late detached spawn", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    assert_eq!(
+        harness.remote.list_remotes().expect("remotes").len(),
+        0,
+        "turn 2 must not create a remote"
+    );
+    let audit = harness.remote.list_audit(None, 50).expect("control audit");
+    assert!(audit.iter().any(|row| {
+        row.action == "root_control"
+            && row.actor_id.starts_with("hyper:")
+            && row.detail_json.contains("turn_authority")
+    }));
     assert_eq!(harness.store.tasks_for_run(run.id).expect("tasks").len(), 2);
 }
 

@@ -1,0 +1,38 @@
+{
+    "usage":  {
+                  "total_tokens":  8060,
+                  "prompt_tokens":  7649,
+                  "completion_tokens":  411
+              },
+    "audit":  [
+                  "remote_created:request_id=live-once-1",
+                  "device_created:system:agent",
+                  "grant_created:system:agent",
+                  "hyper_admission:allow",
+                  "root_control:spawn_superagent:refused"
+              ],
+    "hierarchy":  {
+                      "superagent":  1,
+                      "worker":  1,
+                      "hyper":  1
+                  },
+    "tool":  {
+                 "name":  "request_detached",
+                 "outcome":  "ok"
+             },
+    "remote":  {
+                   "state":  "enrolled",
+                   "owner_id":  "01a1c607-6a44-701a-baf4-c75866d90190",
+                   "device_count":  1,
+                   "grant_count":  1,
+                   "created_by":  "agent:01a1c607-792d-7442-9c6a-9c02158724c6",
+                   "adapter_kind":  "light",
+                   "display_name":  "Lantern"
+               },
+    "observed_at":  "2026-11-10T15:16:00Z",
+    "request_id":  "live-once-1",
+    "status":  "completed",
+    "run_id":  "01a1c607-6a44-701a-baf4-c75866d90190",
+    "provider":  "tokenlab",
+    "tasks":  3
+}
