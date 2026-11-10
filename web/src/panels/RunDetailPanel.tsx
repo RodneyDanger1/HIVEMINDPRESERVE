@@ -72,7 +72,7 @@ function StateBar({ counts }: { readonly counts: Readonly<Record<string, number>
           <li key={state} className="flex items-center gap-1">
             <span
               aria-hidden="true"
-              className="h-[5px] w-[5px] rounded-full"
+              className="h-1 w-1 rounded-full"
               style={{ background: STATE_TONE[state] ?? 'var(--color-ink-500)' }}
             />
             {state} {count}

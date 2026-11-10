@@ -138,9 +138,9 @@ export function CodeBlock({ code, language }: { code: string; language?: string 
     <div className="overflow-hidden rounded-[8px] bg-ink-800">
       <div className="flex items-center gap-1.5 px-3 pt-2">
         <span className="flex gap-1.5" aria-hidden="true">
-          <span className="h-[6px] w-[6px] rounded-full bg-signal" />
-          <span className="h-[6px] w-[6px] rounded-full bg-honey-400" />
-          <span className="h-[6px] w-[6px] rounded-full bg-verify" />
+          <span className="h-2 w-2 rounded-full bg-signal" />
+          <span className="h-2 w-2 rounded-full bg-honey-400" />
+          <span className="h-2 w-2 rounded-full bg-verify" />
         </span>
         {label === null ? null : (
           <span className="type-mono-meta ml-auto truncate text-honey-100/80">{label}</span>

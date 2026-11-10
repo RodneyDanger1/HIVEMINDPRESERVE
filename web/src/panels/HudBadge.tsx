@@ -25,7 +25,7 @@ export function HudBadge() {
       >
         <span
           className={
-            'h-[6px] w-[6px] rounded-full ' +
+            'h-2 w-2 rounded-full ' +
             (hud.source === 'server' && hud.greenPct !== null
               ? 'bg-verify'
               : hud.source === 'derived'

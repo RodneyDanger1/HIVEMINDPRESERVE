@@ -1,0 +1,20 @@
+{
+    "usage":  {
+                  "total_tokens":  1701,
+                  "prompt_tokens":  1698,
+                  "completion_tokens":  3
+              },
+    "wire_model":  "DeepSeek-V4.1-Flash",
+    "answer":  "hello hive",
+    "billing":  "external_unverified",
+    "task_roles":  [
+                       "planner",
+                       "superagent"
+                   ],
+    "observed_at":  "2026-11-10T04:39:52Z",
+    "status":  "completed",
+    "run_id":  "01a1c3c0-f95f-7197-8559-517bb5db818d",
+    "provider":  "tokenlab",
+    "endpoint":  "https://api.tokenlab.amd.com/v1",
+    "tasks":  2
+}

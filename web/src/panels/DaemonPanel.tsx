@@ -192,7 +192,7 @@ export function DaemonPanel() {
       {notice ? <p role="status" className="type-mono-meta mt-1 text-meta">{notice}</p> : null}
       <div className="mt-2 flex flex-wrap gap-2">
         <input
-          className="type-mono-code h-8 min-w-[150px] flex-1 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-ink-900"
+          className="type-mono-code h-8 min-w-[152px] flex-1 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-ink-900"
           value={name}
           maxLength={120}
           onChange={(event) => setName(event.target.value)}

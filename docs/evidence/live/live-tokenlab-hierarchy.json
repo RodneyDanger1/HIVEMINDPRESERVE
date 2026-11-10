@@ -1,0 +1,25 @@
+{
+    "usage":  {
+                  "total_tokens":  15551,
+                  "prompt_tokens":  14407,
+                  "completion_tokens":  1144
+              },
+    "wire_model":  "DeepSeek-V4.1-Flash",
+    "observed_at":  "2026-11-10T05:27:00Z",
+    "hierarchy":  {
+                      "agents":  2,
+                      "superagents":  2,
+                      "subagents":  2,
+                      "hyper":  1
+                  },
+    "wall_seconds":  106,
+    "task_states":  {
+                        "completed":  7
+                    },
+    "billing":  "external_unverified",
+    "status":  "completed",
+    "run_id":  "01a1c402-3dc8-7341-ba38-3c22cdb80edf",
+    "provider":  "tokenlab",
+    "endpoint":  "https://api.tokenlab.amd.com/v1",
+    "tasks":  7
+}

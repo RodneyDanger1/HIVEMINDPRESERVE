@@ -144,7 +144,7 @@
   content: 'no nodes yet';
   position: absolute;
   right: 8px;
-  bottom: 6px;
+  bottom: 8px;
   font: 9px var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;

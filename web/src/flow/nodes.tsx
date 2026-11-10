@@ -147,7 +147,7 @@ function Progress({
 export function SuperAgentNode({ data }: HiveNodeProps) {
   return (
     <Frame data={data} radius={14} gold>
-      <div className="flex h-10 items-center justify-between gap-2 bg-honey-100 pl-[30px] pr-4">
+      <div className="flex h-10 items-center justify-between gap-2 bg-honey-100 pl-8 pr-4">
         <button
           type="button"
           className="nodrag min-w-0 truncate text-left text-[14.5px] font-semibold leading-[18.5px] text-ink-900"
@@ -157,7 +157,7 @@ export function SuperAgentNode({ data }: HiveNodeProps) {
         >
           {data.task.label}
         </button>
-        <span className="flex h-[18px] w-[68px] shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-honey-300">
+        <span className="flex h-5 w-[68px] shrink-0 items-center justify-center rounded-[var(--radius-pill)] bg-honey-300">
           <span className="type-mono-meta text-[11px] text-ink-800">{visualFor(data.task.state).label}</span>
         </span>
         <button
@@ -202,7 +202,7 @@ export function WorkerAgentNode({ data }: HiveNodeProps) {
           </span>
           <button
             type="button"
-            className="nodrag grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border border-hairline bg-panel text-[12px] leading-none text-ink-800 hover:bg-honey-100"
+            className="nodrag grid h-5 w-5 shrink-0 place-items-center rounded-full border border-hairline bg-panel text-[12px] leading-none text-ink-800 hover:bg-honey-100"
             title="Spawn a temporary Subagent under this Agent"
             aria-label={`Spawn a temporary Subagent under ${data.task.label}`}
             onClick={(event) => {
@@ -260,9 +260,9 @@ export function ToolAgentNode({ data }: HiveNodeProps) {
         </div>
         <div className="mt-2 h-[132px] shrink-0 rounded-[8px] bg-ink-800 px-3 py-2">
           <div className="flex gap-1.5" aria-hidden="true">
-            <span className="h-[6px] w-[6px] rounded-full bg-signal" />
-            <span className="h-[6px] w-[6px] rounded-full bg-honey-400" />
-            <span className="h-[6px] w-[6px] rounded-full bg-verify" />
+            <span className="h-2 w-2 rounded-full bg-signal" />
+            <span className="h-2 w-2 rounded-full bg-honey-400" />
+            <span className="h-2 w-2 rounded-full bg-verify" />
           </div>
           <span className="type-mono-meta mt-3 block text-honey-100/80">{STRINGS.node.noToolOutput}</span>
         </div>

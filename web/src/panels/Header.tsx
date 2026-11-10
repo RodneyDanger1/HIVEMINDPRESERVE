@@ -34,7 +34,7 @@ export function Header() {
             fill="var(--color-honey-400)"
           />
         </svg>
-        <span className="truncate text-[17px] font-bold leading-none text-ink-900">HiveMind</span>
+        <span className="truncate text-[17px] font-semibold leading-none text-ink-900">HiveMind</span>
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">

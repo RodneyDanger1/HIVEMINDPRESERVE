@@ -211,7 +211,7 @@ export function LibraryPanel() {
             <li key={template.id}>
               <button
                 type="button"
-                className="flex h-[30px] w-full items-center gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-left text-[11px] text-ink-800 hover:bg-honey-100"
+                className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-left text-[11px] text-ink-800 hover:bg-honey-100"
                 onClick={() => {
                   void insertTemplate(template.id);
                 }}
