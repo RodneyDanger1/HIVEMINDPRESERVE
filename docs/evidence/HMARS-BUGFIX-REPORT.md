@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `68ff3c4`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `67A999D023810DC265F9220A95153BEA6985629514C8E68F9E88BFE1932E5E47`  
-Portable package: `dist/HiveMind.zip` SHA-256 `CCBF829D8DCD8A5BC56D06F8CC87D30D2B0731E9B9011E8BFEA2D63F76944ABA`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `67A999D023810DC265F9220A95153BEA6985629514C8E68F9E88BFE1932E5E47`
+Final repair HEAD at report write: `fc88323`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321`  
+Portable package: `dist/HiveMind.zip` SHA-256 `4D7B7A7D0BDEC3F2AF7A41A684019795BF5A45770E1999883BF4B6E46DB8ED27`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321`
 
 ## 1. What HiveMind is supposed to be
 
@@ -123,6 +123,7 @@ TRUTH:
 | `cc90b4c` | A2A | duplicate open questions are refused before a second parent call; persisted attempts are capped at 2 |
 | `ea49218` | Daemon | allowlisted `.exe`/`.ps1` jobs run outside the DB lock with bounded args/output and timeout tree-kill |
 | `68ff3c4` | Launcher | boot-timeout path stops the child process instead of leaving a server running |
+| `fc88323` | Security | launcher/start script create a per-launch token; `/api/session` refuses a request without a matching `x-hivemind-launch` header |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -142,8 +143,8 @@ Web:
 
 Release:
   cargo build --release --locked -> exit 0
-  target/release/hiverouter.exe SHA-256 67A999D023810DC265F9220A95153BEA6985629514C8E68F9E88BFE1932E5E47
-  size 36,305,920 bytes
+  target/release/hiverouter.exe SHA-256 28E2093A896B506951C87F1832CA5C3DE3DAC8B5D708F435EF1A25A6C4747321
+  size 36,307,968 bytes
 
 Smoke (no provider key, deliberately degraded):
   GET /health -> status "degraded", schema 22
@@ -211,9 +212,10 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 - **A2A attempt counter:** persisted attempts and atomic audit rows exist
   (schema v23); duplicate open questions are refused and attempts are capped at
   2. The operator UI shows the persisted count.
-- **Session token exposure:** `/api/session` still returns the token to a
-  loopback peer with no Origin; read routes remain un-tokenized. This is the
-  local same-user threat model, not a hardened multi-user boundary.
+- **Session token exposure:** the session bootstrap now requires the
+  launcher-issued `x-hivemind-launch` token when `HIVEROUTER_LAUNCH_TOKEN` is
+  set; without it `/api/session` is 403. Read routes remain loopback/Host-gated
+  but un-tokenized, which is the local same-user threat model.
 - **Remote transports:** in-process fixture only; network remotes are not
   implemented. Audit actor uses `system`/`supervisor` for sweeps.
 - **Browser automation:** `tools/qa/ui-e2e.mjs` now drives Edge over CDP,
