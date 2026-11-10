@@ -399,3 +399,11 @@ Before authorize, GET proposals reports `current_superagent_approvals=4` and
 same-run SuperAgent tasks. Invalid voters are no longer counted in the UI
 projection, so the button cannot be offered on votes the authorize route would
 reject. Backend gate: 51 suites / 636 passed.
+## Test AB — authorization binds the proposal hash
+
+Authorization records `proposal_sha256` over `area/problem/proposal/evidence`.
+Apply re-computes it from the current proposal and refuses with **409** on any
+mismatch, so an authorization cannot be reused for changed proposal text. Run
+memory clear now refuses **409** when an `evolution_authorization:` or
+`evolution_apply:` row exists, so a run-memory wipe cannot orphan an applied
+lesson. Backend gate: 51 suites / 636 passed.
