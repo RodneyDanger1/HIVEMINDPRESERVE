@@ -332,3 +332,9 @@ Final build, run `01a1c6bc-be10-7721-839b-15b8aeb365b2`, proposal
 per-boot session token returned **409** because there were zero SuperAgent
 approvals. No authorization memory row and no apply occurred. Evidence:
 `docs/evidence/live/live-tokenlab-authorize-refusal.json`.
+## Test T — voter-identity rejection on final build
+
+Final build `C885…` started against the recorded proposal data; `POST
+.../authorize` with the session token and zero votes returned **409**. The
+endpoint now also rejects voters that are not completed SuperAgents in this run.
+No authorization row and no apply occurred.

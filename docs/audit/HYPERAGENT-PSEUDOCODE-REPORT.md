@@ -380,3 +380,8 @@ SuperAgent votes returned HTTP 409; no authorization row and no apply. Evidence:
 The UI sends the per-boot `Authorization: Bearer <session token>` header; without
 it the mutation correctly returns 401. This is the only fifth-seat path, and it
 still cannot apply code.
+Voter-identity hardening: the authorization endpoint now requires each of the
+four voter task ids to belong to this run, map to `AgentTier::SuperAgent`, and be
+`Completed`; unknown/worker/subagent/foreign-run voters are refused. A final-build
+no-vote `POST .../authorize` returned **409**. This is still authorization only —
+`applied:false` and no rollback/apply path.
