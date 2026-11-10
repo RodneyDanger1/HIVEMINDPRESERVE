@@ -4,10 +4,10 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `113586c`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `AFAD3EBB396037E38D5A12D8C8112C3ED18F6E627224557CDA4C2D0268B74BEB`  
-Portable package: `dist/HiveMind.zip` SHA-256 `050672FE90435FF271991D39579904D3B1881CA64B3C4F94F896824CA84454EF`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `AFAD3EBB396037E38D5A12D8C8112C3ED18F6E627224557CDA4C2D0268B74BEB`
+Final repair HEAD at report write: `f988ef2`  
+Release binary: `target/release/hiverouter.exe` SHA-256 `DB0183EAF279BC4436F6634BF9AB3D2665012468C2F5B1136AA678D9AF16926F`  
+Portable package: `dist/HiveMind.zip` SHA-256 `664A78FA1CFD4B96320A66439FC3EC5F2F2A9128223F553BC183AA3468481C71`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `DB0183EAF279BC4436F6634BF9AB3D2665012468C2F5B1136AA678D9AF16926F`
 
 ## 1. What HiveMind is supposed to be
 
@@ -127,6 +127,7 @@ TRUTH:
 | `bc5ab0d` | Security | all `/api/*` reads require the launcher token when configured; UI wraps same-origin API fetch to send it |
 | `3a43ceb` | Runtime | planner/control usage checkpointed; invalid plans get one counted repair call; root checkpoint cannot add a branch when the planner already supplied one |
 | `113586c` | UI | 10–20% Unslop polish: all off-grid spacing and header weight fixed; audit before/after in `audit/` |
+| `f988ef2` | UI | HoneyGlass startup veil (glassmorphism pane, liquid honeycomb, neumorphic progress, finite motion) + design-system/roadmap docs |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -223,12 +224,20 @@ Billing remains `external_unverified`; no USD figure is claimed for these runs.
 
 `audit/UNSLOP-REPORT.md` records the five-line direction, nine-pass scope,
 before/after audit, and accepted findings. Deterministic audit:
-**71 → 47 errors**, with **U006 spacing 23 → 0** and **U003 weight 1 → 0**.
-Remaining U005 is the intentional FigCraft motion language; U001/U011 are
-false positives from Tailwind `!` utilities and the domain action `unlock`.
-Baseline/final renders are `audit/baseline.light.png` and
-`audit/final.light.png`; connected product proof is
-`docs/evidence/live/ui-polished-final.png`.
+**71 → 47 errors / 3 → 5 warnings**, with **U006 spacing 23 → 0** and
+**U003 weight 1 → 0**. Remaining U005 is the intentional FigCraft motion
+language; U001/U011 are false positives from Tailwind `!` utilities and the
+domain action `unlock`; the two new U010 warnings are the splash kicker and
+loading label, deliberately tracked mono. Baseline/final renders are
+`audit/baseline.light.png` and `audit/final.light.png`; connected product proof
+is `docs/evidence/live/ui-polished-final.png`.
+
+The startup veil is documented in
+`docs/ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md` and
+`docs/UI-UX-ROADMAP.md`. It shows the live connection state, a bounded loading
+window, a FigCraft wordmark with honey drip, and the bottom-right glass credit
+"Designed by Riley Christensen". The splash screenshot is
+`docs/evidence/live/ui-splash.png`.
 
 ## 8. Remaining / unverified
 
@@ -290,3 +299,9 @@ before any further live run.
 - `audit/UNSLOP-REPORT.md`, `audit/baseline.light.png`, `audit/final.light.png`
 - `docs/evidence/live/ui-e2e-provider-save.png` - CDP Settings -> Provider save
 - `tools/qa/ui-e2e.mjs` - repeatable local UI E2E (no provider key)
+## 11. HoneyGlass documentation
+
+- `docs/ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md` - material rules, splash lifecycle, pseudocode/real-code analysis, roadmap section.
+- `docs/UI-UX-ROADMAP.md` - dedicated UI/UX roadmap with the 10-20% scope boundary.
+- `docs/evidence/live/ui-splash.png` - 1440x900 HoneyGlass startup veil.
+- `docs/evidence/live/ui-polished-final.png` - connected workspace after polish.
