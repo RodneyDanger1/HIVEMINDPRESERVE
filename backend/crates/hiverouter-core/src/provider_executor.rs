@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
-use hiverouter_contract::{Refusal, RunId, TaskId};
+use hiverouter_contract::{Refusal, RunId, TaskId, Usage};
 use hiverouter_provider::{
     BudgetLimits, CallEstimate, ChatMessage, ChatRequest, ClientConfig, Completion, DeepSeekClient,
     RunBudget, StreamEvent, Thinking,
@@ -28,8 +28,9 @@ no markdown fences, no prose. Schema: {\"nodes\":[{\"id\":\"n1\",\"role\":\"supe
 \"deps\":[],\"depth\":1}]}. Use short string ids; every dep must be the id of another node; \
 depth must be >= 1 and <= 3. Strict hierarchy: depth 1 nodes are superagent branch leads; \
 workers (agents) may only be depth 2 under a superagent; subagents may only be depth 3 \
-under a worker. Never place worker or subagent at depth 1. Produce the smallest useful DAG \
-(1..=8 nodes).";
+under a worker. Never place worker or subagent at depth 1. If the user specifies exact \
+counts, roles, or topology, honor them exactly and do not add extra branch leads. Produce \
+the smallest useful DAG (1..=8 nodes).";
 
 const TASK_SYSTEM: &str = "You are a HiveMind agent. Answer the assigned task directly and \
 concisely. Do not claim tool calls or side effects you did not perform. If the task cannot be \
@@ -56,6 +57,9 @@ pub struct ProviderExecutorAdapter {
     settings: ProviderSettings,
     budgets: tokio::sync::Mutex<HashMap<RunId, RunBudget>>,
     persona_prompts: HashMap<String, String>,
+    /// Planner/control usage is not part of a StreamedReply; buffer it so the
+    /// engine can persist it with the same accounting as task replies.
+    pending_usage: std::sync::Mutex<Usage>,
 }
 
 impl std::fmt::Debug for ProviderExecutorAdapter {
@@ -89,12 +93,51 @@ impl ProviderExecutorAdapter {
 
     /// Builds the adapter over an explicit client (tests inject wiremock).
     #[must_use]
+    async fn plan_with_system(
+        &self,
+        run_id: RunId,
+        prompt: &str,
+        cancel: &CancellationToken,
+        system: &str,
+    ) -> Result<Plan, Refusal> {
+        let request = self.chat_request(
+            vec![
+                ChatMessage::system(system),
+                ChatMessage::user(format!(
+                    "Create the execution-plan DAG for this user task. Return JSON only.\n\nTask:\n{prompt}"
+                )),
+            ],
+        )
+        .with_thinking(self.settings.planner_thinking)
+        .with_reasoning_effort(self.settings.planner_reasoning_effort)
+        .with_max_tokens(self.settings.planner_max_tokens)
+        .with_response_format(ResponseFormat::json_object());
+        let completion = tokio::select! {
+            _ = cancel.cancelled() => return Err(Refusal::ToolCancelled),
+            result = self.complete(run_id, &request, self.settings.planner_max_tokens) => result?,
+        };
+        if let Some(usage) = completion.usage.clone() {
+            self.record_pending_usage(usage);
+        }
+        let content = message_text(&completion)?;
+        let wire: WirePlan = serde_json::from_str(strip_fences(&content))
+            .map_err(|_| Refusal::SchemaInvalid)?;
+        wire.into_plan()
+    }
+
     pub fn new(client: DeepSeekClient, settings: ProviderSettings) -> Self {
         Self {
             client,
             settings,
             budgets: tokio::sync::Mutex::new(HashMap::new()),
             persona_prompts: HashMap::new(),
+            pending_usage: std::sync::Mutex::new(Usage::default()),
+        }
+    }
+
+    fn record_pending_usage(&self, usage: Usage) {
+        if let Ok(mut pending) = self.pending_usage.lock() {
+            *pending = pending.checked_add(&usage);
         }
     }
 
@@ -348,32 +391,38 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         Some(true)
     }
 
+    fn take_pending_usage(&self) -> Usage {
+        self.pending_usage
+            .lock()
+            .map(|mut pending| std::mem::take(&mut *pending))
+            .unwrap_or_default()
+    }
+
     async fn plan(
         &self,
         run_id: RunId,
         prompt: &str,
         cancel: &CancellationToken,
     ) -> Result<Plan, Refusal> {
-        let request = self.chat_request(
-            vec![
-                ChatMessage::system(PLANNER_SYSTEM),
-                ChatMessage::user(format!(
-                    "Create the execution-plan DAG for this user task. Return JSON only.\n\nTask:\n{prompt}"
-                )),
-            ],
+        self.plan_with_system(run_id, prompt, cancel, PLANNER_SYSTEM)
+            .await
+    }
+
+    async fn repair_plan(
+        &self,
+        run_id: RunId,
+        prompt: &str,
+        cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        self.plan_with_system(
+            run_id,
+            prompt,
+            cancel,
+            "The previous plan was invalid. Return ONE JSON object only with the same schema. \
+             Use only roles superagent, agent, or subagent; include parent for every node at \
+             depth > 1; every dependency must be another node id; do not add prose or fences.",
         )
-        .with_thinking(self.settings.planner_thinking)
-        .with_reasoning_effort(self.settings.planner_reasoning_effort)
-        .with_max_tokens(self.settings.planner_max_tokens)
-        .with_response_format(ResponseFormat::json_object());
-        let completion = tokio::select! {
-            _ = cancel.cancelled() => return Err(Refusal::ToolCancelled),
-            result = self.complete(run_id, &request, self.settings.planner_max_tokens) => result?,
-        };
-        let content = message_text(&completion)?;
-        let wire: WirePlan = serde_json::from_str(strip_fences(&content))
-            .map_err(|_| Refusal::SchemaInvalid)?;
-        wire.into_plan()
+        .await
     }
 
     async fn execute(

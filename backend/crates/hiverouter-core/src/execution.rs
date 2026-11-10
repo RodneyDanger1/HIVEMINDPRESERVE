@@ -394,6 +394,23 @@ pub trait ProviderExecutor: Send + Sync {
         self.execute(run_id, task, prompt, cancel, on_delta).await
     }
 
+    /// One repair planner call after invalid JSON/schema. The engine claims the
+    /// extra provider call explicitly before invoking this.
+    async fn repair_plan(
+        &self,
+        run_id: RunId,
+        prompt: &str,
+        cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        self.plan(run_id, prompt, cancel).await
+    }
+
+    /// Takes usage from non-streamed planner/control calls that do not return a
+    /// [`StreamedReply`]. Test doubles return zero.
+    fn take_pending_usage(&self) -> Usage {
+        Usage::default()
+    }
+
     /// Releases any per-run provider state after the run reaches a terminal
     /// status. The default is a no-op for stateless/test executors.
     async fn finish_run(&self, _run_id: RunId) {}
@@ -985,6 +1002,25 @@ impl RunEngine {
         if let Ok(mut totals) = self.usage_by_run.lock() {
             let entry = totals.entry(run_id).or_default();
             *entry = entry.checked_add(&usage);
+        }
+        // Persist a cumulative checkpoint after every measured reply. A crash
+        // or operator kill must not hide tokens already spent.
+        self.checkpoint_run_usage(run_id);
+    }
+
+    fn checkpoint_run_usage(&self, run_id: RunId) {
+        let usage = self
+            .usage_by_run
+            .lock()
+            .ok()
+            .and_then(|totals| totals.get(&run_id).cloned());
+        if let Some(usage) = usage {
+            if let Err(error) = self.store.record_run_usage(run_id, &usage) {
+                tracing::error!(
+                    code = error.code(),
+                    "failed to checkpoint run usage totals"
+                );
+            }
         }
     }
 
@@ -1714,9 +1750,29 @@ impl RunEngine {
         // Exactly one planning call per plan, counted against the real run cap.
         self.claim_provider_call(run.id)?;
         let planning_prompt = self.planning_prompt(run);
-        let plan = tokio::select! {
+        let first_plan = tokio::select! {
             _ = token.cancelled() => return Err(Refusal::ToolCancelled),
-            result = self.executor.plan(run.id, &planning_prompt, token) => result?,
+            result = self.executor.plan(run.id, &planning_prompt, token) => result,
+        };
+        self.add_run_usage(run.id, self.executor.take_pending_usage());
+        let plan = match first_plan {
+            Ok(plan) => plan,
+            Err(refusal)
+                if matches!(
+                    refusal,
+                    Refusal::SchemaInvalid | Refusal::ProviderInvalidResponse
+                ) =>
+            {
+                // One repair attempt is allowed and counted as its own real call.
+                self.claim_provider_call(run.id)?;
+                let retried = tokio::select! {
+                    _ = token.cancelled() => return Err(Refusal::ToolCancelled),
+                    result = self.executor.repair_plan(run.id, &planning_prompt, token) => result,
+                };
+                self.add_run_usage(run.id, self.executor.take_pending_usage());
+                retried?
+            }
+            Err(refusal) => return Err(refusal),
         };
         plan.validate()?;
 
@@ -3822,6 +3878,11 @@ impl RunEngine {
              Never spawn a direct Agent or Subagent. Return no prose in this control turn.\n",
             run.prompt, plan_digest
         );
+        // A root control turn may add one branch lead only when the planner
+        // produced a flat plan. If the planner already supplied branch leads,
+        // allowing the root to add more silently expands the requested topology
+        // (live TokenLab run: a two-branch request became five depth-1 leads).
+        let has_planned_branch = plan.nodes.iter().any(|node| node.depth == 1);
         // A provider that ignores the finish instruction must not be allowed to
         // turn one control response into an unbounded spawn burst. The cap is
         // intentionally small: root adds a few extra branches, it is not a
@@ -3837,6 +3898,7 @@ impl RunEngine {
                 .executor
                 .orchestrate_root(run.id, root, &prompt, token, &sink)
                 .await?;
+            self.add_run_usage(run.id, reply.usage.clone());
             if reply.tool_calls.is_empty() {
                 return Ok(());
             }
@@ -3852,11 +3914,17 @@ impl RunEngine {
             for call in reply.tool_calls.iter().take(MAX_ROOT_TOOL_CALLS) {
                 match call.name.as_str() {
                     "spawn_superagent" => {
-                        let child = self.spawn_sub_hive(root.id, "super")?;
-                        _result_text.push_str(&format!(
-                            "- spawned superagent {} depth={}\n",
-                            child.id, child.depth
-                        ));
+                        if has_planned_branch {
+                            _result_text.push_str(
+                                "- refused: the planner already supplied branch leads\n",
+                            );
+                        } else {
+                            let child = self.spawn_sub_hive(root.id, "super")?;
+                            _result_text.push_str(&format!(
+                                "- spawned superagent {} depth={}\n",
+                                child.id, child.depth
+                            ));
+                        }
                     }
                     "spawn_remote_agent" => {
                         let result = self.execute_root_remote_call(root, call)?;

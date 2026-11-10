@@ -597,7 +597,7 @@ async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
 }
 
 #[tokio::test]
-async fn hyperagent_checkpoint_can_add_a_superagent_branch() {
+async fn hyperagent_checkpoint_refuses_an_extra_branch_when_the_planner_has_one() {
     let harness = test_engine(RootSuperExecutor::new());
     let mut receiver = harness.bus.subscribe();
     let run = harness
@@ -611,7 +611,11 @@ async fn hyperagent_checkpoint_can_add_a_superagent_branch() {
     .await;
     assert_eq!(completed.envelope.payload["status"], "completed");
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
-    assert_eq!(tasks.len(), 3, "root + planned super + checkpoint super");
+    assert_eq!(
+        tasks.len(),
+        2,
+        "root + the planner's branch; the root checkpoint must not add a branch"
+    );
     let root = tasks
         .iter()
         .find(|task| task.parent_task_id.is_none())
@@ -621,13 +625,8 @@ async fn hyperagent_checkpoint_can_add_a_superagent_branch() {
         .iter()
         .filter(|task| task.role == "super")
         .collect();
-    assert_eq!(supers.len(), 2, "both branch leads must be persisted");
-    assert!(
-        supers
-            .iter()
-            .all(|task| task.parent_task_id == Some(root.id)),
-        "both branch leads must be strict HyperAgent children"
-    );
+    assert_eq!(supers.len(), 1, "only the planned branch lead exists");
+    assert_eq!(supers[0].parent_task_id, Some(root.id));
 }
 
 #[tokio::test]

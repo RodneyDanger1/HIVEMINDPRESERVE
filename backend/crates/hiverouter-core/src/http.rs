@@ -17,6 +17,27 @@ use hiverouter_contract::Refusal;
 /// Optional per-launch secret; when set, `/api/session` requires the matching
 /// `x-hivemind-launch` header supplied by the launcher URL.
 const LAUNCH_TOKEN_ENV: &str = "HIVEROUTER_LAUNCH_TOKEN";
+
+fn configured_launch_token() -> Option<String> {
+    std::env::var(LAUNCH_TOKEN_ENV)
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+fn supplied_launch_token(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get("x-hivemind-launch")
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+}
+
+fn launch_token_matches(expected: Option<&str>, supplied: Option<&str>) -> bool {
+    match expected {
+        None => true,
+        Some(expected) => supplied == Some(expected),
+    }
+}
 use hiverouter_provider::{ClientConfig, DeepSeekClient};
 use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
@@ -690,20 +711,14 @@ async fn mutation_auth(
     request: Request,
     next: Next,
 ) -> Response {
-    let launch_gate = std::env::var(LAUNCH_TOKEN_ENV)
-        .ok()
-        .map(|value| value.trim().to_owned())
-        .filter(|value| !value.is_empty());
+    let launch_gate = configured_launch_token();
     if let Some(expected) = launch_gate {
         if request.method() == axum::http::Method::GET
             && request.uri().path().starts_with("/api/")
             && request.uri().path() != "/api/session"
         {
-            let supplied = request
-                .headers()
-                .get("x-hivemind-launch")
-                .and_then(|value| value.to_str().ok());
-            if supplied != Some(expected.as_str()) {
+            let supplied = supplied_launch_token(request.headers());
+            if !launch_token_matches(Some(expected.as_str()), supplied) {
                 return (
                     StatusCode::FORBIDDEN,
                     [(header::CACHE_CONTROL, "no-store")],
@@ -2925,23 +2940,18 @@ async fn api_session(
     if !allowed {
         return refusal_response(StatusCode::FORBIDDEN, &hiverouter_contract::Refusal::OriginRejected);
     }
-    if let Ok(expected) = std::env::var(LAUNCH_TOKEN_ENV) {
-        let expected = expected.trim();
-        if !expected.is_empty() {
-            let supplied = headers
-                .get("x-hivemind-launch")
-                .and_then(|value| value.to_str().ok());
-            if supplied != Some(expected) {
-                return (
-                    StatusCode::FORBIDDEN,
-                    Json(serde_json::json!({
-                        "code": hiverouter_contract::Refusal::OriginRejected.code(),
-                        "message": "the launcher token is required to read the session",
-                        "how_to_fix": "open HiveMind through HiveMind.exe or start-hivemind.ps1",
-                    })),
-                )
-                    .into_response();
-            }
+    if let Some(expected) = configured_launch_token() {
+        let supplied = supplied_launch_token(&headers);
+        if !launch_token_matches(Some(expected.as_str()), supplied) {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(serde_json::json!({
+                    "code": hiverouter_contract::Refusal::OriginRejected.code(),
+                    "message": "the launcher token is required to read the session",
+                    "how_to_fix": "open HiveMind through HiveMind.exe or start-hivemind.ps1",
+                })),
+            )
+                .into_response();
         }
     }
     (
@@ -3025,5 +3035,13 @@ mod tests {
         assert_eq!(events[0].envelope.payload["task_id"], task.id.to_string());
         assert_eq!(events[0].envelope.payload["state"], "interrupted");
         assert_eq!(events[0].envelope.run_id, Some(run.id));
+    }
+
+    #[test]
+    fn launch_token_gate_matches_only_the_configured_secret() {
+        assert!(launch_token_matches(None, None));
+        assert!(launch_token_matches(Some("abc"), Some("abc")));
+        assert!(!launch_token_matches(Some("abc"), None));
+        assert!(!launch_token_matches(Some("abc"), Some("wrong")));
     }
 }
