@@ -274,9 +274,15 @@ fn build_executor(
         return Arc::new(UnconfiguredExecutor);
     }
     let prompts = persona_system_prompts(personas, templates);
-    match ProviderExecutorAdapter::from_env(config.provider.clone())
-        .map(|adapter| adapter.with_persona_prompts(prompts))
-    {
+    let allowlists = personas
+        .iter()
+        .map(|persona| (persona.id.clone(), persona.allowed_tool_ids.clone()))
+        .collect::<std::collections::HashMap<_, _>>();
+    match ProviderExecutorAdapter::from_env(config.provider.clone()).map(|adapter| {
+        adapter
+            .with_persona_prompts(prompts)
+            .with_persona_tool_allowlists(allowlists)
+    }) {
         Ok(executor) => Arc::new(executor),
         Err(error) => {
             tracing::warn!(

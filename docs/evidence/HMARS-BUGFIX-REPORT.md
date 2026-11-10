@@ -5,9 +5,9 @@ Repo: `C:\Users\Riley\Desktop\hiverouter-v1`
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
 Final repair HEAD at report write: `f988ef2`  
-Release binary: `target/release/hiverouter.exe` SHA-256 `DB0183EAF279BC4436F6634BF9AB3D2665012468C2F5B1136AA678D9AF16926F`  
-Portable package: `dist/HiveMind.zip` SHA-256 `664A78FA1CFD4B96320A66439FC3EC5F2F2A9128223F553BC183AA3468481C71`  
-Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `DB0183EAF279BC4436F6634BF9AB3D2665012468C2F5B1136AA678D9AF16926F`
+Release binary: `target/release/hiverouter.exe` SHA-256 `EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC`  
+Portable package: `dist/HiveMind.zip` SHA-256 `A6C536804E21111C326ABB7D6D66F233DECD77AF37C00D100490A45AEC0B8AA6`  
+Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `EAF16EB85B2FAA8648F794466643B79D4A1E2F212F7581668FCFE4E4044E5CCC`
 
 ## 1. What HiveMind is supposed to be
 
@@ -326,3 +326,59 @@ Evidence: `docs/evidence/live/live-tokenlab-hierarchy.json`,
 Important boundary: the remote transport is still `in_process`; the device/grant
 are real fixture records, not a network satellite. Lower-level request -> HyperAgent
 approval is not implemented as a separate protocol.
+## 13. Independent agentic audits and fixes (2026-11-10)
+
+Four read-only audits were produced in parallel and pinned to `919c339`:
+
+| Audit | File | Verdict |
+|---|---|---|
+| Agent taxonomy vs Meta/DeepSeek/NVIDIA/OpenAI/Anthropic | `docs/audit/AGENT-TAXONOMY-VERIFICATION.md` | Genuine four-rank hierarchy; taxonomy is mislabeled in places; no AGI overclaim |
+| Role/class/tool/spawn capability matrix | `docs/audit/CAPABILITY-MATRIX.md` | HyperAgent partial, SuperAgent alias-dependent, Agent/Subagent genuine, ToolAgent/remote-worker labels; ownership label |
+| Remote/daemon permission and A2A lifecycle | `docs/audit/REMOTE-PERMISSION-GAPS.md` | Only root can create remote/daemon; no lower-level request/approval protocol; duplicate/late gaps |
+| Live test matrix and pseudocode | `docs/audit/AGENTIC-TEST-PLAN.md` | 6 scenarios + no-key probe; 1-3 minute budgets |
+
+The audits also corrected two earlier overclaims: the root `spawn_superagent`
+allow path is dead because every valid plan has a depth-1 node, and the live
+remote is an in-process fixture principal, not a network satellite.
+
+### Fixes applied from the audits
+
+- **Persona alias and effective tool surface:** `super` resolves to the
+  `superagent` persona, `worker` to `agent`, `hyper` to `planner`; the provider
+  now advertises only the intersection of tier and persona allowlist instead of
+  a wider tier surface.
+- **Cross-run rewire refused:** `REWIRE_TASK` now requires parent and child to
+  share a run before graph/context writes, closing foreign-branch memory
+  injection.
+- **HyperAgent memory bank:** completed HyperAgent memory now always writes to
+  `bank:run:<run>`, not an orphan `bank:branch:<root>`.
+- **Truthful detached attribution:** HyperAgent-created remotes, devices, and
+  grants are audited and stored as `system`/`hyper:<task>`, not `operator`.
+- **Duplicate root detached names refused:** one root control turn cannot create
+  two remotes or two daemons with the same display name in one hive.
+- **Root memory summary honors scope and limit:** `read_memory_summary` now
+  filters run/hive/branch and clamps the returned limit.
+- **Child aggregation clarity:** a parent prompt labels the result as
+  `DIRECT CHILD RESULT (this task's own child)` so the model cannot confuse it
+  with a sibling result.
+- **Tool description truth:** the root remote tool now says it creates a fixture
+  device and narrow grant, not "no grant".
+
+### Remaining honest gaps
+
+1. No lower-level request -> HyperAgent approval protocol for detached agents;
+   the authority model must be chosen before implementation.
+2. Root `spawn_superagent` is unconditional refusal for valid plans (dead allow
+   path); either remove it or define a valid no-branch plan.
+3. Remote transport is still `in_process`; no network satellite.
+4. Root-control results and branch-gate decisions are not persisted as audit rows.
+5. Local architecture docs are materially stale and must be rewritten to the
+   five-tier/class/bank/remote reality.
+6. A2A duplicate/late decisions and device-action idempotency conflicts need
+   named audit semantics.
+
+### Gate and artifact
+
+- Backend: **49 suites, 619 passed, 0 failed, 2 ignored**.
+- Web: 225 tests, typecheck 0, production build 0; UI unchanged by this round.
+- Release binary and package hashes are recorded at the top of this report.

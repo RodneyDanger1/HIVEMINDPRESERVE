@@ -591,8 +591,46 @@ async fn hyperagent_can_spawn_a_detached_remote_without_a_task_row() {
         .expect("devices");
     assert_eq!(devices.len(), 1, "a spawned relay must be actuable");
     assert_eq!(devices[0].class, "switch");
+    let grants = harness
+        .remote
+        .list_grants(&remotes[0].remote_id)
+        .expect("grants");
+    assert_eq!(grants.len(), 1);
+    assert!(grants[0].granted_by.starts_with("hyper:"));
+    let audit = harness
+        .remote
+        .list_audit(Some(&remotes[0].remote_id), 50)
+        .expect("audit");
+    assert!(audit.iter().any(|row| {
+        row.action == "remote_created"
+            && row.actor_kind == "system"
+            && row.actor_id == remotes[0].created_by
+    }));
+    assert!(audit.iter().any(|row| {
+        row.action == "grant_created"
+            && row.actor_kind == "system"
+            && row.actor_id == remotes[0].created_by
+    }));
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     assert_eq!(tasks.len(), 3, "root plus two branch tasks");
+    let root = tasks
+        .iter()
+        .find(|task| task.depth == 0)
+        .expect("root task");
+    let banks = harness
+        .store
+        .memory_banks_for_run(run.id)
+        .expect("memory banks");
+    assert!(
+        banks.iter().any(|bank| bank.id == format!("bank:run:{}", run.id)),
+        "HyperAgent memory must live in the run bank"
+    );
+    assert!(
+        !banks
+            .iter()
+            .any(|bank| bank.id == format!("bank:branch:{}", root.id)),
+        "HyperAgent memory must not be orphaned into a branch bank"
+    );
     assert!(tasks.iter().all(|task| task.id.to_string() != remotes[0].remote_id));
 }
 

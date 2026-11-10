@@ -1343,6 +1343,7 @@ impl RunStore {
             .task_identity(task_id)?
             .map(|identity| identity.class);
         let bank_id = match class.as_deref() {
+            Some("hyper") => format!("bank:run:{run_id}"),
             Some("super") => format!("bank:hive:{task_id}"),
             Some("agent" | "subagent") => format!("bank:branch:{task_id}"),
             None => format!("bank:branch:{task_id}"),

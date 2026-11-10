@@ -57,6 +57,7 @@ pub struct ProviderExecutorAdapter {
     settings: ProviderSettings,
     budgets: tokio::sync::Mutex<HashMap<RunId, RunBudget>>,
     persona_prompts: HashMap<String, String>,
+    persona_tool_allowlists: HashMap<String, Vec<String>>,
     /// Planner/control usage is not part of a StreamedReply; buffer it so the
     /// engine can persist it with the same accounting as task replies.
     pending_usage: std::sync::Mutex<Usage>,
@@ -131,6 +132,7 @@ impl ProviderExecutorAdapter {
             settings,
             budgets: tokio::sync::Mutex::new(HashMap::new()),
             persona_prompts: HashMap::new(),
+            persona_tool_allowlists: HashMap::new(),
             pending_usage: std::sync::Mutex::new(Usage::default()),
         }
     }
@@ -148,8 +150,30 @@ impl ProviderExecutorAdapter {
         self
     }
 
+    /// Attaches each persona's effective tool allowlist so the model is only
+    /// offered tools its role can actually call.
+    #[must_use]
+    pub fn with_persona_tool_allowlists(
+        mut self,
+        allowlists: HashMap<String, Vec<String>>,
+    ) -> Self {
+        self.persona_tool_allowlists = allowlists;
+        self
+    }
+
+    fn persona_key(raw: &str) -> String {
+        let lower = raw.trim().to_ascii_lowercase();
+        match lower.as_str() {
+            "super" => "superagent".to_owned(),
+            "worker" => "agent".to_owned(),
+            "planner" | "hyper" => "planner".to_owned(),
+            "sub" => "subagent".to_owned(),
+            _ => lower.replace(['-', ' '], "_"),
+        }
+    }
+
     fn system_prompt_for(&self, task: &TaskRecord) -> &str {
-        let raw = task.role.trim().to_ascii_lowercase();
+        let raw = Self::persona_key(&task.role);
         self.persona_prompts
             .get(&raw)
             .or_else(|| {
@@ -158,6 +182,17 @@ impl ProviderExecutorAdapter {
             })
             .map(String::as_str)
             .unwrap_or(TASK_SYSTEM)
+    }
+
+    fn tools_for_task(&self, task: &TaskRecord, tools: Vec<ToolSpec>) -> Vec<ToolSpec> {
+        let key = Self::persona_key(&task.role);
+        let Some(allowed) = self.persona_tool_allowlists.get(&key) else {
+            return tools;
+        };
+        tools
+            .into_iter()
+            .filter(|tool| allowed.iter().any(|id| id == &tool.function.name))
+            .collect()
     }
 
     fn compatible_request(&self, request: &ChatRequest) -> ChatRequest {
@@ -434,7 +469,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
         let registry = ToolRegistry::standard();
-        let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
+        let tools = self.tools_for_task(task, tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task)));
         let mut request = self.chat_request(
             vec![
                 ChatMessage::system(self.system_prompt_for(task)),
@@ -554,7 +589,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
             ToolSpec::function(FunctionDefinition {
                 name: "spawn_remote_agent".to_owned(),
                 description: Some(
-                    "Create one tree-free remote principal; it is not a task and has no grant."
+                    "Create one tree-free remote principal plus its fixture device and narrow grant; it is not a task."
                         .to_owned(),
                 ),
                 parameters: serde_json::json!({
@@ -721,7 +756,7 @@ impl ProviderExecutor for ProviderExecutorAdapter {
             )));
         }
         let registry = ToolRegistry::standard();
-        let tools = tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task));
+        let tools = self.tools_for_task(task, tool_loop::tool_specs_for_tier(&registry, task_agent_tier(task)));
         let request = self.chat_request(messages)
             .with_thinking(self.settings.leaf_thinking)
             .with_max_tokens(self.settings.leaf_max_tokens)
@@ -914,6 +949,21 @@ impl WirePlan {
 mod tests {
     use super::*;
     use hiverouter_provider::{Model, ReasoningEffort};
+
+    #[test]
+    fn role_aliases_resolve_to_effective_persona_keys() {
+        assert_eq!(
+            ProviderExecutorAdapter::persona_key("super"),
+            "superagent"
+        );
+        assert_eq!(ProviderExecutorAdapter::persona_key("worker"), "agent");
+        assert_eq!(ProviderExecutorAdapter::persona_key("hyper"), "planner");
+        assert_eq!(ProviderExecutorAdapter::persona_key("sub"), "subagent");
+        assert_eq!(
+            ProviderExecutorAdapter::persona_key("content-writer"),
+            "content_writer"
+        );
+    }
 
     #[test]
     fn wire_plan_rejects_duplicate_ids() {

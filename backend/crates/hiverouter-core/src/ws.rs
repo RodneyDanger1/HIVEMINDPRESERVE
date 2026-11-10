@@ -393,6 +393,12 @@ fn insert_template_dag(
 ///
 /// # Errors
 /// `E_INTERNAL_ERROR` when the context store lock is poisoned.
+/// Rewire is a same-run hierarchy mutation; a foreign-run parent would inject
+/// foreign scoped facts and expose its branch memory.
+fn same_run_rewire(task_run: hiverouter_contract::RunId, parent_run: hiverouter_contract::RunId) -> bool {
+    task_run == parent_run
+}
+
 fn seed_rewire_context(
     contexts: &ContextStore,
     task_id: TaskId,
@@ -805,6 +811,13 @@ async fn handle_client_text(
                         return Ok(());
                     }
                 };
+                // Rewire is a same-run hierarchy mutation. A foreign-run parent
+                // would inject foreign scoped facts and make that branch memory
+                // addressable; refuse it before any graph/context write.
+                if !same_run_rewire(task.run_id, parent.run_id) {
+                    publish_error(state, Refusal::TaskNotFound, Some(correlation));
+                    return Ok(());
+                }
                 if parent.depth.saturating_add(1) != task.depth {
                     publish_error(state, Refusal::SpawnDepth, Some(correlation));
                     return Ok(());
@@ -1522,6 +1535,14 @@ mod tests {
             Err(Refusal::TaskNotFound),
             "there is no root node to attach a template node set to"
         );
+    }
+
+    #[test]
+    fn rewire_requires_same_run_parent() {
+        let run = hiverouter_contract::RunId::new();
+        let other = hiverouter_contract::RunId::new();
+        assert!(same_run_rewire(run, run));
+        assert!(!same_run_rewire(run, other));
     }
 
     #[test]

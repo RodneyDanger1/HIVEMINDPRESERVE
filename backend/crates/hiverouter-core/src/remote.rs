@@ -351,7 +351,11 @@ impl RemoteStore {
                 )?;
                 audit(
                     connection,
-                    "operator",
+                    if input.created_by.starts_with("hyper:") {
+                        "system"
+                    } else {
+                        "operator"
+                    },
                     &input.created_by,
                     Some(&remote_id),
                     None,
@@ -565,11 +569,16 @@ impl RemoteStore {
         let now = Timestamp::now().as_str().to_owned();
         self.db
             .with_connection(|connection| {
+                let actor_kind = if remote.created_by.starts_with("hyper:") {
+                    "system"
+                } else {
+                    "operator"
+                };
                 connection.execute(
                     "INSERT INTO remote_grants
                      (grant_id, remote_id, device_id, capability_id, action,
                       constraints_json, granted_by, granted_at, expires_at, revoked_at, rev)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'operator', ?7, ?8, NULL, 0)",
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, NULL, 0)",
                     params![
                         grant_id,
                         input.remote_id,
@@ -577,14 +586,15 @@ impl RemoteStore {
                         input.capability_id,
                         input.action,
                         input.constraints_json,
+                        remote.created_by,
                         now,
                         input.expires_at,
                     ],
                 )?;
                 audit(
                     connection,
-                    "operator",
-                    "operator",
+                    actor_kind,
+                    &remote.created_by,
                     Some(&input.remote_id),
                     Some(&input.device_id),
                     "grant_created",

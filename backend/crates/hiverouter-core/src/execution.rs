@@ -1981,7 +1981,7 @@ impl RunEngine {
                 match self.store.task_result(related_id)? {
                     Some(text) if !text.trim().is_empty() => {
                         prompt.push_str(if is_child {
-                            "\nCompleted child "
+                            "\nDIRECT CHILD RESULT (this task's own child) "
                         } else {
                             "\nCompleted dependency "
                         });
@@ -2243,7 +2243,7 @@ impl RunEngine {
             match self.store.task_result(related_id)? {
                 Some(text) if !text.trim().is_empty() => {
                     prompt.push_str(if is_child {
-                        "\nCompleted child "
+                        "\nDIRECT CHILD RESULT (this task's own child) "
                     } else {
                         "\nCompleted dependency "
                     });
@@ -3911,6 +3911,8 @@ impl RunEngine {
                 );
             }
             let mut _result_text = String::new();
+            let mut root_remote_names: HashSet<String> = HashSet::new();
+            let mut root_daemon_names: HashSet<String> = HashSet::new();
             for call in reply.tool_calls.iter().take(MAX_ROOT_TOOL_CALLS) {
                 match call.name.as_str() {
                     "spawn_superagent" => {
@@ -3927,8 +3929,35 @@ impl RunEngine {
                         }
                     }
                     "spawn_remote_agent" => {
-                        let result = self.execute_root_remote_call(root, call)?;
-                        _result_text.push_str(&format!("- {result}\n"));
+                        let name = call
+                            .arguments
+                            .get("display_name")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|name| !name.is_empty());
+                        let already_exists = name.is_some_and(|name| {
+                            let key = name.to_ascii_lowercase();
+                            if !root_remote_names.insert(key) {
+                                return true;
+                            }
+                            self.remote
+                                .as_ref()
+                                .and_then(|remote| remote.list_remotes().ok())
+                                .is_some_and(|remotes| {
+                                    remotes.iter().any(|remote| {
+                                        remote.owner_id == root.id.to_string()
+                                            && remote.display_name.eq_ignore_ascii_case(name)
+                                    })
+                                })
+                        });
+                        if already_exists {
+                            _result_text.push_str(
+                                "- refused: a remote with that name already exists in this hive\n",
+                            );
+                        } else {
+                            let result = self.execute_root_remote_call(root, call)?;
+                            _result_text.push_str(&format!("- {result}\n"));
+                        }
                     }
                     "spawn_daemon" => {
                         let display_name = call
@@ -3938,6 +3967,24 @@ impl RunEngine {
                             .map(str::trim)
                             .filter(|name| !name.is_empty())
                             .ok_or(Refusal::SchemaInvalid)?;
+                        let daemon_key = display_name.to_ascii_lowercase();
+                        let already_exists = !root_daemon_names.insert(daemon_key)
+                            || self
+                                .daemons
+                                .as_ref()
+                                .and_then(|daemons| daemons.list().ok())
+                                .is_some_and(|daemons| {
+                                    daemons.iter().any(|daemon| {
+                                        daemon.owner_id == root.id.to_string()
+                                            && daemon.display_name.eq_ignore_ascii_case(display_name)
+                                    })
+                                });
+                        if already_exists {
+                            _result_text.push_str(
+                                "- refused: a daemon with that name already exists in this hive\n",
+                            );
+                            continue;
+                        }
                         let kind = call
                             .arguments
                             .get("kind")
@@ -3971,20 +4018,33 @@ impl RunEngine {
                         ));
                     }
                     "read_memory_summary" => {
-                        let entries = self.store.memory_hyper_summary(run.id, 8)?;
+                        let requested_limit = call
+                            .arguments
+                            .get("limit")
+                            .and_then(serde_json::Value::as_u64)
+                            .unwrap_or(8)
+                            .clamp(1, 8) as usize;
+                        let requested_scope = call
+                            .arguments
+                            .get("scope")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or("run");
+                        let mut entries =
+                            self.store.memory_hyper_summary(run.id, requested_limit)?;
+                        entries.retain(|entry| match requested_scope {
+                            "hive" => entry.bank_id.starts_with("bank:hive:"),
+                            "branch" => entry.bank_id.starts_with("bank:branch:"),
+                            _ => entry.bank_id.starts_with("bank:run:"),
+                        });
                         let digest = entries
                             .iter()
-                            .map(|entry| {
-                                format!(
-                                    "{}:{}",
-                                    entry.bank_id,
-                                    entry.key
-                                )
-                            })
-                            .take(8)
+                            .take(requested_limit)
+                            .map(|entry| format!("{}:{}", entry.bank_id, entry.key))
                             .collect::<Vec<_>>()
                             .join(", ");
-                        _result_text.push_str(&format!("- memory summaries: {digest}\n"));
+                        _result_text.push_str(&format!(
+                            "- memory summaries ({requested_scope}, {requested_limit}): {digest}\n"
+                        ));
                     }
                     "finish" => return Ok(()),
                     other => {
