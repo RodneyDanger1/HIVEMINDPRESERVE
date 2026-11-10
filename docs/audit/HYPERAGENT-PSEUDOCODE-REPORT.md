@@ -353,3 +353,30 @@ This is a real SuperAgent vote path, not a completed five-seat apply path. The
 operator vote, a spawned four-SuperAgent evaluation orchestration, apply and
 rollback remain absent. Tool surface is 12 tools / 35 grants; backend 50 suites /
 633 passed; web 229 passed. Package hashes are in README.
+---
+
+## 7. Operator fifth-seat authorization (2026-11-10)
+
+```text
+POST /api/agents/runs/{run_id}/proposals/{proposal_id}/authorize
+  proposal must exist as improvement:<proposal_id>
+  collect evolution_vote:<proposal_id>:* entries
+  require exactly 4 distinct SuperAgent voters, 4 approve, 0 reject
+  require proposal applied=false
+  append evolution_authorization:<proposal_id>
+    {operator_approved:true, superagent_approvals:4, unanimous:true,
+     state:"authorized_not_applied", applied:false}
+  no code, schema, tool grant, prompt, gate, or agent changes
+GET proposals now reports authorized=true and vote_state=authorized_not_applied
+UI shows "Authorize with operator (5th seat)" only when all four approvals exist
+```
+
+This is the fifth seat, not self-application. Apply and rollback remain absent;
+`can_apply` is false. Backend 633 passed; web 229 passed.
+Live fifth-seat refusal: `POST .../authorize` on a proposal with zero
+SuperAgent votes returned HTTP 409; no authorization row and no apply. Evidence:
+`docs/evidence/live/live-tokenlab-authorize-refusal.json`.
+
+The UI sends the per-boot `Authorization: Bearer <session token>` header; without
+it the mutation correctly returns 401. This is the only fifth-seat path, and it
+still cannot apply code.

@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 633 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 229 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `C3C2C7661459A081F097E1FFE5565BB75046AEDA4243BFF27E724AE9D6B508A9` |
-| T4 | Server binary hash | **VERIFIED** | `66D3E1D3D489E6CCC22859A99D4C0C34A7A7CD85C981B597AF13680E79C5FBC7` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `3961CFACBE82373EF975D3967018498B1D98EAFC2BDB42DBA7A13702AD7B5468` |
+| T4 | Server binary hash | **VERIFIED** | `94934A21DEB43759C2DD221E1F46E424FA7E299F4CB7FE8703A4D9989FB7E1F1` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -443,9 +443,10 @@ and contains no approve/apply button.
 
 The proposal payload now carries a stable `proposal_id`, and SuperAgents can
 record a durable `approve`/`reject` vote with `vote_evolution` (SuperAgent-only,
-one vote per task, no code effect). The API aggregates those votes into
-`awaiting_votes`, `awaiting_operator`, or `rejected_by_superagent`. Four distinct
-SuperAgent voters, operator authorization, apply, and rollback remain
+one vote per task, no code effect). The API aggregates votes into
+`awaiting_votes`, `awaiting_operator`, or `rejected_by_superagent`. The operator
+has a fifth-seat authorization endpoint/UI; it requires four distinct approvals
+and zero rejections, and records `authorized_not_applied`. Apply/rollback remain
 unimplemented; `can_apply` is false.
 Live verification of the proposal surface: run `01a1c6a2-6c25-7333-a970-8ef8d6a61a0c`
 proposed the same content twice across the two root-control turns; the ledger

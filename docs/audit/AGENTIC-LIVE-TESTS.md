@@ -325,3 +325,10 @@ Final vote-tool build run `01a1c6bc-be10-7721-839b-15b8aeb365b2` completed with
 one proposal, `applied=false`, zero votes, and
 `vote_path="superagent_votes_recorded; operator_apply_not_implemented"`.
 Evidence: `docs/evidence/live/live-tokenlab-proposal-votes.json`.
+## Test S — operator authorization refused without four votes
+
+Final build, run `01a1c6bc-be10-7721-839b-15b8aeb365b2`, proposal
+`01a1c6bc-d355-761f-9266-5b98b8e0fc75`: `POST .../authorize` with the
+per-boot session token returned **409** because there were zero SuperAgent
+approvals. No authorization memory row and no apply occurred. Evidence:
+`docs/evidence/live/live-tokenlab-authorize-refusal.json`.

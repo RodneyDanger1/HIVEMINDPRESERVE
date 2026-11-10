@@ -1,0 +1,11 @@
+{
+    "proposal_id":  "01a1c6bc-d355-761f-9266-5b98b8e0fc75",
+    "note":  "Operator authorization requires four distinct SuperAgent approvals; zero votes was refused.",
+    "superagent_approvals":  0,
+    "authorize_http":  409,
+    "state":  "awaiting_votes",
+    "applied":  false,
+    "observed_at":  "2026-11-10T18:47:00Z",
+    "run_id":  "01a1c6bc-be10-7721-839b-15b8aeb365b2",
+    "provider":  "tokenlab"
+}

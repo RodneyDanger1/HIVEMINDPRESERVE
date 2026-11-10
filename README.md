@@ -169,9 +169,9 @@ Current gates (this tree, 2026-11-10):
 - Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **229 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `C3C2C7661459A081F097E1FFE5565BB75046AEDA4243BFF27E724AE9D6B508A9`
+  `3961CFACBE82373EF975D3967018498B1D98EAFC2BDB42DBA7A13702AD7B5468`
 - Packaged server / release binary: SHA-256
-  `66D3E1D3D489E6CCC22859A99D4C0C34A7A7CD85C981B597AF13680E79C5FBC7`
+  `94934A21DEB43759C2DD221E1F46E424FA7E299F4CB7FE8703A4D9989FB7E1F1`
 
 ---
 
@@ -359,7 +359,9 @@ operator must be unanimous, and nothing applies before all five approvals exist.
 with `applied:false`, the five-seat `governance` block, and `vote_path:"superagent_votes_recorded; operator_apply_not_implemented"`.
 The web `ProposalsPanel` renders them read-only and refuses to present them as applied.
 
-SuperAgents can now record `approve`/`reject` with `vote_evolution`; the API
-aggregates those votes and reports `awaiting_votes`, `awaiting_operator`, or
-`rejected_by_superagent`. There is still **no operator vote and no apply path**;
-`can_apply` remains false and the panel has no approve button.
+SuperAgents record `approve`/`reject` with `vote_evolution`; the API
+aggregates votes into `awaiting_votes`, `awaiting_operator`, or
+`rejected_by_superagent`. The operator has a fifth-seat authorization endpoint
+and UI button, enabled only with four distinct approvals and no rejection; it
+records `authorized_not_applied`. There is still **no apply path**; `can_apply`
+remains false.
