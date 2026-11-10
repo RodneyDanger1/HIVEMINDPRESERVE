@@ -1,0 +1,16 @@
+{
+    "proposal_count":  1,
+    "vote_path":  "superagent_votes_recorded; operator_apply_not_implemented",
+    "vote_state":  "awaiting_votes",
+    "usage":  {
+                  "total_tokens":  5155,
+                  "prompt_tokens":  4053,
+                  "completion_tokens":  1102
+              },
+    "votes":  0,
+    "observed_at":  "2026-11-10T18:37:00Z",
+    "applied":  false,
+    "status":  "completed",
+    "run_id":  "01a1c6bc-be10-7721-839b-15b8aeb365b2",
+    "provider":  "tokenlab"
+}

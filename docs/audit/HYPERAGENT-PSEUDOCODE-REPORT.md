@@ -327,3 +327,29 @@ Backend 50 suites / 633 passed; web 229 passed. Package hashes are in README.
 
 Still absent: four spawned SuperAgent voters, operator authorization, apply, and
 rollback. The dedupe proves idempotent recording, not self-evolution.
+---
+
+## 6. SuperAgent vote recording (2026-11-10)
+
+```text
+tool vote_evolution (SuperAgent allowlist only):
+  caller tier == SuperAgent
+  proposal_id must exist as improvement:<id> in run bank
+  vote in {approve, reject}; rationale 8..400
+  one vote per (proposal_id, voter_task_id)
+  write run-bank entry evolution_vote:<proposal_id>:<task_id>
+  value {proposal_id, voter_task_id, role:superagent, vote, rationale, applied:false}
+  no code, schema, tool grant, prompt, gate, or agent changes
+
+GET /api/agents/runs/{id}/proposals:
+  join proposal entries with evolution_vote:* entries
+  approvals >= 4 -> vote_state=awaiting_operator
+  any rejection -> rejected_by_superagent
+  else awaiting_votes
+  can_apply=false always
+```
+
+This is a real SuperAgent vote path, not a completed five-seat apply path. The
+operator vote, a spawned four-SuperAgent evaluation orchestration, apply and
+rollback remain absent. Tool surface is 12 tools / 35 grants; backend 50 suites /
+633 passed; web 229 passed. Package hashes are in README.

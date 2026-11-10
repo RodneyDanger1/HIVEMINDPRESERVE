@@ -26,8 +26,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 |---|---|---|---|
 | T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 50 suites, 633 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 229 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `D8CEF455E7C910244A4E31D92C5721E316281229CCF760F72491A0C1654700D1` |
-| T4 | Server binary hash | **VERIFIED** | `D6F245EA9DAA1300F1A19F5D64E164143824EA618065A89A7F59CEBAA05F15D5` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `C3C2C7661459A081F097E1FFE5565BB75046AEDA4243BFF27E724AE9D6B508A9` |
+| T4 | Server binary hash | **VERIFIED** | `66D3E1D3D489E6CCC22859A99D4C0C34A7A7CD85C981B597AF13680E79C5FBC7` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -333,7 +333,7 @@ if let (Some(request_id), Some(store)) = (request_id, self.remote.as_ref()) {
   duplicate name and a payload-mismatched request id are attributable, not
   silent.
 
-### Tool surface (11 tools, 5 permission classes)
+### Tool surface (12 tools, 5 permission classes)
 
 `hiverouter-tools/src/tool.rs` registers `request_detached` as
 `PermissionClass::Control`; SuperAgent/WorkerAgent allowlists include it;
@@ -391,7 +391,7 @@ current tree does not implement the vote-submission path or automatic applicatio
 Test: `root_can_record_but_never_auto_apply_an_improvement_proposal`.
 ## 20. `web_fetch` network capability (approval-gated)
 
-The registry now has an 11th tool, `web_fetch`, permission class `Network`.
+The registry now has an 12th tool, `web_fetch`, permission class `Network`.
 It is granted to SuperAgent and WorkerAgent, not to HyperAgent or Subagent.
 The call path is:
 
@@ -438,14 +438,16 @@ A negative live run with `HIVEROUTER_SIDE_EFFECTS=0` approved the call and got
 
 `GET /api/agents/runs/{run_id}/proposals` exposes recorded improvement proposals
 and their governance block. The response explicitly sets `applied:false` and
-`vote_path:"not_implemented"`. The web `ProposalsPanel` renders this projection
+`vote_path:"superagent_votes_recorded; operator_apply_not_implemented"`. The web `ProposalsPanel` renders this projection
 and contains no approve/apply button.
 
-This is a read surface, not a five-seat vote or apply mechanism. The proposal
-payload now carries a stable `proposal_id`; votes, four-SuperAgent spawning for
-those votes, operator authorization, and rollback remain unimplemented.
+The proposal payload now carries a stable `proposal_id`, and SuperAgents can
+record a durable `approve`/`reject` vote with `vote_evolution` (SuperAgent-only,
+one vote per task, no code effect). The API aggregates those votes into
+`awaiting_votes`, `awaiting_operator`, or `rejected_by_superagent`. Four distinct
+SuperAgent voters, operator authorization, apply, and rollback remain
+unimplemented; `can_apply` is false.
 Live verification of the proposal surface: run `01a1c6a2-6c25-7333-a970-8ef8d6a61a0c`
 proposed the same content twice across the two root-control turns; the ledger
-returned **count=1**, `applied=false`, `vote_path="not_implemented"`, and
-`awaiting_votes`. Content dedupe is enforced, but this is still not an
+returned **count=1**, `applied=false`, `awaiting_votes`, and a SuperAgent vote path that records votes but never applies them. Content dedupe is enforced, but this is still not an
 authorization or apply mechanism.

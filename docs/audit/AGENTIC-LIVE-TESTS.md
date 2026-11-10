@@ -319,3 +319,9 @@ improvement twice across the two root-control turns. The proposal ledger returne
 **count=1**, `applied=false`, `vote_path="not_implemented"`, and
 `state="awaiting_votes"`. The duplicate was deduplicated by content, not by a new
 UUID. Evidence: `docs/evidence/live/live-tokenlab-proposal-dedupe.json`.
+## Test R — vote-aware proposal API
+
+Final vote-tool build run `01a1c6bc-be10-7721-839b-15b8aeb365b2` completed with
+one proposal, `applied=false`, zero votes, and
+`vote_path="superagent_votes_recorded; operator_apply_not_implemented"`.
+Evidence: `docs/evidence/live/live-tokenlab-proposal-votes.json`.

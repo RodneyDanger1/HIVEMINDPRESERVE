@@ -27,13 +27,13 @@ system. The honest comparison, evidence, and gaps are in
 | **Daemon** | Tree-free enrolled record; `watchdog` has a real DB-check job. | Be enrolled and report a DB check when its tick path is driven. | Run as a continuously scheduled OS process in this build; no live tick proof. |
 | **ToolAgent** | Tier exists in the census. | Nothing in production. | No shipped producer; **label only**. |
 
-Tool surface (11 registered tools, 5 permission classes):
+Tool surface (12 registered tools, 5 permission classes):
 
 | Tier | Registered allowlist |
 |---|---|
 | HyperAgent | `spawn_agent`, `report_result`, `finish` (root control is a separate, non-registry tool surface) |
-| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch` |
-| WorkerAgent | same 11 as SuperAgent |
+| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch`, `vote_evolution` |
+| WorkerAgent | the same set without `vote_evolution` |
 | Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
 | ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` |
 
@@ -169,9 +169,9 @@ Current gates (this tree, 2026-11-10):
 - Backend: **50 suites, 633 passed, 0 failed, 2 ignored**
 - Web: typecheck **0**, **229 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
-  `D8CEF455E7C910244A4E31D92C5721E316281229CCF760F72491A0C1654700D1`
+  `C3C2C7661459A081F097E1FFE5565BB75046AEDA4243BFF27E724AE9D6B508A9`
 - Packaged server / release binary: SHA-256
-  `D6F245EA9DAA1300F1A19F5D64E164143824EA618065A89A7F59CEBAA05F15D5`
+  `66D3E1D3D489E6CCC22859A99D4C0C34A7A7CD85C981B597AF13680E79C5FBC7`
 
 ---
 
@@ -356,8 +356,10 @@ operator must be unanimous, and nothing applies before all five approvals exist.
 ## 13. Self-evolution proposal surface
 
 `GET /api/agents/runs/{run_id}/proposals` returns recorded `improvement:*` proposals
-with `applied:false`, the five-seat `governance` block, and `vote_path:"not_implemented"`.
+with `applied:false`, the five-seat `governance` block, and `vote_path:"superagent_votes_recorded; operator_apply_not_implemented"`.
 The web `ProposalsPanel` renders them read-only and refuses to present them as applied.
 
-This is visibility, not self-application. The backend has no vote-submission or apply
-path; the panel deliberately shows `awaiting_votes` and `can_apply:false`.
+SuperAgents can now record `approve`/`reject` with `vote_evolution`; the API
+aggregates those votes and reports `awaiting_votes`, `awaiting_operator`, or
+`rejected_by_superagent`. There is still **no operator vote and no apply path**;
+`can_apply` remains false and the panel has no approve button.
