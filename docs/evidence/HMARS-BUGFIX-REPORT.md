@@ -4,7 +4,7 @@ Date: 2026-11-09
 Repo: `C:\Users\Riley\Desktop\hiverouter-v1`  
 GitHub: `https://github.com/RodneyDanger1/HiveMind`  
 Base before this repair wave: `b039037`  
-Final repair HEAD at report write: `ea49218`  
+Final repair HEAD at report write: `68ff3c4`  
 Release binary: `target/release/hiverouter.exe` SHA-256 `67A999D023810DC265F9220A95153BEA6985629514C8E68F9E88BFE1932E5E47`  
 Portable package: `dist/HiveMind.zip` SHA-256 `CCBF829D8DCD8A5BC56D06F8CC87D30D2B0731E9B9011E8BFEA2D63F76944ABA`  
 Packaged server: `dist/HiveMind/hiverouter.exe` SHA-256 `67A999D023810DC265F9220A95153BEA6985629514C8E68F9E88BFE1932E5E47`
@@ -122,6 +122,7 @@ TRUTH:
 | `717944c` | A2A | schema v23 adds persisted attempts/last-attempt plus `a2a_audit`; parent attempts and answers are audited atomically |
 | `cc90b4c` | A2A | duplicate open questions are refused before a second parent call; persisted attempts are capped at 2 |
 | `ea49218` | Daemon | allowlisted `.exe`/`.ps1` jobs run outside the DB lock with bounded args/output and timeout tree-kill |
+| `68ff3c4` | Launcher | boot-timeout path stops the child process instead of leaving a server running |
 
 Additional Lead changes before `4cf35f6` include the persistent provider profile
 (`tools/set-provider-profile.ps1`), external endpoint/wire model config, and
@@ -215,9 +216,9 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
   local same-user threat model, not a hardened multi-user boundary.
 - **Remote transports:** in-process fixture only; network remotes are not
   implemented. Audit actor uses `system`/`supervisor` for sweeps.
-- **Browser automation:** CDP screenshots verify the connected workspace,
-  Settings → Provider tab, API-type selector, and key-missing state. No
-  automated drag/spawn interaction suite yet.
+- **Browser automation:** `tools/qa/ui-e2e.mjs` now drives Edge over CDP,
+  opens Settings → Provider, saves a TokenLab profile and reads the persisted
+  JSON. Drag/spawn interaction automation is still not covered.
 - **Scale:** accepted 40-node plan cap, 64 provider-call cap, 32-way dispatch
   bound. No 50–150/300–600 claim.
 - **No mock/stub product code added.** Test doubles remain confined to tests;
@@ -229,6 +230,8 @@ attempt plus operator answer appends an `a2a_audit` row atomically (schema v23).
 - `docs/evidence/live/ui-provider-settings.png` — Settings → Provider, API type and key status
 - `docs/evidence/live/ui-api-type.png` — initial no-key workspace
 - `tools/qa/provider-test.log` — provider subagent raw test log (untracked)
+- `docs/evidence/live/ui-e2e-provider-save.png` — CDP-driven Settings → Provider save proving `api_type=tokenlabs`, base URL and wire model persisted
+- `tools/qa/ui-e2e.mjs` — repeatable local UI E2E (no provider key, no model call)
 - Portable package: `dist/HiveMind/{HiveMind.exe,hiverouter.exe,README.txt}` + `dist/HiveMind.zip`
 - Package smoke: `/health` `degraded`, schema **23**, caps 64/32, key absent, port closed after stop
 
