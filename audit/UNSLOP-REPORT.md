@@ -76,6 +76,8 @@ Artifacts: `audit/audit-before.json`, `audit/audit-after.json`.
   the idle HyperAgent workspace.
 - Startup veil: `docs/evidence/live/ui-splash.png` — captured before the
   1.6s minimum veil window closes.
+- Mobile veil: `docs/evidence/live/ui-splash-375.png` — 375×812 CDP-emulated
+  capture; wordmark, description, progress, and designer credit all fit.
 
 `read_image` inspection: the composition is unchanged — honeycomb field left,
 HyperAgent beacon centered, chat on the right, quiet neutral chrome. The

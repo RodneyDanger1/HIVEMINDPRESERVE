@@ -211,6 +211,7 @@ Two real runs against `https://api.tokenlab.amd.com/v1` with
 | Small prompt | `completed`, assistant `hello hive` | 2 (HyperAgent + SuperAgent) | 1,698 prompt / 3 completion / 1,701 total | ~26 s |
 | Exact two-branch hierarchy | `completed` | 7 (HyperAgent, 2 SuperAgents, 2 Agents, 2 Subagents) | 14,407 prompt / 1,144 completion / 15,551 total | ~106 s |
 | Earlier two-branch attempt | `completed` before the root-cap fix | 10 (extra depth-1 `super` leads) | 19,791 / 883 / 20,674 | ~290 s |
+| Hard-kill accounting | process killed after checkpoint; restart `interrupted` | 7 recovered rows | 449 tokens retained in `run_usage` | n/a |
 
 The root-cap fix is what makes the exact-two run produce exactly 7 tasks: the
 checkpoint refuses `spawn_superagent` when the planner already supplied branch
@@ -241,17 +242,15 @@ window, a FigCraft wordmark with honey drip, and the bottom-right glass credit
 
 ## 8. Remaining / unverified
 
-- **Key hygiene:** the AMD Token Lab key was pasted into chat during this
-  session and must be treated as leaked. Rotate/revoke it before the next live
-  test. The live runs above are evidence only; they are not a production-key
-  approval.
+- **Key hygiene:** the operator has confirmed the Token Lab key is **not
+  compromised**. No key material is present in source, committed files, this
+  report, or the saved profile. Never print or commit a provider key.
 - **Live end-to-end after the final repair:** the exact-two run used the final
   root gate and measured usage; the planner repair path was added after an
   earlier `E_SCHEMA_INVALID` attempt and is covered by unit tests, not by a
   fresh live malformed-plan run.
-- **Usage checkpoint under hard kill:** checkpointing after every measured
-  reply is implemented; a deliberate kill during a live run has not been
-  repeated after that change.
+- **Planner repair:** covered by unit tests; not yet driven by a fresh live
+  malformed-plan response.
 - **Daemon script runtime:** daemons execute the real DB-health job and an
   allowlisted script job (`{"kind":"script","program":"name.ps1","args":[],"timeout_secs":N}`)
   rooted under the workspace. Only `.exe`/`.ps1`, plain file names, <=16 bounded
@@ -288,8 +287,8 @@ window, a FigCraft wordmark with honey drip, and the bottom-right glass credit
 ## 8. Security note
 
 The UI/API test credentials are not present in source, committed files, or
-this report. The pasted Token Lab key remains compromised and must be rotated
-before any further live run.
+this report. The operator has confirmed the Token Lab key is not compromised;
+no key material is stored in the repository or the saved non-secret profile.
 
 ## 10. Live and UI evidence files
 
@@ -304,4 +303,6 @@ before any further live run.
 - `docs/ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md` - material rules, splash lifecycle, pseudocode/real-code analysis, roadmap section.
 - `docs/UI-UX-ROADMAP.md` - dedicated UI/UX roadmap with the 10-20% scope boundary.
 - `docs/evidence/live/ui-splash.png` - 1440x900 HoneyGlass startup veil.
+- `docs/evidence/live/ui-splash-375.png` - 375x812 CDP-emulated splash proof.
+- `docs/evidence/live/live-tokenlab-kill-usage.json` - checkpoint survives hard kill and restart.
 - `docs/evidence/live/ui-polished-final.png` - connected workspace after polish.

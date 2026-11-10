@@ -43,7 +43,9 @@ released, built, or end-to-end verified.
 - The 1.2 pre-release working tree (approval suspension, side effects, web replay, live specs) is unverified WIP; it
   is not part of this release and no 1.2 feature is claimed.
 - Full trace ladder, pixel-level design fidelity, Tauri/installer and every P2 audit item remain out of scope.
-- No key material is in the repository or release artifacts. Any key supplied in a chat transcript should be rotated.
+- No key material is in the repository or release artifacts. The operator has
+  confirmed the current Token Lab key is not compromised; never commit a
+  provider key or print one in a report.
 
 ## Install / run
 

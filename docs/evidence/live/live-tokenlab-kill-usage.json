@@ -1,0 +1,23 @@
+{
+    "usage_after_restart":  {
+                                "total_tokens":  449,
+                                "prompt_cache_hit_tokens":  0,
+                                "completion_tokens":  130,
+                                "prompt_cache_miss_tokens":  319,
+                                "prompt_tokens":  319,
+                                "reasoning_tokens":  0
+                            },
+    "run_id":  "01a1c410-6edb-77b9-92e1-9e77f1d1c7b1",
+    "hard_kill":  {
+
+                  },
+    "checkpoint_before_kill":  {
+                                   "total_tokens":  449,
+                                   "prompt_tokens":  319,
+                                   "completion_tokens":  130
+                               },
+    "provider":  "tokenlab",
+    "recovered_status":  "interrupted",
+    "recovered_tasks":  7,
+    "observed_at":  "2026-11-10T06:05:00Z"
+}

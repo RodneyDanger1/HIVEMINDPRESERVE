@@ -19,7 +19,7 @@ detailed material/component contract lives in
       glass credit in the bottom-right.
 - [x] Finite motion, reduced-motion support, opaque `backdrop-filter` fallback.
 - [x] Capture a connected 1440×900 product screenshot.
-- [ ] Capture 375px and keyboard/focus evidence.
+- [x] Capture 375×812 splash evidence; keyboard/focus audit still pending.
 
 ### Pseudocode / real code
 
