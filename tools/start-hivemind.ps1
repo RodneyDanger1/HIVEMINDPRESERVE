@@ -86,7 +86,11 @@ do {
 } while ((Get-Date) -lt $deadline)
 
 if ($null -eq $health) {
-    throw "HiveMind did not become healthy within 20s. See $stderr"
+    if (-not $process.HasExited) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        $process.WaitForExit(3000) | Out-Null
+    }
+    throw "HiveMind did not become healthy within 20s; the child was stopped. See $stderr"
 }
 
 Write-Host "HiveMind running at $base (pid $($process.Id), health $($health.status))."
