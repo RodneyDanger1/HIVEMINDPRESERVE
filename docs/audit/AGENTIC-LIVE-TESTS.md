@@ -385,3 +385,10 @@ without restart; rollback removes the exact line by stored `line_sha256` (not th
 whole-file hash); mutating the target line returns **409** and preserves it; and
 the proposals projection reports `lesson_applied:false`, `lesson_state:"rolled_back"`
 after a successful rollback. Backend gate: 51 suites / 635 passed.
+## Test Z — parsed, fenced lesson retrieval
+
+Final build, seeded apply-shaped JSON lesson (`area/problem/proposal/evidence/state`):
+the new loader parsed the record, skipped foreign lines, and injected it inside
+`<<<AUTHORIZED_LESSONS_DATA … >>>`; run `01a1c740-…` completed and returned
+**HONEYCOMB** (3,478 tokens). Evidence:
+`docs/evidence/live/live-tokenlab-lesson-retrieval-parsed.json`.

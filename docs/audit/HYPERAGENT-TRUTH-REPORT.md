@@ -24,10 +24,10 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 51 suites, 635 passed, 0 failed, 2 ignored |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 51 suites, 636 passed, 0 failed, 2 ignored |
 | T2 | Web gate is green | **VERIFIED** | typecheck 0, 231 tests passed, production build 0 |
-| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `347625E082C23546267F13861462C1702D2B1D42546FAEBD47C340DB437DFF3F` |
-| T4 | Server binary hash | **VERIFIED** | `ECEA2A36E0BF43D63D3011B435874FB73873E98935B875B5CE16A9672C24B60C` |
+| T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `A968D36C43407178DB539F612203B9BD6688BCF99244AB1ECDFB4753F2078CB8` |
+| T4 | Server binary hash | **VERIFIED** | `79F68C04414E074D72FCCFABE9DCBA1DA389A215CFBC5D4945BCDFF2C5BA34AE` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
 | T6 | A2A ask_parent works | **VERIFIED (live)** | One message, attempts=1, answered by parent |
 | T7 | Root-created remote+daemon works | **VERIFIED (live)** | Porch light + Pulse watchdog, device+grant, audit rows |
@@ -359,7 +359,7 @@ persona allowlist. Test:
   retry, idempotent mismatched payload, daemon admission, duplicate names, run
   bank.
 - `provider_adapter.rs`: tier∩persona request capture.
-- Full gate: **51 suites, 635 passed, 0 failed, 2 ignored**.
+- Full gate: **51 suites, 636 passed, 0 failed, 2 ignored**.
 
 ### What this does NOT prove
 

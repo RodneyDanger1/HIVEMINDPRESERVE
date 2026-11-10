@@ -1,0 +1,15 @@
+{
+    "usage":  {
+                  "total_tokens":  3478,
+                  "prompt_tokens":  3425,
+                  "completion_tokens":  53
+              },
+    "note":  "Seeded apply-shaped JSON lesson; new parser/fence path returned HONEYCOMB.",
+    "lesson_token":  "HONEYCOMB",
+    "observed_at":  "2026-11-10T20:54:00Z",
+    "final_answer":  "HONEYCOMB",
+    "status":  "completed",
+    "run_id":  "01a1c740-ef79-76a8-8ee6-797d17f4654b",
+    "provider":  "tokenlab",
+    "lesson_proposal_id":  "test-lesson-1"
+}

@@ -432,3 +432,9 @@ Positive five-seat route test (`proposal_authorization.rs`): one root + four
 completed SuperAgent rows, four approval votes, then authorize 200 →
 apply 200 (`lesson_artifact_only`) → lesson file contains the id → rollback 200 →
 id removed. Backend gate is now 51 suites / 635 passed.
+Lesson loader (2026-11-10): each line must parse as the apply-written JSON
+record; only `area/problem/proposal` are rendered, foreign/malformed lines are
+skipped, control characters are replaced, and the block is fenced with
+`<<<AUTHORIZED_LESSONS_DATA … <<<END_AUTHORIZED_LESSONS>>>`. Apply rejects lesson
+fields containing secret markers or control characters. Live run `01a1c740-…`
+returned HONEYCOMB through this path (3,478 tokens). Backend 51 suites / 636 passed.
