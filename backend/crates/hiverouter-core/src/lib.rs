@@ -14,6 +14,7 @@ pub mod context;
 pub mod daemon;
 pub mod db;
 pub mod entities;
+pub mod evolution_gate;
 pub mod execution;
 pub mod graph;
 pub mod handshake;
@@ -42,6 +43,7 @@ pub use context::{ContextStore, ScopedContext};
 pub use daemon::{Daemon, DaemonReport, DaemonStore, NewDaemon};
 pub use db::{Database, DbError, Migration, ToolTurnRecord, MIGRATIONS};
 pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
+pub use evolution_gate::{verify_evaluation_receipt, VerifiedReceipt};
 pub use execution::{
     DeltaSink, ProviderExecutor, RunEngine, RunRegistry, StreamedReply, ToolTurnTranscript,
 };

@@ -2763,6 +2763,22 @@ async fn apply_evolution_lesson(
     if evolution_proposal_sha256(&proposal) != authorized_sha256 {
         return refusal_response(StatusCode::CONFLICT, &Refusal::ApprovalReplay);
     }
+    let receipt = match crate::evolution_gate::verify_evaluation_receipt(
+        &state.config.data_dir,
+        &proposal_uuid.to_string(),
+    ) {
+        Ok(receipt) => receipt,
+        Err(refusal) => {
+            let status = if refusal == Refusal::ApprovalRequired {
+                StatusCode::CONFLICT
+            } else if refusal == Refusal::SchemaInvalid {
+                StatusCode::UNPROCESSABLE_ENTITY
+            } else {
+                StatusCode::SERVICE_UNAVAILABLE
+            };
+            return refusal_response(status, &refusal);
+        }
+    };
     let root_task_id = match state.engine.store.tasks_for_run(run_id) {
         Ok(tasks) => tasks
             .into_iter()
@@ -2808,6 +2824,17 @@ async fn apply_evolution_lesson(
         "problem": proposal.get("problem").cloned().unwrap_or(serde_json::Value::Null),
         "proposal": proposal.get("proposal").cloned().unwrap_or(serde_json::Value::Null),
         "evidence": proposal.get("evidence").cloned().unwrap_or(serde_json::Value::Null),
+        "expected_effect": proposal.get("expected_effect").cloned().unwrap_or(serde_json::Value::Null),
+        "verification_plan": proposal.get("verification_plan").cloned().unwrap_or(serde_json::Value::Null),
+        "rollback": proposal.get("rollback").cloned().unwrap_or(serde_json::Value::Null),
+        "receipt_sha256": receipt.sha256.clone(),
+        "held_out_task_set": {
+            "id": receipt.task_set_id.clone(),
+            "sha256": receipt.task_set_sha256.clone(),
+            "n": receipt.task_count,
+        },
+        "baseline_pass_rate": receipt.baseline_pass_rate.clone(),
+        "candidate_pass_rate": receipt.candidate_pass_rate.clone(),
         "state": "applied_lesson",
     });
     let lesson_line = lesson.to_string();
@@ -2827,6 +2854,7 @@ async fn apply_evolution_lesson(
         "sha256": sha256,
         "line_sha256": line_sha256,
         "previous_sha256": previous_sha256,
+        "receipt_sha256": receipt.sha256.clone(),
     });
     if let Err(refusal) = state.engine.store.record_agent_memory_scoped(
         "hyper",
@@ -2847,6 +2875,7 @@ async fn apply_evolution_lesson(
         "artifact": "evolution/LESSONS.jsonl",
         "sha256": sha256,
         "line_sha256": line_sha256,
+        "receipt_sha256": receipt.sha256,
         "state": "applied_lesson",
     }))).into_response()
 }

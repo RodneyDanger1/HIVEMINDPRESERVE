@@ -202,11 +202,53 @@ async fn four_superagents_authorize_apply_and_rollback_a_lesson() {
         )
         .expect("restore proposal");
 
+    // Authorization alone is not enough: the operator must supply a held-out
+    // evaluation receipt before a lesson may be admitted.
+    let (status, body) = post_json(server.addr, &format!("{base}/apply"), support::TEST_TOKEN).await;
+    assert_eq!(status, 409, "apply without receipt must refuse: {body}");
+
+    let receipt_dir = server
+        .state
+        .config
+        .data_dir
+        .join("evolution")
+        .join("eval")
+        .join(proposal_id.to_string());
+    std::fs::create_dir_all(&receipt_dir).expect("receipt dir");
+    let receipt = serde_json::json!({
+        "schema": "hivemind.evolution-eval.v1",
+        "proposal_id": proposal_id.to_string(),
+        "head_commit": "d8c00fdc208f014b4d26eea51408e1c2e74ed9eb",
+        "task_set": {
+            "id": "held-out-suite",
+            "sha256": "a".repeat(64),
+            "n": 8
+        },
+        "evaluator": {
+            "id": "operator-evaluator",
+            "sha256": "b".repeat(64)
+        },
+        "baseline": { "pass_rate": 0.5, "ci_lower": 0.4, "ci_upper": 0.6 },
+        "candidate": { "pass_rate": 0.9, "ci_lower": 0.8, "ci_upper": 0.95 },
+        "observed_at": "2026-11-10T00:00:00Z",
+        "command": "run held-out suite",
+        "artifacts": [{ "sha256": "c".repeat(64) }]
+    });
+    std::fs::write(
+        receipt_dir.join("receipt.json"),
+        receipt.to_string().as_bytes(),
+    )
+    .expect("write receipt");
+
     let (status, body) = post_json(server.addr, &format!("{base}/apply"), support::TEST_TOKEN).await;
     assert_eq!(status, 200, "apply: {body}");
     let applied: Value = serde_json::from_str(&body).expect("apply JSON");
     assert_eq!(applied["applied"], true);
     assert_eq!(applied["scope"], "lesson_artifact_only");
+    assert!(
+        applied["receipt_sha256"].as_str().is_some(),
+        "apply response must carry the evaluation receipt hash: {applied}"
+    );
 
     let lessons_path = server
         .state
