@@ -77,7 +77,10 @@ Legend: ~~struck~~ = proven; evidence follows. Partial items are in §2.
 
 ---
 
-## 4. 40-round table status (plan §3)
+## 4. Archived 40-round table status (pre-3.1; superseded by v3.1 §5, 52 rounds)
+
+The table below is retained as history. It refers to the archived pre-3.1 plan §3, not the current
+52-round capability-first schedule.
 
 | Rounds | Status | Note |
 |---|---|---|

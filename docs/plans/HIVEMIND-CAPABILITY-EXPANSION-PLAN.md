@@ -8,9 +8,11 @@ approvals, ledger, evidence, SQLite data, memory banks, proposals/lessons, remot
 8-template library, installer, FigCraft/HoneyGlass identity — and **add full coding capability to
 the existing agents and UI**. No second product, no mode switch, no visual replacement.
 
-**Truth baseline:** product commit `806251b`; docs/audit commit `44e0535`; current branch HEAD
-`014d0d7`; installed `1.2.0-dev`, schema 24, health `degraded`/`E_KEY_MISSING`; docs truth 19/19;
-latest offline battery 8/8 PASS on a docs-dirty tree. No live provider claim.
+**Truth baseline:** product commit `806251b`; pre-expansion tag `014d0d7`; Annex A is referenced
+from the Revision 3.1 plan, so use the plan's baseline-mapping block rather than this line as a
+"current HEAD" authority. Installed `1.2.0-dev`, schema 24, health
+`degraded`/`E_KEY_MISSING`; docs truth 19/19; latest offline battery 8/8 PASS on a docs-dirty tree.
+No live provider claim.
 
 ---
 
@@ -23,10 +25,10 @@ latest offline battery 8/8 PASS on a docs-dirty tree. No live provider claim.
 3. **Coding is a capability of the existing product**, not a separate harness mode.
 4. **Additive only.** No removal or rename of current panels, commands, events, tools, grants,
    refusal codes, data tables, routes, or installer paths. New schema is additive.
-5. **Current behavior remains available.** Existing Team/HMAS runs, approvals, history, canvas and
+5. **Current behavior remains available.** Existing HMAS runs, approvals, history, canvas and
    old data keep working. New tools and UI panes are added alongside them.
-6. **Full capability coding** is supported through one explicit policy toggle; current approval
-   behavior remains a selectable policy.
+6. **Full capability coding** is supported through one explicit permission-policy selector;
+   current approval behavior remains the default and a selectable policy.
 7. **Learning stays operator-gated.** No autonomous code mutation; lessons remain prompt data after
    the evidence gate.
 8. **No false claims.** No AGI, no HiveWire, no OS-sandbox claim, no “better than X” without measured
@@ -127,8 +129,8 @@ Policies are additive and explicit:
 | `standard` | Workspace edits auto-approved; shell/network ask. |
 | `trusted` | Full local coding: workspace edit/command/test/terminal without per-action prompts; outside-workspace/external side effects still refused or asked. |
 
-**Default for new coding runs:** `trusted` is selectable and remembered; `classic` remains available
-and is the behavior of existing runs. No policy bypasses the jail, caps, ledger, or the hard rule that
+**Default for all new runs:** `classic` — current approval behavior is preserved. `trusted` is
+explicitly selected and remembered per session; it is never inferred from “this is a coding run.” No policy bypasses the jail, caps, ledger, or the hard rule that
 nothing outside the workspace is silently touched. The app never claims an OS sandbox.
 
 ### G. Skills, CLI, MCP
@@ -155,8 +157,8 @@ root/monitor → final answer with diff/test evidence
 ```
 
 No separate coding orchestrator. The existing root/monitor still runs; coding tools are available in
-the task tool loop. Higher caps are applied to coding-capable task types, not to the whole Team mode
-unless configured.
+the task tool loop. Higher caps are applied to coding-capable task types, not to the whole existing
+HiveMind run unless configured.
 
 ---
 
@@ -164,14 +166,14 @@ unless configured.
 
 | Version | Addition |
 |---|---|
-| v25 | `sessions`, `sessions_events`, `todos`; nullable `runs.session_id`, `mode` |
+| v25 | `sessions`, `sessions_events`, `todos`; nullable `runs.session_id`, `runs.permission_policy` (no product-mode field) |
 | v26 | `repo_files`, `repo_chunks`, `repo_fts` |
 | v27 | `file_ops`, `checkpoint_blobs`, `checkpoints` |
 | v28 | `jobs`, `terminal_sessions`, `terminal_chunks` |
-| v29 | `lessons`, `lesson_evidence`, `acceptance_runs` |
-| v30 | eval tables (future pack) |
-| v31 | optional memory vectors (future pack) |
-| v32 | `skills`, `mcp_servers`, provider/session config |
+| v29 | `skills`, `mcp_servers`, provider/session config (CAP-8) |
+| v30 | `lessons`, `lesson_evidence`, `acceptance_runs` (CAP-9) |
+| v31 | eval suites/runs/trials/metrics (CAP-9) |
+| v32 | optional memory vectors/embedding jobs (CAP-9) |
 
 No table/column is dropped; v24 remains readable. Every migration has up/down and a v24→latest
 roundtrip with backup/restore.
@@ -206,7 +208,7 @@ roundtrip with backup/restore.
 | P6 | Reasoning/timeline/tool cards/per-agent attribution | visible thinking/decisions |
 | P7 | Workbench UI panes + 1440/375 + command palette | usable coding UI |
 | P8 | Skills/CLI/MCP; costs; docs | harness parity surfaces |
-| P9 | Learning/EVO v2/optional vector memory | measured improvement loop |
+| P9 | Learning/eval/optional vector memory (no undefined “EVO v2”) | measured improvement loop |
 | P10 | Full integration gate, build, bug-fix, keyed live, benchmark | release candidate |
 
 **Round rule:** no installer build, full battery, or release gate until all coding phases (P0–P9)
@@ -225,7 +227,7 @@ coding” is large.
 2. Old v24 database fixture: all old runs/tasks/messages/approvals/history/memory readable after
    migration.
 3. All current commands/tools/panels/routes remain; new additions are additive.
-4. Team/HMAS behavior differential checks: same prompts produce equivalent event/approval/snapshot
+4. Existing-HMAS behavior differential checks: same prompts produce equivalent event/approval/snapshot
    semantics, aside from additive tools/reasoning.
 5. Policy test: `classic` remains current approval behavior; `trusted` only affects new coding runs.
 6. Old package remains installable; data backup before migration; down migration tested.
