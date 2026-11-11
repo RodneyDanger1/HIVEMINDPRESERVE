@@ -1,6 +1,6 @@
 # HiveMind — Truth, capability boundary, and roadmap (2026-11-10)
 
-**Audit HEAD:** `1129349` · **Installed product build:** `806251b` (`1.2.0-dev`, schema 24)
+**Audit HEAD:** `1129349`; **final docs HEAD:** `44e0535` (audit corpus committed) · **Installed product build:** `806251b` (`1.2.0-dev`, schema 24)
 **Working tree (final):** the diagnostic `GET /api/evidence/ledger` candidate was reviewed and **discarded** after the audit; it had no UI consumer and no route-contract test. The tree is now clean apart from this audit's docs. The installed build remains `806251b`.
 **Installed health:** `degraded` / `E_KEY_MISSING`; **no provider key configured**. UI, templates, settings, reads and operator surfaces work; every live prompt refuses by name.
 **Verdict:** HiveMind is a real, bounded, local, approval-gated HMAS prototype. It is **not** a governor in the continuous sense, not a learning system in the weight/skill sense, not a vector-memory product, not HiveWire, not AGI, not a Gödel machine, and not a hands-off autonomous coding employee.
@@ -19,7 +19,7 @@ HiveMind is a Windows-local Rust/Axum + React control room for one provider. It 
 
 | Item | Value | Source |
 |---|---|---|
-| Git HEAD | `1129349` (evidence/QA commits on top of product commit `806251b`) | `git log` |
+| Git HEAD | `44e0535` docs/audit commit on top of `1129349` evidence/QA commit and product `806251b` | `git log` |
 | Installed build | `806251b`, `dirty:false`, server SHA `d9d76902…2c78`, package SHA `B4BAC18D…11061` | `docs/evidence/live/install-1.2.0-dev.json` |
 | Installed code vs HEAD | Product code is code-identical; HEAD adds two evidence/QA commits (`crash-drill`, `scale-drill`) | `git log 806251b..1129349` |
 | Diagnostic candidate | `/api/evidence/ledger` summary was uncommitted during the audit; **discarded** because it had no consumer/route test. Not installed. | `git diff` then reverted |

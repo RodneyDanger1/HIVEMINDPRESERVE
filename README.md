@@ -1,183 +1,254 @@
-# HiveMind — HMARS local agent framework
+# HiveMind — local, approval-gated HMAS prototype
 
-**Working tree:** `1.2.0-dev` (unreleased). **Sealed release:** `1.1.0` — the
-version-truth rule below still applies.
+**Short description:** A local, single-provider, hierarchical multi-agent prototype for Windows.
+It plans bounded runs, delegates to SuperAgents/Agents/Subagents, gates side effects behind operator
+approval, persists evidence in SQLite, and refuses live work when no DeepSeek key is configured.
+It is **not AGI**, not a self-modifying agent, and not yet a general coding harness.
 
-HiveMind is a **local, single-provider, hierarchical multi-agent framework**
-(HMARS): one root HyperAgent plans and synthesizes, SuperAgents lead branches,
-Agents execute work and can spawn temporary Subagents, and two tree-free
-principals — detached remotes and daemons — live outside the task graph under
-narrow grants.
+**Working tree:** `1.2.0-dev` (unreleased). **Sealed release:** `1.1.0` — the sealed
+version remains the release authority; the working tree is pre-release and unsealed.
 
-It is **not AGI**, not a self-modifying agent, and not a network satellite
-system. The honest comparison, evidence, and gaps are in
-[`docs/audit/HYPERAGENT-TRUTH-REPORT.md`](docs/audit/HYPERAGENT-TRUTH-REPORT.md).
+**Truth baseline (observed 2026-11-11):** product commit `806251b`; docs/audit
+HEAD `44e0535`; installed build `806251b` (`dirty:false`); schema `hiverouter.v1`
+version **24**; `/health` is `degraded` with `E_KEY_MISSING`; docs truth checker
+**19/19 PASS**; latest offline battery **8/8 PASS** at `1129349` with
+`working_tree_dirty:true` (audit docs in the tree), so it is **not** a clean
+release seal.
 
-**Round 95 truth snapshot (2026-11-10).** Repo HEAD `1129349`; installed build
-`806251b` (code-identical product; HEAD adds evidence/QA receipts only). No
-provider key is configured, so every live prompt refuses `E_KEY_MISSING`. The
-complete current audit is
-[`docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md`](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md),
-with the plan crosswalk and strikethrough status in
-[`docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md`](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md).
-The short version: **no vector memory, no HiveWire implementation, no automatic
-learning loop, no monitor actions, no live 40-node proof, no AGI/Gödel machine.**
+Read the full evidence and boundary before relying on any claim:
+[truth report](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md),
+[plan-status crosswalk](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md),
+[100 use cases and 100 cannots](docs/audit/round-95/06-use-cases.md).
 
 ---
 
-## 1. What exists, by level
+## 1. What this actually is
 
-| Level | Actual runtime | Can | Cannot / not proven |
-|---|---|---|---|
-| **HyperAgent** | Root `planner` task at depth 0; detached planning call, then a **two-turn bounded root-control loop**, a **read-only post-dispatch monitor review**, then a tool-less final synthesis. | Plan a DAG; create detached remotes/daemons; request memory summaries; record a **proposal-only** improvement; review task states/results before final synthesis; write run-bank decisions. | Self-modify code; run continuously; send instructions, cancel, or repair tasks after dispatch (monitor is review-only); approve arbitrary lower-level requests in an async LLM turn; add extra branches when the planner already supplied them. |
-| **SuperAgent** | Depth-1 branch lead, class `super`, hive bank owner. | Spawn Agents; aggregate direct child results; ask its parent; send to same-parent siblings; read/list files; request detached admission. | Write files / run shell in the **effective persona** (the provider advertises persona∩tier, so those tools are absent); create remotes/daemons directly. |
-| **Agent** | Depth-2 worker, class `agent`, branch bank. | Spawn Subagents; approval-gated `file_write` / `shell_exec`; read/list; A2A; request detached admission. | Create remotes/daemons directly; act as root; escape caps or sandbox. |
-| **Subagent** | Depth-3 temporary leaf, class `subagent`. | Read/list, ask parent, report, finish. | Spawn; write; shell; request detached admission. |
-| **Remote** | Tree-free `in_process` fixture principal + device + narrow grant. | Appear in the remote lane and be actuated through its grant. | Run a model, join the task tree, use the internet, or act as a real network satellite. |
-| **Daemon** | Tree-free enrolled record; `watchdog` has a real DB-check job. | Be enrolled and report a DB check when its tick path is driven. | Run as a continuously scheduled OS process in this build; no live tick proof. |
-| **ToolAgent** | Tier exists in the census. | Nothing in production. | No shipped producer; **label only**. |
+HiveMind is a **local, single-provider, single-run hierarchical multi-agent
+system (HMAS)**. One root HyperAgent makes one planning call, has **two bounded
+pre-dispatch control turns**, dispatches a DAG of SuperAgents → Agents →
+Subagents under hard caps, settles tasks, makes **one read-only post-dispatch
+monitor review**, and produces a tool-less final answer. It persists runs,
+messages, tool turns, approvals, memory banks, snapshots and a run ledger in
+SQLite under a local data directory.
 
-Tool surface (12 registered tools, 5 permission classes):
+It is not a continuous daemon, a cloud service, a self-modifying system, a
+vector-memory product, HiveWire, an autonomous coding employee, or AGI.
 
-| Tier | Registered allowlist |
-|---|---|
-| HyperAgent | `spawn_agent`, `report_result`, `finish` (root control is a separate, non-registry tool surface) |
-| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch`, `vote_evolution` |
-| WorkerAgent | the same set without `vote_evolution` |
-| Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
-| ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` |
-
-`request_detached` is **not** available to Subagents. The effective model-facing
-surface is **tier ∩ persona** allowlist, not the full tier list. Persona aliases:
-`super` → `superagent`, `worker` → `agent`, `hyper` → `planner`.
-
-Caps: depth **3**, fan-out **8**, **64** agents, **64** provider calls, **40**
-tool calls/run, **12** tool turns, **32** agent messages/run, **2** A2A attempts,
-root control ≤ **4** tool calls/turn, ≤ **2** turns.
-
----
-
-## 2. Execution model
+Provider streaming is implemented: ordered text fragments are forwarded as
+`REPLY_DELTA` events and settled by `REPLY_DONE`; malformed or incomplete
+streams refuse by name. This is real SSE/token streaming, not a fake one-delta
+reply. Evidence: `backend/crates/hiverouter-provider/src/client.rs` and
+`provider_executor.rs` streaming paths; the full battery covers the streaming
+suites.
 
 ```text
 submit(prompt)
-  -> planner provider call (one counted call; one counted repair on schema failure)
-  -> plan.validate() (depth, parent/child, DAG, caps)
-  -> insert root HyperAgent task (class hyper, depth 0)
-  -> root control turn 1: spawn_superagent | spawn_remote_agent |
-       spawn_daemon | read_memory_summary | propose_improvement | finish
-  -> root control turn 2: receives turn-1 results; finish or one final call
-  -> dispatch ready tasks only when deps AND direct children are complete
-       super -> agent -> subagent
-  -> HyperAgent final synthesis (no tools) over completed results
-  -> persist usage, terminal status, memory, audit and recovery snapshot
+  → one planner provider call → DAG validation
+  → root control turn 1: create/assign/remote/daemon/memory/proposal/finish
+  → root control turn 2: feedback; creation refused
+  → dispatch ready tasks; settle unfinished tasks
+  → one read-only monitor review (no tools)
+  → final synthesis (no tools)
+  → persist terminal state/usage/snapshot
 ```
 
-Every spawn is checked before the row exists. A task is not ready until its
-direct children are terminal, so parent aggregation cannot invent missing child
-output. A2A `ask_parent` creates a durable message, prefers the parent's bounded
-answer, and falls back to the operator mailbox with a deadline; attempts are
-capped at 2.
+---
 
-### Lower-level detached admission (implemented)
+## 2. Roles, caps, and tools
 
-```text
-Agent/SuperAgent -> request_detached{kind, display_name, reason}
-  -> HyperAgent admission gate (deterministic policy, not a second LLM turn)
-       caller tier in {SuperAgent, WorkerAgent}
-       reason >= 12 chars
-       name unique across remotes AND daemons in the hive
-       lower-level detached cap < 4
-  -> allow: create remote+device+grant OR daemon, created_by=agent:<task>
-       audit: remote_created/device_created/grant_created + hyper_admission
-       or root_control for daemon allow
-  -> refuse: named tool result, no second row
+| Role | Actual runtime | Real authority | Limits |
+|---|---|---|---|
+| **HyperAgent** | Root `planner` task, depth 0 | Plan; two bounded control turns; create remotes/daemons; read memory summaries; propose improvement; review results; final answer | No mid-flight supervision; no `send_instruction`/`cancel_task`/repair; no self-modification |
+| **SuperAgent** | Depth-1 branch lead, `super`, hive bank | Spawn Agents; aggregate children; A2A; read/list; request detached; web fetch; vote evolution | Write/shell only through its effective tier∩persona surface; no direct remotes/daemons |
+| **Agent (Worker)** | Depth-2 task executor, branch bank | Spawn Subagents; approval-gated write/shell; read/list; A2A; request detached; web fetch | No remotes/daemons; no root authority; caps/jail |
+| **Subagent** | Depth-3 temporary leaf | Read/list, ask parent, report, finish | No spawn/write/shell/network/detached admission |
+| **Remote** | In-process fixture principal + device + grant | Appear in the remote lane; be actuated through a grant | No model, no internet, no task tree, no network satellite |
+| **Daemon** | Enrolled tree-free record | Be enrolled; report a DB check when its tick path is driven | No continuously scheduled OS process; no live tick proof |
+| **ToolAgent** | Census tier only | Nothing in production | No shipped producer |
+
+**Hard caps:** depth **3**, fan-out **8**, **64** agents/run, **64** provider
+calls/run, 40 plan nodes, 12 tool turns, 40 tool calls/run, 8 approval waits/run,
+64 KiB tool result, $0.50/run, 400,000 combined tokens/run. Root control is ≤4
+calls/turn and exactly 2 turns. Refusals are named (`E_SPAWN_DEPTH`,
+`E_FANOUT_LIMIT`, `E_AGENT_LIMIT`, `E_CALL_LIMIT`, etc.), never silent clamps.
+
+**Tools — 12 registry tools, 5 permission classes, 35 tier grants.**
+Effective surface is **tier ∩ persona**, so a tier grant can be hidden by a
+persona.
+
+| Tier | Registry allowlist |
+|---|---|
+| HyperAgent | `spawn_agent`, `report_result`, `finish` (root control is a separate local vocabulary) |
+| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch`, `vote_evolution` |
+| WorkerAgent | same as SuperAgent minus `vote_evolution` |
+| Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
+| ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` — no producer |
+
+Root-control vocabulary (local, not registry): `spawn_superagent`,
+`assign_task`, `spawn_remote_agent`, `spawn_daemon`, `read_memory_summary`,
+`propose_improvement`, `convene_evolution_vote`, `finish`.
+
+**Safety limits:** `file_write`/`shell_exec`/`web_fetch` require approval;
+shell is allowlisted to `git.exe`/`cargo.exe` and refuses command-interpreter
+hosts, but remains **approval-gated arbitrary code execution, not an OS
+sandbox**. `web_fetch` is HTTPS-only, no redirects, no private networks, 1 MiB.
+File tools are jailed to the workspace and capped at 1 MiB.
+
+---
+
+## 3. What works without a key
+
+The installed app boots and serves its UI/read/operator surfaces with
+`status:"degraded"` and `E_KEY_MISSING` when no key is configured. Usable today:
+
+- `/health`, `/diagnose`, `/api/runtime`, `/api/session`, `/api/templates`.
+- Workspace tree/read preview, approvals surface, history/revisions/snapshots.
+- Memory banks/journal/verification, proposals/lessons readbacks.
+- Agent roster, profiles, messages, A2A inbox, remote/daemon/audit reads.
+- CLI `version`, `preflight`, `schema`, `tools.list`, `tools.describe`,
+  `capabilities.census`, `provider.cost`, `health`, `diagnose`, `db.backup`.
+- Crash/restart and scale test drills.
+
+**Every live prompt, model tool loop and model-dependent feature refuses
+`E_KEY_MISSING` until a DeepSeek key is configured.** No fake run is produced.
+
+---
+
+## 4. What it cannot do (current truth)
+
+- No autonomous coding, self-modification, continuous agent, or goal loop.
+- No editor, file diff review, integrated terminal/PTY, or workspace session
+  model; reads are read-only previews.
+- No repository index/code search/symbol graph; only `file_read`/`file_list`.
+- No file checkpoints/undo (graph snapshots are run-state history, not file
+  rollback).
+- No monitor actions; the post-dispatch review cannot instruct, cancel, or
+  repair a task.
+- No vector database, embeddings, ANN, or semantic recall; memory is SQLite
+  banks with recency retrieval and admits unverified entries.
+- No automatic learning loop. Lessons are prompt-injected data after a
+  receipt-gated apply; no weights/skills/tools/code change.
+- No HiveWire implementation in this repository; `ws.rs` is the UI WebSocket.
+- No network remotes; remotes are in-process fixtures; daemons have no live
+  scheduler.
+- No headless `run` CLI, MCP server, extension API, or documented HTTP contract.
+- No OS sandbox; `shell_exec` is approval-gated arbitrary code.
+- No live 40-node provider run, clean-profile install proof, or strict release
+  seal; no keyed live proof is claimed in this repository.
+
+---
+
+## 5. Install and current build
+
+There is **no public downloader, MSI, code signing, or auto-updater**. The local
+package is built from this tree:
+
+```powershell
+$root = "C:\Users\Riley\Desktop\hiverouter-v1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-desktop.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\install-desktop.ps1" -SkipProvider
 ```
 
-This is **policy-gated**, not an asynchronous HyperAgent reasoning decision.
-The root-control path remains the direct HyperAgent creation path.
+Prerequisites: Windows x64, Node/npm, Rust/cargo with bundled `tools\w64devkit`,
+Git, and .NET Framework `csc.exe`. Install is per-user under
+`%LOCALAPPDATA%\Programs\HiveMind\app`; data under `%LOCALAPPDATA%\HiveMind`.
+Desktop/Start Menu shortcuts are created.
 
-### Rewire and memory
+Current package identity:
 
-```text
-REWIRE_TASK(task, parent)
-  -> same-run check (foreign-run parent => E_TASK_NOT_FOUND, no write)
-  -> class/spawn/depth validation
-  -> graph CAS + context parent switch + task-row parent update
-```
+- package SHA-256: `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`
+- server SHA-256: `D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`
+- source commit: `806251b`; version `1.2.0-dev` (unreleased); `BUILD.json` `dirty:false`.
 
-Memory banks are partitioned: `bank:run:<run>` for HyperAgent, `bank:hive:<task>`
-for SuperAgent, `bank:branch:<task>` for Agent/Subagent. A HyperAgent completion
-writes to the run bank, never an orphan branch bank. A2A inbox/roster entries are
-filtered out of inherited facts.
+The install/health receipt is under [docs/evidence/live/](docs/evidence/live/);
+the current index is [INDEX.md](docs/evidence/live/INDEX.md). Health is
+`degraded` on this profile only because `DEEPSEEK_API_KEY` is absent.
 
 ---
 
-## 3. Providers and key custody
+## 6. EVO-GATE and learning — real but partial
 
-Two provider types are supported by settings:
+The root may record a proposal with `applied:false` and
+`requires_human_review:true`. Four designated SuperAgent seats plus the operator
+must authorize it. Before a lesson line can be appended, the operator must place
+a held-out evaluation receipt at
+`<data_dir>/evolution/eval/<proposal>/receipt.json`.
 
-- **DeepSeek** (`api_type=deepseek`) — `DEEPSEEK_API_KEY`.
-- **Token Lab / AMD** (`api_type=tokenlabs`) — `HIVEROUTER_API_KEY`, OpenAI-compatible
-  endpoint; used for testing. Its billing is **external and unverified**; HiveMind
-  does not claim USD pricing for it.
+The gate validates schema/proposal binding, ≥8 tasks, task-set/evaluator/artifact
+hashes, confidence intervals and `candidate.ci_lower > baseline.ci_upper`; boot
+rejects receipt-less lesson lines. It **does not run the evaluator**, compare
+`head_commit` to HEAD, or bind artifact hashes to real files. A well-formed
+hand-authored receipt can pass. Lessons are prompt data only; no code, schema,
+tool grant, prompt file, weight or gate is mutated.
 
-Keys are read from the environment by the process; the launcher injects them into
-the child. They are not written to the repository, the UI, logs, or this README.
-A missing key refuses by name (`E_KEY_MISSING`) rather than fabricating a reply.
-The operator can switch provider settings later without changing code.
-
----
-
-## 4. Safety, crash behaviour, and honest refusals
-
-- Hard caps are named refusals, never silent clamps.
-- `file_write` and `shell_exec` require approval; shell programs are allowlisted.
-- Root detachment records are audited; lower-level admission is audited.
-- Provider-call and tool-call budgets are enforced before spend.
-- Usage is checkpointed after each measured reply; a hard kill retains the
-  measured tokens and restart recovers tasks as `interrupted`.
-- The rate governor can refuse with `E_LLM_RATE_LIMIT` before an upstream send.
-- Self-modification is **deliberately not implemented**. `propose_improvement`
-  records a proposal (`applied:false`, `requires_human_review:true`) in the run
-  bank. It cannot edit or execute code. This is the safety boundary: proposals,
-  not autonomous source mutation.
-- **EVO-GATE (real but partial):** a lesson can be applied only after four
-  SuperAgent seats plus the operator authorize **and** the operator places a
-  held-out evaluation receipt at `evolution/eval/<proposal>/receipt.json`.
-  The gate validates task-set size/hash, evaluator id/hash, artifacts and
-  confidence intervals; boot rejects receipt-less lesson lines. It does **not**
-  run the evaluator, bind `head_commit` to HEAD, or hash-check artifact files.
-  A well-formed hand-authored receipt still passes.
-- **Root monitor is review-only:** one answer-only provider call sees task states
-  and bounded results; its text is labelled data in the final prompt. It has no
-  tools, cannot send instructions, cancel tasks, or repair a failed branch, and
-  a tool call from it fails the run.
-- **Memory is SQLite banks, not vector search.** Retrieval is recency-ordered
-  and bank-scoped; there are no embeddings, ANN index, semantic recall, or
-  cross-hive vector database. Unverified memory entries are admitted.
-- **HiveWire does not exist in this repository.** The WebSocket transport
-  (`ws.rs`) is the UI protocol; remotes are in-process fixtures; daemons are
-  enrolled records without a live scheduler.
+There is **no automatic learning loop** and no vector memory. See
+[01-core.md](docs/audit/round-95/01-core.md) for the full evidence.
 
 ---
 
-## 5. UI
+## 7. Evidence and claim ledger
 
-React 19 + TypeScript + Vite 8 + Tailwind 4 + `@xyflow/react` + `motion`. The
-HoneyGlass startup splash is a real React surface; it is not a bitmap overlay.
+| Claim | Grade | Evidence |
+|---|---|---|
+| 12 registry tools, 5 classes, 35 grants | **READ** | `backend/crates/hiverouter-tools/src/tool.rs:115-140,462-518` |
+| Caps depth 3/fan-out 8/64 agents/64 calls | **READ** | `backend/crates/hiverouter-core/src/caps.rs:7-18` |
+| Root control 2 turns, ≤4 calls, turn-2 creation refusal | **READ** | `execution.rs`; `provider_executor.rs` |
+| Monitor is one read-only turn; no action tools | **READ + TEST** | `execution.rs:2342-2398`; `run_lifecycle.rs` |
+| EVO-GATE is shape-validating, not evaluator-executing | **READ** | `evolution_gate.rs:13-15,76-166` |
+| No vector/embedding memory | **READ (absence)** | schema/code search; `store.rs:2217-2286` |
+| No HiveWire | **READ (absent)** | zero repo matches; `ws.rs` is UI transport |
+| 100 use cases + 100 cannots complete | **VERIFIED (counted)** | `docs/audit/round-95/06-use-cases.md` |
+| Final offline battery 8/8 PASS | **VERIFIED (receipt; dirty tree)** | `docs/evidence/live/full-battery-20261110-234515.json` |
+| Docs truth 19/19 | **VERIFIED (command)** | `node tools/qa/check-docs-truth.mjs` |
+| Installed build identity | **VERIFIED (BUILD.json/health)** | install receipt; `/health` |
+| Live provider behavior | **UNVERIFIED** | no key; every prompt refuses `E_KEY_MISSING` |
+| 40-node live scale | **UNVERIFIED / NOT RUN** | scale receipt is a 41-task test harness, not live provider |
+| Clean release seal | **UNVERIFIED / NONE** | sealed `1.1.0`; working tree `1.2.0-dev` |
+| DeepSeek V4.1 Flash 1017 vs Claude Fable 5.2 quality parity | **UNVERIFIED** | official prices only; no independent same-task eval |
 
-- [1440×900 splash](docs/evidence/live/ui-splash.png)
-- [375×812 splash](docs/evidence/live/ui-splash-375.png)
-- [Connected polished UI](docs/evidence/live/ui-polished-final.png)
-- Design system: [HoneyGlass design system](docs/ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md)
-- Roadmap: [UI/UX roadmap](docs/UI-UX-ROADMAP.md)
-
-The UI is a projection of real backend events; this round did not redesign it.
+The full claim register and the model comparison are in
+[the truth report](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md) and
+[04-models.md](docs/audit/round-95/04-models.md).
 
 ---
 
-## 6. Build, run, test
+## 8. Models and the DeepSeek key
+
+The installed route uses DeepSeek `deepseek-flash`; the repository's pricing
+table and provider settings are code-level facts. A DeepSeek key is required
+for any live run. It is read from `DEEPSEEK_API_KEY` or the launcher's
+DPAPI-protected key path; it is never printed or committed.
+
+DeepSeek V4.1 Flash 1017 (API `deepseek-flash`, released 2026-10-17) and Claude
+Fable 5.2 (API `claude-fable-5-2`, released 2026-11-09) are both real,
+vendor-documented models as of 2026-11-11. Official pricing (token list prices):
+DeepSeek **$0.15/$0.30 input off-/peak, $0.60/$1.20 output**; Fable **$8/$40**.
+Token-price ratios are arithmetic, not per-task measurements. **No independent
+same-task quality/speed/bug-fix parity is established.** HiveMind has no
+Anthropic adapter; Fable would require a new provider integration.
+
+Sources: [DeepSeek release](https://api-docs.deepseek.com/news/news261017),
+[DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/),
+[Anthropic Fable 5.2](https://www.anthropic.com/claude-fable-and-mythos-5-2),
+[Claude release notes](https://platform.claude.com/docs/en/release-notes/overview).
+
+---
+
+## 9. Harness status and plan
+
+HiveMind is **not yet a replacement for DeepSeek Harness, Hermes, Claude Code,
+Codex, Grok Build, or Antigravity**. It lacks sessions, editor/diff, terminal,
+repo index, checkpoints, plan/todo, headless CLI and MCP; its monitor is
+review-only and its learning loop is not executed-eval gated.
+
+The preservation-first plan for adding those features is in
+[HIVEMIND-FINISH-PLAN-v3-STATUS.md](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md)
+and the master report. It is a proposal, not shipped functionality.
+
+---
+
+## 10. Build, test, and evidence commands
 
 ```powershell
 $root = "C:\Users\Riley\Desktop\hiverouter-v1"
@@ -187,234 +258,40 @@ cargo test --workspace --locked
 ```
 
 ```powershell
-# Build the portable package (web build + release server + launcher + zip)
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-desktop.ps1"
+Set-Location "$root"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/qa/run-full-battery.ps1
+node tools/qa/check-docs-truth.mjs
+node tools/qa/run-crash-drill.ps1
+node tools/qa/run-scale-receipt.ps1
 ```
 
-Current gates (this tree, 2026-11-10):
-
-- Backend: **full battery PASS** at `1129349` with the audit docs in the
-  working tree (`cargo test --workspace --locked`, exit 0; receipt
-  `docs/evidence/live/full-battery-20261110-234515.json`, `working_tree_dirty:
-  true`). A clean-HEAD battery receipt is **not** claimed.
-- Web: typecheck **0**, **265 tests passed**, production build **0**
-- Current installed package: `dist/HiveMind.zip` SHA-256
-  `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`
-- Installed server: SHA-256
-  `D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`
-  (commit `806251b`, BUILD.json `dirty:false`)
-- Full install/health evidence: the `install-…` receipt under `docs/evidence/live/`.
-
----
-
-## 7. What is *not* true — read this before using the word “AGI”
-
-| Claim | Status |
-|---|---|
-| HiveMind is Meta's HyperAgents / DGM-H | **FALSE.** No task+meta fused editable program, no self-modifying improvement procedure, no variant archive/evolution sandbox. |
-| HiveMind is a general SE agent like the HyperAgent paper | **FALSE.** It is a hierarchical orchestrator, not a four-agent SWE-Bench system, and makes no SWE-Bench claim. |
-| HiveMind is AGI | **FALSE.** No held-out breadth, transfer, continual learning, calibrated self-model, open-ended goals, or verified safety envelope. It is a narrow, capped, single-run HMAS. |
-| HiveMind learns across runs | **FALSE as shipped.** It records memory/proposals and prompt-injected lessons; it does not update weights, build a skill library, or promote a behavior automatically. |
-| HiveMind has vector search or a vector database | **FALSE.** Memory is SQLite banks with recency retrieval; no embeddings/ANN/semantic recall exist (repo-wide search). |
-| HiveWire exists in this repo | **FALSE / NOT DOCUMENTED.** Zero `HiveWire` matches; `ws.rs` is the UI WebSocket, not an agent harness. |
-| The HyperAgent governor can repair a run | **FALSE.** The post-dispatch monitor is a read-only text review; no `send_instruction`, `cancel_task`, or repair tool exists. |
-| EVO-GATE proves a lesson improved the model | **FALSE.** It validates an operator-supplied receipt shape; it does not run the evaluator or bind artifacts to files. |
-| DeepSeek V4.1 Flash 1017 is “as good as” Claude Fable 5.2 | **UNVERIFIED.** Both are real vendor models; no independent same-task evaluation exists. Token prices differ by roughly 26–67×; quality/bug-fix parity is not established. |
-| A remote is a network satellite | **FALSE.** `in_process` fixture only. |
-| A daemon runs continuously | **NOT PROVEN.** Enrolled record; watchdog has a DB-check job; no live tick proof. |
-| Root can add a branch when the planner supplied one | **FALSE / DEAD PATH.** The allow path is unreachable for every validated plan today. |
-| Lower-level request is a real LLM approval turn | **FALSE.** It is a deterministic admission gate. |
-| 40-node live scaling is proven | **NOT RUN.** Caps permit it; no full live 40-node evidence. |
-| Three-repeat exact-two stability | **2 of 3 completed**; one `E_PROVIDER_TIMEOUT` with 0 tasks. |
-| UI is FigCraft-authored runtime | **PARTLY FALSE.** FigCraft supplied design/tokens; the runtime is React/TS. |
-
----
-
-## 8. Evidence map
+Evidence map:
 
 | Area | Evidence |
 |---|---|
-| Truth report / claim register | `docs/audit/HYPERAGENT-TRUTH-REPORT.md` |
-| Bug-fix report + live evidence | `docs/evidence/HMARS-BUGFIX-REPORT.md` |
-| Agent taxonomy vs papers | `docs/audit/AGENT-TAXONOMY-VERIFICATION.md` |
-| Capability matrix | `docs/audit/CAPABILITY-MATRIX.md` |
-| Remote/permission gaps | `docs/audit/REMOTE-PERMISSION-GAPS.md` |
-| Live test plan / results | `docs/audit/AGENTIC-TEST-PLAN.md`, `docs/audit/AGENTIC-LIVE-TESTS.md` |
-| Independent governance audit | `docs/audit/GOVERNANCE-AUDIT-2.md`, `GOVERNANCE-TESTS.md` |
-| Improvement verification | `docs/audit/IMPROVEMENT-VERIFICATION.md` |
-| Pseudocode sources | `docs/audit/PSEUDOCODE-P1-META.md`, `P2-HMARS.md`, `P3-AGI.md` |
-| Release/version truth | `docs/RELEASE-EVIDENCE.md`, `docs/RELEASE.md` |
+| Master truth / boundary / roadmap | [HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md) |
+| Plan crosswalk | [HIVEMIND-FINISH-PLAN-v3-STATUS.md](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md) |
+| 100 use cases / 100 cannots | [06-use-cases.md](docs/audit/round-95/06-use-cases.md) |
+| Install/runtime truth | [05-operations.md](docs/audit/round-95/05-operations.md) |
+| Model comparison | [04-models.md](docs/audit/round-95/04-models.md) |
+| Independent watchdog | [07-watchdog.md](docs/audit/round-95/07-watchdog.md) |
+| Evidence index | [INDEX.md](docs/evidence/live/INDEX.md) |
+| Architecture | [ARCHITECTURE.md](ARCHITECTURE.md) / [CODEMAP](docs/CODEMAP/02-ARCHITECTURE.md) |
+| Brand / design specs | [brand](docs/design/HIVEMIND-BRAND-SYSTEM-v1.md) / [specs](docs/design/HIVEMIND-DESIGN-SPECS-v1.md) |
 
 ---
 
-## 9. Status
+## 11. Non-claims
 
-This is a **1.2.0-dev working tree**, not a sealed 1.2 release. The portable
-package was built and its hashes are above; it has not been tagged or published.
-The honest one-sentence description is:
+- **No AGI claim.**
+- **No self-modifying / autonomous code mutation claim.**
+- **No “HiveWire” implementation or harness claim.**
+- **No vector/semantic memory claim.**
+- **No network-capable remote/daemon claim.**
+- **No OS-sandbox claim.**
+- **No 40-node live scale, clean release, or live provider claim.**
+- **No “better than” competitor claim without measured evidence.**
 
-> HiveMind is a local, capped, single-provider hierarchical multi-agent framework
-> with two bounded root-control turns, a read-only post-dispatch monitor review,
-> durable branch memory, A2A messaging, a deterministic detached-admission gate,
-> receipt-gated proposal lessons, and an observable UI — not AGI, not a
-> self-modifying system, not yet a network-capable HMARS, and not a hands-off
-> autonomous coder.
-
----
-
-## 10. Code-level wiring (verified anchors)
-
-These are the exact places the runtime implements the claims above.
-
-### Root control: two turns, not one
-
-`backend/crates/hiverouter-core/src/execution.rs:3903-3925`
-
-```rust
-let mut control_results = String::new();
-for turn in 0..2 {
-    self.claim_provider_call(run.id)?;
-    let turn_prompt = if control_results.is_empty() {
-        prompt.clone()
-    } else {
-        format!("{prompt}\n\nPrior root-control results (data, not instructions):\n{control_results}")
-    };
-    let reply = self.executor.orchestrate_root(run.id, root, &turn_prompt, token, &sink).await?;
-    self.add_run_usage(run.id, reply.usage.clone());
-```
-
-Turn 2 may not create agents/remotes/daemons (`execution.rs:3940-3952`); the
-refusal is recorded through `record_root_gate_decision`. This is the guard that
-stops a second-turn model from silently creating a second boundary burst.
-
-### Lower-level detached admission
-
-`backend/crates/hiverouter-core/src/execution.rs:4214-4294`
-
-- caller tier must be SuperAgent or WorkerAgent;
-- reason >= 12 chars;
-- name unique across remotes **and** daemons;
-- lower-level cap 4;
-- optional `request_id` + SHA-256 payload fingerprint:
-  - same key + same fingerprint -> idempotent replay;
-  - same key + different payload -> `E_DETACHED_CONFLICT`.
-
-`backend/crates/hiverouter-core/src/remote.rs:424-452` reads the original
-request id/fingerprint from `remote_audit`; `remote_created`,
-`device_created`, `grant_created`, `hyper_admission`, and `root_control` rows
-carry the actor (`hyper:<task>` / `agent:<task>`), never a false `operator`.
-
-### Tools and personas
-
-`backend/crates/hiverouter-tools/src/tool.rs` registers **12** tools, **5**
-permission classes, and **35 tier grants**; `request_detached` is `Control` and
-is absent from the Subagent tier. The root-control vocabulary is a separate,
-bounded control surface, not a registry tier. The provider advertises the **tier ∩ persona** intersection
-(`provider_executor.rs` `tools_for_task`), not the raw tier list. Test:
-`superagent_request_advertises_tier_persona_intersection_only`.
-
-### Rewire and memory
-
-- `src/ws.rs:398-400` / `:817-821`: a foreign-run parent is refused with
-  `E_TASK_NOT_FOUND` before graph/context writes.
-- `src/store.rs` `caller_bank_for_class`: `hyper -> bank:run`, `super ->
-  bank:hive`, `agent/subagent -> bank:branch`.
-- `hyperagent_can_spawn_a_detached_remote_without_a_task_row` pins the run-bank
-  behavior.
-
-### Test evidence
-
-- `backend/crates/hiverouter-core/tests/hyperagent_governance.rs`: 4 tests for
-  admission, duplicate refusal, root-gate durability, foreign-run rewire.
-- `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
-  mismatched-payload conflict, daemon admission, duplicate names, run bank.
-- Full battery: backend `cargo test --workspace --locked` exit 0; web typecheck 0,
-  265 tests passed; receipt `docs/evidence/live/full-battery-20261110-215831.json`.
-
-### Not implemented
-
-Network remote transport, daemon live tick, 40-node live scale, 3/3 exact-two
-stability, self-modifying code, and AGI remain explicitly out of scope.
----
-
-## 11. Live tool-use battery
-
-| Capability | Result |
-|---|---|
-| Read-only file tool | **verified live**: `file_read` returned the exact `# HiveMind HMARS Bug-Fix Report` heading |
-| Approval-gated file write | **verified live**: `file_write` suspended, operator approved the nonce, run completed, `write-test.txt` contained `APPROVED_WRITE_OK` in an isolated temp workspace |
-| Web research | Read-grade aggregate receipt: approval-gated `web_fetch` returned HTTP 200. The aggregate receipt does not store byte count or body text, so the old `577 bytes`/`Example Domain` detail is withdrawn; `web_fetch` is granted to SuperAgent/WorkerAgent, not HyperAgent/Subagent |
-| Web-fetch kill switch | **verified live**: with `HIVEROUTER_SIDE_EFFECTS=0`, the same approved call was refused `E_TOOL_NOT_ALLOWED`; no fetch |
-| Shell | Test-backed: approval-gated `shell_exec` with `git.exe --version` executes; `cmd.exe`, PowerShell, and other interpreter hosts are refused, and `shell_exec` remains approval-gated arbitrary code execution, not an OS sandbox |
-| Detached admission | verified live (Lantern) and test-backed |
-| A2A ask_parent | verified live (one answered question) |
-| Exact hierarchy | verified live (7-task exact-two) |
-
-The tool battery evidence is under `docs/evidence/live/`.
-### `web_fetch` safety boundary
-
-`web_fetch` is the 11th of 12 registry tools and the only network egress seam. It is
-approval-gated (`Network` permission), HTTPS-only, default-port-only, rejects URL
-credentials and localhost, and resolves then rejects loopback/private/link-local/
-CGNAT/240/4/IPv4-mapped/NAT64 destinations. Redirects are not followed, DNS has
-a 10s timeout and cancellation, the response is streamed and capped at 1 MiB
-before buffering, and the request has a 15s timeout. The global
-`HIVEROUTER_SIDE_EFFECTS=0` switch covers it.
-
-Live evidence: `docs/evidence/live/live-tokenlab-web-fetch.json` and
-`docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`. Unit tests cover
-the SSRF policy and census lane. Current full-battery status and the exact receipt
-are in `docs/evidence/live/full-battery-20261110-215831.json`; do not infer a
-backend pass from an older count.
----
-
-## 12. Authorized self-evolution gate
-
-The root may record an improvement proposal, but it cannot apply one. The proposal
-payload states the missing authority explicitly:
-
-```json
-"governance": {
-  "required_approvals": 5,
-  "operator_approvals": 1,
-  "superagent_approvals": 4,
-  "unanimous": true,
-  "current_approvals": 0,
-  "state": "awaiting_votes",
-  "can_apply": false
-}
-```
-
-`truthful_scope` also states what would change, what would **not** change, and the
-one memory + one audit side effect of merely recording it. Current code records
-proposals and audits them; it does **not** implement vote submission, SuperAgent
-spawning for the vote, or automatic application. Test:
-`root_can_record_but_never_auto_apply_an_improvement_proposal`.
-
-This is authorized self-evolution, not autonomy: four spawned SuperAgents plus the
-operator must be unanimous, and nothing applies before all five approvals exist.
----
-
-## 13. Self-evolution proposal surface
-
-`GET /api/agents/runs/{run_id}/proposals` returns recorded `improvement:*` proposals
-with `applied:false`, the five-seat `governance` block, and `vote_path:"superagent_votes; operator_authorize; lesson_apply; lesson_rollback; code_apply_not_implemented"`.
-The web `ProposalsPanel` renders them read-only and refuses to present them as applied.
-
-SuperAgents record `approve`/`reject` with `vote_evolution`; the API
-aggregates votes into `awaiting_votes`, `awaiting_operator`, or
-`rejected_by_superagent`. The operator has a fifth-seat authorization endpoint
-and UI button, enabled only with four distinct approvals and no rejection; it
-records `authorized_not_applied`. After that, `POST .../apply` appends one durable
-lesson line to `evolution/LESSONS.jsonl` and `POST .../rollback` removes it.
-**Scope is lesson artifact only**; there is no code/schema/prompt/tool/persona
-mutation and `can_apply` remains false.
-The applied lesson ledger is also readable at `GET /api/evolution/lessons` and
-rendered read-only by `LessonsPanel`. It is a lesson artifact viewer, not a
-behavioral learning loop; authorized lessons are loaded at boot and hot-reloaded after apply/rollback into planner, root, and task prompts. No automatic quality evaluation or code mutation exists.
-Boot retrieval: authorized lessons are loaded from `<data_dir>/evolution/LESSONS.jsonl`
-and appended to the planner, root-control, and task prompts as bounded, labelled
-data (8 lines, 400 chars each). A live seeded-lesson run returned the lesson token `HONEYCOMB` from both child
-and final answers, and a separate live five-seat apply was later recovered by a
-new run that quoted the applied lesson exactly. Lessons are data, never authority
-to change tools, caps, or gates.
+**Honest one-sentence description:** HiveMind is a local, capped,
+single-provider HMAS prototype with genuine approval/ledger/evidence mechanics
+and a real UI, not yet a general coding harness, AGI, or autonomous agent.

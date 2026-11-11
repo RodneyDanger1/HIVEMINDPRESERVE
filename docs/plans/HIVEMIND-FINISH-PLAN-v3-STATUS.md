@@ -1,7 +1,7 @@
 # HiveMind Finish Plan v3 — execution status (2026-11-10)
 
 **Companion to:** [HIVEMIND-FINISH-PLAN-v3.md](HIVEMIND-FINISH-PLAN-v3.md) (the plan is not rewritten here).
-**Observed HEAD:** `1129349`; **installed build:** `806251b`; **working tree:** product code clean (the ledger endpoint candidate was discarded).
+**Observed HEAD:** `1129349`; **final docs HEAD:** `44e0535`; **installed build:** `806251b`; **working tree:** product code clean (the ledger endpoint candidate was discarded).
 **Verdict:** the P0/conformance core is materially shipped and tested; the plan is **not complete**.
 **Truth rule:** a line is struck through only when the required behavior exists **and** a committed test or receipt proves it. "Unshipped" and "read-only review" are not marked done.
 

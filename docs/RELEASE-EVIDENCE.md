@@ -2,7 +2,7 @@
 
 ## Current working state — 2026-11-10 (supersedes the stale 2026-11-06 snapshot below)
 
-- **Repo HEAD:** `1129349`; **installed product build:** `806251b` (`dirty:false`).
+- **Repo HEAD:** `44e0535` (audit docs committed on `1129349`); **installed product build:** `806251b` (`dirty:false`).
 - **Version/schema:** `1.2.0-dev`, schema `hiverouter.v1` version **24**.
 - **Offline battery:** `docs/evidence/live/full-battery-20261110-234515.json` — 8/8 executed, 0 failed, `working_tree_dirty:true` at `1129349` (audit docs in the tree; the ledger endpoint candidate was discarded). This is **not** a clean-HEAD or release seal.
 - **Install receipt:** `docs/evidence/live/install-1.2.0-dev.json` — installed server `1.2.0-dev`, schema 24, prompt assets loaded, health `degraded` with `E_KEY_MISSING`, 1440/375 screenshots, package SHA-256 `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`.

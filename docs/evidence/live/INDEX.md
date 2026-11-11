@@ -1,4 +1,6 @@
-# Live / evidence index (2026-11-10)
+# Live / evidence index (2026-11-11)
+
+**Current repo HEAD:** `44e0535` (audit docs); **product/install build:** `806251b`, schema 24, `dirty:false`; no provider key configured.
 
 **Rule:** a file here proves only what its receipt says. A PASS on a dirty tree is not a release proof; a scale harness is not a live provider run; a screenshot is not a click-through.
 
