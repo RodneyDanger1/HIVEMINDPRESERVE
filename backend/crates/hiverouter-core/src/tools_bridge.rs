@@ -26,8 +26,10 @@ use std::sync::{Arc, Mutex};
 use hiverouter_contract::command;
 use hiverouter_contract::{event, Refusal, RunId, TaskId, Timestamp};
 use hiverouter_tools::approval::{ApprovalRequest, ApprovalResolution};
+use hiverouter_tools::git::{Git, GitDiffRequest, GitLogRequest};
 use hiverouter_tools::jail::WorkspaceJail;
 use hiverouter_tools::ledger::{append_approval_decision, RunLedger, LEDGER_FILE_NAME};
+use hiverouter_tools::tool::{GitDiffArgs, GitLogArgs, GitStatusArgs};
 use hiverouter_tools::ToolError;
 
 use crate::db::Database;
@@ -452,6 +454,49 @@ impl ToolsBridge {
 
     fn map_tool_error(error: ToolError) -> Refusal {
         error.refusal()
+    }
+
+    /// Executes one read-only git query through the jailed Git wrapper. This is
+    /// async because Git is a child process; the core dispatch calls it without
+    /// creating an approval request (read-class only).
+    pub async fn execute_git_read(
+        &self,
+        tool: &str,
+        args: &serde_json::Value,
+    ) -> Result<String, Refusal> {
+        let jail = self.require_jail()?;
+        let git = Git::new(jail);
+        let text = match tool {
+            "git_status" => {
+                let parsed: GitStatusArgs = serde_json::from_value(args.clone())
+                    .map_err(|_| Refusal::SchemaInvalid)?;
+                let result = git.status(parsed.cwd.as_deref()).await.map_err(Self::map_tool_error)?;
+                serde_json::to_string(&result).map_err(|_| Refusal::InternalError)?
+            }
+            "git_diff" => {
+                let parsed: GitDiffArgs = serde_json::from_value(args.clone())
+                    .map_err(|_| Refusal::SchemaInvalid)?;
+                let request = GitDiffRequest {
+                    cwd: parsed.cwd,
+                    staged: parsed.staged.unwrap_or(false),
+                    path: parsed.path,
+                };
+                let result = git.diff(&request).await.map_err(Self::map_tool_error)?;
+                serde_json::to_string(&result).map_err(|_| Refusal::InternalError)?
+            }
+            "git_log" => {
+                let parsed: GitLogArgs = serde_json::from_value(args.clone())
+                    .map_err(|_| Refusal::SchemaInvalid)?;
+                let request = GitLogRequest {
+                    cwd: parsed.cwd,
+                    limit: parsed.limit.unwrap_or(20),
+                };
+                let result = git.log(&request).await.map_err(Self::map_tool_error)?;
+                serde_json::to_string(&result).map_err(|_| Refusal::InternalError)?
+            }
+            _ => return Err(Refusal::ToolNotAllowed),
+        };
+        Ok(text)
     }
 
     /// `SETTINGS_STATUS` -> `SETTINGS_STATUS_RESULT` (never the key).

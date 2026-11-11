@@ -2845,6 +2845,34 @@ impl RunEngine {
                                     self.execute_request_detached(run, task, &plan)
                                 } else if plan.tool == "vote_evolution" {
                                     self.execute_vote_evolution(run, task, &plan)
+                                } else if matches!(
+                                    plan.tool.as_str(),
+                                    "git_status" | "git_diff" | "git_log"
+                                ) {
+                                    match self.tools.as_ref() {
+                                        Some(tools) => {
+                                            match tools.execute_git_read(&plan.tool, &plan.args).await {
+                                                Ok(text) => ToolExecution::ok(
+                                                    plan.tool_call_id.clone(),
+                                                    text,
+                                                ),
+                                                Err(refusal) => ToolExecution::refused(
+                                                    plan.tool_call_id.clone(),
+                                                    refusal.code(),
+                                                    format!(
+                                                        "git read refused: {}; nothing was written",
+                                                        refusal.message()
+                                                    ),
+                                                ),
+                                            }
+                                        }
+                                        None => ToolExecution::refused(
+                                            plan.tool_call_id.clone(),
+                                            Refusal::FileTreeUnavailable.code(),
+                                            "git read requires a workspace bridge; nothing was executed"
+                                                .to_owned(),
+                                        ),
+                                    }
                                 } else if tool_loop::requires_approval(&self.tool_registry, &plan.tool)
                                     && self.tools.is_some()
                                     && self.tool_workspace.is_some()

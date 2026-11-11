@@ -151,6 +151,12 @@ pub enum ToolId {
     GitStage,
     /// Commit staged changes.
     GitCommit,
+    /// Read git status.
+    GitStatus,
+    /// Read a git diff.
+    GitDiff,
+    /// Read recent git log.
+    GitLog,
 }
 
 impl ToolId {
@@ -177,6 +183,9 @@ impl ToolId {
             ToolId::RunTests => "run_tests",
             ToolId::GitStage => "git_stage",
             ToolId::GitCommit => "git_commit",
+            ToolId::GitStatus => "git_status",
+            ToolId::GitDiff => "git_diff",
+            ToolId::GitLog => "git_log",
         }
     }
 
@@ -668,6 +677,24 @@ impl ToolRegistry {
                 PermissionClass::Mutate,
                 schema_of!(GitCommitArgs),
             ),
+            contract(
+                ToolId::GitStatus,
+                "Read git status with fixed arguments inside the workspace jail.",
+                PermissionClass::Read,
+                schema_of!(GitStatusArgs),
+            ),
+            contract(
+                ToolId::GitDiff,
+                "Read a git diff with fixed, non-interactive arguments inside the workspace jail.",
+                PermissionClass::Read,
+                schema_of!(GitDiffArgs),
+            ),
+            contract(
+                ToolId::GitLog,
+                "Read recent git log output inside the workspace jail.",
+                PermissionClass::Read,
+                schema_of!(GitLogArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -686,6 +713,9 @@ impl ToolRegistry {
                 ToolId::RunTests,
                 ToolId::GitStage,
                 ToolId::GitCommit,
+                ToolId::GitStatus,
+                ToolId::GitDiff,
+                ToolId::GitLog,
             ],
         );
         allowlists.insert(
@@ -710,6 +740,9 @@ impl ToolRegistry {
                 ToolId::RunTests,
                 ToolId::GitStage,
                 ToolId::GitCommit,
+                ToolId::GitStatus,
+                ToolId::GitDiff,
+                ToolId::GitLog,
             ],
         );
         allowlists.insert(
@@ -733,6 +766,9 @@ impl ToolRegistry {
                 ToolId::RunTests,
                 ToolId::GitStage,
                 ToolId::GitCommit,
+                ToolId::GitStatus,
+                ToolId::GitDiff,
+                ToolId::GitLog,
             ],
         );
         allowlists.insert(
@@ -746,6 +782,9 @@ impl ToolRegistry {
                 ToolId::FsGlob,
                 ToolId::FsGrep,
                 ToolId::FileReadRange,
+                ToolId::GitStatus,
+                ToolId::GitDiff,
+                ToolId::GitLog,
             ],
         );
         allowlists.insert(
@@ -762,6 +801,9 @@ impl ToolRegistry {
                 ToolId::RunTests,
                 ToolId::GitStage,
                 ToolId::GitCommit,
+                ToolId::GitStatus,
+                ToolId::GitDiff,
+                ToolId::GitLog,
             ],
         );
 
@@ -887,7 +929,10 @@ mod tests {
             // A deliberately empty object fails the required-field check for
             // every tool except `file_list` (all of its fields are optional).
             let empty = serde_json::json!({});
-            if id == ToolId::FileList {
+            if matches!(
+                id,
+                ToolId::FileList | ToolId::GitStatus | ToolId::GitDiff | ToolId::GitLog
+            ) {
                 assert!(contract.validate_args(&empty).is_ok());
             } else {
                 assert_eq!(
