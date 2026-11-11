@@ -21,11 +21,16 @@
     "missing_key": true,
     "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
   },
+  "screenshots": [
+    "docs/evidence/live/install-ui-1440x900.png",
+    "docs/evidence/live/install-ui-375x812.png"
+  ],
   "what_this_proves": [
     "a clean package built from c8359f6 with dirty=false",
     "the clean currently installed build includes the per-run approval serialization",
     "the installed server reports 1.2.0-dev and schema 24",
-    "Desktop and Start Menu shortcuts were created"
+    "Desktop and Start Menu shortcuts were created",
+    "the UI renders at 1440x900 and 375x812; the library gallery shows all eight templates"
   ],
   "what_this_does_not_prove": [
     "a live provider call (no key configured)",
