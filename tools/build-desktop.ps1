@@ -27,8 +27,13 @@ $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $profileArgs = if ($Configuration -eq 'debug') { @('build', '--profile', 'debug', '--locked') } else { @('build', '--release', '--locked') }
 $server = Join-Path $root "target\$Configuration\hiverouter.exe"
 $version = (Get-Content (Join-Path $web 'package.json') -Raw | ConvertFrom-Json).version
-$commit = (& git -C $root rev-parse HEAD).Trim()
-$dirty = [bool](& git -C $root status --porcelain)
+# Freeze identity at the start and refuse to publish a package when the tree
+# moved while it was being built (otherwise BUILD.json names a different commit
+# than the bytes actually shipped).
+$startCommit = (& git -C $root rev-parse HEAD).Trim()
+$startDirty = [bool](& git -C $root status --porcelain)
+$commit = $startCommit
+$dirty = $startDirty
 
 Write-Host "[1/5] web build" -ForegroundColor Cyan
 Push-Location $web
@@ -92,6 +97,11 @@ No Tauri, no Visual Studio, no MSVC Build Tools are required.
 The UI is the same embedded web/dist served by the Rust binary.
 "@ | Set-Content -LiteralPath (Join-Path $outDir 'README.txt') -Encoding ASCII
 
+$endCommit = (& git -C $root rev-parse HEAD).Trim()
+$endDirty = [bool](& git -C $root status --porcelain)
+if ($endCommit -ne $startCommit -or $endDirty -ne $startDirty) {
+    throw "source identity changed during the build (start=$startCommit dirty=$startDirty end=$endCommit dirty=$endDirty); refusing to stamp ambiguous BUILD.json"
+}
 $launcherHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $outDir 'HiveMind.exe')).Hash.ToLowerInvariant()
 $serverHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $outDir 'hiverouter.exe')).Hash.ToLowerInvariant()
 @{
