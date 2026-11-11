@@ -614,6 +614,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/session", get(api_session))
         .route("/api/sessions", get(sessions_list).post(session_create))
         .route("/api/sessions/{session_id}", get(session_detail))
+        .route("/api/sessions/{session_id}/policy", post(session_policy))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
         .route("/api/history/runs/{run_id}/state", get(history_state))
@@ -925,6 +926,28 @@ async fn session_detail(
         Json(serde_json::json!({ "session": session, "runs": runs })),
     )
         .into_response()
+}
+
+async fn session_policy(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(policy) = body
+        .get("permission_policy")
+        .and_then(serde_json::Value::as_str)
+        .and_then(PermissionPolicy::from_str_strict)
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.set_session_policy(&session_id, policy) {
+        Ok(()) => match store.session(&session_id) {
+            Ok(session) => (StatusCode::OK, Json(session)).into_response(),
+            Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+        },
+        Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
 }
 
 async fn history_runs(State(state): State<Arc<AppState>>) -> Response {

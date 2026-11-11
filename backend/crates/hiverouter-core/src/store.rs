@@ -560,6 +560,27 @@ impl RunStore {
         Ok(())
     }
 
+    /// Sets the default policy for new runs created in a session.
+    pub fn set_session_policy(
+        &self,
+        session_id: &str,
+        policy: PermissionPolicy,
+    ) -> Result<(), Refusal> {
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE sessions SET permission_policy = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![policy.as_str(), Timestamp::now().as_str(), session_id],
+                )
+            })
+            .map_err(map)?;
+        if changed == 0 {
+            return Err(Refusal::SessionNotFound);
+        }
+        Ok(())
+    }
+
     /// Adds a todo to a session.
     pub fn add_todo(&self, session_id: &str, text: &str) -> Result<Todo, Refusal> {
         let todo = Todo {
