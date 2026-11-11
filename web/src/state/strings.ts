@@ -12,6 +12,18 @@ export const STRINGS = {
     documentTitle: 'HiveMind — Spatial Execution Environment',
     skipToCanvas: 'Skip to canvas',
   },
+  splash: {
+    skip: 'Skip intro',
+    skipAria: 'Skip the startup intro and show the workspace',
+    skipHint: 'Press Escape to skip the intro.',
+  },
+  crash: {
+    title: 'The interface stopped rendering',
+    body: 'A panel threw while React was rendering, so this window stopped before it could draw the rest of the app. The local server and the committed runs are unaffected.',
+    detailLabel: 'Reported error',
+    reload: 'Reload the interface',
+    hint: 'If this screen comes back after a reload, close the window and reopen HiveMind from its shortcut so the launcher restarts the local server.',
+  },
   brand: {
     wordmark: 'HiveMind',
     lockupSubtitle: 'SPATIAL EXECUTION ENVIRONMENT',
@@ -54,7 +66,7 @@ export const STRINGS = {
     closed: 'Disconnected',
     error: 'Connection failed',
     mock: 'DEV MOCK · simulated data',
-    offlineBanner: 'The local server is unreachable — start it with cargo run --release, then retry.',
+    offlineBanner: 'The local server is unreachable — reopen HiveMind from its shortcut so the launcher restarts it, then retry.',
     reconnectBanner: 'Reconnecting to the local server; mutations are blocked until the socket is open.',
   },
   assets: {

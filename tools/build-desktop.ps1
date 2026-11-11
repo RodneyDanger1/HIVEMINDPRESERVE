@@ -14,7 +14,11 @@
 param(
     [ValidateSet('release', 'debug')]
     [string]$Configuration = 'release',
-    [switch]$NoZip
+    [switch]$NoZip,
+    # Repackage with the existing server binary instead of compiling it. The
+    # reused binary still embeds the UI it was compiled with, so the package is
+    # only UI-current after a full build; BUILD.json records server_reused.
+    [switch]$SkipServerBuild
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,6 +40,15 @@ $commit = $startCommit
 $dirty = $startDirty
 
 Write-Host "[1/5] web build" -ForegroundColor Cyan
+# A developer shell that still exports these would bake a fixed API origin or the
+# dev mock into the shipped bundle. Clear them for the build instead of trusting
+# the caller's environment.
+foreach ($leaked in @('VITE_API_BASE', 'VITE_UI_MOCK')) {
+    if (Test-Path "Env:$leaked") {
+        Write-Warning "ignoring inherited $leaked=$((Get-Item "Env:$leaked").Value) for the shipped web build"
+        Remove-Item "Env:$leaked"
+    }
+}
 Push-Location $web
 try {
     & cmd.exe /c 'npm.cmd run build'
@@ -43,15 +56,38 @@ try {
 } finally {
     Pop-Location
 }
+$webDist = Join-Path $web 'dist'
+if (-not (Test-Path -LiteralPath (Join-Path $webDist 'index.html'))) {
+    throw "web build produced no $webDist\index.html; the embedded UI would be the previous build"
+}
+# Fingerprint the exact UI tree that rust-embed compiled into the server, so
+# BUILD.json names what shipped instead of only the repository version.
+$uiFiles = @(Get-ChildItem -LiteralPath $webDist -Recurse -File | Sort-Object FullName)
+$uiManifestLines = foreach ($file in $uiFiles) {
+    $relative = $file.FullName.Substring($webDist.Length + 1).Replace('\', '/')
+    '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant(), $relative
+}
+$sha256 = [Security.Cryptography.SHA256]::Create()
+try {
+    $uiHash = -join ($sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes(($uiManifestLines -join "`n"))) | ForEach-Object { $_.ToString('x2') })
+} finally {
+    $sha256.Dispose()
+}
+$uiFileCount = $uiFiles.Count
 
 Write-Host "[2/5] server build ($Configuration)" -ForegroundColor Cyan
-Push-Location $backend
-try {
-    $env:PATH = "$env:USERPROFILE\.cargo\bin;$root\tools\w64devkit\bin;$env:PATH"
-    & cargo @profileArgs
-    if ($LASTEXITCODE -ne 0) { throw "server build failed: $LASTEXITCODE (stop any running hiverouter.exe first)" }
-} finally {
-    Pop-Location
+if ($SkipServerBuild) {
+    if (-not (Test-Path -LiteralPath $server)) { throw "-SkipServerBuild was requested but $server does not exist" }
+    Write-Warning "reusing $server; it embeds the web/dist it was compiled with, so re-run without -SkipServerBuild to ship this UI build"
+} else {
+    Push-Location $backend
+    try {
+        $env:PATH = "$env:USERPROFILE\.cargo\bin;$root\tools\w64devkit\bin;$env:PATH"
+        & cargo @profileArgs
+        if ($LASTEXITCODE -ne 0) { throw "server build failed: $LASTEXITCODE (stop any running hiverouter.exe first)" }
+    } finally {
+        Pop-Location
+    }
 }
 if (-not (Test-Path -LiteralPath $server)) { throw "server exe missing: $server" }
 
@@ -69,9 +105,13 @@ Get-ChildItem -LiteralPath $outDir -Filter 'HiveMindLauncher-*.exe' -File -Error
 Copy-Item -LiteralPath $launcherExe -Destination (Join-Path $outDir 'HiveMind.exe') -Force
 Remove-Item -LiteralPath $launcherExe -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath $server -Destination $outDir -Force
-foreach ($script in @('set-provider-key.ps1', 'set-provider-profile.ps1')) {
+# Ship the installer/uninstaller inside the package: README.txt tells the user to
+# run install-desktop.ps1 from this folder, and the uninstall registry entry
+# points at the copy installed next to the app.
+foreach ($script in @('set-provider-key.ps1', 'set-provider-profile.ps1', 'install-desktop.ps1', 'uninstall-desktop.ps1')) {
     $source = Join-Path $root "tools\$script"
-    if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $outDir -Force }
+    if (-not (Test-Path -LiteralPath $source)) { throw "packaging script missing: $source" }
+    Copy-Item -LiteralPath $source -Destination $outDir -Force
 }
 @"
 HiveMind portable desktop build
@@ -94,11 +134,17 @@ Create or rotate it with the adjacent script:
   powershell -ExecutionPolicy Bypass -File set-provider-key.ps1
 The key is never written into this folder, source, command lines, or logs.
 
-Install for this user (shortcuts, first-run setup):
+Install for this user (shortcuts, first-run setup, uninstall entry):
   powershell -ExecutionPolicy Bypass -File install-desktop.ps1
 
-No Tauri, no Visual Studio, no MSVC Build Tools are required.
-The UI is the same embedded web/dist served by the Rust binary.
+Upgrade: run install-desktop.ps1 again over the existing install. User data is
+never touched, and an older package is refused unless -Downgrade is passed.
+Uninstall (user data preserved):
+  powershell -ExecutionPolicy Bypass -File uninstall-desktop.ps1
+
+No Tauri, no Visual Studio, no MSVC Build Tools and no Visual C++ redistributable
+are required: the server binary imports only Windows system DLLs, and the UI is
+the embedded web/dist served by that binary.
 "@ | Set-Content -LiteralPath (Join-Path $outDir 'README.txt') -Encoding ASCII
 
 $endCommit = (& git -C $root rev-parse HEAD).Trim()
@@ -115,8 +161,13 @@ $serverHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $outDir 'h
     built_at = (Get-Date).ToString('o')
     server_sha256 = $serverHash
     launcher_sha256 = $launcherHash
+    ui_sha256 = $uiHash
+    ui_files = $uiFileCount
+    server_reused = [bool]$SkipServerBuild
+    contract_schema = 'hiverouter.v1'
 } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $outDir 'BUILD.json') -Encoding ASCII
-$lines = foreach ($file in Get-ChildItem -LiteralPath $outDir -File | Sort-Object Name) {
+# CHECKSUMS.txt must not list itself: a manifest cannot contain its own hash.
+$lines = foreach ($file in Get-ChildItem -LiteralPath $outDir -File | Where-Object { $_.Name -ne 'CHECKSUMS.txt' } | Sort-Object Name) {
     '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant(), $file.Name
 }
 $lines | Set-Content -LiteralPath (Join-Path $outDir 'CHECKSUMS.txt') -Encoding ASCII

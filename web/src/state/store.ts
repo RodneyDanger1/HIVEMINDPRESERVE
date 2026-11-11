@@ -39,6 +39,7 @@ import type { DecodedEvent } from '../api/contract';
 import { deriveHud } from './metrics';
 import { spawnGate } from './spawnMatrix';
 import { formatStateOf, STRINGS } from './strings';
+import { readReducedMotionOverride, writeReducedMotionOverride } from './preferences';
 import {
   APPROVAL_ACK_SETTLE_CODE,
   APPROVAL_ACK_SETTLE_MS,
@@ -1956,7 +1957,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       settings: initialSettings(),
       fileTree: initialFileTree(),
       project: baseProject(),
-      reducedMotionOverride: false,
+      reducedMotionOverride: readReducedMotionOverride(),
       diffOpen: false,
 
       async init(): Promise<void> {
@@ -2529,6 +2530,9 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       },
 
       setReducedMotionOverride(value: boolean): void {
+        // Persisted: an operator who needs reduced motion must not re-set it on
+        // every launch.
+        writeReducedMotionOverride(value);
         set({ reducedMotionOverride: value });
       },
 

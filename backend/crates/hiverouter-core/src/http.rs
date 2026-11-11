@@ -916,11 +916,18 @@ async fn session_create(
     if name.trim().is_empty() || project_id.trim().is_empty() || workspace_root.trim().is_empty() {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     }
-    let policy = body
-        .get("permission_policy")
-        .and_then(serde_json::Value::as_str)
-        .and_then(PermissionPolicy::from_str_strict)
-        .unwrap_or(PermissionPolicy::Classic);
+    let policy = match body.get("permission_policy") {
+        None => PermissionPolicy::Classic,
+        Some(value) => match value
+            .as_str()
+            .and_then(PermissionPolicy::from_str_strict)
+        {
+            Some(policy) => policy,
+            None => {
+                return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+            }
+        },
+    };
     let store = crate::store::RunStore::new(state.db.clone());
     match store.create_session(project_id, name, workspace_root, policy) {
         Ok(session) => (StatusCode::CREATED, Json(session)).into_response(),
@@ -987,6 +994,14 @@ fn checkpoint_journal(state: &AppState) -> Result<CheckpointJournal, Response> {
         .map_err(|error| refusal_response(StatusCode::SERVICE_UNAVAILABLE, &error.refusal()))
 }
 
+fn require_run(state: &AppState, run_id: RunId) -> Result<(), Response> {
+    let store = crate::store::RunStore::new(state.db.clone());
+    store
+        .get_run(run_id)
+        .map(|_| ())
+        .map_err(|error| refusal_response(StatusCode::NOT_FOUND, &error))
+}
+
 async fn run_checkpoints(
     State(state): State<Arc<AppState>>,
     Path(run_raw): Path<String>,
@@ -994,6 +1009,9 @@ async fn run_checkpoints(
     let Ok(run_id) = run_raw.parse::<RunId>() else {
         return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
     };
+    if let Err(response) = require_run(&state, run_id) {
+        return response;
+    }
     let journal = match checkpoint_journal(&state) {
         Ok(journal) => journal,
         Err(response) => return response,
@@ -1015,6 +1033,9 @@ async fn run_checkpoint(
     let Ok(run_id) = run_raw.parse::<RunId>() else {
         return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
     };
+    if let Err(response) = require_run(&state, run_id) {
+        return response;
+    }
     let journal = match checkpoint_journal(&state) {
         Ok(journal) => journal,
         Err(response) => return response,
@@ -1033,6 +1054,9 @@ async fn restore_run_checkpoint(
     let Ok(run_id) = run_raw.parse::<RunId>() else {
         return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
     };
+    if let Err(response) = require_run(&state, run_id) {
+        return response;
+    }
     let journal = match checkpoint_journal(&state) {
         Ok(journal) => journal,
         Err(response) => return response,
@@ -1054,6 +1078,9 @@ async fn revert_run_checkpoints(
     let Some(sequence) = body.get("sequence").and_then(serde_json::Value::as_u64) else {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     };
+    if let Err(response) = require_run(&state, run_id) {
+        return response;
+    }
     let journal = match checkpoint_journal(&state) {
         Ok(journal) => journal,
         Err(response) => return response,

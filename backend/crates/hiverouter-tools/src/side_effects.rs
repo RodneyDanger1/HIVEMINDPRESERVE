@@ -33,7 +33,8 @@ use crate::patch::{apply_patch, PatchRequest, MAX_PATCH_BYTES};
 use crate::sha256::sha256_hex;
 use crate::shell::{execute as execute_shell, ShellPolicy, ShellRequest};
 use crate::tests_runner::{
-    run_tests, TestRunPolicy, TestRunRequest, TestSelection, TEST_MAX_TIMEOUT, TEST_MIN_TIMEOUT,
+    run_tests, TestRunPolicy, TestRunRequest, TestSelection, MAX_TEST_ARG_BYTES, MAX_TEST_ARGS,
+    MAX_TEST_ARGV_BYTES, TEST_MAX_TIMEOUT, TEST_MIN_TIMEOUT,
 };
 use crate::tool::{
     AgentTier, ApplyPatchArgs, FileWriteArgs, GitCommitArgs, GitStageArgs, PermissionClass,
@@ -466,6 +467,70 @@ fn commit_patch(jail: &WorkspaceJail, prepared: PreparedPatch) -> Result<Execute
     })
 }
 
+/// Preflight rule shared by every process-spawning tool: `jail.resolve` proves
+/// containment only, so a working directory that does not exist (or is not a
+/// directory) would make the child unspawnable **after** the single-use grant
+/// was consumed. Refusing it here keeps the "a doomed call never burns consent"
+/// contract that `shell_exec` already enforces.
+fn require_existing_working_directory(
+    jail: &WorkspaceJail,
+    cwd: &str,
+    tool: &str,
+) -> Result<(), ToolError> {
+    let resolved = jail.resolve(cwd)?;
+    if !resolved.is_dir() {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            format!(
+                "{tool} working directory {cwd:?} is not an existing directory inside the \
+                 workspace jail; nothing executed and no approval was consumed"
+            ),
+        ));
+    }
+    Ok(())
+}
+
+/// Preflight mirror of `tests_runner::validate_extra_args` (the commit-time
+/// guard). It runs before the grant is verified so an argument the runner would
+/// refuse can never consume the operator's approval; the runner still re-checks.
+fn validate_extra_arguments(args: &[String], tool: &str) -> Result<(), ToolError> {
+    if args.len() > MAX_TEST_ARGS {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            format!(
+                "{tool} accepts at most {MAX_TEST_ARGS} extra arguments; nothing executed and no \
+                 approval was consumed"
+            ),
+        ));
+    }
+    let mut total = 0_usize;
+    for argument in args {
+        if argument.contains('\0') {
+            return Err(ToolError::new(
+                Refusal::SchemaInvalid,
+                format!("{tool} arguments must not contain NUL bytes"),
+            ));
+        }
+        if argument.len() > MAX_TEST_ARG_BYTES {
+            return Err(ToolError::new(
+                Refusal::ToolSchema,
+                format!(
+                    "one {tool} argument is {} bytes; the cap is {MAX_TEST_ARG_BYTES}",
+                    argument.len()
+                ),
+            ));
+        }
+        total = total.saturating_add(argument.len());
+    }
+    if total > MAX_TEST_ARGV_BYTES {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            format!("{tool} arguments total {total} bytes; the cap is {MAX_TEST_ARGV_BYTES}"),
+        ));
+    }
+    crate::shell::validate_arguments(args)
+}
+
 fn preflight_tests(
     jail: &WorkspaceJail,
     args: &serde_json::Value,
@@ -488,20 +553,9 @@ fn preflight_tests(
             ))
         }
     };
-    if spec.args.len() > 16 {
-        return Err(ToolError::new(
-            Refusal::ToolSchema,
-            "run_tests accepts at most 16 extra arguments",
-        ));
-    }
-    if spec.args.iter().any(|arg| arg.len() > 4096) {
-        return Err(ToolError::new(
-            Refusal::ToolSchema,
-            "run_tests argument exceeds 4096 bytes",
-        ));
-    }
+    validate_extra_arguments(&spec.args, "run_tests")?;
     if let Some(cwd) = spec.cwd.as_deref() {
-        let _ = jail.resolve(cwd)?;
+        require_existing_working_directory(jail, cwd, "run_tests")?;
     }
     let mut request = TestRunRequest::auto().with_selection(selection).with_args(spec.args);
     if let Some(cwd) = spec.cwd {
@@ -560,7 +614,7 @@ fn preflight_git_stage(
         let _ = jail.resolve(path)?;
     }
     if let Some(cwd) = spec.cwd.as_deref() {
-        let _ = jail.resolve(cwd)?;
+        require_existing_working_directory(jail, cwd, "git_stage")?;
     }
     let request = GitStageRequest {
         cwd: spec.cwd,
@@ -593,7 +647,7 @@ fn preflight_git_commit(
         ));
     }
     if let Some(cwd) = spec.cwd.as_deref() {
-        let _ = jail.resolve(cwd)?;
+        require_existing_working_directory(jail, cwd, "git_commit")?;
     }
     let request = GitCommitRequest {
         cwd: spec.cwd,
@@ -949,6 +1003,55 @@ mod tests {
             "commit path consumes the grant"
         );
         drop(prepared);
+    }
+
+    /// CAP-4 consent integrity: every case below is refused by the *commit* step
+    /// (missing working directory, argument escape form), so the preflight must
+    /// refuse it first and the single-use approval must stay unconsumed.
+    #[test]
+    fn doomed_cap4_preflight_never_consumes_the_grant() {
+        let cases = [
+            (
+                "run_tests",
+                serde_json::json!({"runner": "auto", "cwd": "missing-dir"}),
+            ),
+            (
+                "run_tests",
+                serde_json::json!({"runner": "auto", "args": ["a&b"]}),
+            ),
+            (
+                "git_stage",
+                serde_json::json!({"paths": ["notes.txt"], "cwd": "missing-dir"}),
+            ),
+            (
+                "git_commit",
+                serde_json::json!({"message": "doomed", "cwd": "missing-dir"}),
+            ),
+        ];
+        for (tool, args) in cases {
+            let (_temp, jail, conn, gate, run) = seeded();
+            grant(&conn, &gate, run, &args, tool);
+            let error = preflight_side_effect(
+                &jail,
+                &registry(),
+                &test_policy(),
+                AgentTier::WorkerAgent,
+                tool,
+                &args,
+                None,
+            )
+            .expect_err(tool);
+            assert!(
+                matches!(error.code(), "E_TOOL_SCHEMA" | "E_TOOL_NOT_ALLOWED"),
+                "{tool}: {}",
+                error.code()
+            );
+            assert_eq!(
+                executed_at(&conn),
+                None,
+                "{tool} consumed the approval for a call the commit step refuses ({args})"
+            );
+        }
     }
 
     #[tokio::test]

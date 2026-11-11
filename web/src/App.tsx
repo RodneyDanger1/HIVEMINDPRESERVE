@@ -29,6 +29,7 @@ import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
 import { ChatCore } from './chat/ChatCore';
 import { HiveMindSplash } from './splash/HiveMindSplash';
+import { AppErrorBoundary } from './splash/CrashScreen';
 
 const NAV_SECTIONS = ['workspace', 'agents', 'data', 'models', 'routing', 'remote', 'settings'] as const;
 const TAB_IDS = ['workspace', 'swarm', 'routing', 'history'] as const;
@@ -223,8 +224,13 @@ export function App() {
 
   return (
     <UiStoreContext.Provider value={store}>
-      <AppFrame />
-      <HiveMindSplash />
+      {/* A render error in any panel becomes a named crash screen with a reload
+          action instead of a blank document. The splash is inside the boundary so
+          a crash cannot leave the veil covering the failure. */}
+      <AppErrorBoundary>
+        <AppFrame />
+        <HiveMindSplash />
+      </AppErrorBoundary>
     </UiStoreContext.Provider>
   );
 }
