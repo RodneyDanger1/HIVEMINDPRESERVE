@@ -326,7 +326,7 @@ pub struct FileWriteArgs {
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ShellExecArgs {
-    /// Program name or path (must be on the shell allowlist).
+    /// Bare program name (must be on the shell allowlist; paths are refused).
     pub program: String,
     /// Arguments passed directly (no shell interpolation).
     pub args: Vec<String>,
@@ -431,7 +431,9 @@ impl ToolRegistry {
             ),
             contract(
                 ToolId::ShellExec,
-                "Execute an allowlisted program inside the workspace jail (requires approval).",
+                "Execute an allowlisted program with the user's privileges (requires approval). \
+                 This is arbitrary code execution, not an OS sandbox; command-interpreter hosts \
+                 and /c, &, |, > or newline arguments are refused.",
                 PermissionClass::Execute,
                 schema_of!(ShellExecArgs),
             ),

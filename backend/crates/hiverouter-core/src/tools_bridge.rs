@@ -5,7 +5,9 @@
 //! the WS command dispatch and the `/diagnose` route:
 //!
 //! - `SETTINGS_STATUS` -> [`hiverouter_tools::commands::settings_status_command`]
-//! - `FILE_TREE_LIST` / `FILE_READ` -> the workspace jail ([`WorkspaceJail`])
+//! - `FILE_TREE_LIST` / `FILE_READ` -> the workspace jail ([`WorkspaceJail`]),
+//!   with the configured data directory and approval-ledger directory denied
+//!   (the same containment the engine's read-only jail applies)
 //! - `APPROVAL_RESOLVE` -> the single approval gate + nonce/replay state machine,
 //!   and exactly one append-only ledger row per committed decision
 //!   ([`ToolsBridge::resolve_approval_ledgered`]); refusals never ledger.
@@ -47,27 +49,35 @@ pub struct ToolsBridge {
 }
 
 impl ToolsBridge {
-    /// Creates the bridge; a workspace root that cannot be opened leaves the
-    /// jail unavailable (file commands then refuse `E_FILE_TREE_UNAVAILABLE`).
+    /// Creates a bridge that denies the conventional `<workspace_root>/data`
+    /// subtree **and** the directory containing the SQLite database.
+    ///
+    /// This constructor exists for test fixtures and compatibility callers.
+    /// Deriving the denied directory from `db.path()` is a best-effort fallback:
+    /// production wiring must use [`Self::new_with_data_dir`] with the configured
+    /// `data_dir`, because the configured data directory also owns snapshots and
+    /// the approval ledger and may differ from the database's parent when
+    /// `--db` is customised.
+    ///
+    /// A workspace root that cannot be opened leaves the jail unavailable (file
+    /// commands then refuse `E_FILE_TREE_UNAVAILABLE`).
     #[must_use]
     pub fn new(workspace_root: &Path, db: Arc<Database>) -> Self {
-        let (jail, jail_error) = if workspace_root.is_dir() {
-            match WorkspaceJail::open(workspace_root) {
-                Ok(jail) => (Some(jail), None),
-                Err(error) => (
-                    None,
-                    Some(format!("{}: {}", error.code(), error.detail())),
-                ),
+        let mut denied = vec![workspace_root.join("data")];
+        if let Some(parent) = db.path().parent() {
+            if !parent.as_os_str().is_empty() {
+                denied.push(parent.to_path_buf());
             }
-        } else {
-            (
-                None,
-                Some(format!(
-                    "workspace root {} is not an existing directory",
-                    workspace_root.display()
-                )),
-            )
-        };
+        }
+        Self::new_with_denied_paths(workspace_root, &denied, db)
+    }
+
+    fn new_with_denied_paths(
+        workspace_root: &Path,
+        denied_paths: &[PathBuf],
+        db: Arc<Database>,
+    ) -> Self {
+        let (jail, jail_error) = Self::open_jail_with_denies(workspace_root, denied_paths);
         Self {
             jail,
             jail_error,
@@ -76,6 +86,69 @@ impl ToolsBridge {
             db,
             ledger: Mutex::new(None),
             side_effects_enabled: true,
+        }
+    }
+
+    /// Creates the bridge with the configured data directory denied.
+    ///
+    /// The jail refuses every path under `data_dir` and under
+    /// `data_dir/ledger` (the approval ledger). This is the same containment the
+    /// engine's read-only workspace jail applies, extended to the bridge's
+    /// `FILE_READ`/`FILE_TREE_LIST` surface and — critically — to approved
+    /// side effects, so an approved `file_write` cannot corrupt the SQLite
+    /// database, snapshots, or the append-only approval ledger.
+    ///
+    /// A workspace root that cannot be opened leaves the jail unavailable (file
+    /// commands then refuse `E_FILE_TREE_UNAVAILABLE`).
+    #[must_use]
+    pub fn new_with_data_dir(workspace_root: &Path, data_dir: &Path, db: Arc<Database>) -> Self {
+        let denied = vec![
+            data_dir.to_path_buf(),
+            Self::approval_ledger_dir(data_dir),
+        ];
+        Self::new_with_denied_paths(workspace_root, &denied, db)
+    }
+
+    /// Replaces the denied data directory on an existing bridge.
+    ///
+    /// Useful for fixtures that build the bridge first and only then know the
+    /// data root; production wiring should prefer [`Self::new_with_data_dir`].
+    #[must_use]
+    pub fn with_data_dir(mut self, data_dir: &Path) -> Self {
+        let denied = vec![
+            data_dir.to_path_buf(),
+            Self::approval_ledger_dir(data_dir),
+        ];
+        let (jail, jail_error) = Self::open_jail_with_denies(&self.workspace_root, &denied);
+        self.jail = jail;
+        self.jail_error = jail_error;
+        self
+    }
+
+    fn open_jail_with_denies(
+        workspace_root: &Path,
+        denied_paths: &[PathBuf],
+    ) -> (Option<WorkspaceJail>, Option<String>) {
+        if !workspace_root.is_dir() {
+            return (
+                None,
+                Some(format!(
+                    "workspace root {} is not an existing directory",
+                    workspace_root.display()
+                )),
+            );
+        }
+        match WorkspaceJail::open(workspace_root) {
+            Ok(mut jail) => {
+                for path in denied_paths {
+                    jail = jail.deny_path(path);
+                }
+                (Some(jail), None)
+            }
+            Err(error) => (
+                None,
+                Some(format!("{}: {}", error.code(), error.detail())),
+            ),
         }
     }
 
@@ -177,6 +250,11 @@ impl ToolsBridge {
     /// This is the only execution authority: the caller must have completed all
     /// read-only pre-checks first so a doomed call never burns consent.
     ///
+    /// This unbound lookup matches `(run, tool, args_sha256)` and is retained
+    /// for existing callers. New execution paths must use
+    /// [`Self::verify_tool_grant_bound`] so the grant is bound to the exact
+    /// `approval_id` and provider `tool_call_id` as well.
+    ///
     /// # Errors
     /// `E_APPROVAL_REQUIRED`, `E_APPROVAL_TIMEOUT`, `E_APPROVAL_REPLAY`.
     pub fn verify_tool_grant(
@@ -189,6 +267,36 @@ impl ToolsBridge {
         self.db.with_connection_refusal(|conn| {
             self.gate
                 .verify_grant(conn, run_id, tool, args, now_unix_secs)
+                .map_err(|error| error.refusal())
+        })
+    }
+
+    /// Verifies and consumes the grant bound to one exact approval request and
+    /// provider tool call.
+    ///
+    /// # Errors
+    /// `E_APPROVAL_NOT_FOUND`, `E_APPROVAL_REQUIRED`, `E_APPROVAL_TIMEOUT`,
+    /// `E_APPROVAL_REPLAY`.
+    pub fn verify_tool_grant_bound(
+        &self,
+        approval_id: &str,
+        tool_call_id: &str,
+        run_id: RunId,
+        tool: hiverouter_tools::ToolId,
+        args: &serde_json::Value,
+        now_unix_secs: u64,
+    ) -> Result<(), Refusal> {
+        self.db.with_connection_refusal(|conn| {
+            self.gate
+                .verify_grant_bound(
+                    conn,
+                    approval_id,
+                    tool_call_id,
+                    run_id,
+                    tool,
+                    args,
+                    now_unix_secs,
+                )
                 .map_err(|error| error.refusal())
         })
     }
@@ -220,6 +328,64 @@ impl ToolsBridge {
         args: &serde_json::Value,
         cancellation: Option<&tokio_util::sync::CancellationToken>,
     ) -> Result<hiverouter_tools::executor::ExecutedTool, Refusal> {
+        self.execute_approved_with_binding(
+            shell_policy,
+            registry,
+            tier,
+            run_id,
+            tool,
+            args,
+            None,
+            cancellation,
+        )
+        .await
+    }
+
+    /// Bound variant of [`Self::execute_approved`]: the grant must match the
+    /// exact committed `approval_id` and provider `tool_call_id` in addition to
+    /// `(run, tool, args_sha256)`.
+    ///
+    /// # Errors
+    /// Named refusals from preflight, `E_APPROVAL_NOT_FOUND` /
+    /// `E_APPROVAL_REQUIRED` / `E_APPROVAL_TIMEOUT` / `E_APPROVAL_REPLAY` from
+    /// the grant CAS, or an execution error after the grant was consumed.
+    pub async fn execute_approved_bound(
+        &self,
+        shell_policy: &hiverouter_tools::shell::ShellPolicy,
+        registry: &hiverouter_tools::tool::ToolRegistry,
+        tier: hiverouter_tools::tool::AgentTier,
+        run_id: RunId,
+        approval_id: &str,
+        tool_call_id: &str,
+        tool: &str,
+        args: &serde_json::Value,
+        cancellation: Option<&tokio_util::sync::CancellationToken>,
+    ) -> Result<hiverouter_tools::executor::ExecutedTool, Refusal> {
+        self.execute_approved_with_binding(
+            shell_policy,
+            registry,
+            tier,
+            run_id,
+            tool,
+            args,
+            Some((approval_id, tool_call_id)),
+            cancellation,
+        )
+        .await
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn execute_approved_with_binding(
+        &self,
+        shell_policy: &hiverouter_tools::shell::ShellPolicy,
+        registry: &hiverouter_tools::tool::ToolRegistry,
+        tier: hiverouter_tools::tool::AgentTier,
+        run_id: RunId,
+        tool: &str,
+        args: &serde_json::Value,
+        binding: Option<(&str, &str)>,
+        cancellation: Option<&tokio_util::sync::CancellationToken>,
+    ) -> Result<hiverouter_tools::executor::ExecutedTool, Refusal> {
         if !self.side_effects_enabled {
             return Ok(hiverouter_tools::executor::ExecutedTool::Refused {
                 code: Refusal::ToolNotAllowed.code().to_owned(),
@@ -241,7 +407,17 @@ impl ToolsBridge {
         .map_err(Self::map_tool_error)?;
         let tool_id = hiverouter_tools::ToolId::from_id(tool).ok_or(Refusal::ToolNotFound)?;
         let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
-        self.verify_tool_grant(run_id, tool_id, args, now_unix_secs)?;
+        match binding {
+            Some((approval_id, tool_call_id)) => self.verify_tool_grant_bound(
+                approval_id,
+                tool_call_id,
+                run_id,
+                tool_id,
+                args,
+                now_unix_secs,
+            )?,
+            None => self.verify_tool_grant(run_id, tool_id, args, now_unix_secs)?,
+        }
         hiverouter_tools::side_effects::commit_side_effect(
             jail,
             shell_policy,
@@ -345,14 +521,19 @@ impl ToolsBridge {
     /// `APPROVAL_RESOLVE` command wiring: consume the nonce once, append exactly
     /// one ledger row for the committed decision, and return the resolution.
     ///
-    /// Ordering is load-bearing: the gate is the only consumer of the nonce, so
-    /// a replay/not-found/expired request returns `Err` **before** any ledger
+    /// Ordering is load-bearing in both directions:
+    /// - the ledger is opened **before** the decision is committed, so a ledger
+    ///   that cannot be opened never consumes the nonce;
+    /// - the decision UPDATE and the ledger append happen inside one uncommitted
+    ///   SQLite transaction. If the append fails, the transaction is dropped
+    ///   (rolled back), so the decision is never visible and the nonce stays
+    ///   unconsumed; only a decision whose evidence was appended commits.
+    ///
+    /// A replay/not-found/expired request still returns `Err` before any ledger
     /// write (never ledger on refusal). Only a committed resolution is appended
-    /// (`allowed` / `denied` + named code). If the ledger cannot be written after
-    /// the decision was committed, this returns `E_INTERNAL_ERROR` so the caller
-    /// publishes ERROR instead of ACK/`APPROVAL_RESOLVED` — a decision whose
-    /// evidence could not be recorded is never claimed as a success (fail closed;
-    /// the consumed nonce stays single-use).
+    /// (`allowed` / `denied` + named code). A commit failure after the append is
+    /// the fail-closed direction: evidence may exist for a decision that did not
+    /// commit, but an executable grant without evidence cannot.
     ///
     /// The ledger instance is cached per directory behind a mutex: concurrent
     /// resolutions therefore share one monotonic sequence and one append/flush
@@ -360,14 +541,53 @@ impl ToolsBridge {
     ///
     /// # Errors
     /// See [`Self::resolve_approval`]; additionally `E_INTERNAL_ERROR` when the
-    /// ledger cannot be opened or appended after a committed decision.
+    /// ledger cannot be opened or appended (in which case the decision did not
+    /// commit and the nonce remains unconsumed).
     pub fn resolve_approval_ledgered(
         &self,
         payload: &command::ApprovalResolve,
         ledger_dir: &Path,
     ) -> Result<ApprovalResolution, Refusal> {
-        let resolution = self.resolve_approval(payload)?;
-        let ledger_result = (|| -> Result<(), Refusal> {
+        let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
+        // Append-before-commit: the decision UPDATE is executed inside one
+        // SQLite transaction, the ledger row is appended while the transaction
+        // is still uncommitted, and only then is the transaction committed. An
+        // append failure drops the transaction (rollback), so the decision is
+        // never visible and the nonce stays unconsumed. A commit failure can
+        // leave a ledger row for a decision that did not commit — the
+        // fail-closed direction (evidence without an executable grant), never a
+        // grant without evidence.
+        //
+        // The ledger is opened only after the gate accepts the decision, so a
+        // refused resolution never creates a ledger file. The one refusal that
+        // mutates the row (`E_APPROVAL_TIMEOUT` marks a pending row expired) is
+        // committed without a ledger row, preserving the pre-existing TTL
+        // consumption semantics.
+        let resolution = self.db.with_connection_refusal(|conn| {
+            let tx = conn
+                .unchecked_transaction()
+                .map_err(|error| ToolError::from(error).refusal())?;
+            let resolution = match self.gate.resolve_command(
+                &tx,
+                &payload.approval_id.to_string(),
+                &payload.nonce,
+                &payload.decision,
+                payload.reason.as_deref(),
+                now_unix_secs,
+            ) {
+                Ok(resolution) => resolution,
+                Err(error) => {
+                    let refusal = error.refusal();
+                    if refusal == Refusal::ApprovalTimeout {
+                        // Preserve the TTL reaper's `expired` consumption while
+                        // still writing no ledger row for a refused decision.
+                        tx.commit()
+                            .map_err(|error| ToolError::from(error).refusal())?;
+                    }
+                    return Err(refusal);
+                }
+            };
+
             let mut guard = self.ledger.lock().map_err(|_| Refusal::InternalError)?;
             let reopen = match guard.as_ref() {
                 Some((dir, _)) => dir.as_path() != ledger_dir,
@@ -382,17 +602,10 @@ impl ToolsBridge {
                 None => return Err(Refusal::InternalError),
             };
             append_approval_decision(ledger, &resolution).map_err(|error| error.refusal())?;
-            Ok(())
-        })();
-        if let Err(refusal) = ledger_result {
-            // The decision was already committed in SQLite. If its evidence
-            // could not be appended, consume/cancel the row before returning so
-            // the TTL executor can never perform the effect without a ledger
-            // row (fail closed, single-use nonce stays consumed).
-            let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
-            let _ = self.cancel_approval(&payload.approval_id.to_string(), now_unix_secs);
-            return Err(refusal);
-        }
+            tx.commit()
+                .map_err(|error| ToolError::from(error).refusal())?;
+            Ok(resolution)
+        })?;
         Ok(resolution)
     }
 
@@ -610,9 +823,10 @@ impl ToolsBridge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hiverouter_contract::command::ApprovalResolve;
+    use hiverouter_contract::command::{ApprovalResolve, FileRead, FileTreeList};
     use hiverouter_contract::{ApprovalId, TaskId};
-    use hiverouter_tools::tool::{PermissionClass, ToolId};
+    use hiverouter_tools::shell::ShellPolicy;
+    use hiverouter_tools::tool::{AgentTier, PermissionClass, ToolId};
 
     fn args() -> serde_json::Value {
         serde_json::json!({"path": "note.txt", "content": "x"})
@@ -622,7 +836,8 @@ mod tests {
         let temp = tempfile::tempdir().expect("temp dir");
         let db = Arc::new(Database::open(&temp.path().join("hive.db")).expect("database"));
         ToolsBridge::migrate(&db).expect("approvals migration");
-        let bridge = ToolsBridge::new(temp.path(), db.clone());
+        let bridge =
+            ToolsBridge::new_with_data_dir(temp.path(), &temp.path().join("data"), db.clone());
         (temp, db, bridge)
     }
 
@@ -647,6 +862,160 @@ mod tests {
             })
             .expect("seed pending approval");
         (request.approval_id, request.nonce, run)
+    }
+
+    /// Bridge whose configured data directory is a real `data/` subtree under
+    /// the workspace root (the production default layout).
+    fn seeded_data_bridge() -> (
+        tempfile::TempDir,
+        PathBuf,
+        Arc<Database>,
+        ToolsBridge,
+    ) {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let data = temp.path().join("data");
+        std::fs::create_dir_all(data.join("ledger")).expect("data/ledger");
+        std::fs::write(data.join("hiverouter.db"), b"sqlite-state").expect("seed db");
+        std::fs::write(data.join("ledger").join("run-ledger.jsonl"), b"{\"seq\":0}\n")
+            .expect("seed ledger");
+        std::fs::write(temp.path().join("notes-legal.txt"), b"legal workspace file")
+            .expect("seed legal file");
+        let db = Arc::new(Database::open(&data.join("hive.db")).expect("database"));
+        ToolsBridge::migrate(&db).expect("approvals migration");
+        let bridge = ToolsBridge::new_with_data_dir(temp.path(), &data, db.clone());
+        (temp, data, db, bridge)
+    }
+
+    #[test]
+    fn compatibility_new_denies_the_database_directory() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let store = temp.path().join("store");
+        std::fs::create_dir_all(&store).expect("store");
+        std::fs::write(store.join("secret.txt"), b"db-adjacent state").expect("secret");
+        let db = Arc::new(Database::open(&store.join("hive.db")).expect("database"));
+        ToolsBridge::migrate(&db).expect("approvals migration");
+        let bridge = ToolsBridge::new(temp.path(), db);
+        let error = bridge
+            .file_read(&FileRead {
+                path: "store/secret.txt".to_owned(),
+            })
+            .expect_err("database directory");
+        assert_eq!(error, Refusal::PathOutsideJail);
+    }
+
+    #[test]
+    fn with_data_dir_rebuilds_the_jail_for_an_existing_bridge() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let store = temp.path().join("store");
+        std::fs::create_dir_all(&store).expect("store");
+        std::fs::write(store.join("secret.txt"), b"not-a-data-name").expect("secret");
+        let db = Arc::new(Database::open(&temp.path().join("hive.db")).expect("database"));
+        ToolsBridge::migrate(&db).expect("approvals migration");
+        let bridge = ToolsBridge::new(temp.path(), db).with_data_dir(&store);
+        let error = bridge
+            .file_read(&FileRead {
+                path: "store/secret.txt".to_owned(),
+            })
+            .expect_err("custom data root");
+        assert_eq!(error, Refusal::PathOutsideJail);
+    }
+
+    #[test]
+    fn bridge_jail_refuses_data_dir_reads_and_listing() {
+        let (_temp, _data, _db, bridge) = seeded_data_bridge();
+        for path in [
+            "data/hiverouter.db",
+            "data/ledger/run-ledger.jsonl",
+            "data/ledger",
+            "data",
+        ] {
+            let error = bridge
+                .file_read(&FileRead {
+                    path: path.to_owned(),
+                })
+                .expect_err(path);
+            assert_eq!(error, Refusal::PathOutsideJail, "{path}");
+        }
+        let error = bridge
+            .file_tree_list(&FileTreeList {
+                path: Some("data".to_owned()),
+            })
+            .expect_err("data listing");
+        assert_eq!(error, Refusal::PathOutsideJail);
+
+        // No regression: a legitimate workspace file is still readable.
+        let content = bridge
+            .file_read(&FileRead {
+                path: "notes-legal.txt".to_owned(),
+            })
+            .expect("legal read");
+        assert_eq!(content.path, "notes-legal.txt");
+        assert_eq!(content.text, "legal workspace file");
+        let tree = bridge
+            .file_tree_list(&FileTreeList { path: None })
+            .expect("legal listing");
+        assert!(tree
+            .entries
+            .iter()
+            .any(|entry| entry.name == "notes-legal.txt"));
+    }
+
+    #[tokio::test]
+    async fn approved_file_write_cannot_target_data_dir_or_ledger() {
+        let (temp, _data, db, bridge) = seeded_data_bridge();
+        let before_db = std::fs::read(temp.path().join("data/hiverouter.db")).expect("db");
+        let before_ledger =
+            std::fs::read(temp.path().join("data/ledger/run-ledger.jsonl")).expect("ledger");
+        for path in ["data/hiverouter.db", "data/ledger/run-ledger.jsonl", "data/new.db"] {
+            let args = serde_json::json!({"path": path, "content": "TAMPERED"});
+            let error = bridge
+                .execute_approved(
+                    &ShellPolicy::new(Vec::new()),
+                    &hiverouter_tools::tool::ToolRegistry::standard(),
+                    AgentTier::WorkerAgent,
+                    RunId::new(),
+                    "file_write",
+                    &args,
+                    None,
+                )
+                .await
+                .expect_err(path);
+            assert_eq!(error, Refusal::PathOutsideJail, "{path}");
+        }
+        assert_eq!(
+            std::fs::read(temp.path().join("data/hiverouter.db")).expect("db unchanged"),
+            before_db
+        );
+        assert_eq!(
+            std::fs::read(temp.path().join("data/ledger/run-ledger.jsonl")).expect("ledger unchanged"),
+            before_ledger
+        );
+        assert!(!temp.path().join("data/new.db").exists());
+
+        // No regression: the same approved-write path succeeds for a workspace
+        // file outside the denied subtree.
+        let args = args();
+        let (approval_id, nonce, run) = seed(&bridge, &db);
+        let ledger_dir = ToolsBridge::approval_ledger_dir(&temp.path().join("data"));
+        bridge
+            .resolve_approval_ledgered(&approve_payload(approval_id, &nonce), &ledger_dir)
+            .expect("approve legal write");
+        bridge
+            .execute_approved(
+                &ShellPolicy::new(Vec::new()),
+                &hiverouter_tools::tool::ToolRegistry::standard(),
+                AgentTier::WorkerAgent,
+                run,
+                "file_write",
+                &args,
+                None,
+            )
+            .await
+            .expect("legal approved write");
+        assert_eq!(
+            std::fs::read(temp.path().join("note.txt")).expect("written"),
+            b"x"
+        );
     }
 
     fn approve_payload(approval_id: ApprovalId, nonce: &str) -> ApprovalResolve {
@@ -918,7 +1287,7 @@ mod tests {
             .request_model_tool_approval(run, task, "call-a", "file_write", &serde_json::json!({"path": "a", "content": "x"}))
             .expect("first request");
         bridge
-            .request_model_tool_approval(run, task, "call-b", "shell_exec", &serde_json::json!({"program": "cmd.exe", "args": []}))
+            .request_model_tool_approval(run, task, "call-b", "shell_exec", &serde_json::json!({"program": "git.exe", "args": ["--version"]}))
             .expect("second request");
 
         let events = bridge.pending_approval_events(run).expect("wire projection");
@@ -965,6 +1334,147 @@ mod tests {
             .expect_err("replay refused");
         assert_eq!(replay, Refusal::ApprovalReplay);
         assert_eq!(ledger_rows(&temp).len(), 1, "existing path stays exactly once");
+    }
+
+    #[test]
+    fn ledger_append_failure_rolls_back_the_committed_decision() {
+        let (temp, db, bridge) = seeded_bridge();
+        let ledger_dir = ToolsBridge::approval_ledger_dir(temp.path());
+        let (first_id, first_nonce, _) = seed(&bridge, &db);
+        bridge
+            .resolve_approval_ledgered(&approve_payload(first_id, &first_nonce), &ledger_dir)
+            .expect("first decision");
+        assert_eq!(ledger_rows(&temp).len(), 1, "cached ledger has one row");
+
+        // Simulate an append failure after the decision UPDATE would run by
+        // making the cached ledger path unavailable.
+        let backup = temp.path().join("ledger-moved");
+        std::fs::rename(&ledger_dir, &backup).expect("move ledger");
+        let (second_id, second_nonce, second_run) = seed(&bridge, &db);
+        let error = bridge
+            .resolve_approval_ledgered(&approve_payload(second_id, &second_nonce), &ledger_dir)
+            .expect_err("append failure must refuse");
+        assert_eq!(error, Refusal::InternalError);
+        assert_eq!(
+            bridge.approval_decision(&second_id.to_string()).expect("decision"),
+            None,
+            "a decision whose ledger row failed must not commit"
+        );
+        assert_eq!(
+            bridge.pending_approvals(second_run).expect("pending").len(),
+            1,
+            "the nonce stays unconsumed so the operator can retry"
+        );
+        let no_grant = bridge
+            .verify_tool_grant(
+                second_run,
+                hiverouter_tools::ToolId::FileWrite,
+                &args(),
+                Timestamp::now().unix_secs().unwrap_or(0),
+            )
+            .expect_err("no executable grant after ledger failure");
+        assert_eq!(no_grant, Refusal::ApprovalRequired);
+        assert!(ledger_rows(&temp).is_empty(), "no ledger row was written");
+
+        // Restoring the ledger lets the same nonce retry successfully; the
+        // append-before-commit ordering leaves no executable grant behind.
+        std::fs::rename(&backup, &ledger_dir).expect("restore ledger");
+        bridge
+            .resolve_approval_ledgered(&approve_payload(second_id, &second_nonce), &ledger_dir)
+            .expect("retry after restore");
+        assert_eq!(
+            bridge.approval_decision(&second_id.to_string()).expect("decision"),
+            Some("allow_once".to_owned())
+        );
+        assert_eq!(ledger_rows(&temp).len(), 2, "one row per committed decision");
+    }
+
+    #[tokio::test]
+    async fn approved_write_requires_the_exact_bound_tool_call() {
+        let (temp, _db, bridge) = seeded_bridge();
+        let shell_policy = ShellPolicy::new(Vec::new());
+        let registry = hiverouter_tools::tool::ToolRegistry::standard();
+        let run = RunId::new();
+        let task = TaskId::new();
+        let args = serde_json::json!({"path": "bound.txt", "content": "bound"});
+        let event = bridge
+            .request_model_tool_approval(run, task, "call-bound", "file_write", &args)
+            .expect("approval request");
+        let approval_id = event.approval_id.to_string();
+        let payload = ApprovalResolve {
+            approval_id: event.approval_id,
+            nonce: event.nonce.clone().expect("nonce"),
+            decision: "approve".to_owned(),
+            reason: None,
+        };
+        bridge
+            .resolve_approval_ledgered(
+                &payload,
+                &ToolsBridge::approval_ledger_dir(temp.path()),
+            )
+            .expect("approved");
+
+        // A different provider tool call cannot consume this grant, and the
+        // refused attempt burns nothing.
+        let error = bridge
+            .execute_approved_bound(
+                &shell_policy,
+                &registry,
+                AgentTier::WorkerAgent,
+                run,
+                &approval_id,
+                "call-other",
+                "file_write",
+                &args,
+                None,
+            )
+            .await
+            .expect_err("tool_call_id binding");
+        assert_eq!(error, Refusal::ApprovalRequired);
+        assert!(!temp.path().join("bound.txt").exists());
+
+        let executed = bridge
+            .execute_approved_bound(
+                &shell_policy,
+                &registry,
+                AgentTier::WorkerAgent,
+                run,
+                &approval_id,
+                "call-bound",
+                "file_write",
+                &args,
+                None,
+            )
+            .await
+            .expect("the exact bound call executes");
+        assert!(matches!(
+            executed,
+            hiverouter_tools::executor::ExecutedTool::Ok { .. }
+        ));
+        assert_eq!(
+            std::fs::read(temp.path().join("bound.txt")).expect("written"),
+            b"bound"
+        );
+
+        let replay = bridge
+            .execute_approved_bound(
+                &shell_policy,
+                &registry,
+                AgentTier::WorkerAgent,
+                run,
+                &approval_id,
+                "call-bound",
+                "file_write",
+                &args,
+                None,
+            )
+            .await
+            .expect_err("single-use grant");
+        assert_eq!(replay, Refusal::ApprovalReplay);
+        assert_eq!(
+            std::fs::read(temp.path().join("bound.txt")).expect("unchanged"),
+            b"bound"
+        );
     }
 
     #[test]

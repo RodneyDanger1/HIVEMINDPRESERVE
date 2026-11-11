@@ -87,11 +87,36 @@ impl WorkspaceJail {
     }
 
     /// Denies an additional canonical subtree (for example the database/data
-    /// directory). Non-canonicalisable paths are ignored: they cannot be a
-    /// reachable workspace target.
+    /// directory).
+    ///
+    /// A path that does not exist yet is still denied: the nearest existing
+    /// ancestor is canonicalised and the missing components are appended, so a
+    /// data directory created after the jail is opened (or a ledger directory
+    /// created on the first append) cannot slip through. A path whose existing
+    /// ancestor cannot be canonicalised is ignored: it cannot be a reachable
+    /// workspace target.
     #[must_use]
     pub fn deny_path(mut self, path: impl AsRef<Path>) -> Self {
-        if let Ok(canonical) = fs::canonicalize(path.as_ref()) {
+        let path = path.as_ref();
+        if let Ok(canonical) = fs::canonicalize(path) {
+            self.denied.push(canonical);
+            return self;
+        }
+        let mut missing = Vec::new();
+        let mut probe = path;
+        while !probe.exists() {
+            if let Some(name) = probe.file_name() {
+                missing.push(name.to_os_string());
+            }
+            match probe.parent() {
+                Some(parent) => probe = parent,
+                None => return self,
+            }
+        }
+        if let Ok(mut canonical) = fs::canonicalize(probe) {
+            for component in missing.iter().rev() {
+                canonical.push(component);
+            }
             self.denied.push(canonical);
         }
         self
@@ -466,6 +491,33 @@ mod tests {
             .deny_path(&data);
         let error = jail.read("data/secret.txt").expect_err("denied read");
         assert_eq!(error.refusal(), Refusal::PathOutsideJail);
+    }
+
+    #[test]
+    fn denied_subtree_created_after_open_is_still_refused() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let data = temp.path().join("data");
+        let ledger = data.join("ledger");
+        // Deny before either directory exists (data_dir/ledger may be created
+        // lazily after the bridge is constructed).
+        let jail = WorkspaceJail::open(temp.path())
+            .expect("jail")
+            .deny_path(&data)
+            .deny_path(&ledger);
+        fs::create_dir_all(&ledger).expect("data/ledger");
+        fs::write(ledger.join("run-ledger.jsonl"), b"secret").expect("seed");
+        let error = jail
+            .read("data/ledger/run-ledger.jsonl")
+            .expect_err("denied read");
+        assert_eq!(error.refusal(), Refusal::PathOutsideJail);
+        let error = jail
+            .write_atomic("data/ledger/run-ledger.jsonl", b"tampered")
+            .expect_err("denied write");
+        assert_eq!(error.refusal(), Refusal::PathOutsideJail);
+        assert_eq!(
+            fs::read(ledger.join("run-ledger.jsonl")).expect("unchanged"),
+            b"secret"
+        );
     }
 
     #[test]

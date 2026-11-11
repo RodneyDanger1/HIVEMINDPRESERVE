@@ -10,8 +10,9 @@
 //! - [`jail`] — the single Windows workspace jail (six escape vectors refused);
 //! - [`executor`] — the read-only tool executor (only `file_read`/`file_list`;
 //!   every other tool is a named `E_TOOL_NOT_ALLOWED` policy refusal);
-//! - [`shell`] — allowlisted child execution with stdout caps, timeout and a
-//!   kill-on-close Job Object;
+//! - [`shell`] — approval-gated arbitrary child execution (not an OS sandbox)
+//!   with an allowlist, interpreter-host/escape-argument refusals, stdout caps,
+//!   timeout and a kill-on-close Job Object;
 //! - [`cancel`] — per-run cancellation registry and kill enforcement;
 //! - [`ledger`] — append-only JSONL run ledger (args hash, never arg body);
 //! - [`sha256`] — the argument-binding digest;

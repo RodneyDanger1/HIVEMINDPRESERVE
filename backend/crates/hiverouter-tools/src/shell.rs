@@ -1,8 +1,24 @@
-//! Allowlisted shell execution inside the workspace jail (WP 6.8).
+//! Allowlisted child-process execution inside the workspace jail (WP 6.8).
 //!
-//! Safety contract:
+//! # Truth: this is not an OS sandbox
+//!
+//! `shell_exec` is **approval-gated arbitrary code execution**. The approved
+//! child runs with the same user privileges as the server. Even the
+//! `conservative_default` allowlist is not a containment boundary: `git.exe` and
+//! `cargo.exe` execute repository-controlled code (hooks, aliases, build
+//! scripts) which can in turn run any program the user can run. The checks in
+//! this module reduce accidental command-string injection and refuse command
+//! interpreters, but they do **not** sandbox code: an operator who approves
+//! `shell_exec` is approving arbitrary code execution until an OS sandbox
+//! exists.
+//!
+//! Mechanical contract:
 //! - the program must be on the explicit allowlist (by bare executable name);
 //!   paths with separators are refused so a call cannot re-point the allowlist;
+//! - command-interpreter hosts ([`SHELL_INTERPRETER_HOSTS`]) are refused even
+//!   when a policy lists them;
+//! - argument escape forms (`/c`, `/k`, `&`, `|`, `>`, CR/LF) are refused
+//!   before any grant is consumed or any child is spawned;
 //! - no shell interpolation: arguments are passed directly to the program;
 //! - working directory is resolved through [`WorkspaceJail`];
 //! - stdout/stderr are capped; the child is bounded by a timeout and killed
@@ -28,6 +44,98 @@ pub const DEFAULT_MAX_STDOUT_BYTES: usize = 1024 * 1024;
 pub const DEFAULT_MAX_STDERR_BYTES: usize = 256 * 1024;
 /// Default tool timeout (60 s).
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Command-interpreter/script hosts refused regardless of the allowlist.
+///
+/// Denying these by name keeps a policy (or a future default) from turning one
+/// approved call into an unconstrained command string. The list is deliberately
+/// exact and documented rather than heuristic; it is **not** a complete
+/// arbitrary-code-execution boundary (see the module docs).
+pub const SHELL_INTERPRETER_HOSTS: &[&str] = &[
+    // Windows also resolves bare names through PATHEXT, so both the bare and
+    // `.exe` spellings are denied.
+    "cmd",
+    "cmd.exe",
+    "command",
+    "command.com",
+    "powershell",
+    "powershell.exe",
+    "pwsh",
+    "pwsh.exe",
+    "cscript",
+    "cscript.exe",
+    "wscript",
+    "wscript.exe",
+    "mshta",
+    "mshta.exe",
+    "wsl",
+    "wsl.exe",
+    "busybox",
+    "busybox.exe",
+    "sh",
+    "sh.exe",
+    "bash",
+    "bash.exe",
+    "zsh",
+    "zsh.exe",
+    "dash",
+    "dash.exe",
+    "ksh",
+    "ksh.exe",
+    "fish",
+    "fish.exe",
+];
+
+/// Whether a bare program name is a denied command-interpreter host.
+#[must_use]
+pub fn is_shell_interpreter(program: &str) -> bool {
+    // Windows strips trailing dots and spaces from executable names; normalize
+    // both so `cmd.exe.` cannot slip past the name check if a policy lists it.
+    let program = program.trim().trim_end_matches('.').to_lowercase();
+    SHELL_INTERPRETER_HOSTS
+        .iter()
+        .any(|host| *host == program.as_str())
+}
+
+/// Refuses argument forms that a command interpreter would treat as syntax.
+///
+/// Arguments are normally passed directly to a non-interpreter program, but the
+/// listed forms are refused before the approval grant is consumed so a mistaken
+/// `cmd /c`-style launch can never become a command string. The exact denied
+/// forms are `/c`, `/k`, `&`, `|`, `>` and CR/LF.
+///
+/// # Errors
+/// [`Refusal::ToolNotAllowed`] naming the offending form (the argument value is
+/// not echoed into the refusal detail beyond a bounded quoted excerpt).
+pub fn validate_arguments(args: &[String]) -> Result<(), ToolError> {
+    for argument in args {
+        let trimmed = argument.trim();
+        if trimmed.eq_ignore_ascii_case("/c") || trimmed.eq_ignore_ascii_case("/k") {
+            return Err(ToolError::new(
+                Refusal::ToolNotAllowed,
+                format!(
+                    "shell_exec argument {argument:?} is a command-interpreter switch; \
+                     interpreter switches (/c, /k) are refused before execution"
+                ),
+            ));
+        }
+        if argument.contains('&')
+            || argument.contains('|')
+            || argument.contains('>')
+            || argument.contains('\n')
+            || argument.contains('\r')
+        {
+            return Err(ToolError::new(
+                Refusal::ToolNotAllowed,
+                format!(
+                    "shell_exec argument {argument:?} contains a shell escape/metacharacter \
+                     (&, |, >, or a newline); such arguments are refused before execution"
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
 
 /// The shell allowlist and resource caps.
 #[derive(Debug, Clone)]
@@ -58,17 +166,18 @@ impl ShellPolicy {
         }
     }
 
-    /// A conservative default allowlist for v1 developer utilities.
+    /// The default allowlist for v1 developer utilities.
     ///
-    /// Only programs that operate on the workspace are listed; the approval
-    /// gate (`Execute` permission class) still runs before execution.
+    /// `cmd.exe` is intentionally **absent**: a command interpreter turns one
+    /// approved call into an arbitrary command string. This is not a sandbox —
+    /// `git.exe` and `cargo.exe` can execute repository-controlled code with the
+    /// user's privileges (hooks, aliases, build scripts) — so `shell_exec`
+    /// remains approval-gated arbitrary code execution. The approval gate
+    /// (`Execute` permission class) still runs before execution, and every
+    /// interpreter host is refused regardless of this list.
     #[must_use]
     pub fn conservative_default() -> Self {
-        Self::new([
-            "cmd.exe".to_owned(),
-            "git.exe".to_owned(),
-            "cargo.exe".to_owned(),
-        ])
+        Self::new(["git.exe".to_owned(), "cargo.exe".to_owned()])
     }
 
     /// Overrides the tool timeout.
@@ -92,9 +201,15 @@ impl ShellPolicy {
     }
 
     /// Whether a program name is allowed (bare name only).
+    ///
+    /// Command-interpreter hosts ([`is_shell_interpreter`]) are never allowed,
+    /// even when an explicit policy lists them.
     #[must_use]
     pub fn allows(&self, program: &str) -> bool {
         if program.contains('\\') || program.contains('/') {
+            return false;
+        }
+        if is_shell_interpreter(program) {
             return false;
         }
         self.allowed_programs
@@ -176,6 +291,16 @@ pub async fn execute(
     request: &ShellRequest,
     cancellation: Option<&CancellationToken>,
 ) -> Result<ShellOutput, ToolError> {
+    if is_shell_interpreter(&request.program) {
+        return Err(ToolError::new(
+            Refusal::ToolNotAllowed,
+            format!(
+                "program {:?} is a command-interpreter host; interpreter hosts are denied \
+                 regardless of the allowlist",
+                request.program
+            ),
+        ));
+    }
     if !policy.allows(&request.program) {
         return Err(ToolError::new(
             Refusal::ToolNotAllowed,
@@ -186,6 +311,7 @@ pub async fn execute(
             ),
         ));
     }
+    validate_arguments(&request.args)?;
     let cwd: PathBuf = match &request.cwd {
         Some(cwd) => jail.resolve(cwd)?,
         None => jail.root().to_path_buf(),
@@ -365,20 +491,54 @@ mod tests {
         (temp, jail)
     }
 
+    /// Explicit non-interpreter test policy. Tests must never depend on a
+    /// command interpreter being allowlisted; `git.exe` is safe to execute on
+    /// this host (a version banner, or a bounded external `sleep` alias that
+    /// Git for Windows supplies through its own shell).
+    fn test_policy() -> ShellPolicy {
+        ShellPolicy::new(["git.exe".to_owned()])
+    }
+
+    /// `git` alias that runs the Git-for-Windows shell's `sleep` in the
+    /// foreground; used to exercise timeout/cancellation deterministically
+    /// without depending on PATH-shadowed `ping.exe` flavours.
+    fn sleep_args(seconds: &str) -> Vec<String> {
+        vec![
+            "-c".to_owned(),
+            format!("alias.hive-sleep=!sleep {seconds}"),
+            "hive-sleep".to_owned(),
+        ]
+    }
+
     #[test]
     fn allowlist_accepts_bare_names_only() {
         let policy = ShellPolicy::conservative_default();
-        assert!(policy.allows("cmd.exe"));
-        assert!(policy.allows("CMD.EXE"));
-        assert!(!policy.allows("C:\\Windows\\System32\\cmd.exe"));
-        assert!(!policy.allows("..\\cmd.exe"));
-        assert!(!policy.allows("powershell.exe"));
+        assert!(policy.allows("git.exe"));
+        assert!(policy.allows("GIT.EXE"));
+        assert!(
+            !policy.allows("cmd.exe"),
+            "cmd.exe was removed from the default allowlist"
+        );
+        assert!(
+            policy.allows("git.exe") && !policy.allows("powershell.exe"),
+            "shell interpreter hosts are never allowed"
+        );
+        assert!(!policy.allows("C:\\Windows\\System32\\git.exe"));
+        assert!(!policy.allows("..\\git.exe"));
+
+        // Even a policy that explicitly lists an interpreter cannot enable it.
+        let explicit = ShellPolicy::new(["cmd.exe".to_owned(), "git.exe".to_owned()]);
+        assert!(
+            !explicit.allows("cmd.exe"),
+            "interpreter hosts are denied regardless of the allowlist"
+        );
+        assert!(explicit.allows("git.exe"));
     }
 
     #[tokio::test]
     async fn non_allowlisted_program_is_refused_by_name() {
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default();
+        let policy = test_policy();
         let request = ShellRequest::new("powershell.exe", vec![]);
         let error = execute(&jail, &policy, &request, None)
             .await
@@ -386,17 +546,62 @@ mod tests {
         assert_eq!(error.code(), "E_TOOL_NOT_ALLOWED");
     }
 
+    #[tokio::test]
+    async fn interpreter_host_is_refused_even_when_explicitly_allowlisted() {
+        let (_temp, jail) = jail();
+        let policy = ShellPolicy::new(["cmd.exe".to_owned()]);
+        for program in [
+            "cmd",
+            "cmd.exe",
+            "CMD.EXE",
+            "cmd.exe.",
+            "powershell.exe",
+            "pwsh.exe",
+            "wsl.exe",
+            "sh.exe",
+        ] {
+            let request = ShellRequest::new(program, vec![]);
+            let error = execute(&jail, &policy, &request, None)
+                .await
+                .expect_err(program);
+            assert_eq!(error.code(), "E_TOOL_NOT_ALLOWED", "{program}");
+            assert!(
+                error.detail().contains("interpreter"),
+                "the refusal names the interpreter policy: {program}: {error}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn argument_escape_forms_are_refused_before_spawn() {
+        let (_temp, jail) = jail();
+        let policy = test_policy();
+        for argument in ["/c", "/C", "/k", "a&b", "a|b", "a>b", "a\nb", "a\rb"] {
+            let request = ShellRequest::new("git.exe", vec![argument.to_owned()]);
+            let error = execute(&jail, &policy, &request, None)
+                .await
+                .expect_err(argument);
+            assert_eq!(error.code(), "E_TOOL_NOT_ALLOWED", "{argument:?}");
+        }
+        // Well-formed direct arguments are not rejected by the escape check.
+        validate_arguments(&["--version".to_owned()]).expect("plain argument");
+    }
+
     #[cfg(windows)]
     #[tokio::test]
     async fn allowlisted_command_runs_and_captures_stdout() {
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default();
-        let request = ShellRequest::new("cmd.exe", vec!["/C".into(), "echo hi-hive".into()]);
+        let policy = test_policy();
+        let request = ShellRequest::new("git.exe", vec!["--version".into()]);
         let output = execute(&jail, &policy, &request, None)
             .await
             .expect("executes");
         assert!(output.success, "exit: {:?}", output.exit_code);
-        assert!(output.stdout.contains("hi-hive"), "stdout: {}", output.stdout);
+        assert!(
+            output.stdout.to_lowercase().contains("git version"),
+            "stdout: {}",
+            output.stdout
+        );
         assert_eq!(output.exit_code, Some(0));
     }
 
@@ -409,10 +614,16 @@ mod tests {
             "sk-shell-env-test-not-a-real-key",
         );
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default();
+        let policy = test_policy();
+        // `git` runs the external alias through its own shell; the environment
+        // printed is the sanitized environment the shell child inherited.
         let request = ShellRequest::new(
-            "cmd.exe",
-            vec!["/C".into(), "echo %DEEPSEEK_API_KEY%".into()],
+            "git.exe",
+            vec![
+                "-c".into(),
+                "alias.hive-env-probe=!env".into(),
+                "hive-env-probe".into(),
+            ],
         );
         let result = execute(&jail, &policy, &request, None).await;
         match previous {
@@ -420,6 +631,16 @@ mod tests {
             None => std::env::remove_var(hiverouter_provider::API_KEY_ENV),
         }
         let output = result.expect("executes");
+        assert!(
+            output.success,
+            "env probe must run: exit {:?}, stderr {}",
+            output.exit_code, output.stderr
+        );
+        assert!(
+            output.stdout.contains("PATH="),
+            "env probe must print the child environment: {}",
+            output.stdout
+        );
         assert!(
             !output.stdout.contains("sk-shell-env-test-not-a-real-key"),
             "child inherited the provider key: {}",
@@ -431,8 +652,8 @@ mod tests {
     #[tokio::test]
     async fn timeout_terminates_the_child() {
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default().with_timeout(Duration::from_millis(300));
-        let request = ShellRequest::new("cmd.exe", vec!["/C".into(), system_ping_command(4)]);
+        let policy = test_policy().with_timeout(Duration::from_millis(300));
+        let request = ShellRequest::new("git.exe", sleep_args("10"));
         let error = execute(&jail, &policy, &request, None)
             .await
             .expect_err("timeout");
@@ -443,11 +664,8 @@ mod tests {
     #[tokio::test]
     async fn stdout_cap_truncates_without_deadlock() {
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default().with_stdout_cap(4);
-        let request = ShellRequest::new(
-            "cmd.exe",
-            vec!["/C".into(), "echo 1234567890".into()],
-        );
+        let policy = test_policy().with_stdout_cap(4);
+        let request = ShellRequest::new("git.exe", vec!["--version".into()]);
         let output = execute(&jail, &policy, &request, None)
             .await
             .expect("executes");
@@ -459,8 +677,9 @@ mod tests {
     #[tokio::test]
     async fn cancellation_returns_named_refusal() {
         let (_temp, jail) = jail();
-        let policy = ShellPolicy::conservative_default().with_timeout(Duration::from_secs(30));
-        let request = ShellRequest::new("cmd.exe", vec!["/C".into(), system_ping_command(10)]);
+        let policy = test_policy().with_timeout(Duration::from_secs(30));
+        // Long foreground sleep so the only exit path is cancellation.
+        let request = ShellRequest::new("git.exe", sleep_args("10"));
         let token = CancellationToken::new();
         let cancel = token.clone();
         tokio::spawn(async move {
@@ -471,21 +690,5 @@ mod tests {
             .await
             .expect_err("cancelled");
         assert_eq!(error.code(), "E_TOOL_CANCELLED");
-    }
-
-    /// Builds a `cmd.exe` command line that runs the **Windows system** ping by
-    /// absolute path.
-    ///
-    /// Root cause of the former flake: the test environment puts
-    /// `tools/w64devkit/bin` on `PATH`, which ships a BusyBox `ping` that rejects
-    /// the Windows `-n <count>` flag and exits in ~90 ms with a usage error. The
-    /// child then finished *before* the 300 ms timeout and the test asserted the
-    /// wrong path. Using `%SystemRoot%\System32\PING.EXE` makes the duration
-    /// deterministic and independent of PATH shadowing; the allowlist still
-    /// applies to the outer program (`cmd.exe`) only.
-    #[cfg(windows)]
-    fn system_ping_command(count: u32) -> String {
-        let system_root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_owned());
-        format!("{system_root}\\System32\\PING.EXE -n {count} 127.0.0.1 > nul")
     }
 }

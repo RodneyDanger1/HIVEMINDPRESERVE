@@ -1664,6 +1664,17 @@ impl RunEngine {
                 "evolution_vote_request",
                 &request,
             )?;
+            // Bind the seat to this exact proposal/voter. The vote path checks
+            // this row, so "four completed SuperAgents" cannot substitute for
+            // the four designated reviewers (and a later fifth voter is refused).
+            self.store.record_agent_memory_scoped(
+                "hyper",
+                &format!("evolution_seat:{proposal_id}:{}", child.id),
+                lens,
+                root.run_id,
+                child.id,
+                "run",
+            )?;
             voters.push(child.id);
         }
         Ok(voters)
@@ -3271,7 +3282,7 @@ impl RunEngine {
                 }
                 match resolution.decision {
                     ApprovalDecision::AllowOnce | ApprovalDecision::AllowSession => {
-                        self.resume_and_execute(run, task, plan, token).await
+                        self.resume_and_execute(run, task, plan, &approval_id, token).await
                     }
                     ApprovalDecision::Deny => self.resume_denied(run, task, plan),
                 }
@@ -3299,7 +3310,7 @@ impl RunEngine {
     ) -> Result<ToolExecution, Refusal> {
         match ApprovalDecision::from_label(label) {
             Some(ApprovalDecision::AllowOnce | ApprovalDecision::AllowSession) => {
-                self.resume_and_execute(run, task, plan, token).await
+                self.resume_and_execute(run, task, plan, approval_id, token).await
             }
             Some(ApprovalDecision::Deny) => self.resume_denied(run, task, plan),
             None if label == "expired" => {
@@ -3321,6 +3332,7 @@ impl RunEngine {
         run: &Run,
         task: &TaskRecord,
         plan: &ToolCallPlan,
+        approval_id: &str,
         token: &CancellationToken,
     ) -> Result<ToolExecution, Refusal> {
         let tools = self.tools.as_ref().ok_or(Refusal::InternalError)?;
@@ -3375,7 +3387,9 @@ impl RunEngine {
                     "approval bridge disappeared before web_fetch; nothing was fetched".to_owned(),
                 ));
             };
-            if let Err(error) = tools.verify_tool_grant(
+            if let Err(error) = tools.verify_tool_grant_bound(
+                approval_id,
+                &plan.tool_call_id,
                 run.id,
                 hiverouter_tools::ToolId::WebFetch,
                 &plan.args,
@@ -3390,11 +3404,13 @@ impl RunEngine {
             return Ok(self.execute_web_fetch(plan, token).await);
         }
         let executed = tools
-            .execute_approved(
+            .execute_approved_bound(
                 &self.shell_policy,
                 &self.tool_registry,
                 tier,
                 run.id,
+                approval_id,
+                &plan.tool_call_id,
                 &plan.tool,
                 &plan.args,
                 Some(token),
@@ -4221,7 +4237,15 @@ impl RunEngine {
         task: &TaskRecord,
         token: &CancellationToken,
     ) -> Result<Option<String>, Refusal> {
-        self.execute_task_with_prompt(run, task, token, &run.prompt)
+        let instruction = self.store.task_instruction(task.id)?;
+        let prompt = match instruction.as_deref().map(str::trim).filter(|text| !text.is_empty()) {
+            Some(instruction) => format!(
+                "Task objective:\n{instruction}\n\nRun context (shared goal, not task authority):\n{}",
+                run.prompt
+            ),
+            None => run.prompt.clone(),
+        };
+        self.execute_task_with_prompt(run, task, token, &prompt)
             .await
     }
 
@@ -4298,7 +4322,8 @@ impl RunEngine {
             .join(", ");
         let prompt = format!(
             "{}\n\nYou are the HyperAgent orchestrator. The planner proposed this DAG: {}. \
-             You may call one or more of: spawn_superagent (extra branch lead), \
+             You may call one or more of: spawn_superagent (extra branch lead with a concrete objective), \
+             assign_task (give a queued branch a concrete objective), \
              spawn_remote_agent (detached light/garage/daemon principal), \
              propose_improvement (record a lesson proposal; never applies it), \
              convene_evolution_vote (after propose_improvement, spawn exactly four \
@@ -4392,19 +4417,87 @@ impl RunEngine {
                                 "planned branches exist or one root branch was already added",
                             )?;
                         } else {
+                            let objective = call
+                                .arguments
+                                .get("objective")
+                                .and_then(serde_json::Value::as_str)
+                                .map(str::trim)
+                                .filter(|text| (8..=800).contains(&text.chars().count()));
                             let child = self.spawn_sub_hive(root.id, "super")?;
+                            if let Some(objective) = objective {
+                                self.store.set_task_instruction(child.id, objective)?;
+                            }
                             root_super_spawned = true;
                             self.record_root_gate_decision(
                                 run,
                                 root,
                                 "spawn_superagent",
                                 "allowed",
-                                &format!("child={} depth={}", child.id, child.depth),
+                                &format!(
+                                    "child={} depth={} objective={}",
+                                    child.id,
+                                    child.depth,
+                                    objective.is_some()
+                                ),
                             )?;
                             _result_text.push_str(&format!(
-                                "- spawned superagent {} depth={}\n",
-                                child.id, child.depth
+                                "- spawned superagent {} depth={} objective={}\n",
+                                child.id,
+                                child.depth,
+                                objective.is_some()
                             ));
+                        }
+                    }
+                    "assign_task" => {
+                        let task_id = call
+                            .arguments
+                            .get("task_id")
+                            .and_then(serde_json::Value::as_str)
+                            .and_then(|value| value.parse::<TaskId>().ok());
+                        let objective = call
+                            .arguments
+                            .get("objective")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|text| (8..=800).contains(&text.chars().count()));
+                        let allowed = match (task_id, objective) {
+                            (Some(task_id), Some(objective)) => {
+                                match self.store.get_task(task_id) {
+                                    Ok(target)
+                                        if target.run_id == run.id
+                                            && !target.state.is_terminal()
+                                            && target.parent_task_id == Some(root.id) =>
+                                    {
+                                        self.store.set_task_instruction(task_id, objective)?;
+                                        self.record_root_gate_decision(
+                                            run,
+                                            root,
+                                            "assign_task",
+                                            "allowed",
+                                            &format!("task={task_id}"),
+                                        )?;
+                                        _result_text.push_str(&format!(
+                                            "- assigned objective to task {} length={}\n",
+                                            task_id,
+                                            objective.chars().count()
+                                        ));
+                                        true
+                                    }
+                                    _ => false,
+                                }
+                            }
+                            _ => false,
+                        };
+                        if !allowed {
+                            self.record_root_gate_decision(
+                                run,
+                                root,
+                                "assign_task",
+                                "refused",
+                                "task must be a non-terminal direct child of root in this run",
+                            )?;
+                            _result_text
+                                .push_str("- refused: assign_task target or objective invalid\n");
                         }
                     }
                     "spawn_remote_agent" => {
@@ -4896,6 +4989,13 @@ impl RunEngine {
             return refused(
                 Refusal::ApprovalReplay.code(),
                 "this SuperAgent task already voted on the proposal",
+            );
+        }
+        let seat_key = format!("evolution_seat:{proposal_id}:{}", task.id);
+        if !entries.iter().any(|entry| entry.key == seat_key) {
+            return refused(
+                Refusal::ToolNotAllowed.code(),
+                "this SuperAgent is not one of the four designated voters for the proposal",
             );
         }
         let key = format!("evolution_vote:{proposal_id}:{}", task.id);

@@ -37,11 +37,12 @@ concisely. Do not claim tool calls or side effects you did not perform. If the t
 done from the provided context, say exactly what is missing.";
 
 const ROOT_CONTROL_SYSTEM: &str = "You are the HiveMind HyperAgent controller. You receive \
-the operator goal and the plan. Return only tool calls: spawn_superagent to add one branch lead, \
-spawn_remote_agent to create one tree-free remote principal (light switch, garage controller, or \
-daemon relay), spawn_daemon to enroll one tree-free watchdog/relay record, \
-read_memory_summary for bounded summaries, propose_improvement to record one safe
-self-improvement proposal without editing code, or finish. Never spawn a direct Agent
+the operator goal and the plan. Return only tool calls: spawn_superagent to add one branch \
+lead with a concrete objective, assign_task to give an existing queued branch a concrete \
+objective, spawn_remote_agent to create one tree-free remote principal (light switch, garage \
+controller, or daemon relay), spawn_daemon to enroll one tree-free watchdog/relay record, \
+read_memory_summary for bounded summaries, propose_improvement to record one safe \
+self-improvement proposal without editing code, or finish. Never spawn a direct Agent \
 or Subagent. Do not answer the user in this turn.";
 
 const ROOT_SYSTEM: &str = "You are the HiveMind HyperAgent orchestrator. You receive the \
@@ -583,10 +584,33 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         .with_tools(vec![
             ToolSpec::function(FunctionDefinition {
                 name: "spawn_superagent".to_owned(),
-                description: Some("Add one SuperAgent branch lead under the HyperAgent.".to_owned()),
+                description: Some(
+                    "Add one SuperAgent branch lead with a concrete objective. The objective is task-local context, never a capability grant."
+                        .to_owned(),
+                ),
                 parameters: serde_json::json!({
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "objective": { "type": "string", "minLength": 8, "maxLength": 800 },
+                        "persona": { "type": "string", "enum": ["superagent"] }
+                    },
+                    "required": ["objective"],
+                    "additionalProperties": false
+                }),
+            }),
+            ToolSpec::function(FunctionDefinition {
+                name: "assign_task".to_owned(),
+                description: Some(
+                    "Give one existing queued branch task a bounded objective/instruction. Refuses terminal or foreign-run tasks."
+                        .to_owned(),
+                ),
+                parameters: serde_json::json!({
+                    "type": "object",
+                    "properties": {
+                        "task_id": { "type": "string", "minLength": 8, "maxLength": 80 },
+                        "objective": { "type": "string", "minLength": 8, "maxLength": 800 }
+                    },
+                    "required": ["task_id", "objective"],
                     "additionalProperties": false
                 }),
             }),

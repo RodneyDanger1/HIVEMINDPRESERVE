@@ -51,10 +51,14 @@ impl TestServer {
         // A non-existent root is a genuine "file access unavailable" state; it
         // must not be created implicitly by the test harness.
         let workspace_root = workspace_root.map(std::path::Path::to_path_buf);
+        // Production separates the data directory from the agent workspace; the
+        // test server must do the same or the bridge's data-dir deny would hide
+        // the entire workspace when `TestServer::start` uses one temp root.
+        let data_root = temp.path().join("data");
         let config = Arc::new(
             Config::resolve_with_workspace(
                 "127.0.0.1:0",
-                temp.path().to_str().expect("utf8"),
+                data_root.to_str().expect("utf8"),
                 None,
                 workspace_root.as_deref(),
             )

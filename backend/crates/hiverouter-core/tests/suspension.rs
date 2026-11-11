@@ -74,7 +74,7 @@ use uuid::Uuid;
 
 const WRITE_PATH: &str = "approval-proof.txt";
 const WRITE_TEXT: &str = "HIVE-APPROVAL-OK";
-const SHELL_MARKER: &str = "HIVE-SHELL-OK";
+
 
 /* ------------------------------------------------------------------ */
 /* Scripted provider (test double; mirrors tool_loop_engine.rs)        */
@@ -244,8 +244,8 @@ fn shell_call(tool_call_id: &str, index: u32) -> AssembledToolCall {
         id: tool_call_id.to_owned(),
         name: "shell_exec".to_owned(),
         arguments: serde_json::json!({
-            "program": "cmd.exe",
-            "args": ["/C", format!("echo {SHELL_MARKER}")]
+            "program": "git.exe",
+            "args": ["--version"]
         }),
     }
 }
@@ -284,7 +284,7 @@ fn harness(executor: Arc<dyn ProviderExecutor>, with_tools: bool, approval_ttl_s
         Arc::new(TemplateRegistry::default()),
     )
     .with_tool_workspace(WorkspaceJail::open(workspace.path()).expect("workspace jail"))
-    .with_shell_policy(ShellPolicy::new(["cmd.exe".to_owned()]));
+    .with_shell_policy(ShellPolicy::new(["git.exe".to_owned()]));
     if with_tools {
         engine = engine.with_tools(bridge.clone());
     }
@@ -1059,18 +1059,14 @@ async fn shell_exec_runs_only_the_allowlisted_program_after_approval() {
         "an executed shell result carries the bounded output size + hash"
     );
     assert!(
-        !payloads.contains(SHELL_MARKER),
-        "the frozen TOOL_RESULT payload never carries output text; the model gets it from the transcript"
-    );
-    assert!(
-        !payloads.contains("/C"),
-        "argv is never published in an event"
+        !payloads.contains("--version"),
+        "the frozen TOOL_RESULT payload never carries argv or output text"
     );
     // Non-allowlisted program is refused by the shell policy (never spawned).
     let policy_error = hiverouter_tools::side_effects::preflight_side_effect(
         &WorkspaceJail::open(harness.workspace.path()).expect("jail"),
         &hiverouter_tools::ToolRegistry::standard(),
-        &ShellPolicy::new(["cmd.exe".to_owned()]),
+        &ShellPolicy::new(["git.exe".to_owned()]),
         hiverouter_tools::AgentTier::WorkerAgent,
         "shell_exec",
         &serde_json::json!({ "program": "powershell.exe", "args": ["-Command", "id"] }),

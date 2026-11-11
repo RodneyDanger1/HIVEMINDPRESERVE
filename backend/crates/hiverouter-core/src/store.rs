@@ -539,6 +539,47 @@ impl RunStore {
             .map_err(map)
     }
 
+    /// Stores the bounded objective/instruction for one task.
+    ///
+    /// The instruction is task-local context, never a grant or policy override.
+    ///
+    /// # Errors
+    /// Database refusal; `E_TASK_NOT_FOUND` when the row does not exist.
+    pub fn set_task_instruction(&self, task_id: TaskId, instruction: &str) -> Result<(), Refusal> {
+        let updated = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE tasks SET instruction = ?2 WHERE id = ?1",
+                    params![task_id.to_string(), instruction],
+                )
+            })
+            .map_err(map)?;
+        if updated == 0 {
+            return Err(Refusal::TaskNotFound);
+        }
+        Ok(())
+    }
+
+    /// Reads the task-local instruction, if one was stored.
+    ///
+    /// # Errors
+    /// Database refusal.
+    pub fn task_instruction(&self, task_id: TaskId) -> Result<Option<String>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT instruction FROM tasks WHERE id = ?1",
+                        params![task_id.to_string()],
+                        |row| row.get::<_, Option<String>>(0),
+                    )
+                    .optional()
+                    .map(|value| value.flatten())
+            })
+            .map_err(map)
+    }
+
     /// Reads a task by id.
     ///
     /// # Errors

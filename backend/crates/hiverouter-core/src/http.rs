@@ -257,7 +257,7 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
         ),
     }
     Arc::new(
-        ToolsBridge::new(&config.workspace_root, db.clone())
+        ToolsBridge::new_with_data_dir(&config.workspace_root, &config.data_dir, db.clone())
             .with_side_effects_enabled(config.side_effects_enabled),
     )
 }

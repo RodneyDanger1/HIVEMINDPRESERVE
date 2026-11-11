@@ -11,6 +11,12 @@
 //! [`WorkspaceJail`] atomically, `shell_exec` goes through the allowlisted
 //! [`crate::shell`] Job Object path. Both are preflighted read-only before the
 //! grant, then committed exactly once after the grant is verified.
+//!
+//! `shell_exec` is approval-gated **arbitrary code execution**, not a sandbox:
+//! an allowlisted developer tool (`git.exe`, `cargo.exe`) can execute
+//! repository-controlled hooks/build scripts with user privileges. The preflight
+//! refuses command-interpreter hosts and `/c`/`&`/`|`/`>`/newline argument
+//! escape forms, but those checks cannot make arbitrary approved code safe.
 
 use std::fmt;
 use std::fs;
@@ -205,6 +211,15 @@ fn preflight_shell_exec(
             ),
         ));
     }
+    if crate::shell::is_shell_interpreter(program) {
+        return Err(ToolError::new(
+            Refusal::ToolNotAllowed,
+            format!(
+                "shell_exec program {program:?} is a command-interpreter host; interpreter \
+                 hosts are denied regardless of the allowlist, and no approval was consumed"
+            ),
+        ));
+    }
     if !policy.allows(program) {
         return Err(ToolError::new(
             Refusal::ToolNotAllowed,
@@ -253,6 +268,10 @@ fn preflight_shell_exec(
             ),
         ));
     }
+    // Command-interpreter escape forms are refused before the grant can be
+    // consumed: direct argv is not shell-interpreted, but a mistaken /c-style
+    // launch must never become a command string.
+    crate::shell::validate_arguments(&spec.args)?;
     // cwd must already resolve inside the jail and be a directory (the child
     // cannot be spawned for a doomed cwd after consent is consumed).
     if let Some(cwd) = spec.cwd.as_deref() {
@@ -463,6 +482,12 @@ mod tests {
         ToolRegistry::standard()
     }
 
+    /// Explicit non-interpreter policy for side-effect tests. `git.exe` is
+    /// allowlisted; interpreter hosts are denied regardless.
+    fn test_policy() -> ShellPolicy {
+        ShellPolicy::new(["git.exe".to_owned()])
+    }
+
     fn executed_at(conn: &Connection) -> Option<String> {
         conn.query_row(
             "SELECT executed_at FROM approvals ORDER BY created_at ASC LIMIT 1",
@@ -507,7 +532,7 @@ mod tests {
         preflight_side_effect(
             jail,
             &registry(),
-            &ShellPolicy::conservative_default(),
+            &test_policy(),
             AgentTier::WorkerAgent,
             "file_write",
             args,
@@ -519,7 +544,7 @@ mod tests {
     fn preflight_refuses_read_only_and_unknown_tools() {
         let (_temp, jail, _conn, _gate, _run) = seeded();
         let registry = registry();
-        let policy = ShellPolicy::conservative_default();
+        let policy = test_policy();
         for tool in ["file_read", "file_list"] {
             let error = preflight_side_effect(
                 &jail,
@@ -611,7 +636,7 @@ mod tests {
         let prepared = preflight(&jail, &args, None).expect("preflight");
         gate.verify_grant(&conn, run, ToolId::FileWrite, &args, NOW)
             .expect("grant");
-        let outcome = commit_side_effect(&jail, &ShellPolicy::conservative_default(), prepared, None).await.expect("commit");
+        let outcome = commit_side_effect(&jail, &test_policy(), prepared, None).await.expect("commit");
         let ExecutedTool::Ok { text } = outcome else {
             panic!("approved write must execute");
         };
@@ -637,7 +662,7 @@ mod tests {
         let prepared = preflight(&jail, &args, None).expect("preflight");
         gate.verify_grant(&conn, run, ToolId::FileWrite, &args, NOW)
             .expect("grant");
-        commit_side_effect(&jail, &ShellPolicy::conservative_default(), prepared, None).await.expect("commit");
+        commit_side_effect(&jail, &test_policy(), prepared, None).await.expect("commit");
         assert_eq!(
             std::fs::read(temp.path().join("notes.txt")).expect("read back"),
             b"new"
@@ -668,7 +693,7 @@ mod tests {
         let prepared = preflight(&jail, &matching, None).expect("matching hash");
         gate.verify_grant(&conn, run, ToolId::FileWrite, &matching, NOW)
             .expect("grant");
-        commit_side_effect(&jail, &ShellPolicy::conservative_default(), prepared, None).await.expect("commit");
+        commit_side_effect(&jail, &test_policy(), prepared, None).await.expect("commit");
         assert_eq!(
             std::fs::read(temp.path().join("notes.txt")).expect("read back"),
             b"next"
@@ -711,7 +736,7 @@ mod tests {
         let prepared = preflight(&jail, &args, None).expect("preflight");
         gate.verify_grant(&conn, run, ToolId::FileWrite, &args, NOW)
             .expect("first grant");
-        commit_side_effect(&jail, &ShellPolicy::conservative_default(), prepared, None).await.expect("commit");
+        commit_side_effect(&jail, &test_policy(), prepared, None).await.expect("commit");
         let error = gate
             .verify_grant(&conn, run, ToolId::FileWrite, &args, NOW)
             .expect_err("second grant must be refused");
@@ -748,7 +773,7 @@ mod tests {
     fn shell_preflight_refuses_disallowed_program_and_bad_bounds() {
         let (_temp, jail, _conn, _gate, _run) = seeded();
         let registry = registry();
-        let policy = ShellPolicy::conservative_default();
+        let policy = test_policy();
         let attempt = |args: serde_json::Value| {
             preflight_side_effect(
                 &jail,
@@ -761,8 +786,8 @@ mod tests {
             )
         };
         let path_qualified = attempt(serde_json::json!({
-            "program": "C:\\Windows\\cmd.exe",
-            "args": []
+            "program": "C:\\Windows\\git.exe",
+            "args": ["--version"]
         }))
         .expect_err("path-qualified");
         assert_eq!(path_qualified.code(), "E_TOOL_NOT_ALLOWED");
@@ -774,22 +799,38 @@ mod tests {
         .expect_err("not allowlisted");
         assert_eq!(unlisted.code(), "E_TOOL_NOT_ALLOWED");
 
+        // Command-interpreter hosts are refused even when an explicit policy
+        // names them; the default policy no longer contains `cmd.exe`.
+        let interpreter_policy = ShellPolicy::new(["cmd.exe".to_owned()]);
+        let interpreter = preflight_side_effect(
+            &jail,
+            &registry,
+            &interpreter_policy,
+            AgentTier::WorkerAgent,
+            "shell_exec",
+            &serde_json::json!({"program": "cmd.exe", "args": []}),
+            None,
+        )
+        .expect_err("interpreter host");
+        assert_eq!(interpreter.code(), "E_TOOL_NOT_ALLOWED");
+        assert!(interpreter.detail().contains("interpreter"));
+
         let too_many = attempt(serde_json::json!({
-            "program": "cmd.exe",
+            "program": "git.exe",
             "args": vec!["x"; MAX_SHELL_ARGS + 1]
         }))
         .expect_err("arg count");
         assert_eq!(too_many.code(), "E_SCHEMA_INVALID");
 
         let nul = attempt(serde_json::json!({
-            "program": "cmd.exe",
+            "program": "git.exe",
             "args": ["a\0b"]
         }))
         .expect_err("NUL argument");
         assert_eq!(nul.code(), "E_SCHEMA_INVALID");
 
         let escaped_cwd = attempt(serde_json::json!({
-            "program": "cmd.exe",
+            "program": "git.exe",
             "args": [],
             "cwd": "../outside"
         }))
@@ -797,16 +838,44 @@ mod tests {
         assert_eq!(escaped_cwd.code(), "E_PATH_OUTSIDE_JAIL");
     }
 
+    #[test]
+    fn shell_preflight_refuses_argument_escape_forms() {
+        let (_temp, jail, _conn, _gate, _run) = seeded();
+        let args = |argument: &str| {
+            serde_json::json!({
+                "program": "git.exe",
+                "args": [argument],
+            })
+        };
+        for argument in ["/c", "/C", "/k", "a&b", "a|b", "a>b", "a\nb", "a\rb"] {
+            let error = preflight_side_effect(
+                &jail,
+                &registry(),
+                &test_policy(),
+                AgentTier::WorkerAgent,
+                "shell_exec",
+                &args(argument),
+                None,
+            )
+            .expect_err(argument);
+            assert_eq!(error.code(), "E_TOOL_NOT_ALLOWED", "{argument:?}");
+            assert!(
+                error.detail().contains("escape") || error.detail().contains("switch"),
+                "{argument:?}: {error}"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn shell_commit_runs_allowlisted_program_once_after_grant() {
         let (_temp, jail, conn, gate, run) = seeded();
         let args = serde_json::json!({
-            "program": "cmd.exe",
-            "args": ["/C", "echo", "hive"],
+            "program": "git.exe",
+            "args": ["--version"],
         });
         grant(&conn, &gate, run, &args, "shell_exec");
         let registry = registry();
-        let policy = ShellPolicy::conservative_default();
+        let policy = test_policy();
         let prepared = preflight_side_effect(
             &jail,
             &registry,
@@ -827,8 +896,14 @@ mod tests {
         };
         assert!(text.contains("exit_code=Some(0)"), "{text}");
         assert!(text.contains("success=true"), "{text}");
-        assert!(text.contains("hive"), "stdout must be visible to the model: {text}");
-        assert!(!text.contains("/C"), "argv must not leak into tool-result text: {text}");
+        assert!(
+            text.to_lowercase().contains("git version"),
+            "stdout must be visible to the model: {text}"
+        );
+        assert!(
+            !text.contains("--version"),
+            "argv must not leak into tool-result text: {text}"
+        );
 
         let error = gate
             .verify_grant(&conn, run, ToolId::ShellExec, &args, NOW)

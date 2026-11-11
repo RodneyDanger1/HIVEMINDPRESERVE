@@ -1271,6 +1271,24 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
         })
         .collect();
     assert_eq!(voters.len(), 4, "exactly four voters must receive an A2A request");
+    let seat_rows: Vec<_> = harness
+        .store
+        .memory_hyper_summary(run.id, 64)
+        .expect("seat rows")
+        .into_iter()
+        .filter(|entry| entry.key.starts_with("evolution_seat:"))
+        .collect();
+    assert_eq!(
+        seat_rows.len(),
+        4,
+        "four designated seats must be durable rows: {seat_rows:?}"
+    );
+    assert!(
+        seat_rows.iter().all(|row| voters.iter().any(|voter| {
+            row.key.ends_with(&voter.id.to_string())
+        })),
+        "every seat row must name one of the four voters"
+    );
     let mut requests = Vec::new();
     for voter in &voters {
         for message in harness

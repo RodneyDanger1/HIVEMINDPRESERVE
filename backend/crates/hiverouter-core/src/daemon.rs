@@ -438,6 +438,10 @@ impl DaemonStore {
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
+        // Daemon scripts are operator-created but must never inherit provider
+        // credentials or unrelated server state (the launcher injects the key
+        // into the server process).
+        hiverouter_tools::env_safety::sanitize_std(&mut command);
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -811,6 +815,38 @@ mod tests {
             fresh.last_error_code.as_deref(),
             Some("E_DAEMON_SCRIPT_TIMEOUT")
         );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn script_job_does_not_inherit_provider_key() {
+        let (db_store, _db) = fixture();
+        let root = tempfile::tempdir().expect("script root");
+        std::fs::write(
+            root.path().join("env-check.ps1"),
+            "if ([string]::IsNullOrEmpty($env:DEEPSEEK_API_KEY)) { 'CLEAN' } else { 'LEAKED' }\n",
+        )
+        .expect("script");
+        std::env::set_var("DEEPSEEK_API_KEY", "must-not-leak-to-daemon");
+        let store = db_store.with_script_root(root.path().to_path_buf());
+        let daemon = store
+            .create(NewDaemon {
+                display_name: "EnvCheck".to_owned(),
+                owner_kind: "operator".to_owned(),
+                owner_id: "operator".to_owned(),
+                kind: "watchdog".to_owned(),
+                job_json: r#"{"kind":"script","program":"env-check.ps1"}"#.to_owned(),
+                interval_secs: 60,
+                created_by: "operator".to_owned(),
+            })
+            .expect("create");
+        store.set_enabled(&daemon.daemon_id, true).expect("start");
+        store.tick_due(10).expect("tick");
+        std::env::remove_var("DEEPSEEK_API_KEY");
+        let reports = store.reports(&daemon.daemon_id, 10).expect("reports");
+        assert_eq!(reports[0].outcome, "ok");
+        assert!(reports[0].detail_json.contains("CLEAN"));
+        assert!(!reports[0].detail_json.contains("must-not-leak-to-daemon"));
     }
 
     #[test]

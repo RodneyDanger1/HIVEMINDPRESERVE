@@ -13,8 +13,8 @@ namespace HiveMindLauncher
     internal static class Program
     {
         private const string Host = "127.0.0.1";
-        private const int PreferredPort = 8099;
-        private const string DefaultRoot = @"C:\Users\Riley\Desktop\hiverouter-v1";
+        private const int FirstPort = 8099;
+        private const int LastPort = 8199;
         private const string Edge = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
         private const string Chrome = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
         private const string KeyEntropy = "HiveMind.ProviderKey.v1";
@@ -41,18 +41,17 @@ namespace HiveMindLauncher
                 Directory.CreateDirectory(data);
                 string launchToken = LoadOrCreateLaunchToken(data);
 
-                int port = PreferredPort;
-                Process serverProcess = null;
-                if (PortOpen(port) && !HealthOk(port))
+                int port = FindUsablePort();
+                if (port == 0)
                 {
                     MessageBox.Show(
-                        "Port " + port + " is in use by another application.\n\n" +
-                        "Close that application and start HiveMind again.",
+                        "No free loopback port was found between " + FirstPort + " and " + LastPort + ".",
                         "HiveMind",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
                 }
+                Process serverProcess = null;
                 if (!PortOpen(port))
                 {
                     string workspaceRoot = ResolveWorkspaceRoot();
@@ -63,8 +62,10 @@ namespace HiveMindLauncher
                         WorkingDirectory = workspaceRoot,
                         UseShellExecute = false,
                         CreateNoWindow = true,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
+                        // Never redirect without concurrent readers: a chatty child can
+                        // fill a pipe and deadlock before health is reachable.
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
                     };
                     ApplyProviderKey(start);
                     start.EnvironmentVariables["HIVEROUTER_LAUNCH_TOKEN"] = launchToken;
@@ -241,14 +242,14 @@ namespace HiveMindLauncher
             {
                 return configured;
             }
-            // This checkout is the development workspace. A portable copy on a
-            // different machine has no such folder, so fall back to its own
-            // directory rather than silently analyzing the two-binary package.
-            if (Directory.Exists(DefaultRoot))
-            {
-                return DefaultRoot;
-            }
-            return Directory.GetCurrentDirectory();
+            // Installed data and agent workspace stay per-user; never point agents at
+            // the whole Documents folder or at a developer checkout.
+            string data = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HiveMind");
+            string workspace = Path.Combine(data, "workspace");
+            Directory.CreateDirectory(workspace);
+            return workspace;
         }
 
         private static string ResolveServer()
@@ -259,17 +260,34 @@ namespace HiveMindLauncher
             }
 
             string root = Environment.GetEnvironmentVariable("HIVEMIND_ROOT");
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root))
             {
-                root = DefaultRoot;
+                string packaged = Path.Combine(root, "hiverouter.exe");
+                if (File.Exists(packaged))
+                {
+                    return packaged;
+                }
             }
-            string packaged = Path.Combine(root, "hiverouter.exe");
-            if (File.Exists(packaged))
-            {
-                return packaged;
-            }
-            string target = Path.Combine(root, @"target\release\hiverouter.exe");
+            string cwd = Directory.GetCurrentDirectory();
+            string target = Path.Combine(cwd, @"target\release\hiverouter.exe");
             return File.Exists(target) ? target : null;
+        }
+
+        /// <summary>Reuses a healthy HiveMind or finds a free loopback port.</summary>
+        private static int FindUsablePort()
+        {
+            for (int port = FirstPort; port <= LastPort; port++)
+            {
+                if (!PortOpen(port))
+                {
+                    return port;
+                }
+                if (HealthOk(port))
+                {
+                    return port;
+                }
+            }
+            return 0;
         }
 
         private static bool PortOpen(int port)

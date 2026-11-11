@@ -6,8 +6,13 @@
 //! - `SQLite UNIQUE(nonce)` + single-use `decision` make a replayed nonce a
 //!   named refusal `E_APPROVAL_REPLAY` (one execution, never two).
 //! - TTL expiry (`APPROVAL_TTL` 120 s, PROPOSED-POLICY) returns
-//!   `E_APPROVAL_TIMEOUT` with zero side effects.
-//! - `AllowSession` is scoped to `(run_id, tool, args_sha256)`.
+//!   `E_APPROVAL_TIMEOUT` with zero side effects; an `allow_once` decision made
+//!   inside the TTL is executable only before `expires_at` (it is consumed as
+//!   `expired` instead of executing late).
+//! - `AllowSession` is scoped to `(run_id, tool, args_sha256)` and is
+//!   intentionally non-expiring.
+//! - Bound verification additionally matches `approval_id` and
+//!   `tool_call_id`, so a same-args call cannot consume another call's grant.
 //! - The ledger stores `permission_class` + `args_sha256`, never the arg body.
 //!
 //! The gate is one in-process state machine over the frozen frames; core owns
@@ -913,14 +918,23 @@ impl ApprovalGate {
 
     /// Verifies the execution grant for a tool call without performing it.
     ///
-    /// The arguments must hash to the approved `args_sha256`; otherwise the
-    /// execution is refused (`E_APPROVAL_REQUIRED`) with zero side effects.
+    /// `AllowSession` stays intentionally non-expiring and is scoped by
+    /// `(run, tool, args_sha256)`. A single-use `AllowOnce` grant is valid only
+    /// while its `expires_at` is still in the future: a decision made inside the
+    /// TTL cannot be executed arbitrarily later. An expired unexecuted
+    /// `allow_once` row is consumed as `expired` (post-decision state) so the
+    /// live-wait timeout path sees the terminal label instead of re-applying an
+    /// executable grant.
+    ///
+    /// This unbound lookup is retained for existing callers. New execution
+    /// paths should use [`Self::verify_grant_bound`], which additionally binds
+    /// the approval id and provider tool-call id.
     ///
     /// # Errors
-    /// [`Refusal::ApprovalRequired`] when the approval is missing, denied,
-    /// expired or bound to different arguments; [`Refusal::ApprovalTimeout`]
-    /// when the approval expired; [`Refusal::ApprovalReplay`] is only returned
-    /// by [`Self::decide`].
+    /// [`Refusal::ApprovalRequired`] when the approval is missing, denied or
+    /// bound to different arguments; [`Refusal::ApprovalTimeout`] when a
+    /// single-use grant expired; [`Refusal::ApprovalReplay`] when it was already
+    /// executed.
     pub fn verify_grant(
         &self,
         conn: &Connection,
@@ -929,47 +943,36 @@ impl ApprovalGate {
         args: &serde_json::Value,
         now_unix_secs: u64,
     ) -> Result<(), ToolError> {
-        // TTL applies to pending decisions (resolve); an existing AllowSession
-        // grant is scoped to (run, tool, args) and carries no second timer. The
-        // clock is accepted here so callers keep one time source for audit rows.
-        let _ = now_unix_secs;
         let digest = hash_args(args);
+        // AllowSession is scoped by (run, tool, args) and carries no second
+        // timer: it stays valid for the rest of the run.
         if session_allowed(conn, run_id, tool, &digest)? {
             return Ok(());
         }
 
-        // Single-use AllowOnce grant: exactly one execution may consume it.
-        let allowance: Option<(String, Option<String>)> = conn
+        // Single-use AllowOnce grant: exactly one execution may consume it, and
+        // only before the approval TTL elapsed.
+        let allowance: Option<(String, Option<String>, String)> = conn
             .query_row(
-                "SELECT approval_id, executed_at FROM approvals
+                "SELECT approval_id, executed_at, expires_at FROM approvals
                  WHERE run_id = ?1 AND tool_name = ?2 AND args_sha256 = ?3
                    AND decision = 'allow_once'
                  ORDER BY decided_at ASC LIMIT 1",
                 params![run_id.to_string(), tool.id(), digest],
-                |row| Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?)),
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, Option<String>>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                },
             )
             .optional()?;
         match allowance {
-            Some((approval_id, None)) => {
-                let executed_at = Timestamp::from_unix_secs(now_unix_secs);
-                let changed = conn.execute(
-                    "UPDATE approvals SET executed_at = ?1
-                     WHERE approval_id = ?2 AND executed_at IS NULL",
-                    params![executed_at.as_str(), approval_id],
-                )?;
-                if changed == 1 {
-                    Ok(())
-                } else {
-                    Err(ToolError::new(
-                        Refusal::ApprovalReplay,
-                        "this single-use approval was already executed; replay is refused",
-                    ))
-                }
+            Some((approval_id, None, expires_at)) => {
+                Self::consume_allow_once(conn, &approval_id, &expires_at, now_unix_secs)
             }
-            Some((_, Some(_))) => Err(ToolError::new(
-                Refusal::ApprovalReplay,
-                "this single-use approval was already executed; replay is refused",
-            )),
+            Some((_, Some(_), _)) => Err(executed_grant_refusal()),
             None => Err(ToolError::new(
                 Refusal::ApprovalRequired,
                 format!(
@@ -980,6 +983,165 @@ impl ApprovalGate {
             )),
         }
     }
+
+    /// Verifies and consumes the grant bound to one exact approval request and
+    /// provider tool call.
+    ///
+    /// Unlike [`Self::verify_grant`], a same-arguments call cannot consume a
+    /// different call's single-use grant: `approval_id`, `tool_call_id`,
+    /// `run_id`, tool and `args_sha256` must all match the committed request.
+    /// `AllowSession` remains non-expiring for the exact bound
+    /// `(run, tool, tool_call_id, args)` request; `AllowOnce` is single-use and
+    /// only valid before its `expires_at`.
+    ///
+    /// # Errors
+    /// `E_APPROVAL_NOT_FOUND` for an unknown approval id;
+    /// [`Refusal::ApprovalRequired`] for a binding mismatch, no decision,
+    /// denial or cancellation; [`Refusal::ApprovalTimeout`] for an expired
+    /// single-use grant; [`Refusal::ApprovalReplay`] for a consumed grant.
+    pub fn verify_grant_bound(
+        &self,
+        conn: &Connection,
+        approval_id: &str,
+        tool_call_id: &str,
+        run_id: RunId,
+        tool: ToolId,
+        args: &serde_json::Value,
+        now_unix_secs: u64,
+    ) -> Result<(), ToolError> {
+        let request = load_request(conn, approval_id)?.ok_or_else(|| {
+            ToolError::new(
+                Refusal::ApprovalNotFound,
+                format!("no approval request with id {approval_id}"),
+            )
+        })?;
+        if request.run_id != run_id
+            || request.tool != tool
+            || request.tool_call_id != tool_call_id
+            || request.args_sha256 != hash_args(args)
+        {
+            return Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                "the execution grant is bound to a different (run, tool, tool_call_id, args); \
+                 a grant cannot be consumed by another call",
+            ));
+        }
+
+        let row: Option<(Option<String>, Option<String>, String)> = conn
+            .query_row(
+                "SELECT decision, executed_at, expires_at FROM approvals
+                 WHERE approval_id = ?1",
+                params![approval_id],
+                |row| {
+                    Ok((
+                        row.get::<_, Option<String>>(0)?,
+                        row.get::<_, Option<String>>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                },
+            )
+            .optional()?;
+        let Some((decision, executed_at, expires_at)) = row else {
+            return Err(ToolError::new(
+                Refusal::ApprovalNotFound,
+                format!("no approval request with id {approval_id}"),
+            ));
+        };
+        match decision.as_deref() {
+            Some("allow_session") => Ok(()),
+            Some("allow_once") => {
+                if executed_at.is_some() {
+                    return Err(executed_grant_refusal());
+                }
+                Self::consume_allow_once(conn, approval_id, &expires_at, now_unix_secs)
+            }
+            Some("expired") => Err(expired_decision_refusal()),
+            Some("cancelled") => Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                "this approval was cancelled; no side effect may execute",
+            )),
+            Some("deny") => Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                "this approval was denied; no side effect may execute",
+            )),
+            Some(other) => Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                format!("stored approval decision {other:?} is not an executable grant"),
+            )),
+            None => Err(ToolError::new(
+                Refusal::ApprovalRequired,
+                "this approval has no decision yet; the call cannot execute",
+            )),
+        }
+    }
+
+    /// Consumes one unexecuted `allow_once` grant if it is still valid.
+    fn consume_allow_once(
+        conn: &Connection,
+        approval_id: &str,
+        expires_at: &str,
+        now_unix_secs: u64,
+    ) -> Result<(), ToolError> {
+        let expires = Timestamp::parse(expires_at).map_err(|error| {
+            ToolError::new(
+                Refusal::InternalError,
+                format!("stored approval has an invalid expires_at: {error}"),
+            )
+        })?;
+        let expired = expires
+            .unix_secs()
+            .map(|at| now_unix_secs >= at)
+            .unwrap_or(true);
+        if expired {
+            let _ = expire_decided_allow_once(conn, approval_id, now_unix_secs)?;
+            return Err(ToolError::new(
+                Refusal::ApprovalTimeout,
+                format!(
+                    "the single-use approval expired at {expires_at}; it cannot execute after \
+                     the TTL"
+                ),
+            ));
+        }
+        let executed_at = Timestamp::from_unix_secs(now_unix_secs);
+        let changed = conn.execute(
+            "UPDATE approvals SET executed_at = ?1
+             WHERE approval_id = ?2 AND decision = 'allow_once' AND executed_at IS NULL",
+            params![executed_at.as_str(), approval_id],
+        )?;
+        if changed == 1 {
+            Ok(())
+        } else {
+            Err(executed_grant_refusal())
+        }
+    }
+}
+
+/// Refusal for a single-use grant that was already executed.
+fn executed_grant_refusal() -> ToolError {
+    ToolError::new(
+        Refusal::ApprovalReplay,
+        "this single-use approval was already executed; replay is refused",
+    )
+}
+
+/// Post-decision terminal state for an `allow_once` grant whose TTL elapsed
+/// before execution.
+///
+/// The live-wait timeout path reads the stored decision label; flipping an
+/// approved-but-unexecuted grant to `expired` means that path finalizes a
+/// timeout instead of re-applying an executable grant after the deadline.
+fn expire_decided_allow_once(
+    conn: &Connection,
+    approval_id: &str,
+    now_unix_secs: u64,
+) -> Result<bool, ToolError> {
+    let decided_at = Timestamp::from_unix_secs(now_unix_secs);
+    let changed = conn.execute(
+        "UPDATE approvals SET decision = 'expired', decided_at = ?1
+         WHERE approval_id = ?2 AND decision = 'allow_once' AND executed_at IS NULL",
+        params![decided_at.as_str(), approval_id],
+    )?;
+    Ok(changed == 1)
 }
 
 /// Commits a model-originated side-effect approval request (W12 tool loop).
@@ -1316,6 +1478,250 @@ mod tests {
     }
 
     #[test]
+    fn allow_once_grant_is_not_executable_after_ttl() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let gate = ApprovalGate::default();
+        let expiry = request.expires_at.unix_secs().expect("expires");
+        gate.decide(
+            &conn,
+            &request.approval_id.to_string(),
+            ApprovalDecision::AllowOnce,
+            now(),
+        )
+        .expect("approved before expiry");
+
+        // The decision was committed inside the TTL; execution after the
+        // deadline must refuse, and the post-decision state must become
+        // terminal `expired` so the timeout path cannot re-apply it.
+        let error = gate
+            .verify_grant(&conn, request.run_id, ToolId::FileWrite, &args(), expiry)
+            .expect_err("expired allow_once cannot execute");
+        assert_eq!(error.code(), "E_APPROVAL_TIMEOUT");
+        assert_eq!(
+            decision_label(&conn, &request.approval_id.to_string()).expect("label"),
+            Some("expired".to_owned())
+        );
+        let error = gate
+            .verify_grant(
+                &conn,
+                request.run_id,
+                ToolId::FileWrite,
+                &args(),
+                expiry.saturating_add(1),
+            )
+            .expect_err("expired grant is never resurrected");
+        assert_eq!(error.code(), "E_APPROVAL_REQUIRED");
+    }
+
+    #[test]
+    fn allow_session_grant_is_intentionally_non_expiring() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let gate = ApprovalGate::default();
+        let expiry = request.expires_at.unix_secs().expect("expires");
+        gate.decide(
+            &conn,
+            &request.approval_id.to_string(),
+            ApprovalDecision::AllowSession,
+            now(),
+        )
+        .expect("session approved");
+
+        for at in [expiry, expiry.saturating_add(86_400)] {
+            gate.verify_grant(&conn, request.run_id, ToolId::FileWrite, &args(), at)
+                .unwrap_or_else(|error| panic!("allow_session must stay valid at {at}: {error}"));
+        }
+    }
+
+    #[test]
+    fn bound_grant_refuses_other_tool_call_and_unknown_approval() {
+        let conn = memory_db();
+        let request = begin(&conn);
+        let gate = ApprovalGate::default();
+        gate.decide(
+            &conn,
+            &request.approval_id.to_string(),
+            ApprovalDecision::AllowOnce,
+            now(),
+        )
+        .expect("approved");
+
+        let unknown = gate
+            .verify_grant_bound(
+                &conn,
+                "00000000-0000-7000-8000-000000000000",
+                &request.tool_call_id,
+                request.run_id,
+                ToolId::FileWrite,
+                &args(),
+                now(),
+            )
+            .expect_err("unknown approval");
+        assert_eq!(unknown.code(), "E_APPROVAL_NOT_FOUND");
+
+        let wrong_call = gate
+            .verify_grant_bound(
+                &conn,
+                &request.approval_id.to_string(),
+                "call-other",
+                request.run_id,
+                ToolId::FileWrite,
+                &args(),
+                now(),
+            )
+            .expect_err("tool_call_id binding");
+        assert_eq!(wrong_call.code(), "E_APPROVAL_REQUIRED");
+
+        gate.verify_grant_bound(
+            &conn,
+            &request.approval_id.to_string(),
+            "call-1",
+            request.run_id,
+            ToolId::FileWrite,
+            &args(),
+            now(),
+        )
+        .expect("the exact binding verifies once");
+        let replay = gate
+            .verify_grant_bound(
+                &conn,
+                &request.approval_id.to_string(),
+                "call-1",
+                request.run_id,
+                ToolId::FileWrite,
+                &args(),
+                now(),
+            )
+            .expect_err("single-use replay");
+        assert_eq!(replay.code(), "E_APPROVAL_REPLAY");
+    }
+
+    #[test]
+    fn bound_grants_are_per_approval_not_only_per_args() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let run = RunId::new();
+        let mut requests = Vec::new();
+        for (tool_call_id, decided_at) in [("call-a", 1_u64), ("call-b", 2_u64)] {
+            let request = gate
+                .request(
+                    &conn,
+                    run,
+                    TaskId::new(),
+                    tool_call_id,
+                    ToolId::FileWrite,
+                    PermissionClass::Mutate,
+                    &args(),
+                    now(),
+                )
+                .expect("request");
+            gate.decide(
+                &conn,
+                &request.approval_id.to_string(),
+                ApprovalDecision::AllowOnce,
+                now().saturating_add(decided_at),
+            )
+            .expect("approved");
+            requests.push(request);
+        }
+
+        // Consume the later-decided `call-b` grant first. The legacy unbound
+        // lookup would select `call-a`; the bound path consumes exactly the
+        // grant named by the caller.
+        gate.verify_grant_bound(
+            &conn,
+            &requests[1].approval_id.to_string(),
+            "call-b",
+            run,
+            ToolId::FileWrite,
+            &args(),
+            now(),
+        )
+        .expect("call-b grant");
+        gate.verify_grant_bound(
+            &conn,
+            &requests[0].approval_id.to_string(),
+            "call-a",
+            run,
+            ToolId::FileWrite,
+            &args(),
+            now(),
+        )
+        .expect("call-a grant remains independently valid");
+        let replay = gate
+            .verify_grant_bound(
+                &conn,
+                &requests[1].approval_id.to_string(),
+                "call-b",
+                run,
+                ToolId::FileWrite,
+                &args(),
+                now(),
+            )
+            .expect_err("call-b is single-use");
+        assert_eq!(replay.code(), "E_APPROVAL_REPLAY");
+    }
+
+    #[test]
+    fn bound_grant_refuses_expired_allow_once_and_allows_session_past_ttl() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let request = begin(&conn);
+        let expiry = request.expires_at.unix_secs().expect("expires");
+        gate.decide(
+            &conn,
+            &request.approval_id.to_string(),
+            ApprovalDecision::AllowOnce,
+            now(),
+        )
+        .expect("approved");
+        let error = gate
+            .verify_grant_bound(
+                &conn,
+                &request.approval_id.to_string(),
+                "call-1",
+                request.run_id,
+                ToolId::FileWrite,
+                &args(),
+                expiry,
+            )
+            .expect_err("expired bound grant");
+        assert_eq!(error.code(), "E_APPROVAL_TIMEOUT");
+
+        let session = gate
+            .request(
+                &conn,
+                RunId::new(),
+                TaskId::new(),
+                "call-session",
+                ToolId::FileWrite,
+                PermissionClass::Mutate,
+                &args(),
+                now(),
+            )
+            .expect("session request");
+        let session_expiry = session.expires_at.unix_secs().expect("expires");
+        gate.decide(
+            &conn,
+            &session.approval_id.to_string(),
+            ApprovalDecision::AllowSession,
+            now(),
+        )
+        .expect("session approved");
+        gate.verify_grant_bound(
+            &conn,
+            &session.approval_id.to_string(),
+            "call-session",
+            session.run_id,
+            ToolId::FileWrite,
+            &args(),
+            session_expiry.saturating_add(86_400),
+        )
+        .expect("allow_session stays valid past its original TTL");
+    }
+
+    #[test]
     fn deny_leaves_no_grant() {
         let conn = memory_db();
         let request = begin(&conn);
@@ -1509,7 +1915,7 @@ mod tests {
         // A second request for the same call is a different nonce (single-use rows).
         let second = request_tool_approval(
             &gate, &conn, run, task, "call-approval-2", "shell_exec",
-            &serde_json::json!({"program": "cmd.exe", "args": []}), now(),
+            &serde_json::json!({"program": "git.exe", "args": ["--version"]}), now(),
         )
         .expect("second approval");
         assert_eq!(second.permission_class, PermissionClass::Execute);
