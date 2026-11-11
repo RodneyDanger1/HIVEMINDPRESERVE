@@ -1,13 +1,13 @@
 {
   "receipt": "hivemind.install-smoke.v1",
-  "observed_at": "2026-11-10T21:15:00-06:00",
-  "source_commit": "31deb19741096b56b4cd0569a4b48107a19e8877",
+  "observed_at": "2026-11-10T21:28:40-06:00",
+  "source_commit": "ea53975c2e96975b572df23dc6075423a4fbfc5f",
   "version": "1.2.0-dev",
   "build_dirty": false,
   "package_zip": "dist/HiveMind.zip",
-  "package_zip_sha256": "4ff882cf20ad7eb86480762e12cd5d3d1ce064d6b7cae17d11a469579c66d835",
-  "server_sha256": "6e8a8aaed0ac26f419bc62b83b36f0ac2aedd0c8380ce69c9d7daa4b5bbee742",
-  "launcher_sha256": "ed5b5ecb85680f4474c5bc130d98ffd86d283508213006f37bcef848aea709fa",
+  "package_zip_sha256": "1e41331e76db3c17f9a6be8c973958f92ab8aa034daf646db413fe206719258b",
+  "server_sha256": "a19e2390ab9353ca50a2a3a31162961977ae1f6df59666aa8157e92a5f9067ca",
+  "launcher_sha256": "ec9bb7866a0d0f9a07c98b8329d91f3cba8593d560ad7c251ae7eea2d31a1f19",
   "install_root": "%LOCALAPPDATA%\\Programs\\HiveMind\\app",
   "data_root": "%LOCALAPPDATA%\\HiveMind",
   "workspace_root": "%LOCALAPPDATA%\\HiveMind\\workspace",
@@ -22,9 +22,8 @@
     "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
   },
   "what_this_proves": [
-    "a clean package built from commit 31deb19 without a dirty tree",
-    "the current build installed to a per-user app root",
-    "the installed server booted and reported the current version/schema",
+    "a clean package built from commit ea53975 with dirty=false",
+    "the clean currently installed build reports 1.2.0-dev and schema 24",
     "Desktop and Start Menu shortcuts were created"
   ],
   "what_this_does_not_prove": [
