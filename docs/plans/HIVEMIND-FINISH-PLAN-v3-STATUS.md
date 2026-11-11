@@ -1,5 +1,10 @@
 # HiveMind Finish Plan v3 — execution status (2026-11-10)
 
+> **Revision 3.1 note (2026-11-11):** capability expansion is now the **mandatory first work**
+> in [HIVEMIND-FINISH-PLAN-v3.md](HIVEMIND-FINISH-PLAN-v3.md) §0, with detailed reference in
+> [HIVEMIND-CAPABILITY-EXPANSION-PLAN.md](HIVEMIND-CAPABILITY-EXPANSION-PLAN.md). This file
+> remains the historical/current v3 crosswalk; the capability plan does not create a Code mode.
+
 **Companion to:** [HIVEMIND-FINISH-PLAN-v3.md](HIVEMIND-FINISH-PLAN-v3.md) (the plan is not rewritten here).
 **Observed HEAD:** `1129349`; **final docs HEAD:** `44e0535`; **installed build:** `806251b`; **working tree:** product code clean (the ledger endpoint candidate was discarded).
 **Verdict:** the P0/conformance core is materially shipped and tested; the plan is **not complete**.
