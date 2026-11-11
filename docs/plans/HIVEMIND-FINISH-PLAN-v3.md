@@ -3,8 +3,8 @@
 **Status:** v3 fact-checked by two independent agents; corrections below are adopted.
 Not a completion claim.
 **Repo:** `C:\Users\Riley\Desktop\hiverouter-v1`
-**Audit baseline:** `6a41250`; **execution baseline:** `436fa4d` (analysis artifacts
-committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
+**Audit baseline:** `6a41250`; **execution baseline:** `abfff55` (analysis artifacts +
+QA gate/docs checker committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
 `15BF4E61…6CA5ADA`, server `F369D7AC…A7CF871`. Current tracked count is **1,593**
 (1,573 at the census pin + 20 analysis artifacts); the census remains pinned to
 `6a41250` and needs a small addendum, not a silent rewrite.
@@ -93,17 +93,19 @@ Required:
 - remove **`cmd.exe` only** from `conservative_default`; do not claim argv is a shell
   (`shell.rs` passes args directly, so `&|>` are literal chars); document that
   `git.exe`/`cargo.exe` remain arbitrary code execution and that the approval gate is
-  the only boundary; update `shell.rs:368-465`, `approval.rs:1512`,
-  `tools_bridge.rs:921`, `execution.rs:783/1036`, `suspension.rs:287/1073` fixtures to
-  opt in with an explicit `ShellPolicy::new(["cmd.exe"])` instead of the default;
+  the only boundary; deny interpreter hosts even when explicitly allowlisted; update
+  `shell.rs:368-465`, `approval.rs:1512`, `tools_bridge.rs:921`,
+  `execution.rs:783/1036`, `suspension.rs:287/1073` fixtures to an explicit safe
+  `ShellPolicy::new(["git.exe"])` test policy, never `cmd.exe`;
 - pass `data_dir` **and `db_path`/+wal/+shm** into `ToolsBridge` and deny them; fail
   closed if a deny path cannot be canonicalized; update all four constructor sites
   (`http.rs:260`, `tools_bridge.rs:625`, `lead_bugcheck_boot.rs:48`, `suspension.rs:276`);
 - daemon `.exe`/`.ps1` jobs get `.env_clear()` + `env_safety` allowlist; test that
   `DEEPSEEK_API_KEY` is absent (do not print it), including a `.ps1` case;
 - add tests: `file_read("data/...")`/custom `--db` path and `file_write` refuse;
-  `cmd.exe` refused only in default policy; no regression to legitimate workspace
-  reads/writes; `send_to_sibling` must not bypass grant verification (add expiry test).
+  interpreter hosts refused even by an explicit test policy; no regression to
+  legitimate workspace reads/writes; `send_to_sibling` must not bypass grant
+  verification (add expiry test).
 
 Acceptance: focused tool tests + full backend suite. Rollback: revert the files; no
 schema change.
@@ -156,15 +158,14 @@ census expected-count update; no dead-grant count. Rollback: revert; no schema c
 Files: `backend/crates/hiverouter-core/src/{db.rs,store.rs,main.rs}`,
 `backend/crates/hiverouter-core/src/tools_bridge.rs`, migration tests.
 
-Required: freeze the complete v24 up/down before any feature work:
-`tasks.instruction TEXT`; `memory_entries.agent_key TEXT` (if role-clear uses it);
-approvals base table/indexes. The conditional one-pending approval unique index remains
-a post-migration step in `ToolsBridge::migrate` with the existing named refusal; do not
-delete that logic. Do not gate all required health checks — only the approval migration
+Required: freeze **v24 = `tasks.instruction TEXT` only** (implemented in this pass).
+Memory role-key/approvals/state-integrity columns are **v25 or later**; do not add them
+to v24 after it ships. The conditional one-pending approval unique index remains a
+post-migration step in `ToolsBridge::migrate` with the existing named refusal; do not
+delete that logic. Do not gate all required health checks — only an approval migration
 failure (or let fatal `Database::migrate` own it). Add a pre-v19 duplicate-hyper precheck
-with `E_SCHEMA_CONFLICT` before v19 applies. Any state column not frozen here must be a
-separate v25; never edit v24 after it ships. v24 down must not drop a pre-existing
-approvals table destructively: require the pre-up backup restore and say so.
+with `E_SCHEMA_CONFLICT` before v19 applies. v24 down restores the pre-up backup; do not
+drop a pre-existing approvals table destructively.
 
 Acceptance: upgrade/downgrade roundtrip, pre-migration backup, legacy two-hyper and
 approval-row fixture, create_all parity. Rollback: v24 down + backup restore.
@@ -245,9 +246,9 @@ Files: `backend/crates/hiverouter-core/src/{db.rs,store.rs,http.rs,snapshot.rs,r
 
 Required: use the schema frozen by WP-SCHEMA-1 (do not edit v24 here); keep the
 conditional approval unique index as a post-migration step; memory-clear guard in the
-same transaction as delete; decide role clear via the frozen v24
-`memory_entries.agent_key` (set it in the live writer) or by `source_task_id → tasks.role`
-— choose one and handle legacy NULL rows; live memory writer uses the strict writer via
+same transaction as delete; role clear uses `source_task_id → tasks.role` (v24 has no
+`agent_key`), with a v25 column only if the query proves insufficient; handle legacy
+NULL rows; live memory writer uses the strict writer via
 `execution.rs`; governance prefix guard complete; snapshot revision shared max+1 (change
 `execution.rs` owner); recovery scans all active runs. Gate only approval-migration
 failure, not every required health check.
