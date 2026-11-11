@@ -468,3 +468,10 @@ and block sha256 whenever authorized lessons are injected into a prompt
 (problem: authorized lessons are not receipted for the run)".
 
 Evidence: `docs/evidence/live/live-tokenlab-applied-lesson-retrieval.json`.
+## Test AI — distinct voter review lenses
+
+Each auto-spawned voter now receives a different A2A review lens:
+security/containment, truthfulness/scope, testability/evidence, or
+reversibility/rollback. The lifecycle test asserts all four lens strings are
+present in the four requests. This reduces (but does not eliminate) shared-input
+lockstep. Backend gate: 51 suites / 637 passed.
