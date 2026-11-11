@@ -9,27 +9,35 @@ implementation claim.
 **Status:** v3 fact-checked by two independent agents; corrections below are adopted.
 This revision adds the capability-expansion contract; it is not a completion claim.
 **Repo:** `C:\Users\Riley\Desktop\hiverouter-v1`
-**Audit baseline:** `6a41250`; **execution baseline:** `73e5fad` (security, approval serialization,
-schema, seat-binding, UI gallery, full battery and clean installer committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
-`15BF4E61…6CA5ADA`, server `F369D7AC…A7CF871`. Current tracked count is **1,593**
-(1,573 at the census pin + 20 analysis artifacts); the census remains pinned to
-`6a41250` and needs a small addendum, not a silent rewrite.
+**Audit baseline:** `6a41250` (historical); **product commit:** `806251b`; **pre-expansion tag:**
+`pre-capability-expansion-2026-11-11` → `014d0d7`; **plan revision commit:** `b0e60c8` plus this
+edit. Installed `1.2.0-dev`, schema 24; package SHA-256
+`B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`; server SHA-256
+`D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`. Tracked count at
+`b0e60c8` is **1,645**; the census pin remains `6a41250` and its historical numbers must not be
+presented as the current count. Working tree at revision time is docs-only dirty (plan files), not
+the old `docs/analysis/**` state.
 **Inputs:** `docs/analysis/lanes/L1..L7`, `docs/analysis/WATCHDOG-LEDGER.md`,
 `PLAN-FACTCHECK-CORE.md`, `PLAN-FACTCHECK-UX.md`, `GAP-AUDIT-1/2.md`,
 `GAP-PATCH-1/2.md`, `docs/analysis/CODEBASE-CENSUS.md`,
 `docs/analysis/LEAD-RESEARCH-PSEUDOCODE-LANGUAGES.md`.
-**Census scope correction:** 1,573/1,573 paths indexed; the census feature table rows
+**Census scope correction (historical pin):** 1,573/1,573 paths indexed; the census feature table rows
 sum to 249, while its verdict counts 216 in the eight named families; 23 migrations and
 10 prompt assets sit outside that total, and 78 refusals + 4 caps are enumerated but not
 counted. Do not repeat an unqualified "216/216 features".
 **Authority:** operator-gated evolution only; no autonomous source mutation, no
 AGI claim, no unmeasured scale claim.
 
+**Baseline mapping (do not conflate):** `6a41250` = audit/census pin; `73e5fad` = historical v3
+execution baseline; `806251b` = installed product commit; `014d0d7` = pre-expansion tag; `b0e60c8`
+= Revision 3.1 plan commit. A receipt or claim must name which baseline it belongs to.
+
 ## 0. MANDATORY FIRST — capability expansion
 
 This section is the first work order. No remaining v3 hardening WP may start until
-CAP-1..CAP-12 are coded, tested and integrated, unless a CAP depends on a specific v3 fix
-(then that fix is embedded in the CAP, not deferred). The full detailed annex is
+CAP-0..CAP-11 are complete, unless a CAP depends on a specific v3 fix
+(then that fix is embedded in the CAP, not deferred). CAP-12 is the **final gate/build/bug-fix**
+phase after all capability and residual coding. The full detailed annex is
 [`HIVEMIND-CAPABILITY-EXPANSION-PLAN.md`](HIVEMIND-CAPABILITY-EXPANSION-PLAN.md); this
 section is binding and wins if they disagree.
 
@@ -86,9 +94,10 @@ initially, queued sessions.
 | `standard` | Workspace edits auto-approved; shell/network ask. |
 | `trusted` | Full local coding: workspace edit/command/test/terminal without per-action prompts; outside-workspace/external side effects refused or asked. |
 
-Default for new local coding runs: `trusted`. Existing runs keep `classic` behavior. No policy
-bypasses the jail, caps, ledger or the rule that nothing outside the workspace is silently touched.
-No OS-sandbox claim.
+Default for **all new runs**: `classic` — the current approval behavior is preserved. `trusted` is
+opt-in, explicitly selected and remembered per session; it is not inferred from “this is a coding
+run.” Existing runs keep their recorded policy. No policy bypasses the jail, caps, ledger or the
+rule that nothing outside the workspace is silently touched. No OS-sandbox claim.
 
 **G. Skills / CLI / MCP.** Local skill files as labelled prompt data; no remote marketplace.
 `hivemind run --json`, status/resume/revert/approve/tail; token from env/DPAPI token file; no
@@ -124,8 +133,8 @@ evidence; and keep using the same canvas/hierarchy/brand.
 
 ### 0.6 Mandatory order and preservation
 
-Capability work is first, then residual v3 hardening. All capability coding must be complete before
-the gate/build/bug-fix cycle. Preservation gates in §6 must pass before merge:
+Capability work is first, then residual v3 hardening. CAP-0..CAP-11 and all residual coding must be
+complete before CAP-12's gate/build/bug-fix cycle. Preservation gates in §6 must pass before merge:
 existing tests unchanged; real v24 database readback; all current commands/tools/routes/panels
 remain; differential HMAS behavior; `classic` equals current approvals; old package installable;
 independent audit. If a gate fails, do not merge or replace; the current HiveMind remains.
@@ -193,8 +202,10 @@ independent audit. If a gate fails, do not merge or replace; the current HiveMin
 ## 3. Capability work packages (mandatory, first)
 
 These WPs are the first coding work. They are additive; they must not remove or rename current
-surfaces. Each WP ends with targeted tests and a commit; no installer build or release gate until
-all capability coding is complete.
+surfaces. Each WP ends with targeted tests and a commit. Integration suites may run during CAP-11;
+no installer build, release battery or release gate until all capability and residual coding is
+complete. The current 12 tools/5 classes/35 grants remain a baseline subset; capability tools are
+new ToolIds/grants, and the final census is derived by a test, not hardcoded.
 
 ### CAP-0 — Preservation baseline
 - **Behavior:** archive current v3; tag/branch; verify source snapshot/bundle/GitHub preservation;
@@ -212,9 +223,13 @@ all capability coding is complete.
 
 ### CAP-2 — Repo index and context
 - **Files:** new `repo_index.rs`; `code_search`/`repo_map`; `provider_executor` context assembly.
+- **Schema:** v26 `repo_files`, `repo_chunks`, `repo_fts`.
 - **Behavior:** local FTS5 chunks; ignore `.git`/`target`/`node_modules`/binaries/>1 MiB; glob/grep/
   read-range; `@file`; bounded context; explicit truncation; no network.
-- **Tests:** jail, binary/large refusal, injection-safe FTS, deterministic index.
+- **Dependency gate:** prove the bundled SQLite supports FTS5 with a real
+  `CREATE VIRTUAL TABLE … USING fts5` test before relying on it; if absent, add the required
+  `rusqlite` feature and lockfile change. No silent lexical fallback in the capability itself.
+- **Tests:** FTS5 probe, jail, binary/large refusal, injection-safe FTS, deterministic index.
 
 ### CAP-3 — Editing and execution tools
 - **Files:** `tool.rs`, new `patch.rs`, `fs_search.rs`, `git.rs`, `tests_runner.rs`,
@@ -227,13 +242,21 @@ all capability coding is complete.
 ### CAP-4 — Workbench panes inside existing UI
 - **Files:** new `web/src/workbench/{FileTree,Editor,DiffView,Terminal,Timeline,TodoPanel,
   SessionRail,CostBar,CommandPalette}.tsx`; update `App.tsx`, state, strings/styles.
+- **Dependency gate:** pin exact CodeMirror 6 and xterm.js versions in `package.json` and
+  `package-lock.json`; add the backend PTY dependency and a Windows ConPTY/fallback spike. No
+  unversioned import and no terminal/editor claim without the dependency/build proof.
 - **Behavior:** panes inside existing Workspace/Data/Agents surfaces; no new primary nav; 1440/375;
-  keyboard; diff cards; keep current panels/canvas/brand.
-- **Tests:** Vitest/Playwright/axe/screenshots; legacy nav/panels unchanged.
+  keyboard; diff cards; keep current panels/canvas/brand. `CommandPalette` is un-cut by this
+  revision; the old v3 cut is historical and superseded. Add a palette behavior/test and
+  accessibility check.
+- **Tests:** Vitest/Playwright/contrast/screenshots; legacy nav/panels unchanged; editor and
+  terminal dependency/build smoke. Axe is optional only if installed; do not claim an axe run
+  without the dependency.
 
 ### CAP-5 — Sessions, checkpoints, jobs
 - **Files:** new `session.rs`, `checkpoint.rs`, `jobs.rs`; `http.rs`/`ws.rs`.
-- **Schema:** v25/v27/v28 tables; content-addressed blobs/file ops/jobs.
+- **Schema:** v27 checkpoints/file ops, v28 jobs/terminal; content-addressed blobs/file ops/jobs.
+  No v25/v26 redefinition.
 - **Behavior:** named sessions; resume/switch; exact file restore; drift refusal; background jobs;
   cleanup; one active run at a time initially.
 - **Tests:** v24 data intact; restore exact hash; external drift refuses; restart/resume; job kill.
@@ -252,12 +275,15 @@ all capability coding is complete.
 
 ### CAP-8 — Skills, CLI, MCP, model/cost
 - **Files:** CLI, HTTP contract, `mcp.rs`, provider settings, cost meter.
+- **Schema:** v29 `skills`, `mcp_servers`, provider/session config.
 - **Behavior:** `hivemind run --json`, status/resume/revert/approve/tail; token source; MCP stdio;
   local skills; per-session model picker; no secret logging.
 - **Tests:** token never logged; CLI receipt; MCP permission conformance.
 
 ### CAP-9 — Learning, eval, optional vector
-- **Files:** learning/eval/memory modules; v29–v31.
+- **Files:** learning/eval/memory modules.
+- **Schema:** v30 lessons/acceptance, v31 eval suites/runs/trials/metrics, v32 optional memory
+  vectors/embedding jobs.
 - **Behavior:** trace manifest; candidate lessons; executed baseline/candidate eval; activation/
   rollback; FTS + optional local embeddings; no autonomous code mutation.
 - **Tests:** shape-only receipt refused; executed eval; non-inferiority; rollback; scope/trust.
@@ -272,10 +298,12 @@ all capability coding is complete.
 - **Behavior:** all capability + legacy tests; old data fixture; UI parity; additive contracts.
 - **Tests:** full backend/web/e2e; v24 migration; differential old HMAS.
 
-### CAP-12 — Gate/build/bug-fix/live
-- **Behavior:** only after all coding; full battery, build, clean install, crash, scale, keyed live
-  coding, benchmark; then bug-fix only.
-- **Tests:** all gates; receipts; no green-seal claim without clean evidence.
+### CAP-12 — Final gate/build/bug-fix/live
+- **Behavior:** only after CAP-0..CAP-11 and all residual v3 coding (R38–R43). Sequence: full
+  integration battery/build/e2e → focused bug-fix loop → clean install/crash/scale → keyed live
+  coding → benchmark → final docs. No new features during bug-fix.
+- **Tests:** focused suites green; receipts; strict G7 expected RED as PRE-RELEASE; no green-seal
+  claim without clean evidence.
 
 **Dependency order:** CAP-0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12.
 CAP-4/CAP-6 may start after CAP-3 against fixture APIs.
@@ -285,7 +313,14 @@ CAP-4/CAP-6 may start after CAP-3 against fixture APIs.
 > **Revision 3.1 precedence note:** these are the historical v3 work packages, retained with their
 > original statuses. Where any line here conflicts with §0 or §3 (for example an old cut of a
 > command palette or mission surface), the capability plan wins. Existing done items stay closed;
-> only residual items move to R38–R41. No old work package is deleted.
+> only residual items move to R38–R43. No old work package is deleted.
+>
+> **Preservation exceptions, explicitly enumerated:** (a) keep all 35 baseline grants; do not
+> adopt WP-SEC-3's dead-grant removal, its “leave ToolId at 12” rule, or its `census 35→28`
+> assertion — capability tools add new ToolIds and the final census is derived by tests; the
+> effective tier∩persona surface must be proven unchanged; (b) the only permitted test deletion is
+> the dead `handshake.rs`/`tests/handshake.rs` path, replaced by a no-export/absence assertion; all
+> other tests remain. No other exception is authorized.
 
 Each work package names files, required behavior, tests, and rollback. The Lead owns
 the final patch integration; helper agents get disjoint file scopes.
@@ -349,15 +384,16 @@ full suite. Files include `run_state.rs` and `approval_wait.rs` (assign
 Files: `backend/crates/hiverouter-core/src/{provider_executor.rs,execution.rs}`,
 `backend/crates/hiverouter-tools/src/{tool.rs,census.rs}`, tool-loop tests.
 
-Decision: **isolate** the root control vocabulary as a bounded validated control
-surface, not a registry tier. Add schemas/validation/audit for its six tools, remove
-the false tier claim, and leave `ToolId` at 12. Remove the unreachable ToolAgent tier
-grants and the dead HyperAgent registry grants; update `census.rs` 35 → 28 and its
-tests. Reconcile `finish`/`report_result`: add task-level tests proving `finish`
+Decision (historical; superseded by §0/§4 preservation exception): **isolate** the root
+control vocabulary as a bounded validated control surface, not a registry tier. Add
+schemas/validation/audit for its six tools and remove the false tier claim. **Do not** remove
+the 35 baseline grants or change the `ToolId` count in this revision; capability tools are new
+ToolIds, and the final census is derived by tests. Keep the seven unreachable grants documented
+as unreachable. Reconcile `finish`/`report_result`: add task-level tests proving `finish`
 completes, `report_result success=false` labels failure, and no extra provider call.
 
-Acceptance: root-control schema validation/refusal tests; task-level terminal tests;
-census expected-count update; no dead-grant count. Rollback: revert; no schema change.
+Acceptance: root-control schema validation/refusal tests; task-level terminal tests; baseline
+12/5/35 unchanged; derived post-expansion census test. Rollback: revert; no schema change.
 
 ### WP-SCHEMA-1 — freeze and ship v24 once
 
@@ -516,9 +552,9 @@ tokens (no new palette swatch), preserve IA/palette, accessible focus/contrast/
 reduced-motion, and make the splash progress indeterminate (no fake numeric percent).
 
 Explicitly cut from this plan: `MissionControlPanel`, `MissionsPanel` as new nav,
-`CommandPalette`, new mission API/entities. They require operator ceiling approval and
-new backend routes and are a follow-up to the historical 40-round baseline; the 48-round
-execution in §5 supersedes that schedule.
+new mission API/entities. They require operator ceiling approval and new backend routes and are a
+follow-up to the historical 40-round baseline; the 52-round execution in §5 supersedes that
+schedule. The command palette is **not** cut by Revision 3.1 (CAP-4 owns it).
 
 Acceptance: real API-bound e2e for HivePulse/8 cards/tools matrix; screenshots at
 1440 and 375; deterministic token/contrast test plus manual new-pair contrast (axe is
@@ -578,7 +614,8 @@ Files: `README.md`, `docs/audit/HYPERAGENT-TRUTH-REPORT.md`,
 `docs/RELEASE.md`, `docs/reports/FINAL-REPORT.md`, `docs/DOWNLOADS.md` (new),
 `docs/evidence/live/INDEX.md` (new), Downloads copy, `dist/*`.
 
-Required: current HEAD/version/counts; 12/5/35 tool truth; implemented votes/UI vs
+Required: current HEAD/version/counts; baseline 12/5/35 tool truth plus a **derived**
+post-expansion census (no hardcoded final count); implemented votes/UI vs
 code-apply absent; installed-build/Downloads section; correct zip/package claims; keep
 sealed 1.1.0 separate from 1.2.0-dev; no unverified "live" statement. Also:
 - fix `check-docs-truth.mjs` false positive on "Working tree: 1.2.0-dev (unreleased)"
@@ -622,10 +659,11 @@ WP-SEC-1/2. Optional external Rust Playground connector only behind `Network` +
 per-call approval, disabled by default, never for HiveMind source. Official Rust
 Playground facts and limits: `LEAD-RESEARCH-PSEUDOCODE-LANGUAGES.md §11`.
 
-## 5. Execution order and rounds — capability first, 48 rounds
+## 5. Execution order and rounds — capability first, 52 rounds
 
 Rounds are checkpoints, not promises. Capability work is mandatory first. No installer build,
-full battery or release gate until all capability coding (R2–R41) is complete. Targeted
+release battery or release gate until all capability and residual coding (R2–R43) is complete; the
+CAP-11 integration suite is not the release battery. Targeted
 compile/typecheck/unit tests are allowed during coding; they are not gate claims.
 
 | Rounds | Work | Exit |
@@ -634,7 +672,7 @@ compile/typecheck/unit tests are allowed during coding; they are not gate claims
 | R2–R3 | CAP-1 one-product policy/contracts/v25 schema | policy matrix; v24 readback; no `runs.mode` |
 | R4–R5 | CAP-2 repo index/context | jail/index/FTS tests |
 | R6–R9 | CAP-3 coding/edit/git/test tools | patch/jail/kill-tree tests |
-| R10–R14 | CAP-4 workbench panes inside existing UI | Vitest/Playwright/axe/1440/375; old UI intact |
+| R10–R14 | CAP-4 workbench panes inside existing UI | Vitest/Playwright/contrast/1440/375; old UI intact; axe only if installed |
 | R15–R17 | CAP-5 sessions/checkpoints/jobs | restore/drift/resume/job tests |
 | R18–R19 | CAP-6 reasoning/timeline/attribution | reasoning/timeline tests |
 | R20–R23 | CAP-7 plan/todo/verify/retry/compaction/monitor actions | scripted provider tests |
@@ -642,15 +680,21 @@ compile/typecheck/unit tests are allowed during coding; they are not gate claims
 | R27–R30 | CAP-9 learning/eval/optional vector | executed eval/rollback/scope tests |
 | R31–R33 | CAP-10 containment/hardening | negative/refusal/e2e tests |
 | R34–R37 | CAP-11 integration/preservation | full legacy + capability tests; v24 migration |
-| R38–R41 | residual existing v3 WPs only (done items skipped; no rework) | residual tests; no feature removal |
-| R42 | **Gate begins:** full backend/web/docs/QA battery, build, e2e, install smoke | gate receipt; bug-fix mode only |
-| R43–R45 | bug-fix/gate reruns only; no new features | green gates |
-| R46 | clean-profile install, keyed live coding, crash/scale | receipts |
-| R47 | benchmark vs external harnesses; no superiority claim without receipt | benchmark receipt |
-| R48 | final docs/evidence/version push and handoff | final receipt |
+| R38–R43 | residual existing v3 WPs only (done items skipped; no rework) | residual tests; no feature removal |
+| R44 | **CAP-12 gate begins:** full backend/web/docs/QA battery, build, e2e, install smoke | focused suites green; strict G7 expected RED (PRE-RELEASE); bug-fix mode only |
+| R45–R47 | bug-fix/gate reruns only; no new features | focused suites green; PRE-RELEASE evidence |
+| R48–R49 | clean-profile install, keyed live coding, crash/scale | receipts |
+| R50 | benchmark vs external harnesses; no superiority claim without receipt | benchmark receipt |
+| R51–R52 | final docs/evidence/version push and handoff | final receipt |
 
-If R42 exposes a real feature gap, reopen coding and repeat the gate; do not hide it by weakening
-tests.
+**Round size:** each round is 2–3 engineer-days; 52 rounds ≈ 104–156 engineer-days. This is a
+checkpoint schedule, not 52 calendar days. If residual work exceeds R38–R43, extend the schedule and
+the goal; do not compress or silently drop it.
+
+If R44 exposes a real feature gap, reopen coding and repeat the gate; do not hide it by weakening
+tests. The strict release gate remains expected RED at G7 because the sealed manifest is 1.1.0;
+this plan does **not** claim a green strict seal. A separate 1.3/2.0 seal is required before any
+release claim.
 
 ## 6. Capability acceptance and preservation gates
 
@@ -660,7 +704,7 @@ tests.
    test → repair → final evidence.
 3. `trusted` allows full local coding without per-action prompts; `classic` preserves current
    approvals; no product-mode switch.
-4. Multiple agents implement/review/verify through the existing hierarchy.
+4. SuperAgents/Agents implement; Subagents read/review/verify; all through the existing hierarchy.
 5. Sessions/checkpoints/revert/resume work; old runs readable.
 6. UI additions are panes in existing surfaces; no clone shell; 1440/375.
 7. Reasoning/attribution shows provider-returned reasoning and observable actions only.
@@ -669,11 +713,15 @@ tests.
 10. No AGI/HiveWire/OS-sandbox/40-node/superiority claim without evidence.
 
 ### Preservation gates
-- All existing backend/web/e2e tests unchanged; no deleted/skipped/weakened tests.
+- All existing backend/web/e2e tests pass; the only permitted deletion is the dead
+  `handshake.rs`/`tests/handshake.rs` path, replaced by an absence assertion. No test weakening,
+  skip or silent removal.
 - Real v24 database fixture migrates and reads old runs/approvals/history/memory.
-- All current commands/tools/routes/panels remain; new additions are additive.
+- All current commands/tools/routes/panels remain; new additions are additive. All 35 grants remain
+  (7 marked unreachable); no dead-grant removal in this plan.
 - Differential HMAS behavior; `classic` equals current approvals.
-- Old package remains installable; backup/down migration tested.
+- Old package remains installable; backup/down migration tested; sequential v24→v32 migration test
+  after each CAP.
 - Independent audit; no merge on failure.
 
 ## 7. Agent structure after plan approval
@@ -715,8 +763,8 @@ tests.
 ## 8. Goal and handoff
 
 After the two plan fact-checkers return and the Lead applies their exact corrections,
-create a fresh **48-round goal** with this plan as the execution objective. The capability
-phases are first. If R48 still has a named residual, create a follow-up goal only for that
+create a fresh **52-round goal** with this plan as the execution objective. The capability
+phases are first. If R52 still has a named residual, create a follow-up goal only for that
 residual; do not silently reset or mark complete. The blocked 80-round goal from the prior
 session is replaced, not resumed.
 
