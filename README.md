@@ -8,8 +8,8 @@ It is **not AGI**, not a self-modifying agent, and not yet a general coding harn
 **Working tree:** `1.2.0-dev` (unreleased). **Sealed release:** `1.1.0` — the sealed
 version remains the release authority; the working tree is pre-release and unsealed.
 
-**Truth baseline (observed 2026-11-11):** product commit `806251b`; docs/audit
-HEAD `44e0535`; installed build `806251b` (`dirty:false`); schema `hiverouter.v1`
+**Truth baseline (observed 2026-11-11):** product commit `806251b`; audit
+commit `44e0535`; installed build `806251b` (`dirty:false`); schema `hiverouter.v1`
 version **24**; `/health` is `degraded` with `E_KEY_MISSING`; docs truth checker
 **19/19 PASS**; latest offline battery **8/8 PASS** at `1129349` with
 `working_tree_dirty:true` (audit docs in the tree), so it is **not** a clean
@@ -44,7 +44,7 @@ suites.
 
 ```text
 submit(prompt)
-  → one planner provider call → DAG validation
+  → bounded planner call(s) → DAG validation (one repair allowed)
   → root control turn 1: create/assign/remote/daemon/memory/proposal/finish
   → root control turn 2: feedback; creation refused
   → dispatch ready tasks; settle unfinished tasks
@@ -70,7 +70,7 @@ submit(prompt)
 **Hard caps:** depth **3**, fan-out **8**, **64** agents/run, **64** provider
 calls/run, 40 plan nodes, 12 tool turns, 40 tool calls/run, 8 approval waits/run,
 64 KiB tool result, $0.50/run, 400,000 combined tokens/run. Root control is ≤4
-calls/turn and exactly 2 turns. Refusals are named (`E_SPAWN_DEPTH`,
+calls/turn and up to 2 turns. Refusals are named (`E_SPAWN_DEPTH`,
 `E_FANOUT_LIMIT`, `E_AGENT_LIMIT`, `E_CALL_LIMIT`, etc.), never silent clamps.
 
 **Tools — 12 registry tools, 5 permission classes, 35 tier grants.**
