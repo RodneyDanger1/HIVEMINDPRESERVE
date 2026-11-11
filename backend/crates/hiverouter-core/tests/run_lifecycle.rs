@@ -592,7 +592,10 @@ impl ProviderExecutor for RootProposalExecutor {
                         "area": "root governance",
                         "problem": "root decisions need a durable proposal archive",
                         "proposal": "record a reviewed improvement candidate in the run bank",
-                        "evidence": "test-only proposal"
+                        "evidence": "test-only proposal",
+                        "expected_effect": "operator can inspect the proposal evidence before voting",
+                        "verification_plan": "run the proposal authorization suite and inspect the run bank row",
+                        "rollback": "delete the run-bank proposal row; no code or schema changed"
                     })
                 } else {
                     json!({})
@@ -1253,6 +1256,9 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
     assert!(proposal.value.contains("\"superagent_approvals\":4"));
     assert!(proposal.value.contains("\"state\":\"awaiting_votes\""));
     assert!(proposal.value.contains("\"can_apply\":false"));
+    assert!(proposal.value.contains("\"expected_effect\":\"operator can inspect"));
+    assert!(proposal.value.contains("\"verification_plan\":\"run the proposal"));
+    assert!(proposal.value.contains("\"rollback\":\"delete the run-bank"));
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     assert_eq!(tasks.len(), 6, "planner, planned branch, four voters: {tasks:?}");
     let voters: Vec<_> = tasks

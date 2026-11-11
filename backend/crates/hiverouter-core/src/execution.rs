@@ -4717,6 +4717,27 @@ impl RunEngine {
                             .and_then(serde_json::Value::as_str)
                             .map(str::trim)
                             .unwrap_or_default();
+                        let expected_effect = call
+                            .arguments
+                            .get("expected_effect")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| value.chars().count() <= 800)
+                            .unwrap_or_default();
+                        let verification_plan = call
+                            .arguments
+                            .get("verification_plan")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| value.chars().count() <= 1_200)
+                            .unwrap_or_default();
+                        let rollback = call
+                            .arguments
+                            .get("rollback")
+                            .and_then(serde_json::Value::as_str)
+                            .map(str::trim)
+                            .filter(|value| value.chars().count() <= 800)
+                            .unwrap_or_default();
                         let existing_key = self
                             .store
                             .memory_hyper_summary(run.id, 64)?
@@ -4763,6 +4784,9 @@ impl RunEngine {
                             "problem": problem,
                             "proposal": proposal,
                             "evidence": evidence,
+                            "expected_effect": expected_effect,
+                            "verification_plan": verification_plan,
+                            "rollback": rollback,
                             "applied": false,
                             "requires_human_review": true,
                             "root_task_id": root.id.to_string(),

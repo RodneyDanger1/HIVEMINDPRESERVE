@@ -672,7 +672,10 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                         "area": { "type": "string", "minLength": 1, "maxLength": 80 },
                         "problem": { "type": "string", "minLength": 8, "maxLength": 800 },
                         "proposal": { "type": "string", "minLength": 8, "maxLength": 2000 },
-                        "evidence": { "type": "string", "maxLength": 800 }
+                        "evidence": { "type": "string", "maxLength": 800 },
+                        "expected_effect": { "type": "string", "maxLength": 800 },
+                        "verification_plan": { "type": "string", "maxLength": 1200 },
+                        "rollback": { "type": "string", "maxLength": 800 }
                     },
                     "required": ["area", "problem", "proposal"],
                     "additionalProperties": false
