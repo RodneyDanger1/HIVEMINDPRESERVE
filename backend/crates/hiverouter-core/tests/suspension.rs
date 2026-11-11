@@ -1171,10 +1171,32 @@ async fn concurrent_tasks_do_not_double_suspend_the_run() {
     let collected = settle(receiver, Collected::default()).await;
     assert_eq!(collected.final_run_status.as_deref(), Some("completed"));
     assert_eq!(harness.run(run.id).status, AgentState::Completed);
-    // This test deliberately pins the serialization invariant (never two
-    // simultaneous Suspend edges); it does not assert both side effects. A
-    // separate execution-accounting test is still required because the current
-    // parallel dispatch has produced one observed tool result for two approvals.
+    // This test pins both properties: never two simultaneous Suspend edges, and
+    // exactly one committed file_write per approved task. (An earlier probe saw
+    // only one TOOL_RESULT because it discarded events while waiting; the DB
+    // tool-turn query below is the authoritative accounting source.)
+    let turns = harness
+        .db
+        .with_connection(|connection| {
+            let mut statement = connection.prepare(
+                "SELECT task_id, tool, outcome FROM tool_turns WHERE run_id = ?1 ORDER BY rowid",
+            )?;
+            let rows = statement.query_map(rusqlite::params![run.id.to_string()], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })?;
+            let mut out = Vec::new();
+            for row in rows { out.push(row?); }
+            Ok(out)
+        })
+        .expect("tool turns");
+    assert_eq!(turns.len(), 2, "both approved tasks must execute one tool turn: {turns:?}");
+    assert!(turns.iter().all(|(_, tool, outcome)| tool == "file_write" && outcome == "ok"));
+    assert_file(&harness, &format!("{a}.txt"), "X");
+    assert_file(&harness, &format!("{b}.txt"), "X");
     let sup = harness
         .engine
         .store
