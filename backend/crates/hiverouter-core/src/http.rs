@@ -38,6 +38,7 @@ fn launch_token_matches(expected: Option<&str>, supplied: Option<&str>) -> bool 
         Some(expected) => supplied == Some(expected),
     }
 }
+use hiverouter_contract::PermissionPolicy;
 use hiverouter_provider::{ClientConfig, DeepSeekClient};
 use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
@@ -611,6 +612,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/diagnose", get(diagnose))
         .route("/api/runtime", get(runtime_status))
         .route("/api/session", get(api_session))
+        .route("/api/sessions", get(sessions_list).post(session_create))
+        .route("/api/sessions/{session_id}", get(session_detail))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
         .route("/api/history/runs/{run_id}/state", get(history_state))
@@ -851,6 +854,77 @@ async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
         )
             .into_response(),
     }
+}
+
+async fn sessions_list(State(state): State<Arc<AppState>>) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.sessions() {
+        Ok(sessions) => (StatusCode::OK, Json(serde_json::json!({ "sessions": sessions }))).into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn session_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(name) = body.get("name").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(project_id) = body.get("project_id").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(workspace_root) = body
+        .get("workspace_root")
+        .and_then(serde_json::Value::as_str)
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if name.trim().is_empty() || project_id.trim().is_empty() || workspace_root.trim().is_empty() {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let policy = body
+        .get("permission_policy")
+        .and_then(serde_json::Value::as_str)
+        .and_then(PermissionPolicy::from_str_strict)
+        .unwrap_or(PermissionPolicy::Classic);
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.create_session(project_id, name, workspace_root, policy) {
+        Ok(session) => (StatusCode::CREATED, Json(session)).into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn session_detail(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    let session = match store.session(&session_id) {
+        Ok(session) => session,
+        Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+    };
+    let runs = match store.list_runs(200) {
+        Ok(runs) => runs
+            .into_iter()
+            .filter(|run| run.session_id.as_deref() == Some(session.id.as_str()))
+            .map(|run| {
+                serde_json::json!({
+                    "run_id": run.id.to_string(),
+                    "project_id": run.project_id,
+                    "status": run.status.as_str(),
+                    "permission_policy": run.permission_policy.as_str(),
+                    "created_at": run.created_at.as_str(),
+                })
+            })
+            .collect::<Vec<_>>(),
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "session": session, "runs": runs })),
+    )
+        .into_response()
 }
 
 async fn history_runs(State(state): State<Arc<AppState>>) -> Response {
