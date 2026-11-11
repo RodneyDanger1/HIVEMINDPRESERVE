@@ -273,7 +273,9 @@ fn harness(executor: Arc<dyn ProviderExecutor>, with_tools: bool, approval_ttl_s
     ToolsBridge::migrate(&db).expect("migrate tools tables");
 
     let bridge = Arc::new(
-        ToolsBridge::new(workspace.path(), db.clone()).with_approval_ttl(approval_ttl_secs),
+        ToolsBridge::new(workspace.path(), db.clone())
+            .with_data_dir(data.path())
+            .with_approval_ttl(approval_ttl_secs),
     );
     let bus = Arc::new(EventBus::new());
     let mut engine = RunEngine::new(

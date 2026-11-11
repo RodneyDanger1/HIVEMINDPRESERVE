@@ -45,7 +45,7 @@ fn boot_restart_expires_orphaned_pending_approval_and_late_resolve_times_out() {
         .set_run_status(run.id, AgentState::AwaitingApproval, None)
         .expect("run is awaiting approval");
 
-    let bridge = ToolsBridge::new(temp.path(), db.clone());
+    let bridge = ToolsBridge::new(temp.path(), db.clone()).with_data_dir(temp.path());
     let request = bridge
         .request_model_tool_approval(
             run.id,
