@@ -3,8 +3,11 @@
 **Status:** v3 fact-checked by two independent agents; corrections below are adopted.
 Not a completion claim.
 **Repo:** `C:\Users\Riley\Desktop\hiverouter-v1`
-**Baseline:** `6a41250` (`master`), version `1.2.0-dev`, package `dist/HiveMind.zip`
-`15BF4E61…6CA5ADA`, server `F369D7AC…A7CF871`.
+**Audit baseline:** `6a41250`; **execution baseline:** `436fa4d` (analysis artifacts
+committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
+`15BF4E61…6CA5ADA`, server `F369D7AC…A7CF871`. Current tracked count is **1,593**
+(1,573 at the census pin + 20 analysis artifacts); the census remains pinned to
+`6a41250` and needs a small addendum, not a silent rewrite.
 **Inputs:** `docs/analysis/lanes/L1..L7`, `docs/analysis/WATCHDOG-LEDGER.md`,
 `PLAN-FACTCHECK-CORE.md`, `PLAN-FACTCHECK-UX.md`, `GAP-AUDIT-1/2.md`,
 `GAP-PATCH-1/2.md`, `docs/analysis/CODEBASE-CENSUS.md`,
@@ -84,21 +87,23 @@ the final patch integration; helper agents get disjoint file scopes.
 ### WP-SEC-1 — containment
 
 Files: `backend/crates/hiverouter-tools/src/{shell.rs,side_effects.rs,jail.rs}`,
-`backend/crates/hiverouter-core/src/{http.rs,tools_bridge.rs}`, containment tests.
+`backend/crates/hiverouter-core/src/{http.rs,tools_bridge.rs,daemon.rs}`, containment tests.
 
 Required:
-- remove `cmd.exe` from the default shell allowlist; document `shell_exec` as
-  arbitrary code execution until an OS sandbox exists; deny shell-interpreter hosts
-  and argument escape forms (`/c`, `&`, `|`, `>`, newline) before execution;
-  update `shell.rs:370-374` and the side-effect shell fixtures that currently rely on
-  `cmd.exe` (use an explicit test policy, not `conservative_default`);
-- pass `data_dir` into `ToolsBridge` and deny it (plus ledger dir) in its jail; update
-  all four constructor sites (`http.rs:260`, `tools_bridge.rs:625`,
-  `lead_bugcheck_boot.rs:48`, `suspension.rs:276`);
+- remove **`cmd.exe` only** from `conservative_default`; do not claim argv is a shell
+  (`shell.rs` passes args directly, so `&|>` are literal chars); document that
+  `git.exe`/`cargo.exe` remain arbitrary code execution and that the approval gate is
+  the only boundary; update `shell.rs:368-465`, `approval.rs:1512`,
+  `tools_bridge.rs:921`, `execution.rs:783/1036`, `suspension.rs:287/1073` fixtures to
+  opt in with an explicit `ShellPolicy::new(["cmd.exe"])` instead of the default;
+- pass `data_dir` **and `db_path`/+wal/+shm** into `ToolsBridge` and deny them; fail
+  closed if a deny path cannot be canonicalized; update all four constructor sites
+  (`http.rs:260`, `tools_bridge.rs:625`, `lead_bugcheck_boot.rs:48`, `suspension.rs:276`);
 - daemon `.exe`/`.ps1` jobs get `.env_clear()` + `env_safety` allowlist; test that
   `DEEPSEEK_API_KEY` is absent (do not print it), including a `.ps1` case;
-- add tests: `file_read("data/...")` and `file_write("data/...")` refuse; shell
-  `cmd.exe`/escape args refuse; no regression to legitimate workspace reads/writes.
+- add tests: `file_read("data/...")`/custom `--db` path and `file_write` refuse;
+  `cmd.exe` refused only in default policy; no regression to legitimate workspace
+  reads/writes; `send_to_sibling` must not bypass grant verification (add expiry test).
 
 Acceptance: focused tool tests + full backend suite. Rollback: revert the files; no
 schema change.
@@ -106,14 +111,16 @@ schema change.
 ### WP-SEC-2 — approval integrity
 
 Files: `backend/crates/hiverouter-tools/src/approval.rs`,
-`backend/crates/hiverouter-core/src/tools_bridge.rs`,
-`backend/crates/hiverouter-core/src/execution.rs`, approval tests.
+`backend/crates/hiverouter-core/src/{tools_bridge.rs,execution.rs,run_state.rs,approval_wait.rs}`,
+approval tests.
 
 Required:
 - `allow_once` verification requires `expires_at > now`; `allow_session` remains
   intentionally non-expiring and scoped by `(run, tool, args)`;
-- bind `approval_id` and `tool_call_id` through `execute_approved` and all 15
-  `verify_grant` call sites, not only `args_sha256`;
+- for `allow_once`, bind `approval_id`/`tool_call_id` through `execute_approved` and
+  the `verify_grant` call sites (14, not 15); do not break repeated session grants;
+  select the grant **by approval_id**, not oldest-by-args (two identical-arg grants
+  can shadow each other);
 - order ledger append before the decision becomes irrevocable, or add a real
   post-decision `cancelled`/`superseded` state honored by the timeout path (the
   existing `cancel_pending` CAS only matches `decision IS NULL` and is a no-op after a
@@ -123,10 +130,11 @@ Required:
   selectively refuse pre-dispatch because `PlanNode` has no permission hints;
 - no args-free replay approval; preserve named refusals.
 
-Acceptance: allow_once-before-expiry then execute-after-expiry refuses; two-concurrent-
-suspension test; simulated ledger failure; allow_session beyond 120 s still works;
-replay refusal; full suite. Files include `run_state.rs` and `approval_wait.rs`.
-Rollback: revert; no migration.
+Acceptance: allow_once-before-expiry then execute-after-expiry refuses; two identical-
+arg grants cannot shadow; two-concurrent-suspension test; simulated ledger failure;
+allow_session beyond 120 s still works; `send_to_sibling` expiry test; replay refusal;
+full suite. Files include `run_state.rs` and `approval_wait.rs` (assign
+`approval_wait.rs` explicitly to this WP). Rollback: revert; no migration.
 
 ### WP-SEC-3 — root tool truth
 
@@ -412,8 +420,8 @@ Rounds are checkpoints, not promises; each ends with a command/evidence and a pu
 
 | Rounds | Work | Exit |
 |---|---|---|
-| R1 | freeze HEAD; commit `docs/analysis/**` + plan + fact-check/gap reports; `git fetch --unshallow` or record ancestry unavailable; push; baseline commands | clean tree; evidence record |
-| R2 | WP-TEST-1: wire the already-passing `node --test` suite into `run-gates.ps1`; fix docs-checker semantics; run baseline tests | 8/8; checker measured; no green seal claim |
+| R1 | freeze HEAD; commit `docs/analysis/**` + plan + fact-check/gap reports and the two QA checker edits; `git fetch --unshallow` or record ancestry unavailable; push; baseline commands | clean tree; evidence record |
+| R2 | WP-TEST-1: wire all `tools/qa/tests/*.test.mjs` into `run-gates.ps1` dynamically; docs checker 19/19; run baseline tests | 8/8; checker measured; no green seal claim |
 | R3–R5 | WP-SEC-1 + WP-SEC-2 (incl. daemon env, shell/jail, approval allow_once/concurrency) | containment/approval tests red→green; full focused suite |
 | R6 | WP-SCHEMA-1: freeze v24 up/down, pre-v19 duplicate preflight, approval base table; no later edits | migration roundtrip + legacy fixture |
 | R7–R9 | WP-GOV-1 task instruction + provider root schemas (`spawn_superagent`/`assign_task`) | provider-conformance + propagation tests |
@@ -440,8 +448,9 @@ Rounds are checkpoints, not promises; each ends with a command/evidence and a pu
 3. **Code workers (3)** — after plan fact-check; file-ownership matrix is frozen
    before R1 and repeated in `plans/foresight/RUN-FINISH.md`:
    - `impl-security`: `backend/crates/hiverouter-tools/**`,
-     `backend/crates/hiverouter-core/src/{http.rs,tools_bridge.rs}`, and their tests.
-     It does not edit `execution.rs`, `provider_executor.rs`, `db.rs`, or `store.rs`.
+     `backend/crates/hiverouter-core/src/{http.rs,tools_bridge.rs,approval_wait.rs}`,
+     and their tests. It does not edit `execution.rs`, `provider_executor.rs`, `db.rs`,
+     or `store.rs`; daemon env flips in `daemon.rs` are Lead-owned.
    - `impl-ui-install`: `web/src/**`, `web/tests/**`,
      `tools/{install-desktop.ps1,uninstall-desktop.ps1,build-desktop.ps1,set-provider-key.ps1}`,
      `tools/desktop-launcher/**`, `dist/HiveMind/README.txt`.

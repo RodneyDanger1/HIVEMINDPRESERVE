@@ -44,7 +44,7 @@ const OLD_HASHES = [
 ];
 const OLD_HASH_RE = new RegExp(`(${OLD_HASHES.map((h) => h.slice(0, 8)).join('|')})`, 'i');
 const STALE_STREAMING_RE = /\b(one|single)\s+(?:`?REPLY_DELTA`?\s+)?delta\b|\bnon[- ]streaming\b|\bnot\s+stream(?:ing|ed)\b|streaming\s+(?:is\s+)?(?:not|still\s+(?:pending|in\s+progress|being\s+completed))\b|true\s+SSE[^.\n]{0,60}(?:not\s+claimed|is\s+1\.1|pending|tracked\s+for\s+1\.1)|\bchunk-by-chunk[^.\n]{0,60}(?:not\s+claimed|is\s+1\.1)/i;
-const STREAMING_POSITIVE_RE = /\bSSE\b|server-sent|token[- ]by[- ]token|stream(?:s|ing|ed)?\s+(?:as|while|chunk|token|real|implemented|now|live)|REPLY_DELTA\s+(?:frames?|as\s+they|arriv)/i;
+const STREAMING_POSITIVE_RE = /\bSSE\b|server-sent|token[- ]by[- ]token|stream(?:s|ing|ed)?\s+(?:as|while|chunk|token|real|implemented|now|live)|response\s+is\s+streamed|REPLY_DELTA\s+(?:frames?|as\s+they|arriv)/i;
 const STALE_STATE_RE = /\b15[ -]states?\b|\bfifteen\s+states\b|\b15\s+of\s+16\b/i;
 const STALE_VERSION_RE = /\bHiveMind\s+1\.0(?:\.0)?\b|\bHiveMind\s+v1\.0\b/i;
 const MANIFEST_POINTER_RE = /tools\/release-manifest\.json/;
@@ -171,7 +171,11 @@ for (const doc of currentDocs) {
   check(`VERSION: ${doc} states sealed release ${sealedVersion}`, sealedVersionRe.test(live), `missing sealed release "${sealedVersion}"`);
   if (!sealedVersionRe.test(live)) fail(doc, 1, 'VERSION', `release-facing doc must state the sealed release version ${sealedVersion}`);
   if (preRelease) {
-    const claimsUnreleased = live.includes(currentVersion);
+    // A pre-release version is honest when the same line explicitly qualifies it as
+    // unreleased/pre-release/working tree; only an unqualified release claim is a violation.
+    const claimsUnreleased = live.split(/\r?\n/).some((line) =>
+      line.includes(currentVersion) && !/(unreleased|pre[- ]release|working\s+tree)/i.test(line),
+    );
     check(`VERSION: ${doc} does not present unreleased ${currentVersion}`, !claimsUnreleased, `must not present the pre-release ${currentVersion} as the released version`);
     if (claimsUnreleased) fail(doc, 1, 'VERSION', `${doc} must not present the unreleased ${currentVersion} as the released version`);
   }

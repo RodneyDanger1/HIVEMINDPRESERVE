@@ -532,6 +532,14 @@ Invoke-Gate 'G5 static QA harness' {
     Invoke-Native $node @((Rel $harness)) $script:Repo 'node tools/qa/verify-harness.mjs'
 } | Out-Null
 
+# ------------------------------------------------------------------ G5b QA unit tests
+Invoke-Gate 'G5b QA unit tests' {
+    $qaTests = @(Get-ChildItem -LiteralPath (Join-Path $script:Repo 'tools\qa\tests') -Filter '*.test.mjs' |
+        Sort-Object Name | ForEach-Object { 'tools/qa/tests/' + $_.Name })
+    if ($qaTests.Count -eq 0) { throw 'no tools/qa/tests/*.test.mjs files found' }
+    Invoke-Native $node (@('--test') + $qaTests) $script:Repo ('node --test ' + ($qaTests -join ' '))
+} | Out-Null
+
 # ------------------------------------------------------------------ G6 strict key scan
 Invoke-Gate 'G6 strict tracked-tree key scan' {
     $tracked = @(& git -C $script:Repo ls-files)
