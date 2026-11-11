@@ -57,13 +57,14 @@ if (-not (Test-Path -LiteralPath $server)) { throw "server exe missing: $server"
 
 Write-Host "[3/5] launcher compile" -ForegroundColor Cyan
 if (-not (Test-Path $csc)) { throw "csc.exe not found at $csc" }
-$launcherExe = Join-Path $launcherDir 'HiveMind.exe'
+$launcherExe = Join-Path $env:TEMP ("HiveMindLauncher-" + [guid]::NewGuid().ToString('N') + '.exe')
 & $csc /nologo /target:winexe /optimize+ /out:$launcherExe /r:System.Windows.Forms.dll /r:System.Security.dll (Join-Path $launcherDir 'HiveMindLauncher.cs')
 if ($LASTEXITCODE -ne 0) { throw "launcher compile failed: $LASTEXITCODE" }
 
 Write-Host "[4/5] assemble portable folder" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 Copy-Item -LiteralPath $launcherExe -Destination $outDir -Force
+Remove-Item -LiteralPath $launcherExe -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath $server -Destination $outDir -Force
 foreach ($script in @('set-provider-key.ps1', 'set-provider-profile.ps1')) {
     $source = Join-Path $root "tools\$script"
