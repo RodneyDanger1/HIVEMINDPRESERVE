@@ -702,6 +702,10 @@ pub struct RunEngine {
     parallel_dispatch: usize,
     /// In-process approval waiters (one server process; no cross-process wait).
     waiters: Arc<ApprovalWaiters>,
+    /// One approval-slot mutex per run. The run state machine permits only one
+    /// `Running -> AwaitingApproval` edge at a time; parallel tasks queue here
+    /// instead of racing `persist_approval_transitions` and failing the run.
+    approval_slots: Mutex<HashMap<RunId, Arc<tokio::sync::Mutex<()>>>>,
     /// In-process A2A answer waiters keyed by message id. A crash loses the
     /// waiter; the message remains open for an operator answer after restart.
     a2a_waiters: tokio::sync::Mutex<HashMap<Uuid, tokio::sync::oneshot::Sender<()>>>,
@@ -777,6 +781,7 @@ impl RunEngine {
             root_orchestrator: false,
             parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
+            approval_slots: Mutex::new(HashMap::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             a2a_delivered: Mutex::new(HashSet::new()),
             clock: Arc::new(default_now_unix_secs),
@@ -807,6 +812,21 @@ impl RunEngine {
         if let Ok(mut calls) = self.provider_calls.lock() {
             calls.remove(&run_id);
         }
+    }
+
+    /// Returns the run-scoped approval slot. Parallel tasks take this async
+    /// lock before creating an approval so only one task performs the
+    /// `Running -> AwaitingApproval` run transition at a time. The std mutex is
+    /// never held across the async wait.
+    fn approval_slot(&self, run_id: RunId) -> Result<Arc<tokio::sync::Mutex<()>>, Refusal> {
+        let mut slots = self
+            .approval_slots
+            .lock()
+            .map_err(|_| Refusal::InternalError)?;
+        Ok(slots
+            .entry(run_id)
+            .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+            .clone())
     }
 
     /// Effective concurrency bound for independently-ready tasks.
@@ -1030,6 +1050,7 @@ impl RunEngine {
             root_orchestrator: false,
             parallel_dispatch: 1,
             waiters: Arc::new(ApprovalWaiters::new()),
+            approval_slots: Mutex::new(HashMap::new()),
             a2a_waiters: tokio::sync::Mutex::new(HashMap::new()),
             a2a_delivered: Mutex::new(HashSet::new()),
             clock: Arc::new(default_now_unix_secs),
@@ -3195,6 +3216,26 @@ impl RunEngine {
             ));
         }
 
+        // Serialize approval suspension per run: the run state machine has one
+        // awaiting-approval state, so concurrent tasks queue here instead of
+        // racing the Suspend edge and failing the whole run.
+        let slot = self.approval_slot(run.id)?;
+        let _slot_guard = slot.lock().await;
+        if token.is_cancelled() {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::ToolCancelled.code(),
+                "run/agent cancelled while waiting for the approval slot; nothing executed".to_owned(),
+            ));
+        }
+        if self.store.get_run(run.id)?.status.is_terminal() {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                Refusal::TaskTerminal.code(),
+                "run became terminal before this task could request approval; nothing executed"
+                    .to_owned(),
+            ));
+        }
         let now = self.now_unix_secs();
         let event = tools
             .request_model_tool_approval(run.id, task.id, &plan.tool_call_id, &plan.tool, &plan.args)?;
