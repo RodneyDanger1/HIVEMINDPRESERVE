@@ -1,0 +1,18 @@
+﻿{
+    "receipt":  "hivemind.crash-drill.v1",
+    "checked_at":  "2026-11-10T23:06:33.1169102-06:00",
+    "server":  "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\target\\release\\hiverouter.exe",
+    "port":  8117,
+    "data_dir":  "C:\\Users\\Riley\\AppData\\Local\\Temp\\hivemind-crash-6b4dd220-813c-44c0-be61-c53c71632c0d",
+    "first_boot_id":  "01a1c900-1f1d-7442-a164-97427896b029",
+    "second_boot_id":  "01a1c900-26bf-72dc-b5a3-96ad12464930",
+    "first_pid":  4716,
+    "second_pid":  29544,
+    "schema_version":  24,
+    "version":  "1.2.0-dev",
+    "data_dir_preserved":  true,
+    "boot_id_changed":  true,
+    "first_process_exited":  true,
+    "second_process_exited":  true,
+    "ok":  true
+}

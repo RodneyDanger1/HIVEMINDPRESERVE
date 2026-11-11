@@ -1,0 +1,11 @@
+﻿{
+    "receipt":  "hivemind.scale-drill.v1",
+    "checked_at":  "2026-11-10T23:06:55.5389256-06:00",
+    "command":  "cargo test -p hiverouter-core --test scale_s0 --test scale_s1 --locked",
+    "exit_code":  0,
+    "s0_small_fanout_pass":  true,
+    "s1_serial_41_pass":  true,
+    "s1_parallel_41_pass":  true,
+    "note":  "These are the repository scale probes: 41-task serial and 41-task bounded-parallel. This is not a live 40-node provider run.",
+    "ok":  true
+}
