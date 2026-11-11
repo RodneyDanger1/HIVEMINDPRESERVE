@@ -1,13 +1,13 @@
 {
   "receipt": "hivemind.install-smoke.v1",
-  "observed_at": "2026-11-10T22:14:00-06:00",
-  "source_commit": "545d67640c3adec6612e1fdfb892aa27cf33f056",
+  "observed_at": "2026-11-10T22:30:10-06:00",
+  "source_commit": "f7c84631627f1e95f42a08ced64d639409dac3aa",
   "version": "1.2.0-dev",
   "build_dirty": false,
   "package_zip": "dist/HiveMind.zip",
-  "package_zip_sha256": "0eac40556a2aab380d5fa0b3e8854eb74eef3f1c057d5e1e03c4c870bdd09dc1",
-  "server_sha256": "5525c203b5cd5e334ebae019bb2098de8be416aebbdd87dc253986742691cd20",
-  "launcher_sha256": "a2da0b62a95133a3d887883268f21ce086a5ca328cf5efdb2ffe48375fa8870d",
+  "package_zip_sha256": "09aba52591187325e7e57bbca438377054c08914bb785e4968e0a8ab030fe6ac",
+  "server_sha256": "5bf0f89596d5025c215e456575e2a35d9d860fce4a0d04bd697f9a511d0eaa85",
+  "launcher_sha256": "86c7dd5158c656d9bb0273b99123affec7a5195fef96c4a01d28417738412e12",
   "install_root": "%LOCALAPPDATA%\\Programs\\HiveMind\\app",
   "data_root": "%LOCALAPPDATA%\\HiveMind",
   "workspace_root": "%LOCALAPPDATA%\\HiveMind\\workspace",
@@ -26,14 +26,14 @@
     "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
   },
   "what_this_proves": [
-    "a clean package built from 545d676 with dirty=false",
+    "a clean package built from f7c8463 with dirty=false",
     "the installed server reports 1.2.0-dev and schema 24",
-    "the UI renders at 1440x900 and 375x812; the library shows all eight templates",
-    "proposal rows now carry expected_effect, verification_plan and rollback"
+    "the installed build includes the held-out evaluation receipt gate on lesson apply",
+    "the UI renders at 1440x900 and 375x812; the library shows all eight templates"
   ],
   "what_this_does_not_prove": [
     "a live provider call (no key configured)",
     "a screenshot of the Edge app window launched from the shortcut",
-    "EVO-GATE receipt admission or root-monitor behavior"
+    "that a real external evaluator produced a receipt"
   ]
 }
