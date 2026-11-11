@@ -33,6 +33,10 @@ pub const PROMPT_CLAIMED_TOOL_IDS: &[&str] = &[
     "fs_glob",
     "fs_grep",
     "file_read_range",
+    "apply_patch",
+    "run_tests",
+    "git_stage",
+    "git_commit",
 ];
 
 /// Every advertised tool must have a declared execution lane. The census below
@@ -54,6 +58,10 @@ pub const EXECUTOR_DISPOSITIONS: &[(&str, &str)] = &[
     ("fs_glob", "read_executor"),
     ("fs_grep", "read_executor"),
     ("file_read_range", "read_executor"),
+    ("apply_patch", "approval_executor"),
+    ("run_tests", "approval_executor"),
+    ("git_stage", "approval_executor"),
+    ("git_commit", "approval_executor"),
 ];
 
 /// Schema id of the census payload.
@@ -237,7 +245,7 @@ mod tests {
         assert!(census.refusal_count >= 40, "the frozen table is complete");
         assert_eq!(census.tier_count, 5);
         assert_eq!(census.permission_class_count, 5);
-        assert_eq!(census.grant_count(), 6 + 15 + 14 + 8 + 7);
+        assert_eq!(census.grant_count(), 10 + 19 + 18 + 8 + 11);
         assert!(census.tools_by_tier.contains_key("hyper_agent"));
         assert_eq!(census.executor_dispositions.len(), census.registry_tool_ids.len());
         assert_eq!(

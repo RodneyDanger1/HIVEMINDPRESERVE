@@ -20,16 +20,25 @@
 
 use std::fmt;
 use std::fs;
+use std::time::Duration;
 
 use hiverouter_contract::Refusal;
 use tokio_util::sync::CancellationToken;
 
 use crate::error::ToolError;
 use crate::executor::ExecutedTool;
+use crate::git::{Git, GitAuthor, GitCommitRequest, GitStageRequest, MAX_GIT_COMMIT_MESSAGE_BYTES};
 use crate::jail::WorkspaceJail;
+use crate::patch::{apply_patch, PatchRequest, MAX_PATCH_BYTES};
 use crate::sha256::sha256_hex;
 use crate::shell::{execute as execute_shell, ShellPolicy, ShellRequest};
-use crate::tool::{AgentTier, FileWriteArgs, PermissionClass, ShellExecArgs, ToolId, ToolRegistry};
+use crate::tests_runner::{
+    run_tests, TestRunPolicy, TestRunRequest, TestSelection, TEST_MAX_TIMEOUT, TEST_MIN_TIMEOUT,
+};
+use crate::tool::{
+    AgentTier, ApplyPatchArgs, FileWriteArgs, GitCommitArgs, GitStageArgs, PermissionClass,
+    RunTestsArgs, ShellExecArgs, ToolId, ToolRegistry,
+};
 
 /// Maximum UTF-8 content a `file_write` may write (mirrors the 1 MiB read cap).
 pub const MAX_WRITE_BYTES: usize = 1024 * 1024;
@@ -92,8 +101,40 @@ impl fmt::Debug for PreparedShell {
 pub enum PreparedSideEffect {
     /// A checked atomic file replacement.
     FileWrite(PreparedWrite),
+    /// A checked unified-diff application.
+    ApplyPatch(PreparedPatch),
+    /// A checked test-suite run.
+    RunTests(PreparedTests),
+    /// A checked git index mutation.
+    GitStage(PreparedGitStage),
+    /// A checked git commit.
+    GitCommit(PreparedGitCommit),
     /// A checked allowlisted child-process execution.
     ShellExec(PreparedShell),
+}
+
+/// A preflighted git stage request.
+#[derive(Debug)]
+pub struct PreparedGitStage {
+    request: GitStageRequest,
+}
+
+/// A preflighted git commit request.
+#[derive(Debug)]
+pub struct PreparedGitCommit {
+    request: GitCommitRequest,
+}
+
+/// A preflighted test-suite run.
+#[derive(Debug)]
+pub struct PreparedTests {
+    request: TestRunRequest,
+}
+
+/// A preflighted patch, applied atomically only after the grant is verified.
+#[derive(Debug)]
+pub struct PreparedPatch {
+    request: PatchRequest,
 }
 
 /// Read-only preflight for one model-originated side-effect tool call.
@@ -136,6 +177,50 @@ pub fn preflight_side_effect(
                 jail, args,
             )?))
         }
+        ToolId::ApplyPatch => {
+            if contract.permission_class != PermissionClass::Mutate {
+                return Err(ToolError::new(
+                    Refusal::ToolNotAllowed,
+                    "apply_patch registry permission class is not Mutate; refusing before any effect",
+                ));
+            }
+            Ok(PreparedSideEffect::ApplyPatch(preflight_patch(
+                jail, args,
+            )?))
+        }
+        ToolId::RunTests => {
+            if contract.permission_class != PermissionClass::Execute {
+                return Err(ToolError::new(
+                    Refusal::ToolNotAllowed,
+                    "run_tests registry permission class is not Execute; refusing before any spawn",
+                ));
+            }
+            Ok(PreparedSideEffect::RunTests(preflight_tests(
+                jail, args,
+            )?))
+        }
+        ToolId::GitStage => {
+            if contract.permission_class != PermissionClass::Mutate {
+                return Err(ToolError::new(
+                    Refusal::ToolNotAllowed,
+                    "git_stage registry permission class is not Mutate; refusing before any effect",
+                ));
+            }
+            Ok(PreparedSideEffect::GitStage(preflight_git_stage(
+                jail, args,
+            )?))
+        }
+        ToolId::GitCommit => {
+            if contract.permission_class != PermissionClass::Mutate {
+                return Err(ToolError::new(
+                    Refusal::ToolNotAllowed,
+                    "git_commit registry permission class is not Mutate; refusing before any effect",
+                ));
+            }
+            Ok(PreparedSideEffect::GitCommit(preflight_git_commit(
+                jail, args,
+            )?))
+        }
         ToolId::ShellExec => {
             if contract.permission_class != PermissionClass::Execute {
                 return Err(ToolError::new(
@@ -174,6 +259,10 @@ pub async fn commit_side_effect(
 ) -> Result<ExecutedTool, ToolError> {
     match prepared {
         PreparedSideEffect::FileWrite(write) => commit_file_write(jail, write),
+        PreparedSideEffect::ApplyPatch(patch) => commit_patch(jail, patch),
+        PreparedSideEffect::RunTests(tests) => commit_tests(jail, tests).await,
+        PreparedSideEffect::GitStage(stage) => commit_git_stage(jail, stage).await,
+        PreparedSideEffect::GitCommit(commit) => commit_git_commit(jail, commit).await,
         PreparedSideEffect::ShellExec(shell) => {
             commit_shell_exec(jail, shell_policy, shell, cancellation).await
         }
@@ -309,6 +398,241 @@ async fn commit_shell_exec(
         "shell_exec {:?} exit_code={:?} success={} truncated={} stdout={:?} stderr={:?}",
         output.program, output.exit_code, output.success, output.truncated, stdout, stderr
     );
+    Ok(ExecutedTool::Ok {
+        text: bounded_text(&text),
+    })
+}
+
+fn preflight_patch(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<PreparedPatch, ToolError> {
+    let spec: ApplyPatchArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("apply_patch arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    if spec.patch.len() > MAX_PATCH_BYTES {
+        return Err(ToolError::new(
+            Refusal::FileTooLarge,
+            format!(
+                "patch is {} bytes; the patch cap is {MAX_PATCH_BYTES} bytes",
+                spec.patch.len()
+            ),
+        ));
+    }
+    // Containment and stale-write checks happen before the grant is verified.
+    let _ = jail.resolve(&spec.path)?;
+    if let Some(expected) = spec.expected_sha256.as_deref() {
+        if expected.len() != 64 || !expected.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(ToolError::new(
+                Refusal::SchemaInvalid,
+                "expected_sha256 must be 64 hexadecimal characters",
+            ));
+        }
+        let current = jail.read(&spec.path)?;
+        let actual = sha256_hex(&current);
+        if !actual.eq_ignore_ascii_case(expected) {
+            return Err(ToolError::new(
+                Refusal::SchemaInvalid,
+                format!(
+                    "stale patch refused for {:?}: current sha256 {actual} does not match \
+                     expected_sha256 {expected}; nothing was written and no approval was consumed",
+                    spec.path
+                ),
+            ));
+        }
+    }
+    Ok(PreparedPatch {
+        request: PatchRequest {
+            path: spec.path,
+            patch: spec.patch,
+            expected_sha256: spec.expected_sha256,
+        },
+    })
+}
+
+fn commit_patch(jail: &WorkspaceJail, prepared: PreparedPatch) -> Result<ExecutedTool, ToolError> {
+    let outcome = apply_patch(jail, &prepared.request)?;
+    let text = serde_json::to_string(&outcome).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize apply_patch result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok {
+        text: bounded_text(&text),
+    })
+}
+
+fn preflight_tests(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<PreparedTests, ToolError> {
+    let spec: RunTestsArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("run_tests arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    let selection = match spec.runner.as_str() {
+        "auto" => TestSelection::Auto,
+        "cargo" => TestSelection::Cargo,
+        "npm" => TestSelection::Npm,
+        "pytest" => TestSelection::Pytest,
+        other => {
+            return Err(ToolError::new(
+                Refusal::ToolSchema,
+                format!("run_tests runner must be auto/cargo/npm/pytest, got {other:?}"),
+            ))
+        }
+    };
+    if spec.args.len() > 16 {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            "run_tests accepts at most 16 extra arguments",
+        ));
+    }
+    if spec.args.iter().any(|arg| arg.len() > 4096) {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            "run_tests argument exceeds 4096 bytes",
+        ));
+    }
+    if let Some(cwd) = spec.cwd.as_deref() {
+        let _ = jail.resolve(cwd)?;
+    }
+    let mut request = TestRunRequest::auto().with_selection(selection).with_args(spec.args);
+    if let Some(cwd) = spec.cwd {
+        request = request.with_cwd(cwd);
+    }
+    if let Some(seconds) = spec.timeout_secs {
+        let clamped = seconds.clamp(
+            TEST_MIN_TIMEOUT.as_secs(),
+            TEST_MAX_TIMEOUT.as_secs(),
+        );
+        request = request.with_timeout(Duration::from_secs(clamped));
+    }
+    Ok(PreparedTests { request })
+}
+
+async fn commit_tests(
+    jail: &WorkspaceJail,
+    prepared: PreparedTests,
+) -> Result<ExecutedTool, ToolError> {
+    let outcome = run_tests(jail, &TestRunPolicy::new(), &prepared.request).await?;
+    let text = serde_json::to_string(&outcome).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize run_tests result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok {
+        text: bounded_text(&text),
+    })
+}
+
+fn preflight_git_stage(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<PreparedGitStage, ToolError> {
+    let spec: GitStageArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("git_stage arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    let all = spec.all.unwrap_or(false);
+    if all == !spec.paths.is_empty() {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            "git_stage requires exactly one of `paths` (non-empty) or `all: true`",
+        ));
+    }
+    if spec.paths.len() > 256 {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            "git_stage accepts at most 256 paths",
+        ));
+    }
+    for path in &spec.paths {
+        let _ = jail.resolve(path)?;
+    }
+    if let Some(cwd) = spec.cwd.as_deref() {
+        let _ = jail.resolve(cwd)?;
+    }
+    let request = GitStageRequest {
+        cwd: spec.cwd,
+        paths: spec.paths,
+        all,
+    };
+    Ok(PreparedGitStage { request })
+}
+
+fn preflight_git_commit(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<PreparedGitCommit, ToolError> {
+    let spec: GitCommitArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("git_commit arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    if spec.message.is_empty() || spec.message.len() > MAX_GIT_COMMIT_MESSAGE_BYTES {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            format!("commit message must be 1..={MAX_GIT_COMMIT_MESSAGE_BYTES} bytes"),
+        ));
+    }
+    if spec.message.contains('\n') || spec.message.contains('\r') {
+        return Err(ToolError::new(
+            Refusal::ToolSchema,
+            "commit message must be a single line",
+        ));
+    }
+    if let Some(cwd) = spec.cwd.as_deref() {
+        let _ = jail.resolve(cwd)?;
+    }
+    let request = GitCommitRequest {
+        cwd: spec.cwd,
+        message: spec.message,
+        author: spec.author.map(|author| GitAuthor {
+            name: author.name,
+            email: author.email,
+        }),
+    };
+    Ok(PreparedGitCommit { request })
+}
+
+async fn commit_git_stage(
+    jail: &WorkspaceJail,
+    prepared: PreparedGitStage,
+) -> Result<ExecutedTool, ToolError> {
+    let outcome = Git::new(jail).stage(&prepared.request).await?;
+    let text = serde_json::to_string(&outcome).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize git_stage result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok {
+        text: bounded_text(&text),
+    })
+}
+
+async fn commit_git_commit(
+    jail: &WorkspaceJail,
+    prepared: PreparedGitCommit,
+) -> Result<ExecutedTool, ToolError> {
+    let outcome = Git::new(jail).commit(&prepared.request).await?;
+    let text = serde_json::to_string(&outcome).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize git_commit result: {error}"),
+        )
+    })?;
     Ok(ExecutedTool::Ok {
         text: bounded_text(&text),
     })
@@ -726,6 +1050,40 @@ mod tests {
         });
         let error = preflight(&jail, &missing, None).expect_err("missing");
         assert_eq!(error.code(), "E_PATH_NOT_FOUND");
+    }
+
+    #[tokio::test]
+    async fn apply_patch_is_preflighted_then_committed_once_after_grant() {
+        let (temp, jail, conn, gate, run) = seeded();
+        std::fs::write(temp.path().join("patch.txt"), b"old\n").expect("seed");
+        let args = serde_json::json!({
+            "path": "patch.txt",
+            "patch": "--- a/patch.txt\n+++ b/patch.txt\n@@ -1,1 +1,1 @@\n-old\n+new\n",
+        });
+        let prepared = preflight_side_effect(
+            &jail,
+            &registry(),
+            &test_policy(),
+            AgentTier::WorkerAgent,
+            "apply_patch",
+            &args,
+            None,
+        )
+        .expect("preflight");
+        grant(&conn, &gate, run, &args, "apply_patch");
+        gate.verify_grant(&conn, run, ToolId::ApplyPatch, &args, NOW)
+            .expect("grant");
+        let outcome = commit_side_effect(&jail, &test_policy(), prepared, None)
+            .await
+            .expect("commit");
+        let ExecutedTool::Ok { text } = outcome else {
+            panic!("patch must execute");
+        };
+        assert!(text.contains("Applied"), "{text}");
+        assert_eq!(
+            std::fs::read(temp.path().join("patch.txt")).expect("read back"),
+            b"new\n"
+        );
     }
 
     #[tokio::test]

@@ -143,6 +143,14 @@ pub enum ToolId {
     FsGrep,
     /// Read an exact line range from a workspace file.
     FileReadRange,
+    /// Apply one atomic unified diff inside the workspace jail.
+    ApplyPatch,
+    /// Detect and run the repository test suite.
+    RunTests,
+    /// Stage paths in the repository index.
+    GitStage,
+    /// Commit staged changes.
+    GitCommit,
 }
 
 impl ToolId {
@@ -165,6 +173,10 @@ impl ToolId {
             ToolId::FsGlob => "fs_glob",
             ToolId::FsGrep => "fs_grep",
             ToolId::FileReadRange => "file_read_range",
+            ToolId::ApplyPatch => "apply_patch",
+            ToolId::RunTests => "run_tests",
+            ToolId::GitStage => "git_stage",
+            ToolId::GitCommit => "git_commit",
         }
     }
 
@@ -446,8 +458,7 @@ pub struct GitStageArgs {
     /// Optional workspace-relative working directory.
     #[serde(default)]
     pub cwd: Option<String>,
-    /// Paths to stage; mutually exclusive with `all`.
-    #[serde(default)]
+    /// Paths to stage; pass an empty array when `all` is true.
     pub paths: Vec<String>,
     /// Stage all tracked/untracked changes.
     #[serde(default)]
@@ -486,8 +497,7 @@ pub struct RunTestsArgs {
     #[serde(default)]
     pub cwd: Option<String>,
     /// `auto`, `cargo`, `npm`, or `pytest`.
-    #[serde(default)]
-    pub runner: Option<String>,
+    pub runner: String,
     /// Extra arguments passed directly (no shell interpolation).
     #[serde(default)]
     pub args: Vec<String>,
@@ -634,6 +644,30 @@ impl ToolRegistry {
                 PermissionClass::Read,
                 schema_of!(FileReadRangeArgs),
             ),
+            contract(
+                ToolId::ApplyPatch,
+                "Apply one bounded unified diff atomically inside the workspace jail (requires approval).",
+                PermissionClass::Mutate,
+                schema_of!(ApplyPatchArgs),
+            ),
+            contract(
+                ToolId::RunTests,
+                "Detect and run this repository's test suite with bounded output and timeout (requires approval).",
+                PermissionClass::Execute,
+                schema_of!(RunTestsArgs),
+            ),
+            contract(
+                ToolId::GitStage,
+                "Stage workspace paths in the repository index (requires approval).",
+                PermissionClass::Mutate,
+                schema_of!(GitStageArgs),
+            ),
+            contract(
+                ToolId::GitCommit,
+                "Commit staged changes with hooks disabled (requires approval).",
+                PermissionClass::Mutate,
+                schema_of!(GitCommitArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -648,6 +682,10 @@ impl ToolRegistry {
                 ToolId::FsGlob,
                 ToolId::FsGrep,
                 ToolId::FileReadRange,
+                ToolId::ApplyPatch,
+                ToolId::RunTests,
+                ToolId::GitStage,
+                ToolId::GitCommit,
             ],
         );
         allowlists.insert(
@@ -668,6 +706,10 @@ impl ToolRegistry {
                 ToolId::FsGlob,
                 ToolId::FsGrep,
                 ToolId::FileReadRange,
+                ToolId::ApplyPatch,
+                ToolId::RunTests,
+                ToolId::GitStage,
+                ToolId::GitCommit,
             ],
         );
         allowlists.insert(
@@ -687,6 +729,10 @@ impl ToolRegistry {
                 ToolId::FsGlob,
                 ToolId::FsGrep,
                 ToolId::FileReadRange,
+                ToolId::ApplyPatch,
+                ToolId::RunTests,
+                ToolId::GitStage,
+                ToolId::GitCommit,
             ],
         );
         allowlists.insert(
@@ -712,6 +758,10 @@ impl ToolRegistry {
                 ToolId::FsGlob,
                 ToolId::FsGrep,
                 ToolId::FileReadRange,
+                ToolId::ApplyPatch,
+                ToolId::RunTests,
+                ToolId::GitStage,
+                ToolId::GitCommit,
             ],
         );
 
