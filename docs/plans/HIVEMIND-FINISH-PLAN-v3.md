@@ -3,8 +3,8 @@
 **Status:** v3 fact-checked by two independent agents; corrections below are adopted.
 Not a completion claim.
 **Repo:** `C:\Users\Riley\Desktop\hiverouter-v1`
-**Audit baseline:** `6a41250`; **execution baseline:** `abfff55` (analysis artifacts +
-QA gate/docs checker committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
+**Audit baseline:** `6a41250`; **execution baseline:** `d8c00fd` (security, approval, schema,
+seat-binding, UI, installer changes committed), version `1.2.0-dev`, package `dist/HiveMind.zip`
 `15BF4E61…6CA5ADA`, server `F369D7AC…A7CF871`. Current tracked count is **1,593**
 (1,573 at the census pin + 20 analysis artifacts); the census remains pinned to
 `6a41250` and needs a small addendum, not a silent rewrite.

@@ -1,7 +1,7 @@
 # HiveMind — current pseudocode truth and paper cross-audit (v4)
 
 **Date:** 2026-11-10 (America/Chicago)
-**Tree:** working tree after `848735a` plus the uncommitted security/approval/schema/UI/seat-binding changes.
+**Tree:** `d8c00fd` (all security/approval/schema/UI/seat-binding changes committed).
 **Purpose:** describe what HiveMind is and does today in executable-shaped pseudocode, cite the exact code
 blocks/lines, and separate code facts from two local research-paper hypotheses. This is not a completion
 claim and not a claim of AGI.
@@ -260,7 +260,7 @@ no-mock rule.
 | H7 | No score archive/population/fitness | CODE (absence) | grep/read; no fitness type |
 | H8 | No distillation/weight training | CODE (absence) | provider is HTTP client; no optimizer |
 | H9 | UI S1 repairs and tests | CODE + test | `web/tests` 262/262 after H2 commit; current full suite pending |
-| H10 | Full backend suite green after latest seat edit | UNVERIFIED | rerun command below |
+| H10 | Full backend suite green after latest seat edit | **VERIFIED** | `cargo test --workspace --locked` exit 0, 2026-11-10 20:49; 0 failures |
 
 ## 9. Test/evidence commands still required
 
@@ -272,5 +272,7 @@ node tools/qa/check-docs-truth.mjs
 node --test tools/qa/tests/*.test.mjs
 ```
 
-A claimed test pass must quote the command and the observed result. The full suite was green at
-`848735a` before the final seat-binding edit; that edit has only targeted `run_lifecycle` evidence so far.
+A claimed test pass must quote the command and the observed result. The full workspace suite is green
+at `d8c00fd` after the seat-binding edit (`cargo test --workspace --locked`, exit 0, 0 failures,
+2026-11-10 20:49). The two flaky shell timeout fixtures were replaced with a bounded BusyBox `ping`
+loop and re-run green; they are not a product bug.
