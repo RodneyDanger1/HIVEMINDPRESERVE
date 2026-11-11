@@ -528,12 +528,16 @@ impl ProviderExecutor for DetachedRequestExecutor {
 
 struct RootProposalExecutor {
     orchestrations: AtomicUsize,
+    reviews: AtomicUsize,
+    final_prompt: Mutex<String>,
 }
 
 impl RootProposalExecutor {
     fn new() -> Arc<Self> {
         Arc::new(Self {
             orchestrations: AtomicUsize::new(0),
+            reviews: AtomicUsize::new(0),
+            final_prompt: Mutex::new(String::new()),
         })
     }
 }
@@ -605,14 +609,36 @@ impl ProviderExecutor for RootProposalExecutor {
         })
     }
 
-    async fn finalize_root(
+    fn supports_root_review(&self) -> bool {
+        true
+    }
+
+    async fn review_root(
         &self,
         _run_id: RunId,
         _task: &TaskRecord,
         _prompt: &str,
         _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        self.reviews.fetch_add(1, Ordering::SeqCst);
+        Ok(StreamedReply {
+            deltas: vec!["monitor review: one branch completed".to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        prompt: &str,
+        _cancel: &CancellationToken,
         on_delta: &DeltaSink,
     ) -> Result<StreamedReply, Refusal> {
+        *self.final_prompt.lock().expect("final prompt") = prompt.to_owned();
         let text = "root answer";
         on_delta(text);
         Ok(StreamedReply {
@@ -1231,7 +1257,8 @@ async fn hyperagent_checkpoint_refuses_an_extra_branch_when_the_planner_has_one(
 
 #[tokio::test]
 async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
-    let harness = test_engine(RootProposalExecutor::new());
+    let executor = RootProposalExecutor::new();
+    let harness = test_engine(executor.clone());
     let mut receiver = harness.bus.subscribe();
     let run = harness
         .engine
@@ -1319,6 +1346,119 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
             "missing review lens {lens}: {requests:?}"
         );
     }
+}
+
+struct ReviewExecutor {
+    plan: Plan,
+    reviews: AtomicUsize,
+    final_prompt: Mutex<String>,
+}
+
+impl ReviewExecutor {
+    fn new(plan: Plan) -> Arc<Self> {
+        Arc::new(Self {
+            plan,
+            reviews: AtomicUsize::new(0),
+            final_prompt: Mutex::new(String::new()),
+        })
+    }
+}
+
+#[async_trait]
+impl ProviderExecutor for ReviewExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(self.plan.clone())
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let text = "branch answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    fn supports_root_review(&self) -> bool {
+        true
+    }
+
+    async fn review_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        _on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        self.reviews.fetch_add(1, Ordering::SeqCst);
+        Ok(StreamedReply {
+            deltas: vec!["monitor review: two branches completed".to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+
+    async fn finalize_root(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        *self.final_prompt.lock().expect("final prompt") = prompt.to_owned();
+        let text = "root answer";
+        on_delta(text);
+        Ok(StreamedReply {
+            deltas: vec![text.to_owned()],
+            usage: Usage::default(),
+            tool_calls: Vec::new(),
+            reasoning: String::new(),
+        })
+    }
+}
+
+#[tokio::test]
+async fn post_dispatch_monitor_review_is_one_bounded_validated_turn() {
+    let executor = ReviewExecutor::new(leaf_plan(2, 1));
+    let harness = test_engine(executor.clone());
+    let mut receiver = harness.bus.subscribe();
+    harness
+        .engine
+        .submit_prompt("review two branches", "p", Uuid::now_v7())
+        .expect("submit");
+    wait_for(&mut receiver, |event| {
+        event_name(event) == EventName::RunStatus.as_str()
+            && event.envelope.payload["status"] == "completed"
+    })
+    .await;
+    assert_eq!(
+        executor.reviews.load(Ordering::SeqCst),
+        1,
+        "exactly one post-dispatch monitor review must run"
+    );
+    let final_prompt = executor.final_prompt.lock().expect("final prompt");
+    assert!(
+        final_prompt.contains("POST-DISPATCH MONITOR REVIEW")
+            && final_prompt.contains("monitor review: two branches completed"),
+        "monitor text must be labelled data in the final prompt: {final_prompt}"
+    );
 }
 
 #[tokio::test]

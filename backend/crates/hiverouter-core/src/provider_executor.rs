@@ -45,6 +45,12 @@ read_memory_summary for bounded summaries, propose_improvement to record one saf
 self-improvement proposal without editing code, or finish. Never spawn a direct Agent \
 or Subagent. Do not answer the user in this turn.";
 
+const ROOT_MONITOR_SYSTEM: &str = "You are the HiveMind post-dispatch monitor. Review the \
+task states and bounded results in the prompt. Return a short factual review: which tasks \
+completed, which failed or have no result, and any operator-visible inconsistency. Do not \
+invent results, do not propose new work, do not call tools, and do not claim authority to \
+change the run. Your text is advisory data for the root final answer.";
+
 const ROOT_SYSTEM: &str = "You are the HiveMind HyperAgent orchestrator. You receive the \
 original user task and the completed child-task results. You may call spawn_remote_agent at \
 most once to create a tree-free remote principal (light switch, garage controller, or daemon \
@@ -694,6 +700,36 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         .with_tool_choice(ToolChoice::Auto);
         self.stream_reply(run_id, &request, 1_024, cancel, on_delta)
             .await
+    }
+
+    fn supports_root_review(&self) -> bool {
+        true
+    }
+
+    /// One answer-only post-dispatch monitor review. No tools are advertised,
+    /// so this turn can only produce text; the engine labels it as data.
+    async fn review_root(
+        &self,
+        run_id: RunId,
+        _task: &TaskRecord,
+        prompt: &str,
+        cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let request = self.chat_request(vec![
+            ChatMessage::system(ROOT_MONITOR_SYSTEM),
+            ChatMessage::user(prompt.to_owned()),
+        ])
+        .with_thinking(self.settings.leaf_thinking)
+        .with_max_tokens(self.settings.leaf_max_tokens.min(1_024));
+        self.stream_reply(
+            run_id,
+            &request,
+            self.settings.leaf_max_tokens.min(1_024),
+            cancel,
+            on_delta,
+        )
+        .await
     }
 
     /// Answer-only HyperAgent synthesis: no tools are advertised, so the root
