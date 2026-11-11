@@ -38,7 +38,7 @@ fn launch_token_matches(expected: Option<&str>, supplied: Option<&str>) -> bool 
         Some(expected) => supplied == Some(expected),
     }
 }
-use hiverouter_contract::PermissionPolicy;
+use hiverouter_contract::{PermissionPolicy, RunId};
 use hiverouter_provider::{ClientConfig, DeepSeekClient};
 use hiverouter_tools::jail::WorkspaceJail;
 use serde::Serialize;
@@ -46,6 +46,7 @@ use tokio::net::TcpListener;
 use uuid::Uuid;
 
 use crate::bus::EventBus;
+use crate::checkpoint::CheckpointJournal;
 use crate::checks::Check;
 use crate::config::Config;
 use crate::db::Database;
@@ -692,6 +693,19 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/agents/memory/{agent_key}", delete(clear_agent_memory))
         .route("/api/usage/runs/{run_id}", get(run_usage))
         .route("/api/runs/{run_id}/detail", get(run_detail))
+        .route("/api/runs/{run_id}/checkpoints", get(run_checkpoints))
+        .route(
+            "/api/runs/{run_id}/checkpoints/{seq}",
+            get(run_checkpoint),
+        )
+        .route(
+            "/api/runs/{run_id}/checkpoints/{seq}/restore",
+            post(restore_run_checkpoint),
+        )
+        .route(
+            "/api/runs/{run_id}/checkpoints/revert",
+            post(revert_run_checkpoints),
+        )
         .route("/api/memory/context/{task_id}", get(task_memory_context))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
@@ -947,6 +961,88 @@ async fn session_policy(
             Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
         },
         Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
+    }
+}
+
+fn checkpoint_journal(state: &AppState) -> Result<CheckpointJournal, Response> {
+    CheckpointJournal::open(state.db.clone(), &state.config.workspace_root)
+        .map_err(|error| refusal_response(StatusCode::SERVICE_UNAVAILABLE, &error.refusal()))
+}
+
+async fn run_checkpoints(
+    State(state): State<Arc<AppState>>,
+    Path(run_raw): Path<String>,
+) -> Response {
+    let Ok(run_id) = run_raw.parse::<RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let journal = match checkpoint_journal(&state) {
+        Ok(journal) => journal,
+        Err(response) => return response,
+    };
+    match journal.entries_for_run(run_id) {
+        Ok(entries) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "run_id": run_id.to_string(), "checkpoints": entries })),
+        )
+            .into_response(),
+        Err(error) => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+    }
+}
+
+async fn run_checkpoint(
+    State(state): State<Arc<AppState>>,
+    Path((run_raw, seq_raw)): Path<(String, u64)>,
+) -> Response {
+    let Ok(run_id) = run_raw.parse::<RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let journal = match checkpoint_journal(&state) {
+        Ok(journal) => journal,
+        Err(response) => return response,
+    };
+    match journal.get(run_id, seq_raw) {
+        Ok(Some(entry)) => (StatusCode::OK, Json(entry)).into_response(),
+        Ok(None) => refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound),
+        Err(error) => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+    }
+}
+
+async fn restore_run_checkpoint(
+    State(state): State<Arc<AppState>>,
+    Path((run_raw, seq)): Path<(String, u64)>,
+) -> Response {
+    let Ok(run_id) = run_raw.parse::<RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let journal = match checkpoint_journal(&state) {
+        Ok(journal) => journal,
+        Err(response) => return response,
+    };
+    match journal.restore_entry(run_id, seq) {
+        Ok(restored) => (StatusCode::OK, Json(restored)).into_response(),
+        Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    }
+}
+
+async fn revert_run_checkpoints(
+    State(state): State<Arc<AppState>>,
+    Path(run_raw): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Ok(run_id) = run_raw.parse::<RunId>() else {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::RunNotFound);
+    };
+    let Some(sequence) = body.get("sequence").and_then(serde_json::Value::as_u64) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let journal = match checkpoint_journal(&state) {
+        Ok(journal) => journal,
+        Err(response) => return response,
+    };
+    match journal.restore_to(run_id, sequence) {
+        Ok(outcome) => (StatusCode::OK, Json(outcome)).into_response(),
+        Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
 }
 
