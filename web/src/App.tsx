@@ -23,6 +23,7 @@ import { ModelsPanel } from './panels/ModelsPanel';
 import { RoutingPanel } from './panels/RoutingPanel';
 import { RemotePanel } from './panels/RemotePanel';
 import { ApprovalOverlay } from './panels/ApprovalOverlay';
+import { SnapshotBanner } from './panels/SnapshotBanner';
 import { SwarmPanel } from './panels/SwarmPanel';
 import { HistoryPanel } from './panels/HistoryPanel';
 import { Canvas } from './flow/Canvas';
@@ -41,6 +42,8 @@ function AppFrame() {
   const connectionRefusal = useUiStore((state) => state.connectionRefusal);
   const apiKind = useUiStore((state) => state.apiKind);
   const run = useUiStore((state) => state.run);
+  const snapshot = useUiStore((state) => state.snapshot);
+  const refreshRunSnapshot = useUiStore((state) => state.refreshRunSnapshot);
   const reduced = useAppReducedMotion();
   const suppressHashWrite = useRef(false);
 
@@ -182,6 +185,12 @@ function AppFrame() {
               {banner}
             </div>
           ) : null}
+          <SnapshotBanner
+            snapshot={snapshot}
+            onResync={() => {
+              void refreshRunSnapshot('manual');
+            }}
+          />
           <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
           {nav === 'workspace' && tab === 'workspace' ? (
             <div className="absolute inset-x-0 bottom-0 z-30">

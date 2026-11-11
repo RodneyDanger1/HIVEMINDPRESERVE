@@ -6,8 +6,10 @@
  *   Liquid Glass  -> .splash-hex, .splash-drip (refraction/highlight gradients)
  *   Neumorphism   -> .splash-well (inset track + raised fill)
  *
- * Every color is a FigCraft token; no new palette is introduced. Motion is
- * finite (no infinite loops) and the global reduced-motion rule disables it.
+ * Token palette: glass/alpha shades are written as literal `rgb()` values
+ * because no alpha tokens exist in the token mirror; no new printed swatch or
+ * palette hue is introduced. Motion is finite (no infinite loops) and the
+ * global reduced-motion rule disables it.
  */
 
 .splash-root {

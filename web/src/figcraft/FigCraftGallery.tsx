@@ -19,12 +19,22 @@ import type { KeyboardEvent } from 'react';
 import { FIGCRAFT_BOARDS, FIGCRAFT_GROUPS } from './catalog';
 import type { FigCraftBoard, FigCraftGroup, FigCraftOwner } from './types';
 
-const FIRST_GROUP: FigCraftGroup = FIGCRAFT_GROUPS[0] ?? {
-  id: 'figcraft-hivemind',
-  label: 'HiveMind · authoritative',
-  description: 'Accepted HiveMind boards.',
-};
 const SECONDARY_SURFACE_LIMIT = 8;
+
+/**
+ * Roving tablist target. `null` when no group exists, so callers cannot do a
+ * `% 0` (NaN index) on an empty catalog.
+ */
+export function nextFigCraftGroupIndex(
+  index: number,
+  count: number,
+  delta: number,
+): number | null {
+  if (count <= 0 || !Number.isInteger(index) || index < 0 || index >= count) {
+    return null;
+  }
+  return (index + delta + count) % count;
+}
 
 function ownerLabel(owner: FigCraftOwner): string {
   return FIGCRAFT_GROUPS.find((group) => group.id === owner)?.label ?? owner;
@@ -208,7 +218,7 @@ function BoardPreview(props: {
 /** The gallery body used by `FigCraftPanel` (and reusable by a Lead-owned view). */
 export function FigCraftGallery() {
   const baseId = useId();
-  const [activeOwner, setActiveOwner] = useState<FigCraftOwner>(FIRST_GROUP.id);
+  const [activeOwner, setActiveOwner] = useState<FigCraftOwner | null>(null);
   const [selectedId, setSelectedId] = useState<string>(() => FIGCRAFT_BOARDS[0]?.id ?? '');
   const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(() => new Set<string>());
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -239,12 +249,21 @@ export function FigCraftGallery() {
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
     const count = FIGCRAFT_GROUPS.length;
+    if (count === 0) {
+      return;
+    }
     if (event.key === 'ArrowRight') {
       event.preventDefault();
-      activateGroup((index + 1) % count);
+      const next = nextFigCraftGroupIndex(index, count, 1);
+      if (next !== null) {
+        activateGroup(next);
+      }
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
-      activateGroup((index - 1 + count) % count);
+      const next = nextFigCraftGroupIndex(index, count, -1);
+      if (next !== null) {
+        activateGroup(next);
+      }
     } else if (event.key === 'Home') {
       event.preventDefault();
       activateGroup(0);
@@ -253,6 +272,17 @@ export function FigCraftGallery() {
       activateGroup(count - 1);
     }
   };
+
+  const firstGroup = FIGCRAFT_GROUPS[0];
+  if (firstGroup === undefined) {
+    return (
+      <p role="status" className="type-mono-code m-0 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-3 py-2 text-ink-500">
+        No accepted FigCraft asset sets exist in the catalog. The representation surface is
+        unavailable rather than fabricated.
+      </p>
+    );
+  }
+  const activeOwnerId: FigCraftOwner = activeOwner ?? firstGroup.id;
 
   if (FIGCRAFT_BOARDS.length === 0) {
     return (
@@ -267,7 +297,7 @@ export function FigCraftGallery() {
     <div className="flex min-h-0 flex-col gap-3">
       <div role="tablist" aria-label="FigCraft asset sets" className="flex flex-wrap gap-1">
         {FIGCRAFT_GROUPS.map((group, index) => {
-          const active = group.id === activeOwner;
+          const active = group.id === activeOwnerId;
           return (
             <button
               key={group.id}
@@ -305,7 +335,7 @@ export function FigCraftGallery() {
                 role="tabpanel"
                 id={`${baseId}-panel-${group.id}`}
                 aria-labelledby={`${baseId}-tab-${group.id}`}
-                hidden={group.id !== activeOwner}
+                hidden={group.id !== activeOwnerId}
                 tabIndex={0}
               >
                 <p className="type-mono-code m-0 mb-2 text-ink-500">{group.description}</p>

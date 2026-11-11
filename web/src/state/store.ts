@@ -119,6 +119,15 @@ export interface ToolActivityRecord {
   readonly outcome: 'pending' | ToolOutcome;
   readonly code?: string;
   readonly text?: string;
+  /**
+   * Owning task from the wire `task_id` (TOOL_CALL/TOOL_RESULT). Optional so a
+   * legacy/partial frame renders an honest "task unknown" instead of a guess.
+   */
+  readonly taskId?: string | null;
+  /** Result byte size when the TOOL_RESULT frame reports it (never estimated). */
+  readonly bytes?: number | null;
+  /** Result digest when the TOOL_RESULT frame reports it (never invented). */
+  readonly sha256?: string | null;
 }
 
 /**
@@ -133,6 +142,8 @@ interface BufferedToolResult {
   readonly runId: string;
   readonly outcome: ToolOutcome;
   readonly code?: string;
+  readonly bytes?: number | null;
+  readonly sha256?: string | null;
 }
 
 export interface RunRecord {
@@ -320,6 +331,12 @@ export interface UiState {
   refreshRunSnapshot(source?: SnapshotSource): Promise<void>;
   setNav(nav: NavSection): void;
   setTab(tab: TabId): void;
+  /**
+   * Select a Workspace tab AND move the visible nav section to Workspace.
+   * The Library rail is visible on every nav section, so its tabs must not
+   * change hidden state while the user stays on Settings/Agents/etc.
+   */
+  setWorkspaceTab(tab: TabId): void;
   setViewport(viewport: ViewportState): void;
   selectTask(taskId: string | null): void;
   setChatVisible(visible: boolean): void;
@@ -804,6 +821,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
     readonly run_id: string;
     readonly outcome: ToolOutcome;
     readonly code?: string | null;
+    readonly bytes?: number | null;
+    readonly sha256?: string | null;
   }): void => {
     if (bufferedToolResults.some((entry) => entry.toolCallId === payload.tool_call_id)) {
       return; // dedupe: the first result per tool-call id wins
@@ -814,6 +833,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       runId: payload.run_id,
       outcome: payload.outcome,
       ...(code === undefined ? {} : { code }),
+      ...(payload.bytes === undefined ? {} : { bytes: payload.bytes }),
+      ...(payload.sha256 === undefined ? {} : { sha256: payload.sha256 }),
     });
     if (bufferedToolResults.length > MAX_BUFFERED_TOOL_RESULTS) {
       bufferedToolResults.shift(); // bounded: oldest orphan is dropped, never rendered
@@ -1656,6 +1677,8 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           // A terminal result may have arrived before this call (fan-out ordering):
           // create the row directly in its terminal state and consume the buffer entry.
           const buffered = takeBufferedToolResult(payload.tool_call_id);
+          // Attribution is server data only: `task_id` comes from the call, and a
+          // buffered result may already carry the result size/digest.
           const record: ToolActivityRecord = buffered
             ? {
                 toolCallId: payload.tool_call_id,
@@ -1663,7 +1686,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 argsSha256: payload.args_sha256,
                 turn: payload.turn,
                 outcome: buffered.outcome,
+                taskId: payload.task_id,
                 ...(buffered.code === undefined ? {} : { code: buffered.code }),
+                ...(buffered.bytes === undefined ? {} : { bytes: buffered.bytes }),
+                ...(buffered.sha256 === undefined ? {} : { sha256: buffered.sha256 }),
               }
             : {
                 toolCallId: payload.tool_call_id,
@@ -1671,6 +1697,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 argsSha256: payload.args_sha256,
                 turn: payload.turn,
                 outcome: 'pending',
+                taskId: payload.task_id,
               };
           set({ toolActivity: [...get().toolActivity, record] });
           return;
@@ -1709,7 +1736,13 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
           set({
             toolActivity: get().toolActivity.map((record) =>
               record.toolCallId === payload.tool_call_id
-                ? { ...record, outcome: payload.outcome, ...(code === undefined ? {} : { code }) }
+                ? {
+                    ...record,
+                    outcome: payload.outcome,
+                    ...(code === undefined ? {} : { code }),
+                    ...(payload.bytes === undefined ? {} : { bytes: payload.bytes }),
+                    ...(payload.sha256 === undefined ? {} : { sha256: payload.sha256 }),
+                  }
                 : record,
             ),
           });
@@ -2460,6 +2493,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
 
       setTab(tab: TabId): void {
         set({ view: { ...get().view, tab } });
+      },
+
+      setWorkspaceTab(tab: TabId): void {
+        set({ view: { nav: 'workspace', tab } });
       },
 
       setViewport(viewport: ViewportState): void {

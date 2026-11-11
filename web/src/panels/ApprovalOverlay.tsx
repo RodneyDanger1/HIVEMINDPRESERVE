@@ -169,6 +169,21 @@ export function approvalActionAriaLabel(action: ApprovalDecision, tool: string):
   return `${label} tool call for ${tool}`;
 }
 
+/** Clamp the queue cursor after approvals are resolved/removed (never out of range). */
+export function clampApprovalIndex(index: number, total: number): number {
+  if (!Number.isInteger(index) || index < 0 || total <= 0) {
+    return 0;
+  }
+  return Math.min(index, total - 1);
+}
+
+/** "Approval 2 of 3" — the queue position of the single visible dialog. */
+export function approvalQueueLabel(index: number, total: number): string {
+  const safeTotal = Math.max(0, Math.trunc(total));
+  const safeIndex = clampApprovalIndex(index, safeTotal);
+  return `${STRINGS.approval.queue.label} ${safeIndex + 1} ${STRINGS.approval.queue.of} ${safeTotal}`;
+}
+
 function asApprovalView(record: {
   approvalId: string;
   tool: string;
@@ -187,8 +202,12 @@ export function ApprovalOverlay() {
   const retryApproval = useUiStore((state) => state.retryApproval);
   const dismissApproval = useUiStore((state) => state.dismissApproval);
   const [now, setNow] = useState<number>(() => Date.now());
+  const [activeIndex, setActiveIndex] = useState(0);
   const dialogRef = useRef<HTMLElement | null>(null);
   const previousFocusRef = useRef<Element | null>(null);
+
+  const activeIndexOf = clampApprovalIndex(activeIndex, approvals.length);
+  const activeApproval = approvals[activeIndexOf] ?? null;
 
   const hasExpiry = approvals.some((approval) => Boolean(asApprovalView(approval).expiresAt));
   useEffect(() => {
@@ -201,7 +220,12 @@ export function ApprovalOverlay() {
     return () => clearInterval(timer);
   }, [hasExpiry]);
 
-  const activeApprovalId = approvals[0]?.approvalId ?? null;
+  // Keep the cursor legal after a resolve removes the active record.
+  useEffect(() => {
+    setActiveIndex((current) => clampApprovalIndex(current, approvals.length));
+  }, [approvals.length]);
+
+  const activeApprovalId = activeApproval?.approvalId ?? null;
   useEffect(() => {
     if (activeApprovalId === null || typeof document === 'undefined') {
       return undefined;
@@ -256,7 +280,7 @@ export function ApprovalOverlay() {
           {STRINGS.approval.staleBanner}
         </div>
       ) : null}
-      {approvals.slice(0, 1).map((record) => {
+      {(activeApproval === null ? [] : [activeApproval]).map((record) => {
         const view = asApprovalView(record);
         const resolveState = approveResolveStates[view.approvalId];
         const actions = approvalActionsEnabled({
@@ -278,8 +302,11 @@ export function ApprovalOverlay() {
             : remaining === STRINGS.approval.expiry.expired
               ? STRINGS.approval.expiry.expired
               : `${STRINGS.approval.expiry.expiresIn} ${remaining}`;
+        // Stable key: navigation updates the same dialog in place, so the
+        // focus-restore target survives Previous/Next (closing the queue
+        // returns focus to the operator's original control).
         return (
-          <div key={view.approvalId} className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/20 p-4">
+          <div key="approval-dialog" className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/20 p-4">
             <section
               ref={dialogRef}
               role="dialog"
@@ -322,6 +349,34 @@ export function ApprovalOverlay() {
                 <p className="type-mono-meta mt-1 text-meta">
                   {approvals.length - 1} more approval{approvals.length - 1 === 1 ? '' : 's'} pending
                 </p>
+              ) : null}
+              {approvals.length > 1 ? (
+                <div
+                  data-testid="approval-queue"
+                  className="mt-2 flex items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1"
+                >
+                  <button
+                    type="button"
+                    aria-label={STRINGS.approval.queue.previous}
+                    disabled={activeIndexOf === 0}
+                    onClick={() => setActiveIndex(clampApprovalIndex(activeIndexOf - 1, approvals.length))}
+                    className="type-label rounded-[var(--radius-sm)] border border-hairline px-2 py-0.5 text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {STRINGS.approval.queue.previousShort}
+                  </button>
+                  <span className="type-mono-meta text-meta" aria-live="polite">
+                    {approvalQueueLabel(activeIndexOf, approvals.length)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={STRINGS.approval.queue.next}
+                    disabled={activeIndexOf === approvals.length - 1}
+                    onClick={() => setActiveIndex(clampApprovalIndex(activeIndexOf + 1, approvals.length))}
+                    className="type-label rounded-[var(--radius-sm)] border border-hairline px-2 py-0.5 text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {STRINGS.approval.queue.nextShort}
+                  </button>
+                </div>
               ) : null}
               <dl className="mt-2 grid grid-cols-[120px_1fr] gap-y-1">
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.toolLabel}</dt>

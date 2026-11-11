@@ -8,6 +8,7 @@ import { DOT_STATES, NODE_KIND_LABELS, visualFor } from '../state/agentState';
 import { StateDot } from '../flow/nodes';
 import { buildReplayTasks } from '../flow/graph';
 import { LAYOUT } from '../tokens/tokens';
+import { APP_VERSION } from '../version';
 
 interface TemplateRow {
   readonly id: string;
@@ -41,7 +42,9 @@ export function LibraryPanel() {
   const insertTemplate = useUiStore((state) => state.insertTemplate);
   const selectTask = useUiStore((state) => state.selectTask);
   const tab = useUiStore((state) => state.view.tab);
-  const setTab = useUiStore((state) => state.setTab);
+  // The library rail is visible on every nav section, so a tab click must also
+  // move the visible section to Workspace; `setTab` alone changed hidden state.
+  const setWorkspaceTab = useUiStore((state) => state.setWorkspaceTab);
   const sourceTasks = useMemo(
     () => (replayGraph === null ? tasks : buildReplayTasks(replayGraph.graph)),
     [replayGraph, tasks],
@@ -126,7 +129,7 @@ export function LibraryPanel() {
                 : (current + (event.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length;
           const target = TABS[next];
           if (target !== undefined) {
-            setTab(target.id);
+            setWorkspaceTab(target.id);
             requestAnimationFrame(() => document.getElementById(`library-tab-${target.id}`)?.focus());
           }
         }}
@@ -139,7 +142,7 @@ export function LibraryPanel() {
             role="tab"
             aria-selected={tab === entry.id}
             tabIndex={tab === entry.id ? 0 : -1}
-            onClick={() => setTab(entry.id)}
+            onClick={() => setWorkspaceTab(entry.id)}
             className={
               'type-label rounded-[var(--radius-sm)] border px-1 py-1 text-[11px] ' +
               (tab === entry.id
@@ -258,7 +261,7 @@ export function LibraryPanel() {
           </div>
         </dl>
         <p className="type-mono-meta mt-2 text-meta">
-          HiveMind v1.2-dev
+          {STRINGS.brand.wordmark} {APP_VERSION}
         </p>
       </details>
     </aside>

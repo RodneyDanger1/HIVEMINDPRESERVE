@@ -3,7 +3,9 @@
  *
  * Outcomes rendered: pending | ok | refused | denied | timeout | cancelled, plus an
  * explicit empty state. No fabricated rows: an unknown outcome falls back to a neutral
- * 'Unknown' label and the count summary only counts declared outcomes.
+ * 'Unknown' label and the count summary only counts declared outcomes. Rows are
+ * grouped by the wire `task_id`; result `bytes`/`sha256` render only when the
+ * TOOL_RESULT frame carried them (unknown is shown as '—', never estimated).
  *
  * W12 wave 3: all user-facing copy (heading, empty state, section/list labels,
  * outcome labels, evidence labels) resolves from `STRINGS.toolActivity`; the
@@ -30,6 +32,12 @@ export interface ToolActivityEntry {
   readonly outcome: ToolActivityOutcome;
   readonly code?: string;
   readonly text?: string;
+  /** Owning task from the wire `task_id`; absent rows are grouped as unknown. */
+  readonly taskId?: string | null;
+  /** Result byte size from TOOL_RESULT; never estimated. */
+  readonly bytes?: number | null;
+  /** Result digest from TOOL_RESULT; never invented. */
+  readonly sha256?: string | null;
 }
 
 export const TOOL_ACTIVITY_OUTCOMES: readonly ToolActivityOutcome[] = [
@@ -85,6 +93,17 @@ export function formatActivityArgsSha256(value: string | null | undefined, head 
   return truncateActivityValue(value, head);
 }
 
+/** Byte size is rendered only when the server reported a finite non-negative number. */
+export function formatActivityBytes(value: number | null | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? String(value)
+    : UNKNOWN_ACTIVITY_VALUE;
+}
+
+export function formatActivitySha256(value: string | null | undefined, head = 12): string {
+  return truncateActivityValue(value, head);
+}
+
 /** Deterministic ordering: turn ascending, then tool_call_id so captures are stable. */
 export function sortToolActivity(entries: readonly ToolActivityEntry[]): readonly ToolActivityEntry[] {
   return [...entries].sort((a, b) => {
@@ -98,6 +117,30 @@ export function sortToolActivity(entries: readonly ToolActivityEntry[]): readonl
 export interface ToolActivitySummary {
   readonly total: number;
   readonly counts: Readonly<Record<ToolActivityOutcome, number>>;
+}
+
+/** One agent's tool rows; `taskId === null` means the wire omitted attribution. */
+export interface ToolActivityGroup {
+  readonly taskId: string | null;
+  readonly entries: readonly ToolActivityEntry[];
+}
+
+/**
+ * Groups rows by owning task while preserving the deterministic turn order
+ * inside each group. Group order follows the first row of each task.
+ */
+export function groupToolActivity(
+  entries: readonly ToolActivityEntry[],
+): readonly ToolActivityGroup[] {
+  const groups = new Map<string | null, ToolActivityEntry[]>();
+  for (const entry of sortToolActivity(entries)) {
+    const rawTaskId = entry.taskId ?? null;
+    const taskId = rawTaskId === null || rawTaskId.trim().length === 0 ? null : rawTaskId;
+    const bucket = groups.get(taskId) ?? [];
+    bucket.push(entry);
+    groups.set(taskId, bucket);
+  }
+  return [...groups.entries()].map(([taskId, grouped]) => ({ taskId, entries: grouped }));
 }
 
 export function toolActivitySummary(entries: readonly ToolActivityEntry[]): ToolActivitySummary {
@@ -132,6 +175,10 @@ export function ToolActivityPanel({ entries }: { entries?: readonly ToolActivity
   const stored = useStoredToolActivity();
   const activity = sortToolActivity(entries ?? stored);
   const summary = toolActivitySummary(activity);
+  const groups = groupToolActivity(activity);
+  // A single legacy group needs no heading; mixed/known attribution always shows it.
+  const showGroupLabels =
+    groups.length > 1 || groups.some((group) => group.taskId !== null);
   const labels = STRINGS.toolActivity.labels;
 
   return (
@@ -143,38 +190,66 @@ export function ToolActivityPanel({ entries }: { entries?: readonly ToolActivity
         <EmptyState message={STRINGS.toolActivity.empty} />
       ) : (
         <ul aria-label={STRINGS.toolActivity.listAria} aria-live="polite" className="mt-2 space-y-2">
-          {activity.map((entry) => (
-            <li
-              key={entry.toolCallId}
-              data-outcome={entry.outcome}
-              aria-label={toolActivityAriaLabel(entry)}
-              className={`surface-panel rounded-[var(--radius-card)] border px-3 py-2 ${toolActivityOutcomeTone(entry.outcome)}`}
-            >
-              <div className="type-mono-meta flex items-center justify-between gap-2">
-                <span className="type-mono-code text-ink-900">{entry.tool}</span>
-                <span className="type-label">{toolActivityOutcomeLabel(entry.outcome)}</span>
-              </div>
-              <div className="type-mono-meta mt-1 flex flex-wrap gap-x-3 gap-y-1 text-meta">
-                <span title={entry.argsSha256}>
-                  {labels.argsSha256} {formatActivityArgsSha256(entry.argsSha256)}
-                </span>
-                <span>
-                  {labels.turn} {entry.turn}
-                </span>
-                <span title={entry.toolCallId}>
-                  {labels.toolCallId} {truncateActivityValue(entry.toolCallId)}
-                </span>
-              </div>
-              {entry.code === undefined ? null : (
-                <div className="type-mono-code mt-1 text-signal">
-                  {labels.code} {entry.code}
+          {groups.map((group) => (
+            <li key={group.taskId ?? 'unattributed'} className="list-none">
+              {showGroupLabels ? (
+                <div className="type-mono-meta mb-1 flex items-center justify-between gap-2 text-meta">
+                  <span title={group.taskId ?? undefined}>
+                    {labels.taskId}{' '}
+                    {group.taskId === null
+                      ? STRINGS.toolActivity.unattributedTask
+                      : truncateActivityValue(group.taskId)}
+                  </span>
+                  <span>
+                    {group.entries.length} {STRINGS.toolActivity.calls}
+                  </span>
                 </div>
-              )}
-              {entry.text === undefined ? null : (
-                <div className="type-mono-meta mt-1 truncate text-meta" title={entry.text}>
-                  {entry.text.length > 160 ? `${entry.text.slice(0, 160)}…` : entry.text}
-                </div>
-              )}
+              ) : null}
+              <ul className="m-0 list-none space-y-2 p-0">
+                {group.entries.map((entry) => (
+                  <li
+                    key={entry.toolCallId}
+                    data-outcome={entry.outcome}
+                    aria-label={toolActivityAriaLabel(entry)}
+                    className={`surface-panel rounded-[var(--radius-card)] border px-3 py-2 ${toolActivityOutcomeTone(entry.outcome)}`}
+                  >
+                    <div className="type-mono-meta flex items-center justify-between gap-2">
+                      <span className="type-mono-code text-ink-900">{entry.tool}</span>
+                      <span className="type-label">{toolActivityOutcomeLabel(entry.outcome)}</span>
+                    </div>
+                    <div className="type-mono-meta mt-1 flex flex-wrap gap-x-3 gap-y-1 text-meta">
+                      <span title={entry.argsSha256}>
+                        {labels.argsSha256} {formatActivityArgsSha256(entry.argsSha256)}
+                      </span>
+                      <span title={entry.taskId ?? undefined}>
+                        {labels.taskId} {truncateActivityValue(entry.taskId)}
+                      </span>
+                      <span>
+                        {labels.turn} {entry.turn}
+                      </span>
+                      <span>
+                        {labels.bytes} {formatActivityBytes(entry.bytes)}
+                      </span>
+                      <span title={entry.sha256 ?? undefined}>
+                        {labels.sha256} {formatActivitySha256(entry.sha256)}
+                      </span>
+                      <span title={entry.toolCallId}>
+                        {labels.toolCallId} {truncateActivityValue(entry.toolCallId)}
+                      </span>
+                    </div>
+                    {entry.code === undefined ? null : (
+                      <div className="type-mono-code mt-1 text-signal">
+                        {labels.code} {entry.code}
+                      </div>
+                    )}
+                    {entry.text === undefined ? null : (
+                      <div className="type-mono-meta mt-1 truncate text-meta" title={entry.text}>
+                        {entry.text.length > 160 ? `${entry.text.slice(0, 160)}…` : entry.text}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </li>
           ))}
         </ul>

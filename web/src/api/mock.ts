@@ -61,7 +61,10 @@ export class MockApiClient implements UiApi {
   private readonly clientErrorListeners = new Set<(refusal: Refusal) => void>();
   private runId: string | null = null;
   private runActive = false;
+  private closed = false;
   private taskCounter = 0;
+  /** Pending scenario timers; close() must leave no callback that can emit. */
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
   private readonly tasks = new Map<string, { label: string; parentId: string | null }>();
 
   constructor() {
@@ -76,12 +79,32 @@ export class MockApiClient implements UiApi {
   }
 
   async open(): Promise<SessionInfo> {
+    this.closed = false;
     this.emitStatus('open');
     return MOCK_SESSION;
   }
 
   close(): void {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
+    for (const timer of this.timers) {
+      globalThis.clearTimeout(timer);
+    }
+    this.timers.clear();
     this.emitStatus('closed');
+  }
+
+  /** Bounded scenario timers are tracked so a dispose can never emit later. */
+  private schedule(callback: () => void, delayMs: number): void {
+    const timer = globalThis.setTimeout(() => {
+      this.timers.delete(timer);
+      if (!this.closed) {
+        callback();
+      }
+    }, delayMs);
+    this.timers.add(timer);
   }
 
   private emitStatus(status: ConnectionStatus, detail?: Refusal): void {
@@ -102,6 +125,10 @@ export class MockApiClient implements UiApi {
     runId?: string | null,
     taskId?: string | null,
   ): void {
+    if (this.closed) {
+      // A closed double must never deliver a frame into a disposed store.
+      return;
+    }
     const envelope: Envelope<unknown> = {
       schema: SCHEMA_VERSION,
       type: 'EVENT',
@@ -160,7 +187,7 @@ export class MockApiClient implements UiApi {
     });
     const chunks = ['Certainly! ', 'Here is ', 'the code', '...'];
     chunks.forEach((chunk, index) => {
-      globalThis.setTimeout(() => {
+      this.schedule(() => {
         this.emit('REPLY_DELTA', { run_id: runId, text_delta: chunk });
         if (index === chunks.length - 1) {
           this.emit('REPLY_DONE', {
@@ -180,7 +207,7 @@ export class MockApiClient implements UiApi {
       }, 40 + index * 40);
     });
     if (text.startsWith('!approval')) {
-      globalThis.setTimeout(() => {
+      this.schedule(() => {
         this.emit('APPROVAL_REQUEST', {
           approval_id: uuidv7(),
           tool: 'file.patch',

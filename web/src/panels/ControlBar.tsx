@@ -8,6 +8,7 @@ import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { isRunActive, isTerminal } from '../state/agentState';
 import { spawnGate } from '../state/spawnMatrix';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export function ControlBar() {
   const run = useUiStore((state) => state.run);
@@ -142,43 +143,18 @@ export function ControlBar() {
       >
         {STRINGS.controls.kill}
       </button>
-      {killConfirm ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink-900/40 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="kill-confirm-title"
-            className="w-[min(420px,92vw)] rounded-[var(--radius-card)] border border-signal bg-panel p-3 shadow-[var(--shadow-e2)]"
-          >
-            <h2 id="kill-confirm-title" className="type-label text-ink-900">
-              Stop this worker?
-            </h2>
-            <p className="type-mono-meta mt-1 text-meta">
-              {selected?.label ?? 'The selected worker'} will be killed. Its branch stops; other
-              branches continue. This cannot be undone.
-            </p>
-            <div className="mt-3 flex justify-end gap-2">
-              <button
-                type="button"
-                className="type-label rounded-[var(--radius-button)] border border-hairline px-3 py-1 text-ink-800 hover:bg-honey-100"
-                onClick={() => setKillConfirm(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="type-label rounded-[var(--radius-button)] border border-signal bg-recessed px-3 py-1 text-signal"
-                onClick={() => {
-                  setKillConfirm(false);
-                  void killWorker();
-                }}
-              >
-                Kill worker
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={killConfirm}
+        title="Stop this worker?"
+        body={`${selected?.label ?? 'The selected worker'} will be killed. Its branch stops; other branches continue. This cannot be undone.`}
+        confirmLabel={STRINGS.controls.kill}
+        danger
+        onConfirm={() => {
+          setKillConfirm(false);
+          void killWorker();
+        }}
+        onCancel={() => setKillConfirm(false)}
+      />
 
       <span className="type-mono-meta ml-auto text-meta" aria-live="polite">
         {anyPending

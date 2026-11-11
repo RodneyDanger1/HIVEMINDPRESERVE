@@ -249,9 +249,15 @@ export function MemoryBanksPanel() {
       return;
     }
     let cancelled = false;
+    // The URL embeds `runId`, so a same-bank run switch must refetch and must
+    // not leave the previous run's rows visible while the read is in flight.
+    const controller = new AbortController();
+    setEntries([]);
+    setEntryFailure(null);
     setEntryStatus('loading');
     fetch(`${apiBaseUrl()}/api/memory/banks/${encodeURIComponent(selected)}/entries?run_id=${encodeURIComponent(runId ?? '')}&limit=50`, {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
       .then(async (response) => {
         if (!response.ok) {
@@ -300,8 +306,9 @@ export function MemoryBanksPanel() {
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [selected]);
+  }, [selected, runId]);
 
   const executeClear = async (): Promise<void> => {
     if (!runId) {

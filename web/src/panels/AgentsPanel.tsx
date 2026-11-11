@@ -9,6 +9,7 @@
  */
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS } from '../state/agentState';
+import { spawnGate } from '../state/spawnMatrix';
 import { STRINGS, formatPercent } from '../state/strings';
 import { StateGlyph } from '../flow/nodes';
 import { PanelTitle, EmptyState } from './StatePack';
@@ -27,6 +28,11 @@ export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
   const selectTask = useUiStore((state) => state.selectTask);
   const selectedTaskId = useUiStore((state) => state.selectedTaskId);
+  const run = useUiStore((state) => state.run);
+  const connection = useUiStore((state) => state.connection);
+  const pendingCommands = useUiStore((state) => state.pendingCommands);
+  const replayGraph = useUiStore((state) => state.history.replayGraph);
+  const spawnSubHive = useUiStore((state) => state.spawnSubHive);
   // Structural reconciliation: the store's ToolActivityRecord is assignable to
   // the panel's ToolActivityEntry (same id/tool/hash/turn/outcome fields); the
   // store stays the single writer and this panel only reads.
@@ -40,7 +46,26 @@ export function AgentsPanel() {
       </PanelTitle>
       {list.length === 0 ? <EmptyState message={STRINGS.panels.agentsEmpty} /> : null}
       {list.length > 0 ? (
-        <AgentHierarchy tasks={tasks} selectedTaskId={selectedTaskId} selectTask={selectTask} />
+        // Live Agents surface: the hierarchy must carry the real spawn handler
+        // and the real gate reason. Mounting it without one made every SPAWN
+        // button claim "Replay is read-only" even during an active run.
+        <AgentHierarchy
+          tasks={tasks}
+          selectedTaskId={selectedTaskId}
+          selectTask={selectTask}
+          spawnTask={
+            replayGraph === null ? (taskId) => void spawnSubHive(taskId) : undefined
+          }
+          spawnReason={(task) =>
+            spawnGate({
+              parent: { id: task.id, kind: task.kind },
+              runStatus: run?.status ?? null,
+              connection,
+              replaying: replayGraph !== null,
+              pending: Object.keys(pendingCommands).length > 0,
+            }).reason
+          }
+        />
       ) : null}
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((task) => (

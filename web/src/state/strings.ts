@@ -88,6 +88,11 @@ export const STRINGS = {
     userLabel: 'You',
     closeAria: 'Hide the chat core (the hive stays)',
     untitledRun: 'Untitled run',
+    /** Header toggle: chat only renders inside Workspace/workspace. */
+    toggleShowAria: 'Show Hive chat',
+    toggleHideAria: 'Hide Hive chat',
+    toggleWorkspaceAria: 'Open Hive chat in Workspace',
+    toggleWorkspaceHint: 'Chat lives in Workspace; this opens it there.',
   },
   composer: {
     placeholder: 'Type your prompt...',
@@ -237,8 +242,29 @@ export const STRINGS = {
       turn: 'turn',
       toolCallId: 'tool_call_id',
       code: 'code',
+      taskId: 'task_id',
+      bytes: 'bytes',
+      sha256: 'sha256',
     },
+    /** Honest grouping copy: the wire may omit the owning task on legacy rows. */
+    unattributedTask: 'task unknown',
+    calls: 'calls',
     unknownValue: '—',
+  },
+  /**
+   * Server-authoritative rehydration strip. `snapshot.status`/`incomplete` were
+   * computed by the store but never rendered; the banner is the only consumer.
+   */
+  snapshot: {
+    aria: 'Live state status',
+    confirming: 'Confirming live state with the server',
+    degraded: 'Live state is unconfirmed',
+    failed: 'Live state refresh failed',
+    incomplete: 'missing',
+    attempts: 'attempts',
+    updated: 'updated',
+    resync: 'Re-sync',
+    resyncing: 'Re-syncing…',
   },
   diff: {
     title: 'Code-diff review',
@@ -272,6 +298,15 @@ export const STRINGS = {
       expiresIn: 'expires in',
     },
     unknownValue: '—',
+    /** Pending-approval queue navigation (one dialog, N reachable records). */
+    queue: {
+      label: 'Approval',
+      of: 'of',
+      previous: 'Previous approval',
+      next: 'Next approval',
+      previousShort: 'Previous',
+      nextShort: 'Next',
+    },
     nonceMissing:
       'This APPROVAL_REQUEST did not carry the nonce required by the frozen APPROVAL_RESOLVE command, so it cannot be resolved from the UI. Report the missing nonce; do not invent one.',
     networkTargetMissing:

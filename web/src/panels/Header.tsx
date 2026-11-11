@@ -3,6 +3,19 @@ import { useState } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 
+export type ChatToggleIntent = 'navigate-show' | 'show' | 'hide';
+
+/**
+ * The chat renders only in Workspace/workspace. Off that surface the header
+ * control navigates there and opens the chat; it never changes hidden state.
+ */
+export function chatToggleIntent(onWorkspace: boolean, chatVisible: boolean): ChatToggleIntent {
+  if (!onWorkspace) {
+    return 'navigate-show';
+  }
+  return chatVisible ? 'hide' : 'show';
+}
+
 export function Header() {
   const connection = useUiStore((state) => state.connection);
   const project = useUiStore((state) => state.project);
@@ -10,10 +23,24 @@ export function Header() {
   const selectTask = useUiStore((state) => state.selectTask);
   const chatVisible = useUiStore((state) => state.chat.visible);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
+  const nav = useUiStore((state) => state.view.nav);
+  const tab = useUiStore((state) => state.view.tab);
+  const setWorkspaceTab = useUiStore((state) => state.setWorkspaceTab);
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const exitHistoryReplay = useUiStore((state) => state.exitHistoryReplay);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+
+  const onWorkspace = nav === 'workspace' && tab === 'workspace';
+  const chatIntent = chatToggleIntent(onWorkspace, chatVisible);
+  const toggleChat = (): void => {
+    if (chatIntent === 'navigate-show') {
+      setWorkspaceTab('workspace');
+      setChatVisible(true);
+      return;
+    }
+    setChatVisible(chatIntent === 'show');
+  };
 
   const results = Object.values(tasks)
     .filter((task) => task.label.toLowerCase().includes(query.trim().toLowerCase()))
@@ -49,10 +76,17 @@ export function Header() {
         ) : null}
         <button
           type="button"
-          aria-label={chatVisible ? 'Hide Hive chat' : 'Show Hive chat'}
+          aria-label={
+            chatIntent === 'navigate-show'
+              ? STRINGS.chat.toggleWorkspaceAria
+              : chatVisible
+                ? STRINGS.chat.toggleHideAria
+                : STRINGS.chat.toggleShowAria
+          }
+          title={chatIntent === 'navigate-show' ? STRINGS.chat.toggleWorkspaceHint : undefined}
           aria-pressed={chatVisible}
           className="type-mono-meta flex h-8 items-center gap-1 rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 text-ink-700 hover:bg-panel-alt hover:text-ink-900"
-          onClick={() => setChatVisible(!chatVisible)}
+          onClick={toggleChat}
         >
           <svg width="13" height="13" viewBox="0 0 18 18" aria-hidden="true">
             <path
@@ -63,7 +97,7 @@ export function Header() {
               strokeLinejoin="round"
             />
           </svg>
-          <span>{chatVisible ? 'Hide chat' : 'Show chat'}</span>
+          <span>{chatIntent === 'hide' ? STRINGS.chat.close : STRINGS.chat.reopen}</span>
         </button>
         <button
           type="button"

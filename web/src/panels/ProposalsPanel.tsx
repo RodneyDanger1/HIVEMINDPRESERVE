@@ -119,6 +119,19 @@ export function canRollbackLesson(row: ProposalRow): boolean {
   return row.lessonApplied;
 }
 
+/**
+ * Mutation auth for the three prose writes. The server accepts
+ * `Authorization: Bearer` or `x-hivemind-token`; every other proven write panel
+ * uses `x-hivemind-token`, so this panel matches that single pattern (style
+ * consistency, not a 401 fix).
+ */
+export function proposalWriteHeaders(token: string | null): Record<string, string> {
+  return {
+    Accept: 'application/json',
+    ...(token === null ? {} : { 'x-hivemind-token': token }),
+  };
+}
+
 export function ProposalsPanel() {
   const runId = useUiStore((state) => state.run?.id ?? null);
   const sessionToken = useUiStore((state) => state.session?.token ?? null);
@@ -189,10 +202,7 @@ export function ProposalsPanel() {
           label: 'POST proposal authorization',
           init: {
             method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
-            },
+            headers: proposalWriteHeaders(sessionToken),
           },
         },
       );
@@ -222,10 +232,7 @@ export function ProposalsPanel() {
           label: `POST proposal ${action}`,
           init: {
             method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              ...(sessionToken === null ? {} : { Authorization: `Bearer ${sessionToken}` }),
-            },
+            headers: proposalWriteHeaders(sessionToken),
           },
         },
       );

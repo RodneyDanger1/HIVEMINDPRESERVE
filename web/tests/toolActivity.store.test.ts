@@ -98,12 +98,13 @@ function toolCall(
   turn: number,
   tool = 'file_read',
   argsSha256 = 'a'.repeat(64),
+  taskId = 'task-1',
 ): DecodedEvent {
   return {
     name: 'TOOL_CALL',
     payload: {
       run_id: 'run-1',
-      task_id: 'task-1',
+      task_id: taskId,
       tool_call_id: toolCallId,
       tool,
       args_sha256: argsSha256,
@@ -116,15 +117,18 @@ function toolResult(
   toolCallId: string,
   outcome: ToolOutcome,
   code?: string,
+  extra: { readonly bytes?: number; readonly sha256?: string; readonly taskId?: string } = {},
 ): DecodedEvent {
   return {
     name: 'TOOL_RESULT',
     payload: {
       run_id: 'run-1',
-      task_id: 'task-1',
+      task_id: extra.taskId ?? 'task-1',
       tool_call_id: toolCallId,
       outcome,
       ...(code === undefined ? {} : { code }),
+      ...(extra.bytes === undefined ? {} : { bytes: extra.bytes }),
+      ...(extra.sha256 === undefined ? {} : { sha256: extra.sha256 }),
     },
   };
 }
@@ -214,6 +218,37 @@ describe('W12 tool activity reducer', () => {
     const row = store.getState().toolActivity[0];
     expect(row?.outcome).toBe('timeout');
     expect(row?.code).toBeUndefined();
+  });
+
+  it('attributes each row to the wire task and records result bytes/sha256', async () => {
+    const { api, store } = await connectedStore();
+    api.emit(toolCall('tc-1', 1, 'file_read', 'a'.repeat(64), 'task-a'));
+    api.emit(
+      toolResult('tc-1', 'ok', undefined, {
+        bytes: 291,
+        sha256: 'b'.repeat(64),
+        taskId: 'task-a',
+      }),
+    );
+
+    const row = store.getState().toolActivity[0];
+    expect(row?.taskId).toBe('task-a');
+    expect(row?.bytes).toBe(291);
+    expect(row?.sha256).toBe('b'.repeat(64));
+    // The call identity still comes from TOOL_CALL; the result never rewrites it.
+    expect(row?.tool).toBe('file_read');
+    expect(row?.argsSha256).toBe('a'.repeat(64));
+  });
+
+  it('keeps attribution unknown rather than inventing bytes/digest when the frame omits them', async () => {
+    const { api, store } = await connectedStore();
+    api.emit(toolCall('tc-1', 1, 'file_read', 'a'.repeat(64), 'task-a'));
+    api.emit(toolResult('tc-1', 'refused', 'E_PATH_OUTSIDE_JAIL'));
+
+    const row = store.getState().toolActivity[0];
+    expect(row?.bytes).toBeUndefined();
+    expect(row?.sha256).toBeUndefined();
+    expect(row?.code).toBe('E_PATH_OUTSIDE_JAIL');
   });
 });
 
@@ -321,11 +356,17 @@ describe('W12 approval state', () => {
 describe('W12 out-of-order TOOL_RESULT buffering (deterministic policy)', () => {
   it('buffers a result before its call and replays it exactly once on the late call', async () => {
     const { api, store } = await connectedStore();
-    api.emit(toolResult('tc-ooo', 'denied', 'E_KILL_DENIED'));
+    api.emit(
+      toolResult('tc-ooo', 'denied', 'E_KILL_DENIED', {
+        bytes: 12,
+        sha256: 'c'.repeat(64),
+        taskId: 'task-z',
+      }),
+    );
     // No fabricated row: the tool/args/turn are only known from the TOOL_CALL.
     expect(store.getState().toolActivity).toEqual([]);
 
-    api.emit(toolCall('tc-ooo', 1, 'file_list'));
+    api.emit(toolCall('tc-ooo', 1, 'file_list', 'a'.repeat(64), 'task-z'));
     const rows = store.getState().toolActivity;
     expect(rows).toHaveLength(1);
     expect(rows[0]?.toolCallId).toBe('tc-ooo');
@@ -333,6 +374,10 @@ describe('W12 out-of-order TOOL_RESULT buffering (deterministic policy)', () => 
     expect(rows[0]?.turn).toBe(1);
     expect(rows[0]?.outcome).toBe('denied');
     expect(rows[0]?.code).toBe('E_KILL_DENIED');
+    // Result evidence buffered before the call is replayed, never dropped.
+    expect(rows[0]?.taskId).toBe('task-z');
+    expect(rows[0]?.bytes).toBe(12);
+    expect(rows[0]?.sha256).toBe('c'.repeat(64));
 
     // Terminal-once still holds after the replay.
     api.emit(toolResult('tc-ooo', 'ok'));

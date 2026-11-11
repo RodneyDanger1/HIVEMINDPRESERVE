@@ -12,6 +12,9 @@ import {
 import {
   TOOL_ACTIVITY_OUTCOMES,
   formatActivityArgsSha256,
+  formatActivityBytes,
+  formatActivitySha256,
+  groupToolActivity,
   isToolActivityOutcome,
   sortToolActivity,
   toolActivityAriaLabel,
@@ -151,5 +154,34 @@ describe('ToolActivityPanel logic (W12)', () => {
     expect(label).toContain('file_list');
     expect(label).toContain('Refused');
     expect(label).toContain('0123456789ab…');
+  });
+
+  it('renders result bytes/digest only when reported and groups rows by owning task', () => {
+    expect(formatActivityBytes(291)).toBe('291');
+    expect(formatActivityBytes(0)).toBe('0');
+    expect(formatActivityBytes(null)).toBe('—');
+    expect(formatActivityBytes(undefined)).toBe('—');
+    expect(formatActivityBytes(Number.NaN)).toBe('—');
+    expect(formatActivitySha256('d'.repeat(64))).toBe('dddddddddddd…');
+    expect(formatActivitySha256(null)).toBe('—');
+
+    const groups = groupToolActivity([
+      entry({ toolCallId: 'b', turn: 2, taskId: 'task-b' }),
+      entry({ toolCallId: 'a', turn: 1, taskId: 'task-a' }),
+      entry({ toolCallId: 'c', turn: 3, taskId: 'task-b' }),
+      entry({ toolCallId: 'd', turn: 4 }),
+    ]);
+    expect(groups.map((group) => group.taskId)).toEqual(['task-a', 'task-b', null]);
+    expect(groups.map((group) => group.entries.map((item) => item.toolCallId))).toEqual([
+      ['a'],
+      ['b', 'c'],
+      ['d'],
+    ]);
+    // Grouping never mutates the caller's array.
+    expect(groups[1]?.entries.map((item) => item.toolCallId)).toEqual(['b', 'c']);
+
+    // An empty wire task id is the same honest unknown group as absent.
+    const blankTask = groupToolActivity([entry({ toolCallId: 'e', taskId: '' })]);
+    expect(blankTask.map((group) => group.taskId)).toEqual([null]);
   });
 });
