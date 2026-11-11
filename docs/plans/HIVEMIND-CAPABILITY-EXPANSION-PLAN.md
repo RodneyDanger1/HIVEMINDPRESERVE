@@ -1,7 +1,8 @@
 # HiveMind Capability Expansion Plan — same HMAS, full coding capability
 
-**Status:** replaces the earlier dual-mode/Code-mode plan. This is the authoritative plan for the
-next build.
+**Status:** **Annex A** to [HIVEMIND-FINISH-PLAN-v3.1](HIVEMIND-FINISH-PLAN-v3.md). The v3.1 plan
+is authoritative; this annex provides the detailed capability reference. It supersedes the earlier
+dual-mode/Code-mode framing, but it is not a competing plan.
 **Goal:** keep HiveMind exactly what it is — HMAS planner/root/SuperAgent/Agent/Subagent, canvas,
 approvals, ledger, evidence, SQLite data, memory banks, proposals/lessons, remotes/daemons,
 8-template library, installer, FigCraft/HoneyGlass identity — and **add full coding capability to

@@ -242,9 +242,13 @@ Codex, Grok Build, or Antigravity**. It lacks sessions, editor/diff, terminal,
 repo index, checkpoints, plan/todo, headless CLI and MCP; its monitor is
 review-only and its learning loop is not executed-eval gated.
 
-The preservation-first plan for adding those features is in
-[HIVEMIND-FINISH-PLAN-v3-STATUS.md](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md)
-and the master report. It is a proposal, not shipped functionality.
+The mandatory-first capability plan is
+[HIVEMIND-FINISH-PLAN-v3.md](docs/plans/HIVEMIND-FINISH-PLAN-v3.md) §0, with the detailed
+capability reference in
+[HIVEMIND-CAPABILITY-EXPANSION-PLAN.md](docs/plans/HIVEMIND-CAPABILITY-EXPANSION-PLAN.md)
+and the historical crosswalk in
+[HIVEMIND-FINISH-PLAN-v3-STATUS.md](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md).
+It is a plan, not shipped functionality; there is no Code mode or product-mode switch.
 
 ---
 
