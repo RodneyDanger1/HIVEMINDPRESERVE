@@ -8,6 +8,9 @@
 pub mod approval_wait;
 pub mod bus;
 pub mod caps;
+pub mod checkpoint;
+pub mod jobs;
+pub mod repo_index;
 pub mod checks;
 pub mod config;
 pub mod context;
@@ -42,7 +45,7 @@ pub use config::{Config, ConfigError};
 pub use context::{ContextStore, ScopedContext};
 pub use daemon::{Daemon, DaemonReport, DaemonStore, NewDaemon};
 pub use db::{Database, DbError, Migration, ToolTurnRecord, MIGRATIONS};
-pub use entities::{ChatMessage, ChatRole, Run, TaskRecord};
+pub use entities::{ChatMessage, ChatRole, PermissionPolicy, Run, Session, TaskRecord, Todo};
 pub use evolution_gate::{verify_evaluation_receipt, VerifiedReceipt};
 pub use execution::{
     DeltaSink, ProviderExecutor, RunEngine, RunRegistry, StreamedReply, ToolTurnTranscript,

@@ -5,10 +5,58 @@
 //! builds the frozen `TOOL_CALL` / `TOOL_RESULT` payloads. It never executes a tool
 //! and never publishes an event; [`crate::execution`] owns those side effects.
 
-use hiverouter_contract::{Refusal, RunId, TaskId, ToolCallPayload, ToolOutcome, ToolResultPayload};
+use hiverouter_contract::{
+    PermissionPolicy, Refusal, RunId, TaskId, ToolCallPayload, ToolOutcome, ToolResultPayload,
+};
 use hiverouter_provider::dto::{FunctionDefinition, ToolSpec};
 use hiverouter_provider::tool_assembler::AssembledToolCall;
 use hiverouter_tools::{AgentTier, PermissionClass, ToolId, ToolRegistry};
+
+/// Policy decision for one tool call.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PolicyDecision {
+    /// Execute without an interactive approval (an audited policy grant is still
+    /// required before any side effect).
+    Execute,
+    /// Ask the operator through the existing approval path.
+    AskApproval,
+    /// Refuse without creating an approval request.
+    Refuse,
+}
+
+/// Resolves a permission policy against a tool class. `classic` is exactly the
+/// existing `requires_approval()` behavior. `trusted` still requires an explicit
+/// operator opt-in at admission; this function never infers it from a prompt.
+#[must_use]
+pub fn decide_policy(
+    policy: PermissionPolicy,
+    class: PermissionClass,
+    inside_workspace: bool,
+) -> PolicyDecision {
+    if matches!(class, PermissionClass::Read | PermissionClass::Control) {
+        return PolicyDecision::Execute;
+    }
+    match policy {
+        PermissionPolicy::Classic => {
+            if class.requires_approval() {
+                PolicyDecision::AskApproval
+            } else {
+                PolicyDecision::Execute
+            }
+        }
+        PermissionPolicy::Plan => PolicyDecision::Refuse,
+        PermissionPolicy::Standard => match class {
+            PermissionClass::Mutate if inside_workspace => PolicyDecision::Execute,
+            _ => PolicyDecision::AskApproval,
+        },
+        PermissionPolicy::Trusted => match class {
+            PermissionClass::Mutate | PermissionClass::Execute if inside_workspace => {
+                PolicyDecision::Execute
+            }
+            _ => PolicyDecision::AskApproval,
+        },
+    }
+}
 
 /// Maximum model turns in one task before the run fails closed.
 pub const MAX_TOOL_TURNS: u32 = 12;

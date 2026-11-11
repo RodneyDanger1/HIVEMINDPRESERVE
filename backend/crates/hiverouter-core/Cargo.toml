@@ -36,6 +36,9 @@ petgraph = { workspace = true }
 prompty = { workspace = true }
 async-trait = { workspace = true }
 rust-embed = { workspace = true }
+# CAP-2 repo index: bounded regex grep. Exact pin; 1.13.1 is already in
+# Cargo.lock (transitively via prompty), so no new package is introduced.
+regex = "=1.13.1"
 
 [dev-dependencies]
 tempfile = { workspace = true }

@@ -656,7 +656,7 @@ async fn health_endpoint_reports_boot_checks_and_database() {
     assert!(!health["boot_id"].as_str().unwrap_or_default().is_empty());
     assert!(health["data_dir"].as_str().is_some_and(|value| !value.is_empty()));
     assert!(health["workspace_root"].as_str().is_some_and(|value| !value.is_empty()));
-    assert_eq!(health["database"]["schema_version"], 24);
+    assert_eq!(health["database"]["schema_version"], 27);
     let (status, diagnosis) = http_get(server.addr, "/diagnose").await;
     assert_eq!(status, 200, "diagnose: {diagnosis}");
     let diagnosis: Value = serde_json::from_str(&diagnosis).expect("diagnose JSON");

@@ -1558,6 +1558,19 @@ impl RunEngine {
         project_id: &str,
         correlation: Uuid,
     ) -> Result<Run, Refusal> {
+        self.submit_prompt_scoped(prompt, project_id, None, None, correlation)
+    }
+
+    /// Handles `SUBMIT_PROMPT` with an optional session and explicit policy.
+    /// Omitted values preserve the old behavior: no session, `classic` policy.
+    pub fn submit_prompt_scoped(
+        self: &Arc<Self>,
+        prompt: &str,
+        project_id: &str,
+        session_id: Option<&str>,
+        requested_policy: Option<hiverouter_contract::PermissionPolicy>,
+        correlation: Uuid,
+    ) -> Result<Run, Refusal> {
         let chars = prompt.chars().count();
         if chars == 0 {
             return Err(Refusal::PromptEmpty);
@@ -1575,7 +1588,27 @@ impl RunEngine {
         if self.store.latest_active_run()?.is_some() || self.active_run().is_some() {
             return Err(Refusal::RunActive);
         }
-        let run = self.store.create_run(project_id, prompt, AgentState::Queued)?;
+        let (session_id, policy) = match session_id {
+            Some(id) if !id.trim().is_empty() => {
+                let session = self.store.session(id)?;
+                if session.project_id != project_id {
+                    return Err(Refusal::SessionNotFound);
+                }
+                (Some(session.id), requested_policy.unwrap_or(session.permission_policy))
+            }
+            Some(_) => return Err(Refusal::SessionNotFound),
+            None => (None, requested_policy.unwrap_or_default()),
+        };
+        let run = self
+            .store
+            .create_run_scoped(project_id, prompt, AgentState::Queued, session_id.as_deref(), policy)?;
+        if let Some(id) = session_id.as_deref() {
+            self.store.append_session_event(
+                id,
+                "run_started",
+                &serde_json::json!({ "run_id": run.id.to_string() }),
+            )?;
+        }
         self.store.record_receipt(correlation, run.id)?;
         self.store.append_message(run.id, ChatRole::User, prompt)?;
         self.set_active(Some(run.id))?;
@@ -2816,16 +2849,52 @@ impl RunEngine {
                                     && self.tools.is_some()
                                     && self.tool_workspace.is_some()
                                 {
-                                    // D12: count the attempt before the wait so a
-                                    // deny/timeout cannot retry for free.
-                                    self.db
-                                        .increment_run_tool_counters(run.id, 0, 1)
-                                        .map_err(|error| error.refusal())?;
-                                    precounted = precounted.saturating_add(1);
-                                    // Terminal waits finalize their own TOOL_RESULT and
-                                    // return Err (D13); approve/deny return Ok.
-                                    self.suspend_for_approval(run, task, call, &plan, turn, token)
-                                        .await?
+                                    let class = tool_loop::permission_for(
+                                        &self.tool_registry,
+                                        &plan.tool,
+                                    )
+                                    .ok_or(Refusal::ToolNotAllowed)?;
+                                    let inside_workspace = plan
+                                        .args
+                                        .get("path")
+                                        .and_then(serde_json::Value::as_str)
+                                        .is_some_and(|path| {
+                                            self.tool_workspace
+                                                .as_ref()
+                                                .is_some_and(|jail| jail.resolve(path).is_ok())
+                                        });
+                                    match tool_loop::decide_policy(
+                                        run.permission_policy,
+                                        class,
+                                        inside_workspace,
+                                    ) {
+                                        tool_loop::PolicyDecision::Refuse => {
+                                            ToolExecution::refused(
+                                                plan.tool_call_id.clone(),
+                                                Refusal::ToolNotAllowed.code(),
+                                                format!(
+                                                    "permission policy {:?} forbids this {} tool \
+                                                     without an approval request; nothing was executed",
+                                                    run.permission_policy,
+                                                    class.label()
+                                                ),
+                                            )
+                                        }
+                                        _ => {
+                                            // D12: count the attempt before the wait so a
+                                            // deny/timeout cannot retry for free.
+                                            self.db
+                                                .increment_run_tool_counters(run.id, 0, 1)
+                                                .map_err(|error| error.refusal())?;
+                                            precounted = precounted.saturating_add(1);
+                                            // Terminal waits finalize their own TOOL_RESULT and
+                                            // return Err (D13); approve/deny return Ok.
+                                            self.suspend_for_approval(
+                                                run, task, call, &plan, turn, token,
+                                            )
+                                            .await?
+                                        }
+                                    }
                                 } else {
                                     self.execute_tool_plan(&plan, tier)
                                 }

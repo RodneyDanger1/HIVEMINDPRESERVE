@@ -4,6 +4,8 @@ use hiverouter_contract::{AgentState, RunId, TaskId, Timestamp};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+pub use hiverouter_contract::PermissionPolicy;
+
 /// One run: one user prompt and everything it spawns.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Run {
@@ -21,6 +23,46 @@ pub struct Run {
     pub created_at: Timestamp,
     /// Last status-change timestamp.
     pub updated_at: Timestamp,
+    /// Optional named session this run belongs to.
+    pub session_id: Option<String>,
+    /// Permission policy for this run (`classic` by default; no product mode).
+    pub permission_policy: PermissionPolicy,
+}
+
+/// One named workspace/session row.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Session {
+    /// Session id (UUID string).
+    pub id: String,
+    /// Project/workspace binding.
+    pub project_id: String,
+    /// Human-readable session name.
+    pub name: String,
+    /// Workspace root for this session.
+    pub workspace_root: String,
+    /// Default permission policy for new runs.
+    pub permission_policy: PermissionPolicy,
+    /// Creation timestamp.
+    pub created_at: Timestamp,
+    /// Last update timestamp.
+    pub updated_at: Timestamp,
+}
+
+/// One session todo row.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Todo {
+    /// Todo id (UUID string).
+    pub id: String,
+    /// Owning session.
+    pub session_id: String,
+    /// Monotonic order.
+    pub seq: u64,
+    /// Text.
+    pub text: String,
+    /// open/done/cancelled.
+    pub state: String,
+    /// Creation timestamp.
+    pub created_at: Timestamp,
 }
 
 /// One task row (one node in the run graph).

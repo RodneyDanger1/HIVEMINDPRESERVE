@@ -28,6 +28,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::envelope::{Envelope, FrameKind};
 use crate::ids::{ApprovalId, RunId, TaskId};
+use crate::policy::PermissionPolicy;
 use crate::refusal::Refusal;
 use crate::schema;
 
@@ -170,6 +171,12 @@ pub struct SubmitPrompt {
     pub text: String,
     /// Project/workspace the run belongs to.
     pub project_id: String,
+    /// Optional session binding; old clients omit it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    /// Optional explicit permission policy; old clients omit it and get `classic`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permission_policy: Option<PermissionPolicy>,
 }
 
 /// `SPAWN_SUB_HIVE` payload.
@@ -563,16 +570,22 @@ mod tests {
         let empty = Command::SubmitPrompt(SubmitPrompt {
             text: String::new(),
             project_id: "p".into(),
+            session_id: None,
+            permission_policy: None,
         });
         assert_eq!(empty.validate(), Err(Refusal::PromptEmpty));
         let too_long = Command::SubmitPrompt(SubmitPrompt {
             text: "x".repeat(MAX_PROMPT_CHARS + 1),
             project_id: "p".into(),
+            session_id: None,
+            permission_policy: None,
         });
         assert_eq!(too_long.validate(), Err(Refusal::PromptTooLong));
         let exact = Command::SubmitPrompt(SubmitPrompt {
             text: "x".repeat(MAX_PROMPT_CHARS),
             project_id: "p".into(),
+            session_id: None,
+            permission_policy: None,
         });
         assert_eq!(exact.validate(), Ok(()));
     }

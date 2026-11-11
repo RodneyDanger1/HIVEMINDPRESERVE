@@ -40,13 +40,17 @@ pub mod db_admin;
 pub mod env_safety;
 pub mod error;
 pub mod executor;
+pub mod fs_search;
+pub mod git;
 pub mod health;
 pub mod jail;
 pub mod ledger;
+pub mod patch;
 pub mod sha256;
 pub mod shell;
 pub mod side_effects;
 pub mod settings;
+pub mod tests_runner;
 pub mod tool;
 pub mod watcher;
 

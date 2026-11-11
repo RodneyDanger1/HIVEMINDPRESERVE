@@ -27,6 +27,8 @@ pub fn command_samples() -> Vec<Command> {
         Command::SubmitPrompt(SubmitPrompt {
             text: "Build a honeycomb graph for the run".to_owned(),
             project_id: "project-1".to_owned(),
+            session_id: None,
+            permission_policy: None,
         }),
         Command::SpawnSubHive(SpawnSubHive {
             parent_task_id: TaskId::new(),
@@ -47,6 +49,8 @@ pub fn command_samples() -> Vec<Command> {
         Command::TemplateInsert(TemplateInsert {
             template_id: "template-1".to_owned(),
             project_id: "project-1".to_owned(),
+            session_id: None,
+            permission_policy: None,
         }),
         Command::HistoryRevisionSet(HistoryRevisionSet {
             run_id: RunId::new(),

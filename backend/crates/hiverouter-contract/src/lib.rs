@@ -20,6 +20,7 @@
 #![warn(missing_debug_implementations)]
 
 pub mod command;
+pub mod policy;
 pub mod envelope;
 pub mod event;
 pub mod ids;
@@ -28,6 +29,8 @@ pub mod schema;
 pub mod state;
 pub mod timestamp;
 pub mod usage;
+
+pub use policy::PermissionPolicy;
 
 pub use command::{
     ApprovalResolve, CancelRun, ChatPin, Command, CommandName, DiffDecision, FileRead, FileTreeList,

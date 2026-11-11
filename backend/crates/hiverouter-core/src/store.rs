@@ -8,7 +8,7 @@ use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
 use crate::db::{Database, DbError};
-use crate::entities::{ChatMessage, ChatRole, Run, TaskRecord};
+use crate::entities::{ChatMessage, ChatRole, PermissionPolicy, Run, Session, TaskRecord, Todo};
 use crate::run_state::{is_terminal_task_state, TASK_TERMINAL_STATES};
 
 fn map(error: DbError) -> Refusal {
@@ -355,6 +355,18 @@ impl RunStore {
         prompt: &str,
         status: AgentState,
     ) -> Result<Run, Refusal> {
+        self.create_run_scoped(project_id, prompt, status, None, PermissionPolicy::Classic)
+    }
+
+    /// Creates a run bound to an optional session and explicit policy.
+    pub fn create_run_scoped(
+        &self,
+        project_id: &str,
+        prompt: &str,
+        status: AgentState,
+        session_id: Option<&str>,
+        permission_policy: PermissionPolicy,
+    ) -> Result<Run, Refusal> {
         let now = Timestamp::now();
         let run = Run {
             id: RunId::new(),
@@ -364,6 +376,8 @@ impl RunStore {
             error_code: None,
             created_at: now.clone(),
             updated_at: now,
+            session_id: session_id.map(ToOwned::to_owned),
+            permission_policy,
         };
         self.db
             .with_connection(|connection| {
@@ -372,21 +386,230 @@ impl RunStore {
                     params![run.project_id, run.created_at.as_str()],
                 )?;
                 connection.execute(
-                    "INSERT INTO runs(id, project_id, prompt, status, error_code, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6)",
+                    "INSERT INTO runs(id, project_id, prompt, status, error_code, created_at, updated_at, session_id, permission_policy)
+                     VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, ?7, ?8)",
                     params![
                         run.id.to_string(),
                         run.project_id,
                         run.prompt,
                         run.status.as_str(),
                         run.created_at.as_str(),
-                        run.updated_at.as_str()
+                        run.updated_at.as_str(),
+                        run.session_id,
+                        run.permission_policy.as_str()
                     ],
                 )?;
                 Ok(())
             })
             .map_err(map)?;
         Ok(run)
+    }
+
+    /// Creates a named session. The default policy is `classic` (current behavior).
+    pub fn create_session(
+        &self,
+        project_id: &str,
+        name: &str,
+        workspace_root: &str,
+        permission_policy: PermissionPolicy,
+    ) -> Result<Session, Refusal> {
+        let now = Timestamp::now();
+        let session = Session {
+            id: Uuid::now_v7().to_string(),
+            project_id: project_id.to_owned(),
+            name: name.to_owned(),
+            workspace_root: workspace_root.to_owned(),
+            permission_policy,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO sessions(id, project_id, name, workspace_root, permission_policy, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                    params![
+                        session.id,
+                        session.project_id,
+                        session.name,
+                        session.workspace_root,
+                        session.permission_policy.as_str(),
+                        session.created_at.as_str(),
+                        session.updated_at.as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        Ok(session)
+    }
+
+    /// Lists sessions newest first.
+    pub fn sessions(&self) -> Result<Vec<Session>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at
+                     FROM sessions ORDER BY created_at DESC, id DESC",
+                )?;
+                let rows = statement.query_map([], |row| {
+                    Ok(Session {
+                        id: row.get(0)?,
+                        project_id: row.get(1)?,
+                        name: row.get(2)?,
+                        workspace_root: row.get(3)?,
+                        permission_policy: PermissionPolicy::from_str(
+                            &row.get::<_, String>(4).unwrap_or_else(|_| "classic".to_owned()),
+                        ),
+                        created_at: Timestamp::parse(&row.get::<_, String>(5)?)
+                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+                        updated_at: Timestamp::parse(&row.get::<_, String>(6)?)
+                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+                    })
+                })?;
+                let mut sessions = Vec::new();
+                for row in rows {
+                    sessions.push(row?);
+                }
+                Ok(sessions)
+            })
+            .map_err(map)
+    }
+
+    /// Reads one session by id.
+    pub fn session(&self, id: &str) -> Result<Session, Refusal> {
+        let session = self
+            .db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at
+                         FROM sessions WHERE id = ?1",
+                        params![id],
+                        |row| {
+                            Ok(Session {
+                                id: row.get(0)?,
+                                project_id: row.get(1)?,
+                                name: row.get(2)?,
+                                workspace_root: row.get(3)?,
+                                permission_policy: PermissionPolicy::from_str(
+                                    &row.get::<_, String>(4)
+                                        .map_err(|_| rusqlite::Error::InvalidColumnType(4, "permission_policy".into(), rusqlite::types::Type::Text))?,
+                                ),
+                                created_at: Timestamp::parse(
+                                    &row.get::<_, String>(5).map_err(|_| {
+                                        rusqlite::Error::InvalidColumnType(5, "created_at".into(), rusqlite::types::Type::Text)
+                                    })?,
+                                )
+                                .map_err(|_| rusqlite::Error::InvalidColumnType(5, "created_at".into(), rusqlite::types::Type::Text))?,
+                                updated_at: Timestamp::parse(
+                                    &row.get::<_, String>(6).map_err(|_| {
+                                        rusqlite::Error::InvalidColumnType(6, "updated_at".into(), rusqlite::types::Type::Text)
+                                    })?,
+                                )
+                                .map_err(|_| rusqlite::Error::InvalidColumnType(6, "updated_at".into(), rusqlite::types::Type::Text))?,
+                            })
+                        },
+                    )
+                    .optional()
+            })
+            .map_err(map)?;
+        session.ok_or(Refusal::SessionNotFound)
+    }
+
+    /// Appends a session event (best-effort audit only; never changes run state).
+    pub fn append_session_event(
+        &self,
+        session_id: &str,
+        kind: &str,
+        detail_json: &serde_json::Value,
+    ) -> Result<(), Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    params![
+                        Uuid::now_v7().to_string(),
+                        session_id,
+                        kind,
+                        detail_json.to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
+                Ok(())
+            })
+            .map_err(map)
+    }
+
+    /// Sets a run's permission policy. Only an explicit operator/API choice should
+    /// call this; the default remains `classic`.
+    pub fn set_run_policy(&self, run_id: RunId, policy: PermissionPolicy) -> Result<(), Refusal> {
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                connection.execute(
+                    "UPDATE runs SET permission_policy = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![policy.as_str(), Timestamp::now().as_str(), run_id.to_string()],
+                )
+            })
+            .map_err(map)?;
+        if changed == 0 {
+            return Err(Refusal::RunNotFound);
+        }
+        Ok(())
+    }
+
+    /// Adds a todo to a session.
+    pub fn add_todo(&self, session_id: &str, text: &str) -> Result<Todo, Refusal> {
+        let todo = Todo {
+            id: Uuid::now_v7().to_string(),
+            session_id: session_id.to_owned(),
+            seq: 0,
+            text: text.to_owned(),
+            state: "open".to_owned(),
+            created_at: Timestamp::now(),
+        };
+        self.db
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO todos(id, session_id, seq, text, state, created_at)
+                     VALUES (?1, ?2, (SELECT COALESCE(MAX(seq), 0) + 1 FROM todos WHERE session_id = ?2), ?3, 'open', ?4)",
+                    params![todo.id, todo.session_id, todo.text, todo.created_at.as_str()],
+                )?;
+                Ok(())
+            })
+            .map_err(map)?;
+        let mut todos = self.todos(&todo.session_id)?;
+        Ok(todos.pop().unwrap_or(todo))
+    }
+
+    /// Lists session todos in order.
+    pub fn todos(&self, session_id: &str) -> Result<Vec<Todo>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, session_id, seq, text, state, created_at FROM todos
+                     WHERE session_id = ?1 ORDER BY seq ASC, id ASC",
+                )?;
+                let rows = statement.query_map(params![session_id], |row| {
+                    Ok(Todo {
+                        id: row.get(0)?,
+                        session_id: row.get(1)?,
+                        seq: row.get::<_, i64>(2)? as u64,
+                        text: row.get(3)?,
+                        state: row.get(4)?,
+                        created_at: Timestamp::parse(&row.get::<_, String>(5)?)
+                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+                    })
+                })?;
+                let mut todos = Vec::new();
+                for row in rows {
+                    todos.push(row?);
+                }
+                Ok(todos)
+            })
+            .map_err(map)
     }
 
     /// Lists durable projects in creation order.
@@ -420,7 +643,7 @@ impl RunStore {
             .with_connection(|connection| {
                 connection
                     .query_row(
-                        "SELECT id, project_id, prompt, status, error_code, created_at, updated_at
+                        "SELECT id, project_id, prompt, status, error_code, created_at, updated_at, session_id, permission_policy
                          FROM runs WHERE id = ?1",
                         params![run_id.to_string()],
                         row_to_run,
@@ -440,7 +663,7 @@ impl RunStore {
             .with_connection(|connection| {
                 connection
                     .query_row(
-                        "SELECT id, project_id, prompt, status, error_code, created_at, updated_at
+                        "SELECT id, project_id, prompt, status, error_code, created_at, updated_at, session_id, permission_policy
                          FROM runs WHERE status IN ('queued','planning','thinking','running','streaming','awaiting_approval')
                          ORDER BY created_at DESC LIMIT 1",
                         [],
@@ -459,7 +682,7 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
-                    "SELECT id, project_id, prompt, status, error_code, created_at, updated_at
+                    "SELECT id, project_id, prompt, status, error_code, created_at, updated_at, session_id, permission_policy
                      FROM runs ORDER BY created_at DESC LIMIT ?1",
                 )?;
                 let rows = statement.query_map(params![i64::from(limit)], row_to_run)?;
@@ -2870,6 +3093,10 @@ fn row_to_run(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
         error_code,
         created_at: Timestamp::parse(&created_at).unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
         updated_at: Timestamp::parse(&updated_at).unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+        session_id: row.get(7)?,
+        permission_policy: crate::entities::PermissionPolicy::from_str(
+            &row.get::<_, String>(8).unwrap_or_else(|_| "classic".to_owned()),
+        ),
     })
 }
 

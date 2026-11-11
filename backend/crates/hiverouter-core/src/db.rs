@@ -865,6 +865,61 @@ Migration {
         ALTER TABLE tasks DROP COLUMN instruction;
     "#,
 },
+Migration {
+    version: 25,
+    name: "sessions_policy_todos",
+    up: r#"
+        CREATE TABLE sessions (
+            id                TEXT PRIMARY KEY NOT NULL,
+            project_id        TEXT NOT NULL,
+            name              TEXT NOT NULL,
+            workspace_root    TEXT NOT NULL,
+            permission_policy TEXT NOT NULL DEFAULT 'classic'
+                              CHECK (permission_policy IN ('classic','plan','standard','trusted')),
+            created_at        TEXT NOT NULL,
+            updated_at        TEXT NOT NULL
+        );
+        CREATE INDEX idx_sessions_project ON sessions(project_id, created_at);
+        CREATE TABLE session_events (
+            id         TEXT PRIMARY KEY NOT NULL,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            kind       TEXT NOT NULL,
+            detail_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX idx_session_events_session ON session_events(session_id, created_at);
+        CREATE TABLE todos (
+            id         TEXT PRIMARY KEY NOT NULL,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            seq        INTEGER NOT NULL,
+            text       TEXT NOT NULL,
+            state      TEXT NOT NULL DEFAULT 'open'
+                       CHECK (state IN ('open','done','cancelled')),
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX idx_todos_session ON todos(session_id, seq);
+        ALTER TABLE runs ADD COLUMN session_id TEXT;
+        ALTER TABLE runs ADD COLUMN permission_policy TEXT NOT NULL DEFAULT 'classic'
+            CHECK (permission_policy IN ('classic','plan','standard','trusted'));
+    "#,
+    down: r#"
+        ALTER TABLE runs DROP COLUMN permission_policy;
+        ALTER TABLE runs DROP COLUMN session_id;
+        DROP INDEX IF EXISTS idx_todos_session;
+        DROP TABLE IF EXISTS todos;
+        DROP INDEX IF EXISTS idx_session_events_session;
+        DROP TABLE IF EXISTS session_events;
+        DROP INDEX IF EXISTS idx_sessions_project;
+        DROP TABLE IF EXISTS sessions;
+    "#,
+},
+Migration {
+    version: 26,
+    name: "repo_index",
+    up: crate::repo_index::SCHEMA_V26,
+    down: crate::repo_index::SCHEMA_V26_DOWN,
+},
+crate::checkpoint::checkpoint_migration(27),
 ];
 /// Database errors; each maps to a named refusal for the wire.
 #[derive(Debug, Error)]
@@ -1478,10 +1533,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 24);
-        assert_eq!(database.migrate().expect("second migrate"), 24);
+        assert_eq!(database.migrate().expect("first migrate"), 27);
+        assert_eq!(database.migrate().expect("second migrate"), 27);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 24);
+        assert_eq!(applied.len(), 27);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1518,7 +1573,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 24);
+        assert_eq!(database.migrate().expect("re-migrate"), 27);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1534,7 +1589,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 24);
+        assert_eq!(reopened.schema_version().expect("version"), 27);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1689,7 +1744,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 24);
+        assert_eq!(database.migrate().expect("migrate"), 27);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1724,7 +1779,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 24);
+        assert_eq!(database.migrate().expect("re-migrate"), 27);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1748,7 +1803,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (25, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (28, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1758,12 +1813,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 25,
-                latest: 24
+                current: 28,
+                latest: 27
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 25);
+        assert_eq!(database.schema_version().expect("version"), 28);
     }
 
     #[test]
@@ -1812,5 +1867,255 @@ mod tests {
             .query_row("PRAGMA integrity_check", [], |row| row.get(0))
             .expect("integrity");
         assert_eq!(integrity, "ok");
+    }
+
+    // --- schema v25: sessions, session_events, todos, run policy ----------
+
+    fn table_names(database: &Database) -> Vec<String> {
+        database
+            .with_connection(|connection| {
+                let mut statement = connection
+                    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")?;
+                let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+                let mut names = Vec::new();
+                for row in rows {
+                    names.push(row?);
+                }
+                Ok(names)
+            })
+            .expect("table names")
+    }
+
+    fn column_names(database: &Database, table: &str) -> Vec<String> {
+        database
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(&format!("PRAGMA table_info({table})"))?;
+                let rows = statement.query_map([], |row| row.get::<_, String>(1))?;
+                let mut names = Vec::new();
+                for row in rows {
+                    names.push(row?);
+                }
+                Ok(names)
+            })
+            .expect("column names")
+    }
+
+    /// Applies only the migrations up to `target`, producing a genuine
+    /// `target`-era database without relying on the down migrations.
+    fn seed_schema(database: &Database, target: i64) {
+        database
+            .with_connection(|connection| {
+                connection.execute_batch(
+                    "CREATE TABLE IF NOT EXISTS schema_migrations (
+                        version    INTEGER PRIMARY KEY,
+                        name       TEXT NOT NULL,
+                        applied_at TEXT NOT NULL
+                    );",
+                )?;
+                for migration in MIGRATIONS.iter().filter(|m| m.version <= target) {
+                    connection.execute_batch(migration.up)?;
+                    connection.execute(
+                        "INSERT INTO schema_migrations(version, name, applied_at) VALUES (?1, ?2, ?3)",
+                        rusqlite::params![
+                            migration.version,
+                            migration.name,
+                            Timestamp::now().as_str()
+                        ],
+                    )?;
+                }
+                Ok(())
+            })
+            .expect("seed schema");
+    }
+
+    #[test]
+    fn v25_up_adds_sessions_todos_and_run_policy_columns() {
+        let database = Database::open_in_memory().expect("in-memory db");
+        assert_eq!(
+            database.migrate().expect("migrate"),
+            MIGRATIONS.last().expect("migrations").version
+        );
+        let tables = table_names(&database);
+        for expected in ["sessions", "session_events", "todos"] {
+            assert!(
+                tables.iter().any(|name| name == expected),
+                "{expected} missing from {tables:?}"
+            );
+        }
+        let columns = column_names(&database, "runs");
+        assert!(
+            columns.iter().any(|name| name == "session_id"),
+            "runs.session_id missing from {columns:?}"
+        );
+        assert!(
+            columns.iter().any(|name| name == "permission_policy"),
+            "runs.permission_policy missing from {columns:?}"
+        );
+        let applied = database.applied_migrations().expect("migrations");
+        let v25 = applied
+            .iter()
+            .find(|(version, _, _)| *version == 25)
+            .expect("v25 must be applied");
+        assert_eq!(v25.1, "sessions_policy_todos");
+    }
+
+    #[test]
+    fn v25_defaults_runs_to_classic_and_rejects_unknown_policies() {
+        let database = Database::open_in_memory().expect("in-memory db");
+        database.migrate().expect("migrate");
+        let run_id = RunId::new();
+        insert_run(&database, run_id);
+        let policy: String = database
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT permission_policy FROM runs WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .expect("stored policy");
+        assert_eq!(policy, "classic", "a run must default to classic");
+        let rejected = database.with_connection(|connection| {
+            connection.execute(
+                "UPDATE runs SET permission_policy = 'yolo' WHERE id = ?1",
+                rusqlite::params![run_id.to_string()],
+            )
+        });
+        assert!(
+            rejected.is_err(),
+            "the CHECK constraint must reject an unknown policy"
+        );
+        let session_rejected = database.with_connection(|connection| {
+            connection.execute(
+                "INSERT INTO sessions(id, project_id, name, workspace_root, permission_policy, created_at, updated_at)
+                 VALUES ('s1', 'p', 'n', '/w', 'yolo', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+                [],
+            )
+        });
+        assert!(
+            session_rejected.is_err(),
+            "the session CHECK constraint must reject an unknown policy"
+        );
+    }
+
+    #[test]
+    fn v24_database_upgrades_to_v25_with_runs_still_readable() {
+        let database = Database::open_in_memory().expect("in-memory db");
+        seed_schema(&database, 24);
+        assert_eq!(database.schema_version().expect("version"), 24);
+        let run_id = RunId::new();
+        // A v24-era insert: the new columns do not exist yet.
+        insert_run(&database, run_id);
+        assert_eq!(
+            database.migrate().expect("upgrade"),
+            MIGRATIONS.last().expect("migrations").version
+        );
+        let row: (String, String, String, String) = database
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT project_id, prompt, status, permission_policy FROM runs WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                    |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+                )
+            })
+            .expect("old run row after upgrade");
+        assert_eq!(row.0, "project-1");
+        assert_eq!(row.1, "persist tool turns");
+        assert_eq!(row.2, "queued");
+        assert_eq!(row.3, "classic", "old runs adopt the classic default");
+        let session_id: Option<String> = database
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT session_id FROM runs WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .expect("old run session_id");
+        assert_eq!(session_id, None);
+    }
+
+    #[test]
+    fn v25_down_restores_v24_shape_and_reapplies() {
+        let database = Database::open_in_memory().expect("in-memory db");
+        assert_eq!(
+            database.migrate().expect("migrate"),
+            MIGRATIONS.last().expect("migrations").version
+        );
+        let run_id = RunId::new();
+        insert_run(&database, run_id);
+        database
+            .with_connection(|connection| {
+                connection.execute(
+                    "INSERT INTO sessions(id, project_id, name, workspace_root, permission_policy, created_at, updated_at)
+                     VALUES ('session-1', 'p', 's', '/w', 'trusted', ?1, ?1)",
+                    rusqlite::params![Timestamp::now().as_str()],
+                )?;
+                connection.execute(
+                    "INSERT INTO todos(id, session_id, seq, text, state, created_at)
+                     VALUES ('todo-1', 'session-1', 1, 'one', 'open', ?1)",
+                    rusqlite::params![Timestamp::now().as_str()],
+                )?;
+                connection.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES ('event-1', 'session-1', 'created', '{}', ?1)",
+                    rusqlite::params![Timestamp::now().as_str()],
+                )?;
+                connection.execute(
+                    "UPDATE runs SET session_id = 'session-1', permission_policy = 'trusted' WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                )?;
+                Ok(())
+            })
+            .expect("seed v25 rows");
+
+        assert_eq!(database.migrate_down_to(24).expect("down v25"), 24);
+        let tables = table_names(&database);
+        for gone in ["sessions", "session_events", "todos"] {
+            assert!(
+                !tables.iter().any(|name| name == gone),
+                "{gone} must be dropped by the v25 down migration, got {tables:?}"
+            );
+        }
+        let columns = column_names(&database, "runs");
+        assert!(
+            !columns.iter().any(|name| name == "session_id"),
+            "runs.session_id must be dropped, got {columns:?}"
+        );
+        assert!(
+            !columns.iter().any(|name| name == "permission_policy"),
+            "runs.permission_policy must be dropped, got {columns:?}"
+        );
+        // The pre-existing run survives the rollback.
+        let prompt: String = database
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT prompt FROM runs WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .expect("run row after rollback");
+        assert_eq!(prompt, "persist tool turns");
+
+        // The forward migration re-applies cleanly and rebuilds the v25 surface.
+        assert_eq!(
+            database.migrate().expect("re-migrate"),
+            MIGRATIONS.last().expect("migrations").version
+        );
+        let tables = table_names(&database);
+        for expected in ["sessions", "session_events", "todos"] {
+            assert!(tables.iter().any(|name| name == expected), "{expected} missing");
+        }
+        let policy: String = database
+            .with_connection(|connection| {
+                connection.query_row(
+                    "SELECT permission_policy FROM runs WHERE id = ?1",
+                    rusqlite::params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+            })
+            .expect("re-added policy column");
+        assert_eq!(policy, "classic");
     }
 }

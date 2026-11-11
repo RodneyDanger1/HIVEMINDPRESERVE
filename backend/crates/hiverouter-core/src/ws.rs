@@ -959,7 +959,13 @@ async fn handle_client_text(
             }
             match state
                 .engine
-                .submit_prompt(&payload.text, &payload.project_id, correlation)
+                .submit_prompt_scoped(
+                    &payload.text,
+                    &payload.project_id,
+                    payload.session_id.as_deref(),
+                    payload.permission_policy,
+                    correlation,
+                )
             {
                 Ok(_run) => publish_ack(state, CommandName::SubmitPrompt, correlation),
                 Err(refusal) => publish_error(state, refusal, Some(correlation)),
