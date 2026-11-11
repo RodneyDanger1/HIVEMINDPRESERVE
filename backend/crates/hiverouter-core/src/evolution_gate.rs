@@ -219,4 +219,30 @@ mod tests {
             Err(Refusal::SchemaInvalid)
         );
     }
+
+    #[test]
+    fn oversized_receipt_is_refused_before_parse() {
+        let root = tempfile::tempdir().expect("root");
+        let path = receipt_path(root.path(), "p-big");
+        std::fs::create_dir_all(path.parent().expect("parent")).expect("dir");
+        std::fs::write(&path, vec![b'{'; (MAX_RECEIPT_BYTES + 1) as usize]).expect("write");
+        assert_eq!(
+            verify_evaluation_receipt(root.path(), "p-big"),
+            Err(Refusal::SchemaInvalid)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_receipt_is_refused() {
+        let root = tempfile::tempdir().expect("root");
+        let target = write_receipt(root.path(), "p-target", 0.8);
+        let link = receipt_path(root.path(), "p-link");
+        std::fs::create_dir_all(link.parent().expect("parent")).expect("dir");
+        std::os::unix::fs::symlink(&target, &link).expect("symlink");
+        assert_eq!(
+            verify_evaluation_receipt(root.path(), "p-link"),
+            Err(Refusal::SchemaInvalid)
+        );
+    }
 }

@@ -95,6 +95,17 @@ pub fn load_authorized_lessons(path: &std::path::Path) -> Vec<String> {
         .take(64)
         .filter_map(|line| {
             let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
+            // Boot trust is receipt-bound: a hand-written lesson line without a
+            // 64-hex evaluation receipt is not admitted to any prompt.
+            if value.get("state").and_then(serde_json::Value::as_str) != Some("applied_lesson") {
+                return None;
+            }
+            let receipt = value
+                .get("receipt_sha256")
+                .and_then(serde_json::Value::as_str)?;
+            if receipt.len() != 64 || !receipt.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                return None;
+            }
             let area = value.get("area")?.as_str().unwrap_or("general");
             let problem = value.get("problem")?.as_str().unwrap_or("");
             let proposal = value.get("proposal")?.as_str()?;
@@ -5804,16 +5815,27 @@ mod prompt_context_tests {
             "problem": "hidden remedy",
             "proposal": "include HONEYCOMB",
             "evidence": "test",
+            "receipt_sha256": "d".repeat(64),
             "state": "applied_lesson",
         })
         .to_string();
-        std::fs::write(&path, format!("{line}\nnot-json\n")).expect("write lessons");
+        let receiptless = serde_json::json!({
+            "proposal_id": "p-2",
+            "area": "style",
+            "problem": "hand-written lesson",
+            "proposal": "include HONEYCOMB-NO-RECEIPT",
+            "state": "applied_lesson",
+        })
+        .to_string();
+        std::fs::write(&path, format!("{line}\n{receiptless}\nnot-json\n"))
+            .expect("write lessons");
         let lessons = load_authorized_lessons(&path);
         let _ = std::fs::remove_file(&path);
         assert_eq!(lessons.len(), 1);
         assert!(lessons[0].contains("include HONEYCOMB"));
         assert!(lessons[0].contains("hidden remedy"));
         assert!(!lessons[0].contains("\"proposal_id\""));
+        assert!(!lessons.join("\n").contains("HONEYCOMB-NO-RECEIPT"));
     }
 
     #[test]
