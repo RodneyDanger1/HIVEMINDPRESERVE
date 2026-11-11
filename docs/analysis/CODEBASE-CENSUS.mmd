@@ -1,0 +1,240 @@
+%%{init: {"flowchart": {"curve": "basis", "nodeSpacing": 28, "rankSpacing": 42}}}%%
+%%
+%% HiveMind v1 — subsystem diagrams for the exhaustive codebase census.
+%% Repo: C:/Users/Riley/Desktop/hiverouter-v1   HEAD: 6a4125070186da1bbe3f088b3634f3f6d5402fab
+%% Source of every count: docs/analysis/CODEBASE-CENSUS.json (generated from git ls-files, 1,573 paths).
+%% The per-file index is Appendix A of CODEBASE-CENSUS.md; this diagram is subsystem-level only.
+%% Blocks below are subgraphs of one valid flowchart: TOPO, CONTRACT, CORE, TRANSPORT, STATE,
+%% PROVIDER, TOOLS, MEMORY, EVOLUTION, UI, BUILD, INDEX-ONLY, UNTRACKED.
+%%
+flowchart TB
+
+  classDef area fill:#f4e7c3,stroke:#8a6d1f,color:#20180a
+  classDef core fill:#dbe9f6,stroke:#2f5d8a,color:#0d1b2a
+  classDef state fill:#e6f0dc,stroke:#4a6b2a,color:#12200a
+  classDef ui fill:#f6dde6,stroke:#8a2f5d,color:#2a0d1b
+  classDef build fill:#eee2f6,stroke:#5d2f8a,color:#1b0d2a
+  classDef idx fill:#f2f2f2,stroke:#666,color:#222
+  classDef miss fill:#f8c9c9,stroke:#a11,color:#300
+
+  subgraph TOPO["1. Repository topology — 1,573 tracked paths, 12 areas"]
+    direction LR
+    BACKEND["backend 132<br/>4 crates, 117 .rs"]:::area
+    WEB["web 137<br/>78 src + 32 tests"]:::area
+    DOCS["docs 922<br/>trace 374, ui 250, evidence 95"]:::area
+    PLANS["plans 114<br/>seats, waves, planners, foresight"]:::area
+    AUDIT["audit 98<br/>prior census + diagrams"]:::area
+    RT["runtime-test 82<br/>package + sqlite fixtures"]:::area
+    E2E["e2e 39<br/>16 specs + 8 helpers"]:::area
+    TOOLS["tools 34<br/>qa 13, release, launcher"]:::area
+    ROOT["root 8 + ledgers 2 + dist 4 + skills 1"]:::area
+  end
+
+  BACKEND --> WEB
+  TOOLS --> BACKEND
+  E2E --> WEB
+  E2E --> BACKEND
+  DOCS --> BACKEND
+  PLANS --> DOCS
+  AUDIT --> DOCS
+  RT --> BACKEND
+
+  subgraph CONTRACT["2. Frozen contract crate — hiverouter-contract"]
+    direction LR
+    CMD["command.rs<br/>17 command names, 14 frozen"]:::core
+    EVT["event.rs<br/>24 event names"]:::core
+    REF["refusal.rs<br/>78 E_* codes"]:::core
+    SCH["schema.rs + schemas/contract-v1.json<br/>golden JSON schema"]:::core
+    MISC["envelope / ids / state / timestamp / usage"]:::core
+  end
+
+  subgraph CORE["3. Core runtime barrel — hiverouter-core src"]
+    direction LR
+    EXEC["execution.rs 5.7k lines<br/>engine + dispatch + settlement"]:::core
+    PLAN["planner.rs<br/>plan-v1, 40-node cap"]:::core
+    CAPS["caps.rs<br/>depth 3, fanout 8, agents 64, calls 64"]:::core
+    RUNSTATE["run_state.rs<br/>16-state machine"]:::core
+    RECOV["recovery.rs<br/>suspension + child restore"]:::core
+    GRAPH["graph.rs<br/>authoritative task graph"]:::core
+    CTX["context.rs + checks.rs<br/>context + preflight"]:::core
+    DAEMON["daemon.rs + remote.rs + remote_supervisor.rs"]:::core
+  end
+
+  CMD --> EXEC
+  EVT --> EXEC
+  REF --> EXEC
+  EXEC --> RUNSTATE
+  EXEC --> GRAPH
+  CAPS --> EXEC
+  PLAN --> EXEC
+  RECOV --> RUNSTATE
+  DAEMON --> EXEC
+
+  subgraph TRANSPORT["4. HTTP + WS transport"]
+    direction LR
+    HTTP["http.rs build_router<br/>60 paths = 63 method+path"]:::core
+    WS["ws.rs<br/>hello + 14 dispatch arms + replay"]:::core
+    BUS["bus.rs<br/>EventBus sequence + replay"]:::core
+    STATIC["static_ui.rs<br/>rust-embed of web/dist"]:::core
+    HANDSHAKE["handshake.rs<br/>origin + session token"]:::core
+  end
+
+  HTTP --> HANDSHAKE
+  WS --> HANDSHAKE
+  WS --> BUS
+  HTTP --> BUS
+
+  subgraph STATE["5. Persistence — SQLite store"]
+    direction LR
+    DB["db.rs<br/>23 migrations, 28 tables, 30 CREATE stmts"]:::state
+    STORE["store.rs 3.6k lines<br/>RunStore"]:::state
+    HIS["history.rs + snapshot.rs<br/>revisions, replay, state_at"]:::state
+    ENT["entities.rs<br/>Run, TaskRecord, ChatMessage"]:::state
+  end
+
+  BUS --> STORE
+  HTTP --> STORE
+  STORE --> DB
+  STORE --> HIS
+  ENT --> STORE
+  EXEC --> STORE
+
+  subgraph PROVIDER["6. Provider adapter"]
+    direction LR
+    PEXEC["provider_executor.rs<br/>tool assembly + conversation"]:::core
+    PCLIENT["provider/src/client.rs<br/>streaming, retry, rate"]:::core
+    PBUDGET["budget.rs + pricing.rs + accounting.rs"]:::core
+    PSECRET["secret.rs<br/>key never leaves process"]:::core
+    PTOOLS["tool_assembler.rs + dto.rs"]:::core
+  end
+
+  EXEC --> PEXEC
+  PEXEC --> PCLIENT
+  PCLIENT --> PBUDGET
+  PCLIENT --> PSECRET
+  PTOOLS --> PEXEC
+
+  subgraph TOOLS["7. Tool registry and safety"]
+    direction LR
+    TREG["tool.rs<br/>12 tools, 5 classes, 5 tiers, 35 grants"]:::core
+    TLOOP["tool_loop.rs + tools_bridge.rs<br/>40 calls/run, 12 continuations"]:::core
+    APP["approval.rs + approval_wait.rs<br/>nonce, TTL, CAS resolve"]:::core
+    JAIL["jail.rs + shell.rs + side_effects.rs"]:::core
+    CLI["cli.rs + bin/hiverouter.rs + tools/hivemind-cli.mjs"]:::core
+  end
+
+  PEXEC --> TLOOP
+  TLOOP --> TREG
+  TREG --> APP
+  APP --> JAIL
+  TREG --> CLI
+
+  subgraph MEMORY["8. Memory + A2A"]
+    direction LR
+    MB["memory_banks / memory_entries<br/>migrations 14"]:::state
+    MJ["memory_journal<br/>hash chain, migrations 15/18/20"]:::state
+    MS["memory_context_snapshots<br/>migration 16"]:::state
+    A2A["a2a_audit + agent_messages<br/>migrations 6/12/23"]:::state
+    MROUTE["/api/memory/*, /api/a2a/*<br/>http.rs 625-654"]:::core
+  end
+
+  MROUTE --> MB
+  MROUTE --> MJ
+  MROUTE --> MS
+  MROUTE --> A2A
+  MB --> STORE
+  A2A --> STORE
+
+  subgraph EVOLUTION["9. Evolution gate"]
+    direction LR
+    PROP["propose_improvement<br/>root tool"]:::core
+    VOTE["convene_evolution_vote<br/>4 SuperAgent voters"]:::core
+    AUTH["operator authorize<br/>POST proposals/id/authorize"]:::core
+    APPLY["apply / rollback<br/>POST proposals/id/apply|rollback"]:::core
+    LESSON["LESSONS.jsonl + evolution_lessons<br/>GET /api/evolution/lessons"]:::state
+  end
+
+  PROP --> VOTE
+  VOTE --> AUTH
+  AUTH --> APPLY
+  APPLY --> LESSON
+  LESSON --> MROUTE
+
+  subgraph UI["10. Web UI — 7 nav sections, 4 tabs, 28 hash surfaces"]
+    direction LR
+    SHELL["App.tsx + main.tsx<br/>hash router /nav/tab"]:::ui
+    APICLI["api/client.ts + api/contract.ts<br/>WS hello, ACK/ERROR"]:::ui
+    STOREUI["state/store.ts<br/>Zustand vanilla store"]:::ui
+    CANVAS["flow/Canvas.tsx + nodes + BeeEdge<br/>spatial hive"]:::ui
+    CHAT["chat/ChatCore.tsx + ChatMotion"]:::ui
+    PANELS["panels/* 36 components<br/>agents, data, history, remote, settings"]:::ui
+    DESIGN["tokens/tokens.ts + styles/*.css<br/>FigCraft gallery + splash"]:::ui
+  end
+
+  APICLI --> HTTP
+  APICLI --> WS
+  APICLI --> STOREUI
+  STOREUI --> CANVAS
+  STOREUI --> CHAT
+  STOREUI --> PANELS
+  SHELL --> STOREUI
+  DESIGN --> PANELS
+  DESIGN --> CANVAS
+
+  subgraph BUILD["11. Build, install, release"]
+    direction LR
+    WEBBUILD["npm build  web/dist 40 files 21.5 MB"]:::build
+    EMBED["rust-embed compile-time embed<br/>static_ui.rs:15-17"]:::build
+    CARGO["cargo build --release --locked<br/>target/release/hiverouter.exe"]:::build
+    RELEASE["tools/build-release.ps1<br/>zip + sha256 + release-manifest.json"]:::build
+    LAUNCHER["HiveMind.exe launcher<br/>tools/start-hivemind.ps1"]:::build
+    GATES["tools/qa/run-gates.ps1<br/>G0..G7 fail-closed"]:::build
+  end
+
+  WEBBUILD --> EMBED
+  EMBED --> CARGO
+  CARGO --> RELEASE
+  RELEASE --> LAUNCHER
+  CARGO --> GATES
+  WEBBUILD --> GATES
+  GATES --> RELEASE
+
+  subgraph INDEXONLY["12. Present in the index, not drawn file-by-file"]
+    direction LR
+    IDFAM["docs/design-figcraft 248<br/>docs/trace-figma-parity 155<br/>docs/trace-ui-rebuild 85"]:::idx
+    IDEV["docs/evidence 95 + docs/trace-live 40<br/>gate receipts + live runs"]:::idx
+    IDPLAN["plans 114 + audit 98<br/>seats, waves, census parts"]:::idx
+    IDRT["runtime-test 82<br/>pkg-final, pkg-smoke, sqlite fixtures"]:::idx
+    IDE2E["e2e/specs 16 + helpers 8<br/>Playwright + live probes"]:::idx
+  end
+
+  TOPO -.-> INDEXONLY
+  RT -.-> IDRT
+  E2E -.-> IDE2E
+
+  subgraph UNTRACKED["13. Generated or untracked trees that affect the product"]
+    direction LR
+    UWD["web/dist 40 files 21.5 MB<br/>compile-time embedded"]:::build
+    UTGT["backend/target 4,633 files 2.46 GB"]:::build
+    UW64["tools/w64devkit 9,452 files 752 MB"]:::build
+    UNM["web/node_modules 8,469 + e2e/node_modules 194"]:::build
+    UPKG["dist/HiveMind 3 files + dist/HiveMind-1.1.0-win64 6 + dist/HiveMind.zip"]:::build
+    UPATH["LOCALAPPDATA/HiveMind/provider.json<br/>./data/hiverouter.db"]:::build
+  end
+
+  UWD --> EMBED
+  UTGT --> CARGO
+  UPKG --> LAUNCHER
+  UPATH --> STORE
+
+  MISS1["MISSING: DIFF_PROPOSE"]:::miss
+  MISS2["MISSING: DIFF_APPLY"]:::miss
+  MISS3["MISSING: DIFF_REJECT"]:::miss
+  MISS4["ABSENT BY DESIGN: APPROVAL_HYDRATE<br/>hello replay carries approvals"]:::idx
+  CMD -.-> MISS1
+  CMD -.-> MISS2
+  CMD -.-> MISS3
+  CMD -.-> MISS4
+
+  NODIAG["Index-only, no individual node:<br/>1,137 doc-feature paths in Appendix A"]:::idx
+  TOPO -.-> NODIAG
