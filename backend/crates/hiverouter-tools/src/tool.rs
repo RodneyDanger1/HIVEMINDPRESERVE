@@ -137,6 +137,12 @@ pub enum ToolId {
     WebFetch,
     /// Record a SuperAgent vote on one self-evolution proposal.
     VoteEvolution,
+    /// Bounded glob over the workspace jail.
+    FsGlob,
+    /// Bounded literal grep over the workspace jail.
+    FsGrep,
+    /// Read an exact line range from a workspace file.
+    FileReadRange,
 }
 
 impl ToolId {
@@ -156,6 +162,9 @@ impl ToolId {
             ToolId::RequestDetached => "request_detached",
             ToolId::WebFetch => "web_fetch",
             ToolId::VoteEvolution => "vote_evolution",
+            ToolId::FsGlob => "fs_glob",
+            ToolId::FsGrep => "fs_grep",
+            ToolId::FileReadRange => "file_read_range",
         }
     }
 
@@ -335,6 +344,158 @@ pub struct ShellExecArgs {
     pub cwd: Option<String>,
 }
 
+/// Arguments for `fs_glob`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct FsGlobArgs {
+    /// Glob pattern relative to the jail root (`*`, `?`, `**`, `[...]`).
+    pub pattern: String,
+    /// Optional workspace-relative root.
+    #[serde(default)]
+    pub root: Option<String>,
+    /// Requested result cap (server clamps).
+    #[serde(default)]
+    pub max_results: Option<usize>,
+}
+
+/// Arguments for `fs_grep`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct FsGrepArgs {
+    /// Literal substring to find.
+    pub pattern: String,
+    /// Optional workspace-relative root.
+    #[serde(default)]
+    pub root: Option<String>,
+    /// Optional file glob filter.
+    #[serde(default)]
+    pub glob: Option<String>,
+    /// Whether matching is case-sensitive (ASCII).
+    #[serde(default)]
+    pub case_sensitive: Option<bool>,
+    /// Requested match cap (server clamps).
+    #[serde(default)]
+    pub max_matches: Option<usize>,
+}
+
+/// Arguments for `file_read_range`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct FileReadRangeArgs {
+    /// Workspace-relative path.
+    pub path: String,
+    /// 1-based first line.
+    pub start_line: u64,
+    /// Number of lines to return.
+    pub line_count: u64,
+}
+
+/// Arguments for `apply_patch`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ApplyPatchArgs {
+    /// Workspace-relative target path.
+    pub path: String,
+    /// Unified diff text (bounded by the server).
+    pub patch: String,
+    /// Optional expected current SHA-256 (64 lowercase hex).
+    #[serde(default)]
+    pub expected_sha256: Option<String>,
+}
+
+/// Arguments for `git_status`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitStatusArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+}
+
+/// Arguments for `git_diff`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitDiffArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+    /// Diff the index instead of the worktree.
+    #[serde(default)]
+    pub staged: Option<bool>,
+    /// Optional path filter.
+    #[serde(default)]
+    pub path: Option<String>,
+}
+
+/// Arguments for `git_log`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitLogArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+    /// Number of commits to return.
+    #[serde(default)]
+    pub limit: Option<usize>,
+}
+
+/// Arguments for `git_stage`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitStageArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+    /// Paths to stage; mutually exclusive with `all`.
+    #[serde(default)]
+    pub paths: Vec<String>,
+    /// Stage all tracked/untracked changes.
+    #[serde(default)]
+    pub all: Option<bool>,
+}
+
+/// Arguments for `git_commit`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitCommitArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+    /// Single-line commit message.
+    pub message: String,
+    /// Optional author identity.
+    #[serde(default)]
+    pub author: Option<GitAuthorArgs>,
+}
+
+/// Author identity for `git_commit`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GitAuthorArgs {
+    /// Author name.
+    pub name: String,
+    /// Author email.
+    pub email: String,
+}
+
+/// Arguments for `run_tests`.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct RunTestsArgs {
+    /// Optional workspace-relative working directory.
+    #[serde(default)]
+    pub cwd: Option<String>,
+    /// `auto`, `cargo`, `npm`, or `pytest`.
+    #[serde(default)]
+    pub runner: Option<String>,
+    /// Extra arguments passed directly (no shell interpolation).
+    #[serde(default)]
+    pub args: Vec<String>,
+    /// Optional timeout in seconds (server clamps).
+    #[serde(default)]
+    pub timeout_secs: Option<u64>,
+}
+
 /// Arguments for `request_detached`.
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -455,6 +616,24 @@ impl ToolRegistry {
                 PermissionClass::Control,
                 schema_of!(VoteEvolutionArgs),
             ),
+            contract(
+                ToolId::FsGlob,
+                "List workspace paths matching a bounded glob inside the jail.",
+                PermissionClass::Read,
+                schema_of!(FsGlobArgs),
+            ),
+            contract(
+                ToolId::FsGrep,
+                "Search workspace files for a bounded literal substring inside the jail.",
+                PermissionClass::Read,
+                schema_of!(FsGrepArgs),
+            ),
+            contract(
+                ToolId::FileReadRange,
+                "Read an exact line range from one workspace file inside the jail.",
+                PermissionClass::Read,
+                schema_of!(FileReadRangeArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -462,7 +641,14 @@ impl ToolRegistry {
         let mut allowlists = BTreeMap::new();
         allowlists.insert(
             AgentTier::HyperAgent,
-            vec![ToolId::SpawnAgent, ToolId::ReportResult, ToolId::Finish],
+            vec![
+                ToolId::SpawnAgent,
+                ToolId::ReportResult,
+                ToolId::Finish,
+                ToolId::FsGlob,
+                ToolId::FsGrep,
+                ToolId::FileReadRange,
+            ],
         );
         allowlists.insert(
             AgentTier::SuperAgent,
@@ -479,6 +665,9 @@ impl ToolRegistry {
                 ToolId::RequestDetached,
                 ToolId::WebFetch,
                 ToolId::VoteEvolution,
+                ToolId::FsGlob,
+                ToolId::FsGrep,
+                ToolId::FileReadRange,
             ],
         );
         allowlists.insert(
@@ -495,6 +684,9 @@ impl ToolRegistry {
                 ToolId::ShellExec,
                 ToolId::RequestDetached,
                 ToolId::WebFetch,
+                ToolId::FsGlob,
+                ToolId::FsGrep,
+                ToolId::FileReadRange,
             ],
         );
         allowlists.insert(
@@ -505,6 +697,9 @@ impl ToolRegistry {
                 ToolId::Finish,
                 ToolId::FileRead,
                 ToolId::FileList,
+                ToolId::FsGlob,
+                ToolId::FsGrep,
+                ToolId::FileReadRange,
             ],
         );
         allowlists.insert(
@@ -514,6 +709,9 @@ impl ToolRegistry {
                 ToolId::FileList,
                 ToolId::FileWrite,
                 ToolId::ShellExec,
+                ToolId::FsGlob,
+                ToolId::FsGrep,
+                ToolId::FileReadRange,
             ],
         );
 

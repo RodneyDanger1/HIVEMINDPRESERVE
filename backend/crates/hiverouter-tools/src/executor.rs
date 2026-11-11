@@ -14,9 +14,11 @@
 use hiverouter_contract::Refusal;
 
 use crate::error::ToolError;
+use crate::fs_search::{self, GlobRequest, GrepRequest, ReadRangeRequest};
 use crate::jail::WorkspaceJail;
 use crate::tool::{
-    AgentTier, FileListArgs, FileReadArgs, FinishArgs, ReportResultArgs, ToolId, ToolRegistry,
+    AgentTier, FileListArgs, FileReadArgs, FileReadRangeArgs, FinishArgs, FsGlobArgs, FsGrepArgs,
+    ReportResultArgs, ToolId, ToolRegistry,
 };
 
 /// Result of routing one model-originated read-only tool call.
@@ -55,11 +57,7 @@ pub fn execute_read_only(
     tool: &str,
     args: &serde_json::Value,
 ) -> Result<ExecutedTool, ToolError> {
-    if tool != ToolId::FileRead.id()
-        && tool != ToolId::FileList.id()
-        && tool != ToolId::ReportResult.id()
-        && tool != ToolId::Finish.id()
-    {
+    let Some(id) = ToolId::from_id(tool) else {
         return Ok(ExecutedTool::Refused {
             code: Refusal::ToolNotAllowed.code().to_owned(),
             detail: format!(
@@ -67,8 +65,25 @@ pub fn execute_read_only(
                  side-effecting tools are approval/loop-owned"
             ),
         });
+    };
+    let Some(known) = registry.contract(id) else {
+        return Ok(ExecutedTool::Refused {
+            code: Refusal::ToolNotAllowed.code().to_owned(),
+            detail: format!(
+                "tool {tool:?} is not executable by the read-only executor; \
+                 side-effecting tools are approval/loop-owned"
+            ),
+        });
+    };
+    if !matches!(known.permission_class, crate::tool::PermissionClass::Read) {
+        return Ok(ExecutedTool::Refused {
+            code: Refusal::ToolNotAllowed.code().to_owned(),
+            detail: format!(
+                "tool {tool:?} is side-effecting or control-plane; the read-only executor \
+                 performs no I/O and the approval/loop owner must execute it"
+            ),
+        });
     }
-
     // Registry first: unknown id, missing tier grant or invalid args never
     // reach an executor (fail closed before any filesystem access).
     let contract = registry.resolve_call(tier, tool, args)?;
@@ -77,11 +92,98 @@ pub fn execute_read_only(
         ToolId::FileList => execute_file_list(jail, args),
         ToolId::ReportResult => execute_report_result(args),
         ToolId::Finish => execute_finish(args),
+        ToolId::FsGlob => execute_fs_glob(jail, args),
+        ToolId::FsGrep => execute_fs_grep(jail, args),
+        ToolId::FileReadRange => execute_file_read_range(jail, args),
         _ => Ok(ExecutedTool::Refused {
             code: Refusal::ToolNotAllowed.code().to_owned(),
-            detail: format!("tool {:?} is not executable by the read-only executor", tool),
+            detail: format!(
+                "tool {tool:?} is not executable by the read-only filesystem executor; \
+                 side-effecting or process-owned tools are approval/loop-owned"
+            ),
         }),
     }
+}
+
+fn execute_fs_glob(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<ExecutedTool, ToolError> {
+    let parsed: FsGlobArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("fs_glob arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    let mut request = GlobRequest::new(parsed.pattern);
+    if let Some(root) = parsed.root {
+        request = request.with_root(root);
+    }
+    if let Some(max_results) = parsed.max_results {
+        request = request.with_max_results(max_results);
+    }
+    let result = fs_search::glob(jail, &request)?;
+    let text = serde_json::to_string(&result).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize fs_glob result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok { text })
+}
+
+fn execute_fs_grep(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<ExecutedTool, ToolError> {
+    let parsed: FsGrepArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("fs_grep arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    let mut request = GrepRequest::new(parsed.pattern);
+    if let Some(root) = parsed.root {
+        request = request.with_root(root);
+    }
+    if let Some(glob) = parsed.glob {
+        request = request.with_glob(glob);
+    }
+    if let Some(case_sensitive) = parsed.case_sensitive {
+        request = request.with_case_sensitive(case_sensitive);
+    }
+    if let Some(max_matches) = parsed.max_matches {
+        request = request.with_max_matches(max_matches);
+    }
+    let result = fs_search::grep(jail, &request)?;
+    let text = serde_json::to_string(&result).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize fs_grep result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok { text })
+}
+
+fn execute_file_read_range(
+    jail: &WorkspaceJail,
+    args: &serde_json::Value,
+) -> Result<ExecutedTool, ToolError> {
+    let parsed: FileReadRangeArgs = serde_json::from_value(args.clone()).map_err(|error| {
+        ToolError::new(
+            Refusal::SchemaInvalid,
+            format!("file_read_range arguments do not deserialize after schema validation: {error}"),
+        )
+    })?;
+    let request = ReadRangeRequest::new(parsed.path, parsed.start_line, parsed.line_count);
+    let result = fs_search::read_range(jail, &request)?;
+    let text = serde_json::to_string(&result).map_err(|error| {
+        ToolError::new(
+            Refusal::InternalError,
+            format!("could not serialize file_read_range result: {error}"),
+        )
+    })?;
+    Ok(ExecutedTool::Ok { text })
 }
 
 /// A terminal-result report from the model. It carries no side effect and is
@@ -241,6 +343,48 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
         assert_eq!(parsed.as_array().expect("array").len(), 1);
         assert_eq!(parsed[0]["name"].as_str(), Some("inner.txt"));
+    }
+
+    #[test]
+    fn fs_glob_grep_and_read_range_execute_without_side_effects() {
+        let (_temp, jail) = jail();
+        let registry = registry();
+        let glob = execute_read_only(
+            &jail,
+            &registry,
+            AgentTier::WorkerAgent,
+            "fs_glob",
+            &serde_json::json!({"pattern": "*.txt"}),
+        )
+        .expect("glob executes");
+        let ExecutedTool::Ok { text } = glob else {
+            panic!("fs_glob must execute, got {glob:?}");
+        };
+        assert!(text.contains("note.txt"), "{text}");
+        let range = execute_read_only(
+            &jail,
+            &registry,
+            AgentTier::WorkerAgent,
+            "file_read_range",
+            &serde_json::json!({"path": "note.txt", "start_line": 1, "line_count": 1}),
+        )
+        .expect("range executes");
+        let ExecutedTool::Ok { text } = range else {
+            panic!("file_read_range must execute, got {range:?}");
+        };
+        assert!(text.contains("hello tool loop"), "{text}");
+        let grep = execute_read_only(
+            &jail,
+            &registry,
+            AgentTier::WorkerAgent,
+            "fs_grep",
+            &serde_json::json!({"pattern": "hello"}),
+        )
+        .expect("grep executes");
+        let ExecutedTool::Ok { text } = grep else {
+            panic!("fs_grep must execute, got {grep:?}");
+        };
+        assert!(text.contains("note.txt"), "{text}");
     }
 
     #[test]
