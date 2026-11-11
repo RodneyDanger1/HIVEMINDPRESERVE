@@ -1,13 +1,13 @@
 {
   "receipt": "hivemind.install-smoke.v1",
-  "observed_at": "2026-11-10T22:44:20-06:00",
-  "source_commit": "92daed7c9a09e7d051421cdf10397decb1ee6199",
+  "observed_at": "2026-11-10T23:04:45-06:00",
+  "source_commit": "806251b80efa4760711bd238cded68e548d48800",
   "version": "1.2.0-dev",
   "build_dirty": false,
   "package_zip": "dist/HiveMind.zip",
-  "package_zip_sha256": "27b7ea4f982a71224d3392fec463b88208a6c871b25957aaf5f305d335664fc4",
-  "server_sha256": "2313cbf260e899db72a595948df139a6ec5924fb61694ecfef89338e11af711f",
-  "launcher_sha256": "732e2b887f16cef9b53d5b1f202cc713ffab337c655295f4fe6c328ce1d49f2a",
+  "package_zip_sha256": "b4bac18d29560d5c63404649c2953e359ffc6170c1214a3aa1b54de127811061",
+  "server_sha256": "d9d7690287e5d9d84cf655525690983a1f109d625efd7cfd7168cd2529732c78",
+  "launcher_sha256": "fc574034ed603a4a8a409f28e6e9fe873c3ca599fe8aaf8de6e38a93c8a3b98a",
   "install_root": "%LOCALAPPDATA%\\Programs\\HiveMind\\app",
   "data_root": "%LOCALAPPDATA%\\HiveMind",
   "workspace_root": "%LOCALAPPDATA%\\HiveMind\\workspace",
@@ -26,14 +26,15 @@
     "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
   },
   "what_this_proves": [
-    "a clean package built from 92daed7 with dirty=false",
+    "a clean package built from 806251b with dirty=false",
     "the installed server reports 1.2.0-dev and schema 24",
-    "the installed build requires a held-out receipt to apply a lesson and rejects receipt-less lesson lines at boot",
+    "the installed build includes the held-out evaluation receipt gate at apply and boot",
+    "hierarchical runs make one bounded read-only post-dispatch monitor review before final synthesis",
     "the UI renders at 1440x900 and 375x812; the library shows all eight templates"
   ],
   "what_this_does_not_prove": [
     "a live provider call (no key configured)",
     "a screenshot of the Edge app window launched from the shortcut",
-    "that a real external evaluator produced a receipt"
+    "that the monitor can send_instruction, cancel_task or repair a task; it is review-only"
   ]
 }
