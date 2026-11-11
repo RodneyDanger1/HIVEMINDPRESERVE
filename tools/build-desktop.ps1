@@ -63,7 +63,10 @@ if ($LASTEXITCODE -ne 0) { throw "launcher compile failed: $LASTEXITCODE" }
 
 Write-Host "[4/5] assemble portable folder" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
-Copy-Item -LiteralPath $launcherExe -Destination $outDir -Force
+# Remove stale temp-named launchers from an interrupted/older build.
+Get-ChildItem -LiteralPath $outDir -Filter 'HiveMindLauncher-*.exe' -File -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath $launcherExe -Destination (Join-Path $outDir 'HiveMind.exe') -Force
 Remove-Item -LiteralPath $launcherExe -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath $server -Destination $outDir -Force
 foreach ($script in @('set-provider-key.ps1', 'set-provider-profile.ps1')) {
