@@ -1643,13 +1643,19 @@ impl RunEngine {
             agents.saturating_add(4) as u64,
         )?;
         let mut voters = Vec::new();
-        for _ in 0..4 {
+        let lenses = [
+            "security and containment",
+            "truthfulness of scope and effects",
+            "testability and evidence",
+            "reversibility and rollback",
+        ];
+        for lens in lenses {
             let child = self.spawn_sub_hive(root.id, "super")?;
             let request = format!(
                 "Authorized evolution vote request. proposal_id={proposal_id}. \
-                 Call vote_evolution with this proposal_id and vote approve or reject \
-                 with an 8-400 character rationale. You may not apply; only the operator \
-                 can authorize and apply a lesson."
+                 Review lens: {lens}. Call vote_evolution with this proposal_id and vote \
+                 approve or reject with an 8-400 character rationale grounded in that lens. \
+                 You may not apply; only the operator can authorize and apply a lesson."
             );
             self.store.record_agent_message(
                 root.run_id,

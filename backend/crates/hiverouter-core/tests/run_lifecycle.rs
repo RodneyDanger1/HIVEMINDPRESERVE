@@ -1255,7 +1255,7 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
     assert!(proposal.value.contains("\"can_apply\":false"));
     let tasks = harness.store.tasks_for_run(run.id).expect("tasks");
     assert_eq!(tasks.len(), 6, "planner, planned branch, four voters: {tasks:?}");
-    let voters = tasks
+    let voters: Vec<_> = tasks
         .iter()
         .filter(|task| task.role == "super")
         .filter(|task| {
@@ -1269,8 +1269,32 @@ async fn root_can_record_but_never_auto_apply_an_improvement_proposal() {
                 })
                 .unwrap_or(false)
         })
-        .count();
-    assert_eq!(voters, 4, "exactly four voters must receive an A2A request");
+        .collect();
+    assert_eq!(voters.len(), 4, "exactly four voters must receive an A2A request");
+    let mut requests = Vec::new();
+    for voter in &voters {
+        for message in harness
+            .store
+            .agent_messages_for_task(run.id, voter.id, 8)
+            .expect("voter messages")
+        {
+            if message.kind == "evolution_vote_request" {
+                requests.push(message.text);
+            }
+        }
+    }
+    assert_eq!(requests.len(), 4);
+    for lens in [
+        "security and containment",
+        "truthfulness of scope and effects",
+        "testability and evidence",
+        "reversibility and rollback",
+    ] {
+        assert!(
+            requests.iter().any(|request| request.contains(lens)),
+            "missing review lens {lens}: {requests:?}"
+        );
+    }
 }
 
 #[tokio::test]
