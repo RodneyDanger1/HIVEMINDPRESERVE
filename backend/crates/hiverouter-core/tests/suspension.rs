@@ -266,6 +266,15 @@ struct Harness {
 }
 
 fn harness(executor: Arc<dyn ProviderExecutor>, with_tools: bool, approval_ttl_secs: u64) -> Harness {
+    harness_with_parallel(executor, with_tools, approval_ttl_secs, 1)
+}
+
+fn harness_with_parallel(
+    executor: Arc<dyn ProviderExecutor>,
+    with_tools: bool,
+    approval_ttl_secs: u64,
+    parallel: usize,
+) -> Harness {
     let data = tempfile::tempdir().expect("data tempdir");
     let workspace = tempfile::tempdir().expect("workspace tempdir");
     let db = Arc::new(Database::open(&data.path().join("hiverouter.db")).expect("open db"));
@@ -286,7 +295,8 @@ fn harness(executor: Arc<dyn ProviderExecutor>, with_tools: bool, approval_ttl_s
         Arc::new(TemplateRegistry::default()),
     )
     .with_tool_workspace(WorkspaceJail::open(workspace.path()).expect("workspace jail"))
-    .with_shell_policy(ShellPolicy::new(["git.exe".to_owned()]));
+    .with_shell_policy(ShellPolicy::new(["git.exe".to_owned()]))
+    .with_parallel_dispatch(parallel);
     if with_tools {
         engine = engine.with_tools(bridge.clone());
     }
@@ -447,6 +457,18 @@ async fn begin_approval(
                     collected.terminal_status, collected.sequence, collected.tool_results
                 );
             }
+        }
+    }
+}
+
+async fn next_approval_event(
+    receiver: &mut tokio::sync::broadcast::Receiver<SequencedEvent>,
+) -> ApprovalRequestEvent {
+    loop {
+        let event = next_event(receiver).await;
+        if event.envelope.name == "APPROVAL_REQUEST" {
+            return serde_json::from_value(event.envelope.payload.clone())
+                .expect("approval payload");
         }
     }
 }
@@ -1033,6 +1055,132 @@ async fn wrong_args_grant_refused_before_side_effect() {
     assert_eq!(collected.outcomes(), vec!["ok".to_owned()]);
     assert_file(&harness, WRITE_PATH, WRITE_TEXT);
     assert_no_side_effect(&harness, "wrong-target.txt");
+}
+
+/// Two SuperAgent tasks, each asking for one approval.
+struct ParallelApprovalExecutor {
+    plan: Plan,
+}
+
+#[async_trait]
+impl ProviderExecutor for ParallelApprovalExecutor {
+    async fn plan(
+        &self,
+        _run_id: RunId,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+    ) -> Result<Plan, Refusal> {
+        Ok(self.plan.clone())
+    }
+
+    async fn execute(
+        &self,
+        _run_id: RunId,
+        task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+    ) -> Result<StreamedReply, Refusal> {
+        let _ = on_delta;
+        if task.role != "super" {
+            return Ok(final_answer());
+        }
+        Ok(tool_only_reply(vec![write_call(
+            &format!("call-{}", task.id),
+            &format!("{}.txt", task.id),
+            "X",
+            0,
+        )]))
+    }
+
+    async fn continue_with_tools(
+        &self,
+        _run_id: RunId,
+        _task: &TaskRecord,
+        _prompt: &str,
+        _cancel: &CancellationToken,
+        on_delta: &DeltaSink,
+        _transcript: &[ToolTurnTranscript],
+    ) -> Result<StreamedReply, Refusal> {
+        let _ = on_delta;
+        Ok(final_answer())
+    }
+
+    async fn answer_escalation(
+        &self,
+        _run_id: RunId,
+        _parent: &TaskRecord,
+        _run_prompt: &str,
+        _question: &str,
+        _parent_context: Option<&hiverouter_core::context::ScopedContext>,
+        _cancel: &CancellationToken,
+    ) -> Result<EscalationAnswer, Refusal> {
+        Err(Refusal::ProviderInvalidResponse)
+    }
+}
+
+#[tokio::test]
+async fn concurrent_tasks_do_not_double_suspend_the_run() {
+    let a = TaskId::new();
+    let b = TaskId::new();
+    let plan = Plan::new(vec![
+        PlanNode {
+            node_id: a,
+            role: "super".to_owned(),
+            deps: Vec::new(),
+            depth: 1,
+            parent: None,
+        },
+        PlanNode {
+            node_id: b,
+            role: "super".to_owned(),
+            deps: Vec::new(),
+            depth: 1,
+            parent: None,
+        },
+    ]);
+    let executor: Arc<dyn ProviderExecutor> = Arc::new(ParallelApprovalExecutor { plan });
+    let harness = harness_with_parallel(executor, true, 120, 2);
+    let mut receiver = harness.bus.subscribe();
+    let run = harness
+        .engine
+        .submit_prompt("two approvals", "project-suspension", Uuid::now_v7())
+        .expect("submit prompt");
+
+    let first = tokio::time::timeout(Duration::from_secs(5), next_approval_event(&mut receiver))
+        .await
+        .expect("first approval request");
+    // Only one task may occupy the run's AwaitingApproval state.
+    let premature = tokio::time::timeout(
+        Duration::from_millis(350),
+        next_approval_event(&mut receiver),
+    )
+    .await;
+    assert!(
+        premature.is_err(),
+        "a second approval request arrived while the first was still open"
+    );
+
+    assert!(harness.resolve_and_wake(&first, "approve"));
+    let second = tokio::time::timeout(Duration::from_secs(5), next_approval_event(&mut receiver))
+        .await
+        .expect("second approval request after the first resolved");
+    assert_ne!(first.approval_id, second.approval_id);
+    assert!(harness.resolve_and_wake(&second, "approve"));
+
+    let collected = settle(receiver, Collected::default()).await;
+    assert_eq!(collected.final_run_status.as_deref(), Some("completed"));
+    assert_eq!(harness.run(run.id).status, AgentState::Completed);
+    let sup = harness
+        .engine
+        .store
+        .tasks_for_run(run.id)
+        .expect("tasks")
+        .into_iter()
+        .filter(|task| task.role == "super")
+        .collect::<Vec<_>>();
+    assert_eq!(sup.len(), 2);
+    assert!(sup.iter().all(|task| task.state == AgentState::Completed));
 }
 
 /* ------------------------------------------------------------------ */
