@@ -1,17 +1,21 @@
 {
   "receipt": "hivemind.install-smoke.v1",
-  "observed_at": "2026-11-10T21:44:00-06:00",
-  "source_commit": "c8359f68a024987093b7435ebce17ca68f67bc38",
+  "observed_at": "2026-11-10T22:14:00-06:00",
+  "source_commit": "545d67640c3adec6612e1fdfb892aa27cf33f056",
   "version": "1.2.0-dev",
   "build_dirty": false,
   "package_zip": "dist/HiveMind.zip",
-  "package_zip_sha256": "d8fc7ee8ae47af4d1cd1cbb0f6da9f4175a3f6fb33c2c2f5fdec01e5e09ed64c",
-  "server_sha256": "1e6d455dad7214d0d210751949998f421a6306d222dc4d770f22ccb489382b86",
-  "launcher_sha256": "fd24bc6dc577965bb6fb9f11b1ed695cf6503f2bed926c81fcd1995757caecfb",
+  "package_zip_sha256": "0eac40556a2aab380d5fa0b3e8854eb74eef3f1c057d5e1e03c4c870bdd09dc1",
+  "server_sha256": "5525c203b5cd5e334ebae019bb2098de8be416aebbdd87dc253986742691cd20",
+  "launcher_sha256": "a2da0b62a95133a3d887883268f21ce086a5ca328cf5efdb2ffe48375fa8870d",
   "install_root": "%LOCALAPPDATA%\\Programs\\HiveMind\\app",
   "data_root": "%LOCALAPPDATA%\\HiveMind",
   "workspace_root": "%LOCALAPPDATA%\\HiveMind\\workspace",
   "shortcuts": ["Desktop\\HiveMind.lnk", "Start Menu\\Programs\\HiveMind\\HiveMind.lnk"],
+  "screenshots": [
+    "docs/evidence/live/install-ui-1440x900.png",
+    "docs/evidence/live/install-ui-375x812.png"
+  ],
   "health": {
     "status": "degraded",
     "version": "1.2.0-dev",
@@ -21,20 +25,15 @@
     "missing_key": true,
     "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
   },
-  "screenshots": [
-    "docs/evidence/live/install-ui-1440x900.png",
-    "docs/evidence/live/install-ui-375x812.png"
-  ],
   "what_this_proves": [
-    "a clean package built from c8359f6 with dirty=false",
-    "the clean currently installed build includes the per-run approval serialization",
+    "a clean package built from 545d676 with dirty=false",
     "the installed server reports 1.2.0-dev and schema 24",
-    "Desktop and Start Menu shortcuts were created",
-    "the UI renders at 1440x900 and 375x812; the library gallery shows all eight templates"
+    "the UI renders at 1440x900 and 375x812; the library shows all eight templates",
+    "proposal rows now carry expected_effect, verification_plan and rollback"
   ],
   "what_this_does_not_prove": [
     "a live provider call (no key configured)",
-    "a screenshot of the installed app window",
-    "browser interaction at 1440/375px"
+    "a screenshot of the Edge app window launched from the shortcut",
+    "EVO-GATE receipt admission or root-monitor behavior"
   ]
 }
