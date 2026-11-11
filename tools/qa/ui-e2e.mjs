@@ -16,7 +16,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const exe = path.join(root, 'target', 'release', 'hiverouter.exe');
 const edge = process.env.HIVEROUTER_E2E_EDGE
   || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-const screenshot = process.argv[2] || path.join(root, 'docs', 'evidence', 'live', 'ui-e2e-provider-save.png');
+const viewportWidth = Number(process.env.HIVEROUTER_E2E_WIDTH || 1440);
+const viewportHeight = Number(process.env.HIVEROUTER_E2E_HEIGHT || 900);
+const screenshot = process.argv[2] || path.join(
+  root, 'docs', 'evidence', 'live',
+  `ui-e2e-provider-save-${viewportWidth}x${viewportHeight}.png`,
+);
 const dataDir = mkdtempSync(path.join(tmpdir(), 'hmars-ui-e2e-'));
 const profileFile = path.join(dataDir, 'provider.json');
 const edgeProfile = path.join(dataDir, 'edge-profile');
@@ -113,7 +118,12 @@ async function main() {
 
   await send('Page.enable');
   await send('Page.navigate', { url: `http://127.0.0.1:${port}/?launch=${launchToken}` });
-  await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await send('Emulation.setDeviceMetricsOverride', {
+    width: viewportWidth,
+    height: viewportHeight,
+    deviceScaleFactor: 1,
+    mobile: viewportWidth < 720,
+  });
   const connectDeadline = Date.now() + 15_000;
   while (Date.now() < connectDeadline) {
     if (await evaluate("document.body.innerText.includes('CONNECTED')")) break;
@@ -121,6 +131,12 @@ async function main() {
   }
   if (!(await evaluate("document.body.innerText.includes('CONNECTED')"))) {
     throw new Error('UI did not report CONNECTED');
+  }
+  if (viewportWidth < 720) {
+    const narrow = await evaluate("({overflow: document.documentElement.scrollWidth > window.innerWidth + 1, text: document.body.innerText.includes('HiveMind')})");
+    if (!narrow || narrow.overflow || !narrow.text) {
+      throw new Error(`375px app-shell check failed: ${JSON.stringify(narrow)}`);
+    }
   }
   await evaluate("(()=>{const b=Array.from(document.querySelectorAll('button')).find(x=>x.textContent.trim()==='Settings'); if(!b) return false; b.click(); return true;})()");
   await sleep(700);

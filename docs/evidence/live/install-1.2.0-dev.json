@@ -1,0 +1,34 @@
+{
+  "receipt": "hivemind.install-smoke.v1",
+  "observed_at": "2026-11-10T21:02:00-06:00",
+  "source_commit": "d8c00fdc208f014b4d26eea51408e1c2e74ed9eb",
+  "version": "1.2.0-dev",
+  "build_dirty": true,
+  "package_zip": "dist/HiveMind.zip",
+  "package_zip_sha256": "49291b39459da1149941d51fe1e03b167a29b2cbd4c956e0c1b5b972ef4ed3c1",
+  "server_sha256": "67b96bd3fbfe843e3f52b1bbca457fee6d4a89ebd0842ac5aaca67daecfcb6d3",
+  "launcher_sha256": "55435b34adcf24f94dd2878e7d9cec954d7f8064390d06aa2e2ff1edca6f5b41",
+  "install_root": "%LOCALAPPDATA%\\Programs\\HiveMind\\app",
+  "data_root": "%LOCALAPPDATA%\\HiveMind",
+  "workspace_root": "%LOCALAPPDATA%\\HiveMind\\workspace",
+  "shortcuts": ["Desktop\\HiveMind.lnk", "Start Menu\\Programs\\HiveMind\\HiveMind.lnk"],
+  "health": {
+    "status": "degraded",
+    "version": "1.2.0-dev",
+    "schema": "hiverouter.v1",
+    "schema_version": 24,
+    "prompt_assets_loaded": true,
+    "missing_key": true,
+    "note": "no provider key was configured on this profile; prompts will refuse E_KEY_MISSING"
+  },
+  "what_this_proves": [
+    "the current build installed to a per-user app root",
+    "the installed server booted and reported the current version/schema",
+    "Desktop and Start Menu shortcuts were created"
+  ],
+  "what_this_does_not_prove": [
+    "a live provider call (no key configured)",
+    "a screenshot of the installed app window",
+    "a clean rebuild from a clean tree (build_dirty=true)"
+  ]
+}
