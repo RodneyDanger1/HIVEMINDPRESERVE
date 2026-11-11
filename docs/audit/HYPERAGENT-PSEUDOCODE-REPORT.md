@@ -261,7 +261,7 @@ not a claim of autonomy.
 ## 4. Current-wave pseudocode update (2026-11-10)
 
 ```text
-tool_registry = 11 tools / 5 permission classes
+tool_registry = 12 tools / 5 permission classes / 35 tier grants
 web_fetch:
   caller tier in {SuperAgent, WorkerAgent} AND persona allows web_fetch
   -> request approval (Network)

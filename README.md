@@ -166,8 +166,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **51 suites, 637 passed, 0 failed, 2 ignored**
-- Web: typecheck **0**, **231 tests passed**, production build **0**
+- Backend: **full battery PASS** (`cargo test --workspace --locked`, exit 0; receipt
+  `docs/evidence/live/full-battery-20261110-215831.json`)
+- Web: typecheck **0**, **265 tests passed**, production build **0**
 - Portable package: `dist/HiveMind.zip` SHA-256
   `15BF4E61C05AEEFC8ABACB341283568CA3705FB5C6E226510CD33B88D6CA5ADA`
 - Packaged server / release binary: SHA-256
@@ -267,9 +268,10 @@ carry the actor (`hyper:<task>` / `agent:<task>`), never a false `operator`.
 
 ### Tools and personas
 
-`backend/crates/hiverouter-tools/src/tool.rs` registers **10** tools and **5**
-permission classes; `request_detached` is `Control` and is absent from the
-Subagent tier. The provider advertises the **tier ∩ persona** intersection
+`backend/crates/hiverouter-tools/src/tool.rs` registers **12** tools, **5**
+permission classes, and **35 tier grants**; `request_detached` is `Control` and
+is absent from the Subagent tier. The root-control vocabulary is a separate,
+bounded control surface, not a registry tier. The provider advertises the **tier ∩ persona** intersection
 (`provider_executor.rs` `tools_for_task`), not the raw tier list. Test:
 `superagent_request_advertises_tier_persona_intersection_only`.
 
@@ -288,8 +290,8 @@ Subagent tier. The provider advertises the **tier ∩ persona** intersection
   admission, duplicate refusal, root-gate durability, foreign-run rewire.
 - `run_lifecycle.rs`: two-turn feedback, turn-2 authority, idempotent replay,
   mismatched-payload conflict, daemon admission, duplicate names, run bank.
-- Full gate: **51 suites, 637 passed, 0 failed, 2 ignored**; web typecheck 0,
-  231 tests passed.
+- Full battery: backend `cargo test --workspace --locked` exit 0; web typecheck 0,
+  265 tests passed; receipt `docs/evidence/live/full-battery-20261110-215831.json`.
 
 ### Not implemented
 
@@ -303,9 +305,9 @@ stability, self-modifying code, and AGI remain explicitly out of scope.
 |---|---|
 | Read-only file tool | **verified live**: `file_read` returned the exact `# HiveMind HMARS Bug-Fix Report` heading |
 | Approval-gated file write | **verified live**: `file_write` suspended, operator approved the nonce, run completed, `write-test.txt` contained `APPROVED_WRITE_OK` in an isolated temp workspace |
-| Web research | **verified live**: approval-gated `web_fetch` fetched `https://example.com` once (HTTP 200, 577 bytes) and the Agent reported `Example Domain`; `web_fetch` is granted to SuperAgent/WorkerAgent, not HyperAgent/Subagent |
+| Web research | Read-grade aggregate receipt: approval-gated `web_fetch` returned HTTP 200. The aggregate receipt does not store byte count or body text, so the old `577 bytes`/`Example Domain` detail is withdrawn; `web_fetch` is granted to SuperAgent/WorkerAgent, not HyperAgent/Subagent |
 | Web-fetch kill switch | **verified live**: with `HIVEROUTER_SIDE_EFFECTS=0`, the same approved call was refused `E_TOOL_NOT_ALLOWED`; no fetch |
-| Shell | **verified live**: approval-gated `cmd.exe /c echo shell-ok` returned exit 0 and stdout `shell-ok` |
+| Shell | Test-backed: approval-gated `shell_exec` with `git.exe --version` executes; `cmd.exe`, PowerShell, and other interpreter hosts are refused, and `shell_exec` remains approval-gated arbitrary code execution, not an OS sandbox |
 | Detached admission | verified live (Lantern) and test-backed |
 | A2A ask_parent | verified live (one answered question) |
 | Exact hierarchy | verified live (7-task exact-two) |
@@ -313,7 +315,7 @@ stability, self-modifying code, and AGI remain explicitly out of scope.
 The tool battery evidence is under `docs/evidence/live/`.
 ### `web_fetch` safety boundary
 
-`web_fetch` is the 11th registry tool and the only network egress seam. It is
+`web_fetch` is the 11th of 12 registry tools and the only network egress seam. It is
 approval-gated (`Network` permission), HTTPS-only, default-port-only, rejects URL
 credentials and localhost, and resolves then rejects loopback/private/link-local/
 CGNAT/240/4/IPv4-mapped/NAT64 destinations. Redirects are not followed, DNS has
@@ -323,7 +325,9 @@ before buffering, and the request has a 15s timeout. The global
 
 Live evidence: `docs/evidence/live/live-tokenlab-web-fetch.json` and
 `docs/evidence/live/live-tokenlab-web-fetch-killswitch.json`. Unit tests cover
-the SSRF policy and census lane; full gate is 635 backend / 231 web.
+the SSRF policy and census lane. Current full-battery status and the exact receipt
+are in `docs/evidence/live/full-battery-20261110-215831.json`; do not infer a
+backend pass from an older count.
 ---
 
 ## 12. Authorized self-evolution gate

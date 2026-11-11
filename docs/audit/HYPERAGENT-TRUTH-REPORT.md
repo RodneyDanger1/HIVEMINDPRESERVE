@@ -24,8 +24,8 @@ Grades: **VERIFIED** = executed test/build evidence; **READ** = file read;
 
 | ID | Claim | Grade | Evidence |
 |---|---|---|---|
-| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked`: 51 suites, 637 passed, 0 failed, 2 ignored |
-| T2 | Web gate is green | **VERIFIED** | typecheck 0, 231 tests passed, production build 0 |
+| T1 | Backend gate is green | **VERIFIED** | `cargo test --workspace --locked` exit 0; receipt `docs/evidence/live/full-battery-20261110-215831.json` |
+| T2 | Web gate is green | **VERIFIED** | typecheck 0, 265 tests passed, production build 0 |
 | T3 | Portable package builds | **VERIFIED** | `build-desktop.ps1` exit 0; `dist/HiveMind.zip` SHA-256 `15BF4E61C05AEEFC8ABACB341283568CA3705FB5C6E226510CD33B88D6CA5ADA` |
 | T4 | Server binary hash | **VERIFIED** | `F369D7AC4CC523EF72FE7DD88DE0191A3C7D0BBB852FF743E542AEFA6A7CF871` |
 | T5 | Exact hierarchy exists | **VERIFIED (live)** | Exact-two live run: 7 tasks (1 hyper / 2 super / 2 agent / 2 subagent) |
@@ -359,7 +359,8 @@ persona allowlist. Test:
   retry, idempotent mismatched payload, daemon admission, duplicate names, run
   bank.
 - `provider_adapter.rs`: tier∩persona request capture.
-- Full gate: **51 suites, 637 passed, 0 failed, 2 ignored**.
+- Full battery: backend `cargo test --workspace --locked` exit 0; current receipt
+  `docs/evidence/live/full-battery-20261110-215831.json`; web 265 tests.
 
 ### What this does NOT prove
 
