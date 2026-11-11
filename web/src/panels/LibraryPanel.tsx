@@ -9,11 +9,7 @@ import { StateDot } from '../flow/nodes';
 import { buildReplayTasks } from '../flow/graph';
 import { LAYOUT } from '../tokens/tokens';
 import { APP_VERSION } from '../version';
-
-interface TemplateRow {
-  readonly id: string;
-  readonly label: string;
-}
+import { decodeTemplateCatalog, type TemplateRow } from '../state/templateCatalog';
 
 type TemplateStatus = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -62,25 +58,8 @@ export function LibraryPanel() {
         if (!response.ok) {
           throw await httpFailure(response, 'GET /api/templates');
         }
-        const body = (await response.json()) as { templates?: unknown };
-        if (!Array.isArray(body.templates)) {
-          throw new Error('templates payload has no templates');
-        }
-        const decoded: TemplateRow[] = [];
-        for (const raw of body.templates) {
-          if (typeof raw !== 'object' || raw === null) {
-            continue;
-          }
-          const item = raw as Record<string, unknown>;
-          if (
-            typeof item.template_id !== 'string' ||
-            typeof item.name !== 'string' ||
-            item.insertable !== true
-          ) {
-            continue;
-          }
-          decoded.push({ id: item.template_id, label: item.name });
-        }
+        const body = (await response.json()) as unknown;
+        const decoded = decodeTemplateCatalog(body);
         if (!cancelled) {
           setTemplates(decoded);
           setTemplateFailure(null);
@@ -197,7 +176,9 @@ export function LibraryPanel() {
       </div>
 
       <div>
-        <div className="text-[11.5px] font-semibold text-ink-900">{STRINGS.library.templates}</div>
+        <div className="text-[11.5px] font-semibold text-ink-900">
+          {STRINGS.library.templates} · {templates.length}
+        </div>
         {templateStatus === 'loading' ? (
           <p className="type-mono-meta mt-1 text-meta">Loading templates…</p>
         ) : null}
@@ -214,15 +195,27 @@ export function LibraryPanel() {
             <li key={template.id}>
               <button
                 type="button"
-                className="flex h-8 w-full items-center gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 text-left text-[11px] text-ink-800 hover:bg-honey-100"
+                disabled={!template.insertable}
+                aria-disabled={!template.insertable}
+                title={
+                  template.insertable
+                    ? `Insert ${template.label}`
+                    : `${template.label} is catalog-only; it has no insertable plan`
+                }
+                className="flex min-h-8 w-full items-center gap-2 rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-left text-[11px] text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => {
-                  void insertTemplate(template.id);
+                  if (template.insertable) {
+                    void insertTemplate(template.id);
+                  }
                 }}
               >
                 <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
                   <path d="m8 2 6 3.2-6 3.2-6-3.2Z M2 10.8 8 14l6-3.2" fill="none" stroke="var(--color-ink-500)" strokeWidth="1.2" />
                 </svg>
-                <span className="truncate">{template.label}</span>
+                <span className="min-w-0 flex-1 truncate">{template.label}</span>
+                {template.insertable ? null : (
+                  <span className="type-mono-meta shrink-0 text-meta">catalog</span>
+                )}
               </button>
             </li>
           ))}

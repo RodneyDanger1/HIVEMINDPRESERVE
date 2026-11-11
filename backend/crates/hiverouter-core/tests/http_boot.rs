@@ -156,6 +156,15 @@ async fn templates_route_marks_only_insertable_library_ids() {
     assert_eq!(status, 200, "templates: {body}");
     let value: Value = serde_json::from_str(&body).expect("templates JSON");
     let templates = value["templates"].as_array().expect("templates array");
+    assert_eq!(templates.len(), 8, "the catalog gallery must show all eight templates");
+    assert_eq!(
+        templates
+            .iter()
+            .filter(|row| row["insertable"] == true)
+            .count(),
+        4,
+        "exactly four templates are insertable"
+    );
     assert!(templates.iter().any(|row| row["template_id"] == "planner" && row["insertable"] == false));
     assert!(templates.iter().any(|row| row["template_id"] == "content-writer" && row["insertable"] == true));
 }
