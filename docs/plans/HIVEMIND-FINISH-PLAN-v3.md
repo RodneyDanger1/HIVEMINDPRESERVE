@@ -401,8 +401,9 @@ Files: `backend/crates/hiverouter-core/src/{db.rs,store.rs,main.rs}`,
 `backend/crates/hiverouter-core/src/tools_bridge.rs`, migration tests.
 
 Required: freeze **v24 = `tasks.instruction TEXT` only** (implemented in this pass).
-Memory role-key/approvals/state-integrity columns are **v25 or later**; do not add them
-to v24 after it ships. The conditional one-pending approval unique index remains a
+Memory role-key/approvals/state-integrity columns are **v25+ only via CAP-1**; any new
+column after the v32 capability schema must use a new v33+ migration. Do not add them to v24
+after it ships. The conditional one-pending approval unique index remains a
 post-migration step in `ToolsBridge::migrate` with the existing named refusal; do not
 delete that logic. Do not gate all required health checks — only an approval migration
 failure (or let fatal `Database::migrate` own it). Add a pre-v19 duplicate-hyper precheck
@@ -489,7 +490,8 @@ Files: `backend/crates/hiverouter-core/src/{db.rs,store.rs,http.rs,snapshot.rs,r
 Required: use the schema frozen by WP-SCHEMA-1 (do not edit v24 here); keep the
 conditional approval unique index as a post-migration step; memory-clear guard in the
 same transaction as delete; role clear uses `source_task_id → tasks.role` (v24 has no
-`agent_key`), with a v25 column only if the query proves insufficient; handle legacy
+`agent_key`), with a **post-v32 v33+ migration** only if the query proves insufficient; v25
+is CAP-1's session/todo schema and is not extended by this residual WP; handle legacy
 NULL rows; live memory writer uses the strict writer via
 `execution.rs`; governance prefix guard complete; snapshot revision shared max+1 (change
 `execution.rs` owner); recovery scans all active runs. Gate only approval-migration

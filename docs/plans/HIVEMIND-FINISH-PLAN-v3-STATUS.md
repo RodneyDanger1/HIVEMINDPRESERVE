@@ -48,8 +48,8 @@ Legend: ~~struck~~ = proven; evidence follows. Partial items are in §2.
 | Plan item | What exists | What is missing |
 |---|---|---|
 | WP-SEC-1 db-path containment | data_dir + ledger denied | `db_path/+wal/+shm` are not passed to `ToolsBridge`; custom `--db` outside data root is not denied (`tools_bridge.rs:104`) |
-| WP-SEC-2 approval integrity | TTL, binding, single suspension, one-write test | session approvals are non-expiring; a true bounded waiter queue is not implemented; all `verify_grant` paths not proven |
-| WP-SEC-3 root tool truth | root schemas updated; two-turn control | 35→28 grant recount/unreachable-grant removal/tests absent |
+| WP-SEC-2 approval integrity | TTL, binding, single suspension, one-write test | session approvals are **by design** non-expiring (one-shot TTL 120s; scoped by run/tool/args); a bounded waiter queue is not implemented; all `verify_grant` paths not proven |
+| WP-SEC-3 root tool truth | root schemas updated; two-turn control | **superseded by v3.1 §0/§4:** keep all 35 grants; do not adopt the 35→28 removal; only root schema/audit tests remain |
 | WP-GOV-2 monitor | one read-only review turn | **no `send_instruction`, `cancel_task`, or repair turn**; tool calls in review fail the run (`execution.rs:2384-2387`) |
 | WP-GOV-3 caps/settlement | 41-task probes; crash settle | no live 40-node provider run; no atomic provider-call reservation proof; structural settlement remains a sequential loop |
 | WP-HARDEN-1 | `/api` fall-through fixed; interpreter policy | history 1970 bug (`history.rs:79`), handshake dead API, planner fan-out validation, `build.rs` extraction |
