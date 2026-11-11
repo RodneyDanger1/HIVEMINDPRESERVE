@@ -1,5 +1,19 @@
 # HiveMind release evidence
 
+## Current working state — 2026-11-10 (supersedes the stale 2026-11-06 snapshot below)
+
+- **Repo HEAD:** `1129349`; **installed product build:** `806251b` (`dirty:false`).
+- **Version/schema:** `1.2.0-dev`, schema `hiverouter.v1` version **24**.
+- **Offline battery:** `docs/evidence/live/full-battery-20261110-234515.json` — 8/8 executed, 0 failed, `working_tree_dirty:true` at `1129349` (audit docs in the tree; the ledger endpoint candidate was discarded). This is **not** a clean-HEAD or release seal.
+- **Install receipt:** `docs/evidence/live/install-1.2.0-dev.json` — installed server `1.2.0-dev`, schema 24, prompt assets loaded, health `degraded` with `E_KEY_MISSING`, 1440/375 screenshots, package SHA-256 `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`.
+- **Crash drill:** `docs/evidence/live/crash-drill-20261110-230629.json` — process killed, restarted, boot_id changed, schema 24, data preserved.
+- **Scale drill:** `docs/evidence/live/scale-drill-20261110-230653.json` — 41-task serial and bounded-parallel probes; the receipt explicitly says **not a live 40-node provider run**.
+- **No live paid provider proof** for 1.2; no provider key is configured. All current live prompts refuse `E_KEY_MISSING`.
+- **No 1.2 tag, release manifest, or strict release PASS.** `-Release` remains PRE-RELEASE exit 3.
+- **Truth audit:** `docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md`; plan status with strikethrough: `docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md`.
+
+The older 2026-11-06 observations below are retained as history and are superseded by this block where they conflict.
+
 **Working tree source line: `1.2.0-dev` (pre-release; unsealed; no 1.2 artifacts or tag).** The authoritative
 exact-hash registry for released artifacts remains `tools/release-manifest.json` (sealed 1.1.0 build); this file never
 invents hashes. The `1.2.0-dev` version bump itself changes version strings only (four crate manifests + `backend/Cargo.lock`

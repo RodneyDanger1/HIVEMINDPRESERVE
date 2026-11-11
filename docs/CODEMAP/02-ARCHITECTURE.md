@@ -1,5 +1,27 @@
 # 02 — Architecture
 
+> **Round 95 truth addendum (2026-11-10).** The shipped architecture is a bounded
+> one-run HMAS, not a continuous governor. The root has **two pre-dispatch
+> control turns** and **one read-only post-dispatch monitor review** before a
+> tool-less final synthesis (`execution.rs:2266-2399`; `provider_executor.rs:48-53,709-738`).
+> The monitor cannot send instructions, cancel, or repair tasks.
+>
+> EVO-GATE is real at the apply/boot boundary: a lesson requires a held-out
+> receipt with ≥8 tasks, matching proposal id, task-set/evaluator/artifact
+> hashes, and candidate CI lower > baseline CI upper (`evolution_gate.rs`).
+> It **validates a receipt; it does not run an evaluator**, bind `head_commit`,
+> or hash-check artifact files.
+>
+> Memory is SQLite `memory_banks`/`memory_entries` with recency retrieval and
+> fixed bank scope. There is **no vector DB, embedding call, ANN index, or
+> semantic recall**. `HiveWire` is **not present**; `ws.rs` is the UI transport,
+> `remote.rs` is an in-process fixture, `daemon.rs` is an enrolled record without
+> a live scheduler.
+>
+> Current product commit: `806251b`; installed `1.2.0-dev`, schema 24, health
+> `degraded` with `E_KEY_MISSING` when no key is configured. Round-95 audit:
+> [`HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md`](../audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md).
+
 ## Process and planes
 
 HiveMind is a local-first single-binary Rust server plus a React client.

@@ -3,6 +3,13 @@
 This is the dedicated roadmap section for the FigCraft-derived interface. The
 detailed material/component contract lives in
 [`ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md`](ui/HIVEMIND-HONEYGLASS-DESIGN-SYSTEM.md).
+Round-95 audit additions:
+[`design/HIVEMIND-BRAND-SYSTEM-v1.md`](design/HIVEMIND-BRAND-SYSTEM-v1.md) and
+[`design/HIVEMIND-DESIGN-SPECS-v1.md`](design/HIVEMIND-DESIGN-SPECS-v1.md).
+Known UI defects from the audit: the 375px layout hides the library (so the
+8-template gallery is unreachable), the connection chip is socket-only (it can
+say CONNECTED while the provider key is missing), and the splash has no skip.
+The 1440/375 screenshots prove rendering, not every interaction path.
 
 ## UI/UX-0 — preserve
 

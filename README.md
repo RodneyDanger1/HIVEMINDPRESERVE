@@ -13,13 +13,23 @@ It is **not AGI**, not a self-modifying agent, and not a network satellite
 system. The honest comparison, evidence, and gaps are in
 [`docs/audit/HYPERAGENT-TRUTH-REPORT.md`](docs/audit/HYPERAGENT-TRUTH-REPORT.md).
 
+**Round 95 truth snapshot (2026-11-10).** Repo HEAD `1129349`; installed build
+`806251b` (code-identical product; HEAD adds evidence/QA receipts only). No
+provider key is configured, so every live prompt refuses `E_KEY_MISSING`. The
+complete current audit is
+[`docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md`](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md),
+with the plan crosswalk and strikethrough status in
+[`docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md`](docs/plans/HIVEMIND-FINISH-PLAN-v3-STATUS.md).
+The short version: **no vector memory, no HiveWire implementation, no automatic
+learning loop, no monitor actions, no live 40-node proof, no AGI/Gödel machine.**
+
 ---
 
 ## 1. What exists, by level
 
 | Level | Actual runtime | Can | Cannot / not proven |
 |---|---|---|---|
-| **HyperAgent** | Root `planner` task at depth 0; detached planning call, then a **two-turn bounded root-control loop**, then a tool-less final synthesis. | Plan a DAG; create detached remotes/daemons; request memory summaries; record a **proposal-only** improvement; synthesize child results; write run-bank decisions. | Self-modify code; run continuously; approve arbitrary lower-level requests in an async LLM turn; add extra branches when the planner already supplied them. |
+| **HyperAgent** | Root `planner` task at depth 0; detached planning call, then a **two-turn bounded root-control loop**, a **read-only post-dispatch monitor review**, then a tool-less final synthesis. | Plan a DAG; create detached remotes/daemons; request memory summaries; record a **proposal-only** improvement; review task states/results before final synthesis; write run-bank decisions. | Self-modify code; run continuously; send instructions, cancel, or repair tasks after dispatch (monitor is review-only); approve arbitrary lower-level requests in an async LLM turn; add extra branches when the planner already supplied them. |
 | **SuperAgent** | Depth-1 branch lead, class `super`, hive bank owner. | Spawn Agents; aggregate direct child results; ask its parent; send to same-parent siblings; read/list files; request detached admission. | Write files / run shell in the **effective persona** (the provider advertises persona∩tier, so those tools are absent); create remotes/daemons directly. |
 | **Agent** | Depth-2 worker, class `agent`, branch bank. | Spawn Subagents; approval-gated `file_write` / `shell_exec`; read/list; A2A; request detached admission. | Create remotes/daemons directly; act as root; escape caps or sandbox. |
 | **Subagent** | Depth-3 temporary leaf, class `subagent`. | Read/list, ask parent, report, finish. | Spawn; write; shell; request detached admission. |
@@ -132,6 +142,23 @@ The operator can switch provider settings later without changing code.
   records a proposal (`applied:false`, `requires_human_review:true`) in the run
   bank. It cannot edit or execute code. This is the safety boundary: proposals,
   not autonomous source mutation.
+- **EVO-GATE (real but partial):** a lesson can be applied only after four
+  SuperAgent seats plus the operator authorize **and** the operator places a
+  held-out evaluation receipt at `evolution/eval/<proposal>/receipt.json`.
+  The gate validates task-set size/hash, evaluator id/hash, artifacts and
+  confidence intervals; boot rejects receipt-less lesson lines. It does **not**
+  run the evaluator, bind `head_commit` to HEAD, or hash-check artifact files.
+  A well-formed hand-authored receipt still passes.
+- **Root monitor is review-only:** one answer-only provider call sees task states
+  and bounded results; its text is labelled data in the final prompt. It has no
+  tools, cannot send instructions, cancel tasks, or repair a failed branch, and
+  a tool call from it fails the run.
+- **Memory is SQLite banks, not vector search.** Retrieval is recency-ordered
+  and bank-scoped; there are no embeddings, ANN index, semantic recall, or
+  cross-hive vector database. Unverified memory entries are admitted.
+- **HiveWire does not exist in this repository.** The WebSocket transport
+  (`ws.rs`) is the UI protocol; remotes are in-process fixtures; daemons are
+  enrolled records without a live scheduler.
 
 ---
 
@@ -166,13 +193,17 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root\tools\build-deskt
 
 Current gates (this tree, 2026-11-10):
 
-- Backend: **full battery PASS** (`cargo test --workspace --locked`, exit 0; receipt
-  `docs/evidence/live/full-battery-20261110-215831.json`)
+- Backend: **full battery PASS** at `1129349` with the audit docs in the
+  working tree (`cargo test --workspace --locked`, exit 0; receipt
+  `docs/evidence/live/full-battery-20261110-234515.json`, `working_tree_dirty:
+  true`). A clean-HEAD battery receipt is **not** claimed.
 - Web: typecheck **0**, **265 tests passed**, production build **0**
-- Portable package: `dist/HiveMind.zip` SHA-256
-  `15BF4E61C05AEEFC8ABACB341283568CA3705FB5C6E226510CD33B88D6CA5ADA`
-- Packaged server / release binary: SHA-256
-  `F369D7AC4CC523EF72FE7DD88DE0191A3C7D0BBB852FF743E542AEFA6A7CF871`
+- Current installed package: `dist/HiveMind.zip` SHA-256
+  `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`
+- Installed server: SHA-256
+  `D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`
+  (commit `806251b`, BUILD.json `dirty:false`)
+- Full install/health evidence: the `install-…` receipt under `docs/evidence/live/`.
 
 ---
 
@@ -183,7 +214,12 @@ Current gates (this tree, 2026-11-10):
 | HiveMind is Meta's HyperAgents / DGM-H | **FALSE.** No task+meta fused editable program, no self-modifying improvement procedure, no variant archive/evolution sandbox. |
 | HiveMind is a general SE agent like the HyperAgent paper | **FALSE.** It is a hierarchical orchestrator, not a four-agent SWE-Bench system, and makes no SWE-Bench claim. |
 | HiveMind is AGI | **FALSE.** No held-out breadth, transfer, continual learning, calibrated self-model, open-ended goals, or verified safety envelope. It is a narrow, capped, single-run HMAS. |
-| HiveMind learns across runs | **FALSE as shipped.** It records memory/proposals; it does not update weights or promote a skill automatically. |
+| HiveMind learns across runs | **FALSE as shipped.** It records memory/proposals and prompt-injected lessons; it does not update weights, build a skill library, or promote a behavior automatically. |
+| HiveMind has vector search or a vector database | **FALSE.** Memory is SQLite banks with recency retrieval; no embeddings/ANN/semantic recall exist (repo-wide search). |
+| HiveWire exists in this repo | **FALSE / NOT DOCUMENTED.** Zero `HiveWire` matches; `ws.rs` is the UI WebSocket, not an agent harness. |
+| The HyperAgent governor can repair a run | **FALSE.** The post-dispatch monitor is a read-only text review; no `send_instruction`, `cancel_task`, or repair tool exists. |
+| EVO-GATE proves a lesson improved the model | **FALSE.** It validates an operator-supplied receipt shape; it does not run the evaluator or bind artifacts to files. |
+| DeepSeek V4.1 Flash 1017 is “as good as” Claude Fable 5.2 | **UNVERIFIED.** Both are real vendor models; no independent same-task evaluation exists. Token prices differ by roughly 26–67×; quality/bug-fix parity is not established. |
 | A remote is a network satellite | **FALSE.** `in_process` fixture only. |
 | A daemon runs continuously | **NOT PROVEN.** Enrolled record; watchdog has a DB-check job; no live tick proof. |
 | Root can add a branch when the planner supplied one | **FALSE / DEAD PATH.** The allow path is unreachable for every validated plan today. |
@@ -218,9 +254,11 @@ package was built and its hashes are above; it has not been tagged or published.
 The honest one-sentence description is:
 
 > HiveMind is a local, capped, single-provider hierarchical multi-agent framework
-> with a real root governor, durable branch memory, A2A messaging, a deterministic
-> detached-admission gate, proposal-only self-improvement, and an observable UI —
-> not AGI, and not yet a network-capable HMARS.
+> with two bounded root-control turns, a read-only post-dispatch monitor review,
+> durable branch memory, A2A messaging, a deterministic detached-admission gate,
+> receipt-gated proposal lessons, and an observable UI — not AGI, not a
+> self-modifying system, not yet a network-capable HMARS, and not a hands-off
+> autonomous coder.
 
 ---
 
