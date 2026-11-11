@@ -55,6 +55,7 @@ use crate::execution::{
 };
 use crate::graph::GraphAuthority;
 use crate::history::HistoryReadModel;
+use crate::jobs::{JobPolicy, JobRegistry, JobRequest};
 use crate::prompts::{load_personas_embedded, Persona, TemplateRegistry};
 use crate::provider_executor::ProviderExecutorAdapter;
 use crate::remote::{
@@ -93,6 +94,8 @@ pub struct AppState {
     pub history: Arc<HistoryReadModel>,
     /// Wired tools capabilities (settings, jailed files, approvals, diagnose).
     pub tools: Arc<ToolsBridge>,
+    /// Background jobs owned by this server process, when the workspace opened.
+    pub jobs: Option<Arc<JobRegistry>>,
     /// Named refusal when the embedded prompt assets failed to load.
     ///
     /// `None` means the planner template registry loaded from the binary's
@@ -427,6 +430,9 @@ impl AppState {
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
+        let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
+            .ok()
+            .map(Arc::new);
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -442,6 +448,7 @@ impl AppState {
             daemons,
             history,
             tools,
+            jobs,
             prompt_assets_error,
         }
     }
@@ -476,6 +483,9 @@ impl AppState {
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
+        let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
+            .ok()
+            .map(Arc::new);
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -491,6 +501,7 @@ impl AppState {
             daemons,
             history,
             tools,
+            jobs,
             prompt_assets_error,
         }
     }
@@ -517,6 +528,9 @@ impl AppState {
         let history = Arc::new(HistoryReadModel::new(db.clone(), (*snapshots).clone()));
         let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
+        let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
+            .ok()
+            .map(Arc::new);
         Self {
             db,
             checks,
@@ -531,6 +545,7 @@ impl AppState {
             daemons,
             history,
             tools,
+            jobs,
             prompt_assets_error: None,
         }
     }
@@ -706,6 +721,9 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/runs/{run_id}/checkpoints/revert",
             post(revert_run_checkpoints),
         )
+        .route("/api/jobs", get(jobs_list).post(job_start))
+        .route("/api/jobs/{job_id}", get(job_detail))
+        .route("/api/jobs/{job_id}/kill", post(job_kill))
         .route("/api/memory/context/{task_id}", get(task_memory_context))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
@@ -1042,6 +1060,73 @@ async fn revert_run_checkpoints(
     };
     match journal.restore_to(run_id, sequence) {
         Ok(outcome) => (StatusCode::OK, Json(outcome)).into_response(),
+        Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    }
+}
+
+async fn jobs_list(State(state): State<Arc<AppState>>) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    (StatusCode::OK, Json(serde_json::json!({ "jobs": jobs.list_all() }))).into_response()
+}
+
+async fn job_start(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    let Some(program) = body.get("program").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(args) = body.get("args").and_then(serde_json::Value::as_array) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(args) = args
+        .iter()
+        .map(|value| value.as_str().map(ToOwned::to_owned))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let session_id = body
+        .get("session_id")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("manual");
+    let mut request = JobRequest::new(session_id, program, args);
+    if let Some(cwd) = body.get("cwd").and_then(serde_json::Value::as_str) {
+        request = request.with_cwd(cwd);
+    }
+    match jobs.start(request).await {
+        Ok(snapshot) => (StatusCode::CREATED, Json(snapshot)).into_response(),
+        Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    }
+}
+
+async fn job_detail(
+    State(state): State<Arc<AppState>>,
+    Path(job_id): Path<String>,
+) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    match jobs.get(&job_id) {
+        Ok(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
+        Err(error) => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+    }
+}
+
+async fn job_kill(
+    State(state): State<Arc<AppState>>,
+    Path(job_id): Path<String>,
+) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    match jobs.kill(&job_id).await {
+        Ok(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
 }
