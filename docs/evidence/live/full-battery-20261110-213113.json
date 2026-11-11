@@ -1,0 +1,62 @@
+﻿{
+    "receipt":  "hivemind.full-battery.v1",
+    "observed_at":  "2026-11-10T21:31:13.0686746-06:00",
+    "started_at":  "2026-11-10T21:29:49.9627618-06:00",
+    "source_commit":  "bacdfd7e1887b3fda477a423ca002ba1ce4ba9d1",
+    "working_tree_dirty":  false,
+    "executed":  8,
+    "skipped":  0,
+    "failed":  0,
+    "steps":  [
+                  {
+                      "name":  "backend cargo test --workspace --locked",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  65.3
+                  },
+                  {
+                      "name":  "web typecheck",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  2.4
+                  },
+                  {
+                      "name":  "web unit tests",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  10.15
+                  },
+                  {
+                      "name":  "web production build",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  4.06
+                  },
+                  {
+                      "name":  "docs truth checker",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  0.16
+                  },
+                  {
+                      "name":  "static QA harness",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  0.14
+                  },
+                  {
+                      "name":  "QA unit tests",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  0.28
+                  },
+                  {
+                      "name":  "installed server /health",
+                      "status":  "PASS",
+                      "exit_code":  0,
+                      "seconds":  0.41
+                  }
+              ],
+    "verdict":  "PASS",
+    "note":  "Offline battery; no provider call or key was used. SKIPPED is not PASS."
+}
