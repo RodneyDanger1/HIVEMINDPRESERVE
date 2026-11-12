@@ -349,6 +349,18 @@ fn build_engine(
 ) -> Arc<RunEngine> {
     let remote = Arc::new(crate::remote::RemoteStore::new(db.clone()));
     let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
+    let repo_context = db
+        .with_connection_refusal(|connection| {
+            crate::repo_index::context_block(connection, &config.workspace_root).map_err(|error| {
+                tracing::warn!(
+                    workspace_root = %config.workspace_root.display(),
+                    %error,
+                    "repository index unavailable; planning prompts will not include workspace context"
+                );
+                hiverouter_contract::Refusal::InternalError
+            })
+        })
+        .ok();
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
@@ -356,6 +368,7 @@ fn build_engine(
         .with_remote_store(remote)
         .with_daemon_store(daemons)
         .with_root_orchestrator()
+        .with_repo_context(repo_context)
         .with_authorized_lessons(crate::execution::load_authorized_lessons(
             &config.data_dir.join("evolution").join("LESSONS.jsonl"),
         ));

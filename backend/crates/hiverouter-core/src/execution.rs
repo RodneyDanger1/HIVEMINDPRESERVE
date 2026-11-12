@@ -51,6 +51,13 @@ fn default_now_unix_secs() -> u64 {
 /// Adds the task's model-visible scoped facts to a prompt, bounded by the
 /// context renderer. The prompt is the only path that makes rewiring visible to
 /// the model; storing facts without this step is a no-op.
+fn prompt_with_repo_context(prompt: &str, repo_context: Option<&str>) -> String {
+    match repo_context {
+        Some(block) if !block.trim().is_empty() => format!("{block}\n\n{prompt}"),
+        _ => prompt.to_owned(),
+    }
+}
+
 fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String {
     match context.and_then(|context| context.prompt_block(4_000)) {
         Some(block) => format!("{prompt}\n\n{block}"),
@@ -715,6 +722,10 @@ pub struct RunEngine {
     /// tool execution by name (`E_FILE_TREE_UNAVAILABLE`); the engine never
     /// reads the filesystem without it.
     tool_workspace: Option<WorkspaceJail>,
+    /// Bounded repo-index context block, built once by the host and given to
+    /// every planning/task prompt as labelled data. `None` preserves the old
+    /// prompt byte-for-byte.
+    repo_context: Option<String>,
     /// Frozen tool registry used to validate model-originated calls
     /// (tier allowlists + argument schemas).
     tool_registry: ToolRegistry,
@@ -807,6 +818,7 @@ impl RunEngine {
             caps: Caps::default(),
             snapshots: None,
             tool_workspace: None,
+            repo_context: None,
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
@@ -912,6 +924,14 @@ impl RunEngine {
     #[must_use]
     pub fn with_tool_workspace(mut self, workspace: WorkspaceJail) -> Self {
         self.tool_workspace = Some(workspace);
+        self
+    }
+
+    /// Installs the bounded workspace-index context block rendered into every
+    /// planning and task prompt. Empty/blank input leaves the old prompt path.
+    #[must_use]
+    pub fn with_repo_context(mut self, repo_context: Option<String>) -> Self {
+        self.repo_context = repo_context.filter(|block| !block.trim().is_empty());
         self
     }
 
@@ -1076,6 +1096,7 @@ impl RunEngine {
             caps,
             snapshots: None,
             tool_workspace: None,
+            repo_context: None,
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
@@ -2677,10 +2698,16 @@ impl RunEngine {
                     .map(|message| format!("{:?}: {}", message.role, message.content))
                     .collect::<Vec<_>>()
                     .join("\n");
-                return prompt_with_authorized_lessons(&rendered, &self.authorized_lessons_snapshot());
+                return prompt_with_repo_context(
+                    &prompt_with_authorized_lessons(&rendered, &self.authorized_lessons_snapshot()),
+                    self.repo_context.as_deref(),
+                );
             }
         }
-        prompt_with_authorized_lessons(&run.prompt, &self.authorized_lessons_snapshot())
+        prompt_with_repo_context(
+            &prompt_with_authorized_lessons(&run.prompt, &self.authorized_lessons_snapshot()),
+            self.repo_context.as_deref(),
+        )
     }
 
     /// Executes the read-only tool calls returned in one assistant turn and
@@ -4549,9 +4576,12 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_authorized_lessons(
-            &prompt_with_context(prompt, context.as_ref()),
-            &self.authorized_lessons_snapshot(),
+        let prompt = prompt_with_repo_context(
+            &prompt_with_authorized_lessons(
+                &prompt_with_context(prompt, context.as_ref()),
+                &self.authorized_lessons_snapshot(),
+            ),
+            self.repo_context.as_deref(),
         );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, true, false)
@@ -4574,9 +4604,12 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_authorized_lessons(
-            &prompt_with_context(prompt, context.as_ref()),
-            &self.authorized_lessons_snapshot(),
+        let prompt = prompt_with_repo_context(
+            &prompt_with_authorized_lessons(
+                &prompt_with_context(prompt, context.as_ref()),
+                &self.authorized_lessons_snapshot(),
+            ),
+            self.repo_context.as_deref(),
         );
         let result = self
             .execute_task_inner(run, task, &task_token, &prompt, false, true)
