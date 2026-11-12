@@ -73,7 +73,7 @@ calls/run, 40 plan nodes, 12 tool turns, 40 tool calls/run, 8 approval waits/run
 calls/turn and up to 2 turns. Refusals are named (`E_SPAWN_DEPTH`,
 `E_FANOUT_LIMIT`, `E_AGENT_LIMIT`, `E_CALL_LIMIT`, etc.), never silent clamps.
 
-**Tools — 12 registry tools, 5 permission classes, 35 tier grants.**
+**Tools — 22 registry tools, 5 permission classes, 81 tier grants.** The original 12 tools remain; capability work adds jailed filesystem search/read, atomic patch, bounded test runner, and git read/stage/commit lanes.
 Effective surface is **tier ∩ persona**, so a tier grant can be hidden by a
 persona.
 
@@ -84,6 +84,8 @@ persona.
 | WorkerAgent | same as SuperAgent minus `vote_evolution` |
 | Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
 | ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` — no producer |
+
+Capability additions extend the same tier allowlists: `fs_glob`, `fs_grep`, `file_read_range`, `apply_patch`, `run_tests`, `git_stage`, `git_commit`, `git_status`, `git_diff`, `git_log`. The census test derives the totals; they are not hand-maintained counts.
 
 Root-control vocabulary (local, not registry): `spawn_superagent`,
 `assign_task`, `spawn_remote_agent`, `spawn_daemon`, `read_memory_summary`,
@@ -118,11 +120,14 @@ The installed app boots and serves its UI/read/operator surfaces with
 ## 4. What it cannot do (current truth)
 
 - No autonomous coding, self-modification, continuous agent, or goal loop.
-- No editor, file diff review, integrated terminal/PTY, or workspace session
-  model; reads are read-only previews.
-- No repository index/code search/symbol graph; only `file_read`/`file_list`.
-- No file checkpoints/undo (graph snapshots are run-state history, not file
-  rollback).
+- No mounted editor, file-diff review, integrated terminal/PTY, or workbench
+  UI yet; the new workbench components exist but are not mounted.
+- Repository index/search exists as an additive module and API surface, but it
+  is not yet injected into planner/agent prompts; `file_read`/`file_list` remain
+  the prompt-visible reads.
+- File checkpoints are wired for approved `file_write`/`apply_patch` mutations
+  and exposed through checkpoint routes; there is no general editor undo UI yet.
+  Graph snapshots remain run-state history, not a substitute for file rollback.
 - No monitor actions; the post-dispatch review cannot instruct, cancel, or
   repair a task.
 - No vector database, embeddings, ANN, or semantic recall; memory is SQLite
@@ -191,7 +196,7 @@ There is **no automatic learning loop** and no vector memory. See
 
 | Claim | Grade | Evidence |
 |---|---|---|
-| 12 registry tools, 5 classes, 35 grants | **READ** | `backend/crates/hiverouter-tools/src/tool.rs:115-140,462-518` |
+| 22 registry tools, 5 classes, 81 grants | **READ** | `backend/crates/hiverouter-tools/src/tool.rs:115-250`; `census.rs` |
 | Caps depth 3/fan-out 8/64 agents/64 calls | **READ** | `backend/crates/hiverouter-core/src/caps.rs:7-18` |
 | Root control 2 turns, ≤4 calls, turn-2 creation refusal | **READ** | `execution.rs`; `provider_executor.rs` |
 | Monitor is one read-only turn; no action tools | **READ + TEST** | `execution.rs:2342-2398`; `run_lifecycle.rs` |
@@ -238,8 +243,10 @@ Sources: [DeepSeek release](https://api-docs.deepseek.com/news/news261017),
 ## 9. Harness status and plan
 
 HiveMind is **not yet a replacement for DeepSeek Harness, Hermes, Claude Code,
-Codex, Grok Build, or Antigravity**. It lacks sessions, editor/diff, terminal,
-repo index, checkpoints, plan/todo, headless CLI and MCP; its monitor is
+Codex, Grok Build, or Antigravity**. It now has local sessions, a checkpoint
+journal for approved file mutations, a repo-index module, and a registered
+coding tool surface, but it still lacks a mounted editor/diff/terminal, full
+repo-context injection, plan/todo, headless CLI and MCP; its monitor is
 review-only and its learning loop is not executed-eval gated.
 
 The mandatory-first capability plan is

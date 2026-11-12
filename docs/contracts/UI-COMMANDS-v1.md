@@ -8,7 +8,7 @@ FigCraft surface work. Changing a name here requires a `CHANGE-LEDGER-IMPL.md` r
 > **21 → 24 events** (adds `TOOL_CALL`, `TOOL_RESULT`, `AGENT_MESSAGE`) and **15 → 16 agent states** (adds `interrupted`).
 > `APPROVAL_REQUEST` gains **optional** `nonce`, `run_id`, `task_id`, `tool_call_id`, `args_sha256`, `expires_at`;
 > a producer must populate all six for model-originated side effects, but the fields stay optional on the wire in this
-> wave. No command or refusal code is added (14 frozen commands, 65 refusal codes; `CommandName::ALL` = 17 including the
+> wave. No command or refusal code is added (14 frozen commands, 79 refusal codes; `CommandName::ALL` = 17 including the
 > 3 decision-gated `DIFF_*` names). Sources of truth: `backend/crates/hiverouter-contract/src/event.rs`
 > (`EventName::ALL` = 24), `src/state.rs` (`AgentState` = 16), pinned by `tests/schema_roundtrip.rs` and
 > `web/tests/contract.test.ts`; the "21 events / 15 states" wording in the freeze paragraph above and in historical
@@ -29,7 +29,7 @@ schema mismatch → `E_SCHEMA_INVALID`; refusal is a typed `Error` event, never 
 
 | Name | Payload (required → optional) | Precondition | Success | Named refusals |
 |---|---|---|---|---|
-| `SUBMIT_PROMPT` | `text`, `project_id` | text 1..8000 chars, run not active | `ACK` + `RUN_CREATED` | `E_PROMPT_EMPTY`, `E_PROMPT_TOO_LONG`, `E_RUN_ACTIVE`, `E_KEY_MISSING` |
+| `SUBMIT_PROMPT` | `text`, `project_id`; optional `session_id`, `permission_policy` | text 1..8000 chars, run not active; explicit policy must be classic/plan/standard/trusted | `ACK` + `RUN_CREATED` | `E_PROMPT_EMPTY`, `E_PROMPT_TOO_LONG`, `E_RUN_ACTIVE`, `E_KEY_MISSING`, `E_SCHEMA_INVALID`, `E_SESSION_NOT_FOUND` |
 | `SPAWN_SUB_HIVE` | `parent_task_id`, `role` | depth < 3, fan-out < 8 | `ACK` + `NODE_SPAWN` | `E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`, `E_TASK_NOT_FOUND`, `E_RUN_TERMINAL` |
 | `REWIRE_TASK` | `task_id`, `new_parent_id`, `expected_rev` | graph acyclic, worker not streaming | `ACK` + `NODE_REWIRE` | `E_CYCLE`, `E_RESYNC_REQUIRED`, `E_REWIRE_IN_FLIGHT`, `E_TASK_NOT_FOUND` |
 | `CANCEL_RUN` | `run_id` | run active | `ACK` + `RUN_STATUS(CANCELLED)` | `E_RUN_TERMINAL`, `E_RUN_NOT_FOUND` |
@@ -78,7 +78,7 @@ failed→failed, queued→queued; every other value renders with shape/text cue 
 Transport/UI: `E_ORIGIN_REJECTED`, `E_TOKEN_INVALID`, `E_RESYNC_REQUIRED`, `E_ZOOM_RANGE`, `E_HISTORY_GAP`, `E_DB_BUSY`,
 `E_WS_DISCONNECTED`; command/schema: `E_COMMAND_UNKNOWN`, `E_SCHEMA_INVALID`, `E_PROMPT_EMPTY`, `E_PROMPT_TOO_LONG`,
 `E_RUN_ACTIVE`, `E_KEY_MISSING`, `E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`, `E_CYCLE`, `E_REWIRE_IN_FLIGHT`, `E_RUN_TERMINAL`,
-`E_RUN_NOT_FOUND`, `E_TASK_NOT_FOUND`, `E_TASK_TERMINAL`, `E_KILL_DENIED`, `E_BUDGET_EXCEEDED`, `E_APPROVAL_REPLAY`,
+`E_RUN_NOT_FOUND`, `E_SESSION_NOT_FOUND`, `E_TASK_NOT_FOUND`, `E_TASK_TERMINAL`, `E_KILL_DENIED`, `E_BUDGET_EXCEEDED`, `E_APPROVAL_REPLAY`,
 `E_APPROVAL_TIMEOUT`, `E_APPROVAL_NOT_FOUND`, `E_APPROVAL_DECISION_INVALID`, `E_DIFF_DECISION_REQUIRED`,
 `E_TEMPLATE_UNKNOWN`, `E_TEMPLATE_LICENSE_MISSING`, `E_TEMPLATE_REF_FORBIDDEN`; files/jail: `E_PATH_OUTSIDE_JAIL`,
 `E_PATH_NOT_FOUND`, `E_FILE_TOO_LARGE`, `E_FILE_TREE_UNAVAILABLE` (no usable workspace root); tool/safety: `E_TOOL_NOT_FOUND`, `E_TOOL_SCHEMA`, `E_JAIL_ESCAPE`, `E_TOOL_TIMEOUT`,

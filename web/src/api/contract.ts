@@ -45,6 +45,8 @@ export interface Envelope<TPayload = unknown> {
 export interface SubmitPromptPayload {
   readonly text: string;
   readonly project_id: string;
+  readonly session_id?: string;
+  readonly permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
 }
 export interface SpawnSubHivePayload {
   readonly parent_task_id: string;
