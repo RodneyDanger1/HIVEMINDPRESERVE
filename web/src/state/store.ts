@@ -118,6 +118,8 @@ export interface ToolActivityRecord {
   readonly argsSha256: string;
   readonly turn: number;
   readonly outcome: 'pending' | ToolOutcome;
+  /** Wire event timestamp; absent on legacy frames and never guessed. */
+  readonly at?: string;
   readonly code?: string;
   readonly text?: string;
   /**
@@ -1687,6 +1689,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 argsSha256: payload.args_sha256,
                 turn: payload.turn,
                 outcome: buffered.outcome,
+                at: envelope.ts,
                 taskId: payload.task_id,
                 ...(buffered.code === undefined ? {} : { code: buffered.code }),
                 ...(buffered.bytes === undefined ? {} : { bytes: buffered.bytes }),
@@ -1698,6 +1701,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
                 argsSha256: payload.args_sha256,
                 turn: payload.turn,
                 outcome: 'pending',
+                at: envelope.ts,
                 taskId: payload.task_id,
               };
           set({ toolActivity: [...get().toolActivity, record] });

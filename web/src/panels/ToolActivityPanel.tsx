@@ -30,6 +30,8 @@ export interface ToolActivityEntry {
   readonly argsSha256: string;
   readonly turn: number;
   readonly outcome: ToolActivityOutcome;
+  /** Wire event timestamp when the frame carried one; never synthesized. */
+  readonly at?: string;
   readonly code?: string;
   readonly text?: string;
   /** Owning task from the wire `task_id`; absent rows are grouped as unknown. */

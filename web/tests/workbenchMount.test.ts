@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import agentsPanelSource from '../src/panels/AgentsPanel.tsx?raw';
 import dataPanelSource from '../src/panels/DataPanel.tsx?raw';
 
 describe('CAP-4 workbench mount', () => {
@@ -8,6 +9,12 @@ describe('CAP-4 workbench mount', () => {
     expect(dataPanelSource).toContain('<Editor');
     expect(dataPanelSource).toContain('buildFileTreeNodes(fileTree.entries)');
     expect(dataPanelSource).toContain('readOnly');
+  });
+
+  it('mounts the real Timeline from server tool-call timestamps', () => {
+    expect(agentsPanelSource).toContain('<Timeline');
+    expect(agentsPanelSource).toContain('record.at ??');
+    expect(agentsPanelSource).toContain('timelineSteps');
   });
 
   it('does not invent file rows or editable writes', () => {

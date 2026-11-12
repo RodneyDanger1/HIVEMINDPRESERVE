@@ -23,6 +23,8 @@ import { LessonsPanel } from './LessonsPanel';
 import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
 import { A2AInboxPanel } from './A2AInboxPanel';
+import { Timeline } from '../workbench';
+import type { TimelineAgent, TimelineStep } from '../workbench';
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -38,6 +40,35 @@ export function AgentsPanel() {
   // store stays the single writer and this panel only reads.
   const toolActivity: readonly ToolActivityEntry[] = useUiStore((state) => state.toolActivity);
   const list = Object.values(tasks);
+  const timelineAgents: readonly TimelineAgent[] = list.map((task) => ({
+    id: task.id,
+    label: task.label,
+    kind: task.kind,
+  }));
+  const timelineSteps: readonly TimelineStep[] = toolActivity.map((record) => ({
+    id: record.toolCallId,
+    // Empty means the wire did not carry a timestamp; Timeline renders it as
+    // unknown and sorts it last instead of inventing a time.
+    at: record.at ?? '',
+    agentId: record.taskId ?? 'unattributed',
+    title: `${record.tool} · turn ${record.turn}`,
+    detail:
+      record.code === undefined
+        ? `outcome: ${record.outcome}`
+        : `outcome: ${record.outcome} · code: ${record.code}`,
+    evidence: record.sha256 === undefined || record.sha256 === null
+      ? null
+      : `sha256 ${record.sha256.slice(0, 12)}…`,
+    status:
+      record.outcome === 'pending'
+        ? 'running'
+        : record.outcome === 'ok'
+          ? 'ok'
+          : record.outcome === 'denied'
+            ? 'awaiting_approval'
+            : 'failed',
+    kind: 'tool',
+  }));
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-4">
@@ -99,6 +130,14 @@ export function AgentsPanel() {
         className="surface-panel mt-3 rounded-[var(--radius-card)] p-3"
       >
         <ToolActivityPanel entries={toolActivity} />
+      </div>
+      <div className="mt-3">
+        <Timeline
+          agents={timelineAgents}
+          steps={timelineSteps}
+          status="ready"
+          emptyMessage="No tool-call timeline has been recorded for this run."
+        />
       </div>
       <AgentProfilesPanel />
       <AgentRosterPanel />
