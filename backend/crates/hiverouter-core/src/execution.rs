@@ -51,11 +51,29 @@ fn default_now_unix_secs() -> u64 {
 /// Adds the task's model-visible scoped facts to a prompt, bounded by the
 /// context renderer. The prompt is the only path that makes rewiring visible to
 /// the model; storing facts without this step is a no-op.
+fn prompt_with_skills(prompt: &str, skills_context: Option<&str>) -> String {
+    match skills_context {
+        Some(block) if !block.trim().is_empty() => format!("{block}\n\n{prompt}"),
+        _ => prompt.to_owned(),
+    }
+}
+
 fn prompt_with_repo_context(prompt: &str, repo_context: Option<&str>) -> String {
     match repo_context {
         Some(block) if !block.trim().is_empty() => format!("{block}\n\n{prompt}"),
         _ => prompt.to_owned(),
     }
+}
+
+fn prompt_with_capability_context(
+    prompt: &str,
+    skills_context: Option<&str>,
+    repo_context: Option<&str>,
+) -> String {
+    prompt_with_repo_context(
+        &prompt_with_skills(prompt, skills_context),
+        repo_context,
+    )
 }
 
 fn prompt_with_context(prompt: &str, context: Option<&ScopedContext>) -> String {
@@ -726,6 +744,9 @@ pub struct RunEngine {
     /// every planning/task prompt as labelled data. `None` preserves the old
     /// prompt byte-for-byte.
     repo_context: Option<String>,
+    /// Bounded local-skill prompt block, loaded once by the host and labelled
+    /// as data. `None` preserves the pre-CAP-8 prompt path.
+    skills_context: Option<String>,
     /// Frozen tool registry used to validate model-originated calls
     /// (tier allowlists + argument schemas).
     tool_registry: ToolRegistry,
@@ -819,6 +840,7 @@ impl RunEngine {
             snapshots: None,
             tool_workspace: None,
             repo_context: None,
+            skills_context: None,
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
@@ -932,6 +954,14 @@ impl RunEngine {
     #[must_use]
     pub fn with_repo_context(mut self, repo_context: Option<String>) -> Self {
         self.repo_context = repo_context.filter(|block| !block.trim().is_empty());
+        self
+    }
+
+    /// Installs the bounded local-skill prompt block. Skills are data and grant
+    /// no tools; empty input preserves the old prompt path.
+    #[must_use]
+    pub fn with_skills_context(mut self, skills_context: Option<String>) -> Self {
+        self.skills_context = skills_context.filter(|block| !block.trim().is_empty());
         self
     }
 
@@ -1097,6 +1127,7 @@ impl RunEngine {
             snapshots: None,
             tool_workspace: None,
             repo_context: None,
+            skills_context: None,
             tool_registry: ToolRegistry::standard(),
             tools: None,
             remote: None,
@@ -2698,14 +2729,16 @@ impl RunEngine {
                     .map(|message| format!("{:?}: {}", message.role, message.content))
                     .collect::<Vec<_>>()
                     .join("\n");
-                return prompt_with_repo_context(
+                return prompt_with_capability_context(
                     &prompt_with_authorized_lessons(&rendered, &self.authorized_lessons_snapshot()),
+                    self.skills_context.as_deref(),
                     self.repo_context.as_deref(),
                 );
             }
         }
-        prompt_with_repo_context(
+        prompt_with_capability_context(
             &prompt_with_authorized_lessons(&run.prompt, &self.authorized_lessons_snapshot()),
+            self.skills_context.as_deref(),
             self.repo_context.as_deref(),
         )
     }
@@ -4576,11 +4609,12 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_repo_context(
+        let prompt = prompt_with_capability_context(
             &prompt_with_authorized_lessons(
                 &prompt_with_context(prompt, context.as_ref()),
                 &self.authorized_lessons_snapshot(),
             ),
+            self.skills_context.as_deref(),
             self.repo_context.as_deref(),
         );
         let result = self
@@ -4604,11 +4638,12 @@ impl RunEngine {
         let context = self.contexts.get(task.id)?;
         let context = self.refresh_memory_bank(task, context)?;
         let context = self.refresh_a2a_inbox(task, context)?;
-        let prompt = prompt_with_repo_context(
+        let prompt = prompt_with_capability_context(
             &prompt_with_authorized_lessons(
                 &prompt_with_context(prompt, context.as_ref()),
                 &self.authorized_lessons_snapshot(),
             ),
+            self.skills_context.as_deref(),
             self.repo_context.as_deref(),
         );
         let result = self

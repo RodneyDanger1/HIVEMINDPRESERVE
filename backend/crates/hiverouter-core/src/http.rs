@@ -371,6 +371,21 @@ fn build_engine(
             })
         })
         .ok();
+    let skills_context = match crate::skills::load_skills(&config.data_dir.join("skills")) {
+        Ok(skills) => {
+            let block = crate::skills::prompt_block(&skills);
+            if block.trim().is_empty() {
+                None
+            } else {
+                tracing::info!(skills = skills.len(), "loaded local skills into prompt data");
+                Some(block)
+            }
+        }
+        Err(error) => {
+            tracing::warn!(%error, "local skills unavailable; prompts continue without them");
+            None
+        }
+    };
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
@@ -379,6 +394,7 @@ fn build_engine(
         .with_daemon_store(daemons)
         .with_root_orchestrator()
         .with_repo_context(repo_context)
+        .with_skills_context(skills_context)
         .with_authorized_lessons(crate::execution::load_authorized_lessons(
             &config.data_dir.join("evolution").join("LESSONS.jsonl"),
         ));
@@ -661,6 +677,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/diagnose", get(diagnose))
         .route("/api/runtime", get(runtime_status))
         .route("/api/session", get(api_session))
+        .route("/api/skills", get(skills_list))
+        .route("/api/skills/{skill_id}", get(skill_detail))
         .route("/api/sessions", get(sessions_list).post(session_create))
         .route("/api/sessions/{session_id}", get(session_detail))
         .route(
@@ -923,6 +941,39 @@ async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
             })),
         )
             .into_response(),
+    }
+}
+
+async fn skills_list(State(state): State<Arc<AppState>>) -> Response {
+    match crate::skills::load_skills(&state.config.data_dir.join("skills")) {
+        Ok(skills) => (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "skills": skills
+                    .iter()
+                    .map(|skill| serde_json::json!({
+                        "id": skill.id,
+                        "name": skill.name,
+                        "description": skill.description,
+                    }))
+                    .collect::<Vec<_>>()
+            })),
+        )
+            .into_response(),
+        Err(_) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
+    }
+}
+
+async fn skill_detail(
+    State(state): State<Arc<AppState>>,
+    Path(skill_id): Path<String>,
+) -> Response {
+    match crate::skills::load_skills(&state.config.data_dir.join("skills")) {
+        Ok(skills) => match skills.into_iter().find(|skill| skill.id == skill_id) {
+            Some(skill) => (StatusCode::OK, Json(skill)).into_response(),
+            None => refusal_response(StatusCode::NOT_FOUND, &Refusal::PathNotFound),
+        },
+        Err(_) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
     }
 }
 

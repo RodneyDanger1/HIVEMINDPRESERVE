@@ -30,6 +30,7 @@ pub mod recovery;
 pub mod remote;
 pub mod remote_supervisor;
 pub mod run_state;
+pub mod skills;
 pub mod snapshot;
 pub mod static_ui;
 pub mod store;
@@ -66,6 +67,7 @@ pub use run_state::{
     apply_run, apply_task, can_apply_run, can_apply_task, Effect, RunStateError, RunTransition,
     Scope, StateEvent, TaskTransition,
 };
+pub use skills::{load_skills, prompt_block as skills_prompt_block, Skill, SkillError};
 pub use snapshot::{SnapshotEnvelope, SnapshotStore};
 pub use store::RunStore;
 pub use tool_loop::{
