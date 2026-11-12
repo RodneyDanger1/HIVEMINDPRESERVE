@@ -653,6 +653,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/session", get(api_session))
         .route("/api/sessions", get(sessions_list).post(session_create))
         .route("/api/sessions/{session_id}", get(session_detail))
+        .route(
+            "/api/sessions/{session_id}/todos",
+            get(session_todos).post(session_todo_add),
+        )
         .route("/api/sessions/{session_id}/policy", post(session_policy))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
@@ -987,6 +991,39 @@ async fn session_detail(
         Json(serde_json::json!({ "session": session, "runs": runs })),
     )
         .into_response()
+}
+
+async fn session_todos(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    if let Err(refusal) = store.session(&session_id) {
+        return refusal_response(StatusCode::NOT_FOUND, &refusal);
+    }
+    match store.todos(&session_id) {
+        Ok(todos) => (StatusCode::OK, Json(serde_json::json!({ "todos": todos }))).into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn session_todo_add(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(text) = body.get("text").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let text = text.trim();
+    if text.is_empty() || text.chars().count() > 4_000 {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.add_todo(&session_id, text) {
+        Ok(todo) => (StatusCode::CREATED, Json(todo)).into_response(),
+        Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
+    }
 }
 
 async fn session_policy(

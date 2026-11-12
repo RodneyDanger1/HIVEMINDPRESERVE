@@ -467,6 +467,55 @@ async fn session_create_truth_defect_rejects_unknown_explicit_policy() {
     );
 }
 
+// --- session todos ----------------------------------------------------------
+
+#[tokio::test]
+async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let (status, session) = post(
+        &server,
+        "/api/sessions",
+        &session_body("todo-session", Some("classic")),
+    )
+    .await;
+    assert_eq!(status, 201, "session create: {session:?}");
+    let session_id = session["id"].as_str().expect("session id");
+
+    let (status, todo) = post(
+        &server,
+        &format!("/api/sessions/{session_id}/todos"),
+        &json!({ "text": "inspect the failing test" }),
+    )
+    .await;
+    assert_eq!(status, 201, "todo add: {todo:?}");
+    assert_eq!(todo["text"], "inspect the failing test");
+    assert_eq!(todo["state"], "open");
+
+    let (status, list) = get(&server, &format!("/api/sessions/{session_id}/todos")).await;
+    assert_eq!(status, 200);
+    assert_eq!(list["todos"].as_array().map(Vec::len), Some(1));
+    assert_eq!(list["todos"][0]["text"], "inspect the failing test");
+
+    let (status, refusal) = post(
+        &server,
+        "/api/sessions/does-not-exist/todos",
+        &json!({ "text": "orphan" }),
+    )
+    .await;
+    assert_eq!(status, 400, "unknown session must refuse: {refusal:?}");
+    assert_eq!(refusal["code"], "E_SESSION_NOT_FOUND");
+
+    let (status, refusal) = post(
+        &server,
+        &format!("/api/sessions/{session_id}/todos"),
+        &json!({ "text": "   " }),
+    )
+    .await;
+    assert_eq!(status, 400, "blank todo must refuse: {refusal:?}");
+    assert_eq!(refusal["code"], "E_SCHEMA_INVALID");
+}
+
 // --- POST /api/sessions/{id}/policy ---------------------------------------
 
 #[tokio::test]
