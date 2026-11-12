@@ -1046,6 +1046,14 @@ impl RunEngine {
         if let Some(persona) = personas.get(&lower) {
             return Some(persona.clone());
         }
+        let canonical = match lower.as_str() {
+            "super" | "super_agent" => "superagent",
+            "worker" | "worker_agent" => "agent",
+            _ => lower.as_str(),
+        };
+        if let Some(persona) = personas.get(canonical) {
+            return Some(persona.clone());
+        }
         let normalized = lower.replace(['-', ' '], "_");
         if let Some(persona) = personas.get(&normalized) {
             return Some(persona.clone());
@@ -4471,39 +4479,47 @@ impl RunEngine {
         let Some(mut context) = context else {
             return Ok(None);
         };
+        // Read first: a transient read failure must not erase the task's current
+        // memory facts and then persist a zero-fact context as if it succeeded.
+        let entries = self
+            .store
+            .memory_read_set(task.run_id, task.id, task.parent_task_id, 16)?;
         context.facts.retain(|key, _| !key.starts_with("memory:"));
-        if let Ok(entries) =
-            self.store
-                .memory_read_set(task.run_id, task.id, task.parent_task_id, 16)
-        {
-            let run_bank = format!("bank:run:{}", task.run_id);
-            let mut banks: Vec<String> = Vec::new();
-            let mut entry_ids: Vec<String> = Vec::new();
-            let mut rendered = String::new();
-            for entry in entries {
-                if !banks.iter().any(|bank| bank == &entry.bank_id) {
-                    banks.push(entry.bank_id.clone());
-                }
-                entry_ids.push(entry.entry_id.clone());
-                let prefix = if entry.bank_id == run_bank {
-                    "memory:run:"
-                } else {
-                    "memory:"
-                };
-                rendered.push_str(&format!("{prefix}{}={}\n", entry.key, entry.value));
-                context
-                    .facts
-                    .insert(format!("{prefix}{}", entry.key), entry.value);
+        let run_bank = format!("bank:run:{}", task.run_id);
+        let mut banks: Vec<String> = Vec::new();
+        let mut entry_ids: Vec<String> = Vec::new();
+        let mut rendered = String::new();
+        for entry in entries {
+            if !banks.iter().any(|bank| bank == &entry.bank_id) {
+                banks.push(entry.bank_id.clone());
             }
-            let hash = hiverouter_tools::sha256::sha256_hex(rendered.as_bytes());
-            let _ = self.store.record_memory_context_snapshot(
-                task.id,
-                task.run_id,
-                &banks,
-                &entry_ids,
-                rendered.chars().count(),
-                false,
-                &hash,
+            entry_ids.push(entry.entry_id.clone());
+            let prefix = if entry.bank_id == run_bank {
+                "memory:run:"
+            } else {
+                "memory:"
+            };
+            rendered.push_str(&format!("{prefix}{}={}\n", entry.key, entry.value));
+            context
+                .facts
+                .insert(format!("{prefix}{}", entry.key), entry.value);
+        }
+        let hash = hiverouter_tools::sha256::sha256_hex(rendered.as_bytes());
+        let rendered_chars = rendered.chars().count();
+        let truncated = rendered_chars > 4_000;
+        if let Err(error) = self.store.record_memory_context_snapshot(
+            task.id,
+            task.run_id,
+            &banks,
+            &entry_ids,
+            rendered_chars,
+            truncated,
+            &hash,
+        ) {
+            tracing::warn!(
+                code = error.code(),
+                task_id = %task.id,
+                "memory context snapshot could not be persisted; prompt facts remain authoritative"
             );
         }
         self.contexts.set(task.id, context.clone())?;
@@ -4672,23 +4688,40 @@ impl RunEngine {
             .map(|node| format!("{}@{}", node.role, node.depth))
             .collect::<Vec<_>>()
             .join(", ");
+        let task_lines = self
+            .store
+            .tasks_for_run(run.id)?
+            .into_iter()
+            .filter(|task| task.parent_task_id == Some(root.id))
+            .take(16)
+            .map(|task| {
+                format!(
+                    "id={} role={} depth={}",
+                    task.id, task.role, task.depth
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
         let prompt = format!(
             "{}\n\nYou are the HyperAgent orchestrator. The planner proposed this DAG: {}. \
              You may call one or more of: spawn_superagent (extra branch lead with a concrete objective), \
              assign_task (give a queued branch a concrete objective), \
              spawn_remote_agent (detached light/garage/daemon principal), \
+             spawn_daemon (tree-free daemon/watchdog/relay record), \
              propose_improvement (record a lesson proposal; never applies it), \
-             convene_evolution_vote (after propose_improvement, spawn exactly four \
-             SuperAgent voters for that proposal), \
              read_memory_summary (bounded summaries only), finish. \
+             Planned tasks (use these exact ids only for assign_task): {}. \
              Never spawn a direct Agent or Subagent. Return no prose in this control turn.\n",
-            run.prompt, plan_digest
+            run.prompt, plan_digest, task_lines
         );
         // A root control turn may add one branch lead only when the planner
         // produced a flat plan. If the planner already supplied branch leads,
         // allowing the root to add more silently expands the requested topology
         // (live TokenLab run: a two-branch request became five depth-1 leads).
-        let has_planned_branch = plan.nodes.iter().any(|node| node.depth == 1);
+        // A single planned node is a flat plan: the root may add the one branch
+        // lead. If the planner already produced a multi-node DAG, adding another
+        // depth-1 lead would silently expand the requested topology.
+        let has_planned_branch = plan.nodes.len() > 1;
         // A provider that ignores the finish instruction must not be allowed to
         // turn one control response into an unbounded spawn burst. The cap is
         // intentionally small: root adds a few extra branches, it is not a
@@ -4775,10 +4808,21 @@ impl RunEngine {
                                 .and_then(serde_json::Value::as_str)
                                 .map(str::trim)
                                 .filter(|text| (8..=800).contains(&text.chars().count()));
+                            let Some(objective) = objective else {
+                                _result_text.push_str(
+                                    "- refused: spawn_superagent requires a concrete objective (8..=800 chars)\n",
+                                );
+                                self.record_root_gate_decision(
+                                    run,
+                                    root,
+                                    "spawn_superagent",
+                                    "refused",
+                                    "objective missing or outside 8..=800 chars",
+                                )?;
+                                continue;
+                            };
                             let child = self.spawn_sub_hive(root.id, "super")?;
-                            if let Some(objective) = objective {
-                                self.store.set_task_instruction(child.id, objective)?;
-                            }
+                            self.store.set_task_instruction(child.id, objective)?;
                             root_super_spawned = true;
                             self.record_root_gate_decision(
                                 run,
@@ -4786,17 +4830,15 @@ impl RunEngine {
                                 "spawn_superagent",
                                 "allowed",
                                 &format!(
-                                    "child={} depth={} objective={}",
+                                    "child={} depth={} objective=provided",
                                     child.id,
-                                    child.depth,
-                                    objective.is_some()
+                                    child.depth
                                 ),
                             )?;
                             _result_text.push_str(&format!(
-                                "- spawned superagent {} depth={} objective={}\n",
+                                "- spawned superagent {} depth={} objective=provided\n",
                                 child.id,
-                                child.depth,
-                                objective.is_some()
+                                child.depth
                             ));
                         }
                     }
@@ -6045,14 +6087,23 @@ impl RunEngine {
         self.add_run_usage(run.id, reply.usage);
         if !text.trim().is_empty() && memory_text_is_safe(&text) {
             let bounded: String = text.chars().take(2_000).collect();
-            self.store.record_agent_memory_scoped(
+            // Completion is already published. A best-effort memory write must
+            // not turn a completed task into a failed run after the UI saw
+            // REPLY_DONE/Completed.
+            if let Err(error) = self.store.record_agent_memory_scoped(
                 &task.role,
                 &format!("task:{}", task.id),
                 &bounded,
                 run.id,
                 task.id,
                 &task.id.to_string(),
-            )?;
+            ) {
+                tracing::warn!(
+                    code = error.code(),
+                    task_id = %task.id,
+                    "task completed but its memory entry could not be persisted"
+                );
+            }
         }
         let _ = self.graph.set_state(task.id, AgentState::Completed);
         self.publish_node(run.id, task.id, AgentState::Completed);

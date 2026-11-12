@@ -418,9 +418,17 @@ impl TailBuffer {
             self.truncated = true;
             return;
         }
-        let overflow = self.bytes.len() + chunk.len() - self.cap;
+        // usize arithmetic must never underflow: the old expression subtracted
+        // `cap` from bytes+chunk even when the buffer was smaller than the cap,
+        // panicking (debug) or wrapping (release) on the first ordinary chunk.
+        let overflow = self
+            .bytes
+            .len()
+            .saturating_add(chunk.len())
+            .saturating_sub(self.cap);
         if overflow > 0 {
-            self.bytes.drain(..overflow);
+            let drop_count = overflow.min(self.bytes.len());
+            self.bytes.drain(..drop_count);
             self.truncated = true;
         }
         self.bytes.extend(chunk.iter().copied());
@@ -549,6 +557,10 @@ struct RegistryInner {
     policy: JobPolicy,
     slots: Arc<Semaphore>,
     jobs: Mutex<HashMap<String, JobEntry>>,
+    /// Optional durable sink: terminal snapshots are written here by the
+    /// supervisor so a naturally-completed job is not mistaken for a crash
+    /// orphan after restart.
+    persistence: Mutex<Option<Arc<crate::db::Database>>>,
 }
 
 impl std::fmt::Debug for RegistryInner {
@@ -615,8 +627,19 @@ impl JobRegistry {
                 policy,
                 slots: Arc::new(Semaphore::new(MAX_CONCURRENT_JOBS)),
                 jobs: Mutex::new(HashMap::new()),
+                persistence: Mutex::new(None),
             }),
         }
+    }
+
+    /// Attaches the durable job store. Terminal snapshots are persisted by the
+    /// supervisor; starting/killing also persist at the HTTP layer.
+    #[must_use]
+    pub fn with_persistence(self, db: Arc<crate::db::Database>) -> Self {
+        if let Ok(mut slot) = self.inner.persistence.lock() {
+            *slot = Some(db);
+        }
+        self
     }
 
     /// The workspace jail used for every job working directory.
@@ -1038,12 +1061,30 @@ async fn supervise(
         err_abort.abort();
     }
 
-    {
+    let terminal_snapshot = {
         let mut jobs = inner.jobs();
         if let Some(entry) = jobs.get_mut(&id) {
             entry.state = state;
             entry.exit_code = exit_code;
             entry.ended_at = Some(Timestamp::now());
+        }
+        jobs.get(&id).map(snapshot_of)
+    };
+    if let Some(snapshot) = terminal_snapshot {
+        let database = inner
+            .persistence
+            .lock()
+            .ok()
+            .and_then(|slot| slot.as_ref().cloned());
+        if let Some(database) = database {
+            if let Err(error) =
+                database.with_connection(|connection| persist_job(connection, &snapshot))
+            {
+                tracing::warn!(
+                    job_id = %snapshot.id,
+                    "terminal job snapshot could not be persisted: {error}"
+                );
+            }
         }
     }
     // `send_replace` updates the stored value even when no waiter is subscribed
@@ -1169,5 +1210,44 @@ fn refused(refusal: Refusal, detail: impl Into<String>) -> JobError {
     JobError::Refused {
         refusal,
         detail: detail.into(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tail_buffer_keeps_last_cap_bytes_and_never_underflows() {
+        let mut buffer = TailBuffer::new(16);
+        buffer.append(b"abcd");
+        buffer.append(b"efghijkl");
+        assert!(!buffer.truncated);
+        buffer.append(b"0123456789abcdefghij");
+        let snapshot = buffer.snapshot();
+        assert_eq!(snapshot.tail, "456789abcdefghij");
+        assert!(snapshot.truncated);
+        assert_eq!(snapshot.bytes, 4 + 8 + 20);
+    }
+
+    #[test]
+    fn default_cap_accepts_an_ordinary_read_chunk_without_panicking() {
+        let mut buffer = TailBuffer::new(DEFAULT_OUTPUT_TAIL_BYTES);
+        buffer.append(&vec![b'x'; 8192]);
+        let snapshot = buffer.snapshot();
+        assert_eq!(snapshot.tail.len(), 8192);
+        assert!(!snapshot.truncated);
+        assert_eq!(snapshot.bytes, 8192);
+    }
+
+    #[test]
+    fn growing_past_the_default_cap_keeps_only_the_last_cap_bytes() {
+        let mut buffer = TailBuffer::new(DEFAULT_OUTPUT_TAIL_BYTES);
+        buffer.append(&vec![b'a'; DEFAULT_OUTPUT_TAIL_BYTES]);
+        buffer.append(b"TAIL");
+        let snapshot = buffer.snapshot();
+        assert_eq!(snapshot.tail.len(), DEFAULT_OUTPUT_TAIL_BYTES);
+        assert!(snapshot.tail.ends_with("TAIL"));
+        assert!(snapshot.truncated);
     }
 }

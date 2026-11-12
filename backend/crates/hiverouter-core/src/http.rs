@@ -481,7 +481,7 @@ impl AppState {
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
             .ok()
-            .map(Arc::new);
+            .map(|jobs| Arc::new(jobs.with_persistence(db.clone())));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -534,7 +534,7 @@ impl AppState {
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
             .ok()
-            .map(Arc::new);
+            .map(|jobs| Arc::new(jobs.with_persistence(db.clone())));
         publish_recovery_catch_up(&db, &graph, &bus);
         Self {
             db,
@@ -579,7 +579,7 @@ impl AppState {
         let daemons = Arc::new(crate::daemon::DaemonStore::new(db.clone()));
         let jobs = JobRegistry::open(&config.workspace_root, JobPolicy::conservative_default())
             .ok()
-            .map(Arc::new);
+            .map(|jobs| Arc::new(jobs.with_persistence(db.clone())));
         Self {
             db,
             checks,
@@ -3698,10 +3698,24 @@ async fn task_memory_context(
     };
     match state.engine.store.memory_context_snapshot(task_id) {
         Ok(Some((banks, entry_ids, rendered_chars, truncated, prompt_sha256, created_at))) => {
-            let banks: serde_json::Value =
-                serde_json::from_str(&banks).unwrap_or(serde_json::Value::Null);
-            let entry_ids: serde_json::Value =
-                serde_json::from_str(&entry_ids).unwrap_or(serde_json::Value::Null);
+            let banks: Vec<String> = match serde_json::from_str(&banks) {
+                Ok(banks) => banks,
+                Err(_) => {
+                    return refusal_response(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        &Refusal::InternalError,
+                    );
+                }
+            };
+            let entry_ids: Vec<String> = match serde_json::from_str(&entry_ids) {
+                Ok(entry_ids) => entry_ids,
+                Err(_) => {
+                    return refusal_response(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        &Refusal::InternalError,
+                    );
+                }
+            };
             (
                 [(header::CACHE_CONTROL, "no-store")],
                 Json(serde_json::json!({

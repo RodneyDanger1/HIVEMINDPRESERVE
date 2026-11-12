@@ -89,7 +89,9 @@ Capability additions extend the same tier allowlists: `fs_glob`, `fs_grep`, `fil
 
 Root-control vocabulary (local, not registry): `spawn_superagent`,
 `assign_task`, `spawn_remote_agent`, `spawn_daemon`, `read_memory_summary`,
-`propose_improvement`, `convene_evolution_vote`, `finish`.
+`propose_improvement`, `finish`. `spawn_superagent` is currently advertised but
+refused whenever the planner supplied a branch; `convene_evolution_vote` is not
+in the root tool schema.
 
 **Safety limits:** `file_write`/`shell_exec`/`web_fetch` require approval;
 shell is allowlisted to `git.exe`/`cargo.exe` and refuses command-interpreter

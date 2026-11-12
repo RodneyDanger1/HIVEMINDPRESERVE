@@ -5,7 +5,8 @@ use std::sync::Arc;
 use hiverouter_contract::Timestamp;
 use hiverouter_core::db::{Database, MIGRATIONS};
 use hiverouter_core::jobs::{
-    list_persisted_jobs, persist_job, reconcile_running_jobs, JobOutput, JobSnapshot, JobState,
+    list_persisted_jobs, persist_job, reconcile_running_jobs, JobOutput, JobPolicy, JobRegistry,
+    JobRequest, JobSnapshot, JobState,
 };
 
 fn snapshot(id: &str, state: JobState, ended_at: Option<Timestamp>) -> JobSnapshot {
@@ -71,6 +72,38 @@ fn v28_records_terminal_jobs_and_reads_them_back() {
     let live = stored.iter().find(|job| job.id == "job-running").expect("running job");
     assert_eq!(live.state, JobState::Failed);
     assert_eq!(live.exit_code, Some(1));
+}
+
+#[tokio::test]
+async fn naturally_completed_job_is_persisted_as_succeeded() {
+    let temp = tempfile::tempdir().expect("temp");
+    let workspace = temp.path().join("workspace");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+    let db = Arc::new(Database::open(&temp.path().join("hive.db")).expect("db"));
+    db.migrate().expect("migrate");
+    let registry = JobRegistry::open(&workspace, JobPolicy::conservative_default())
+        .expect("registry")
+        .with_persistence(db.clone());
+
+    let snapshot = registry
+        .start(JobRequest::new("session-1", "cargo.exe", vec!["--version".to_owned()]))
+        .await
+        .expect("start job");
+    registry.wait(&snapshot.id).await.expect("wait");
+
+    let stored = db
+        .with_connection(|connection| list_persisted_jobs(connection, 10))
+        .expect("list");
+    let job = stored.iter().find(|job| job.id == snapshot.id).expect("persisted job");
+    assert_eq!(job.state, JobState::Succeeded);
+    assert_eq!(job.exit_code, Some(0));
+    assert!(job.output.tail.contains("cargo"), "tail: {:?}", job.output.tail);
+    assert_eq!(
+        db.with_connection(|connection| reconcile_running_jobs(connection))
+            .expect("reconcile"),
+        0,
+        "a completed job must not be reconciled as a restart orphan"
+    );
 }
 
 #[test]

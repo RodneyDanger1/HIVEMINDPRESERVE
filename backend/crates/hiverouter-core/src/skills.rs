@@ -148,16 +148,22 @@ pub fn load_skills(directory: &Path) -> Result<Vec<Skill>, SkillError> {
             });
         }
         let path = entry.path();
-        let metadata = entry.metadata().map_err(|source| SkillError::File {
+        // `DirEntry::file_type` does not follow the link; `metadata()` would
+        // report the target's type and make the symlink check meaningless.
+        let file_type = entry.file_type().map_err(|source| SkillError::File {
             path: path.display().to_string(),
             source,
         })?;
-        if !metadata.is_file() || metadata.file_type().is_symlink() {
+        if !file_type.is_file() || file_type.is_symlink() {
             continue;
         }
         if path.extension().and_then(|extension| extension.to_str()) != Some("json") {
             continue;
         }
+        let metadata = entry.metadata().map_err(|source| SkillError::File {
+            path: path.display().to_string(),
+            source,
+        })?;
         if metadata.len() > MAX_SKILL_FILE_BYTES {
             return Err(SkillError::TooLarge {
                 path: path.display().to_string(),
