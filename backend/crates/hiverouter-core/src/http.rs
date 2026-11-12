@@ -1246,6 +1246,13 @@ async fn jobs_list(State(state): State<Arc<AppState>>) -> Response {
             tracing::warn!(code = error.code(), "persisted job history unavailable");
         }
     }
+    all.sort_by(|left, right| {
+        right
+            .started_at
+            .cmp(&left.started_at)
+            .then_with(|| right.id.cmp(&left.id))
+    });
+    all.truncate(200);
     (StatusCode::OK, Json(serde_json::json!({ "jobs": all }))).into_response()
 }
 
@@ -1322,6 +1329,9 @@ async fn job_kill(
                 tracing::warn!(code = error.code(), job_id = %snapshot.id, "killed job could not be persisted");
             }
             (StatusCode::OK, Json(snapshot)).into_response()
+        }
+        Err(crate::jobs::JobError::UnknownJob(_)) => {
+            refusal_response(StatusCode::NOT_FOUND, &Refusal::JobNotFound)
         }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }

@@ -520,7 +520,7 @@ impl JobError {
         match self {
             Self::Refused { refusal, .. } => *refusal,
             Self::ConcurrencyLimit { .. } => Refusal::SemaphoreFull,
-            Self::UnknownJob(_) => Refusal::InternalError,
+            Self::UnknownJob(_) => Refusal::JobNotFound,
             Self::KillTimeout(_) => Refusal::ToolTimeout,
         }
     }

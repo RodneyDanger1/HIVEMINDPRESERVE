@@ -8,7 +8,7 @@ FigCraft surface work. Changing a name here requires a `CHANGE-LEDGER-IMPL.md` r
 > **21 → 24 events** (adds `TOOL_CALL`, `TOOL_RESULT`, `AGENT_MESSAGE`) and **15 → 16 agent states** (adds `interrupted`).
 > `APPROVAL_REQUEST` gains **optional** `nonce`, `run_id`, `task_id`, `tool_call_id`, `args_sha256`, `expires_at`;
 > a producer must populate all six for model-originated side effects, but the fields stay optional on the wire in this
-> wave. No command or refusal code is added (14 frozen commands, 79 refusal codes; `CommandName::ALL` = 17 including the
+> wave. No command or refusal code is added (14 frozen commands, 80 refusal codes; `CommandName::ALL` = 17 including the
 > 3 decision-gated `DIFF_*` names). Sources of truth: `backend/crates/hiverouter-contract/src/event.rs`
 > (`EventName::ALL` = 24), `src/state.rs` (`AgentState` = 16), pinned by `tests/schema_roundtrip.rs` and
 > `web/tests/contract.test.ts`; the "21 events / 15 states" wording in the freeze paragraph above and in historical
@@ -75,7 +75,7 @@ failed→failed, queued→queued; every other value renders with shape/text cue 
 
 ## 5. Refusal codes (Phase 1 table; UI must display code + how_to_fix)
 
-> This section is a Phase-1 subset. The live table has **79** codes; authoritative source is
+> This section is a Phase-1 subset. The live table has **80** codes; authoritative source is
 > `backend/crates/hiverouter-contract/src/refusal.rs` and `Refusal::ALL`. Capability work adds
 > `E_SESSION_NOT_FOUND`; do not treat this paragraph as a complete enumeration.
 

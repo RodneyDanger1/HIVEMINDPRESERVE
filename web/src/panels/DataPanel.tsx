@@ -30,7 +30,7 @@ export function DataPanel() {
   }, [fileTree.status, requestFileTree]);
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[280px_1fr] gap-3 p-4">
+    <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,40%)_minmax(0,1fr)] gap-3 p-4 lg:grid-cols-[280px_1fr] lg:grid-rows-1">
       <section aria-label={STRINGS.panels.dataTitle} className="min-h-0 overflow-y-auto">
         <PanelTitle>{STRINGS.panels.dataTitle}</PanelTitle>
         {fileTree.status === 'ok' ? (

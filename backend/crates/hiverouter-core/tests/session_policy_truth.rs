@@ -516,6 +516,17 @@ async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
     assert_eq!(refusal["code"], "E_SCHEMA_INVALID");
 }
 
+// --- unknown job refusal ----------------------------------------------------
+
+#[tokio::test]
+async fn unknown_job_detail_uses_the_job_not_found_code() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let (status, refusal) = get(&server, "/api/jobs/does-not-exist").await;
+    assert_eq!(status, 404);
+    assert_eq!(refusal["code"], "E_JOB_NOT_FOUND");
+}
+
 // --- local skills routes ----------------------------------------------------
 
 #[tokio::test]

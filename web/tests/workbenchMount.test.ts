@@ -9,6 +9,8 @@ describe('CAP-4 workbench mount', () => {
     expect(dataPanelSource).toContain('<Editor');
     expect(dataPanelSource).toContain('buildFileTreeNodes(fileTree.entries)');
     expect(dataPanelSource).toContain('readOnly');
+    expect(dataPanelSource).toContain('lg:grid-cols-[280px_1fr]');
+    expect(dataPanelSource).toContain('grid-cols-1');
   });
 
   it('mounts the real Timeline from server tool-call timestamps', () => {
