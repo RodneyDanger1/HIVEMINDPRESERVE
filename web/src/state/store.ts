@@ -365,6 +365,26 @@ function fallbackTaskLabel(kind: NodeKindLabel | null, id: string): string {
 }
 
 /**
+ * Clears the streaming flag for one run. Returns the SAME array when no row
+ * changed so duplicate REPLY_DONE / terminal RUN_STATUS frames do not allocate
+ * (or notify subscribers with) a fresh copy of the whole transcript.
+ */
+function finalizeStreamingMessages(
+  messages: readonly ChatMessage[],
+  runId: string,
+): readonly ChatMessage[] {
+  let changed = false;
+  const next = messages.map((message) => {
+    if (message.role === 'assistant' && message.runId === runId && message.streaming) {
+      changed = true;
+      return { ...message, streaming: false };
+    }
+    return message;
+  });
+  return changed ? next : messages;
+}
+
+/**
  * Reconcile live node records with a committed snapshot. The snapshot is
  * authoritative unless the live record carries a strictly newer node revision
  * (an event that landed after the snapshot). This prevents a resync from
@@ -1524,11 +1544,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
               : {}),
             streamingRunId: isTerminal(event.payload.status) ? null : get().streamingRunId,
             messages: isTerminal(event.payload.status)
-              ? get().messages.map((message) =>
-                  message.streaming && message.runId === event.payload.run_id
-                    ? { ...message, streaming: false }
-                    : message,
-                )
+              ? finalizeStreamingMessages(get().messages, event.payload.run_id)
               : get().messages,
             graphRev: get().graphRev + 1,
           });
@@ -1551,16 +1567,25 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             // A delayed/foreign stream must not append to this run's chat.
             return;
           }
+          const delta = event.payload.text_delta;
+          if (delta.length === 0) {
+            // No-op deltas would otherwise copy the transcript and (on the first
+            // frame) mount an empty assistant row. Text/stream state is unchanged.
+            return;
+          }
+          // Immutable state requires a new array reference for a streaming text
+          // update; the copy is bounded by the transcript, and finalized rows keep
+          // their identity so React only re-renders the tail (see ChatCore).
           const messages = [...get().messages];
           const lastIndex = messages.length - 1;
           const last = messages[lastIndex];
           if (last && last.role === 'assistant' && last.runId === runId && last.streaming) {
-            messages[lastIndex] = { ...last, text: last.text + event.payload.text_delta };
+            messages[lastIndex] = { ...last, text: last.text + delta };
           } else {
             messages.push({
               id: uuidv7(),
               role: 'assistant',
-              text: event.payload.text_delta,
+              text: delta,
               runId,
               streaming: true,
             });
@@ -1573,11 +1598,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             return;
           }
           set({
-            messages: get().messages.map((message) =>
-              message.role === 'assistant' && message.runId === event.payload.run_id
-                ? { ...message, streaming: false }
-                : message,
-            ),
+            messages: finalizeStreamingMessages(get().messages, event.payload.run_id),
             streamingRunId: null,
           });
           return;

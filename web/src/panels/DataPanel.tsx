@@ -3,11 +3,16 @@
  *
  * FILE_TREE_LIST accepts an optional path. Directory rows expand in place; only
  * regular files dispatch FILE_READ.
+ *
+ * Status ownership: FileTree renders its own idle/loading/error/empty states from
+ * the `status` prop, and Editor renders the open file. This panel must not add a
+ * second copy of those states around them, and it must not keep the previously
+ * opened file visible while the next FILE_READ is in flight.
  */
 import { useEffect } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
-import { Editor, FileTree, buildFileTreeNodes } from '../workbench';
+import { Editor, FileTree, FILE_TREE_COPY, buildFileTreeNodes } from '../workbench';
 import type { FileTreeStatus } from '../workbench';
 import { PanelTitle, EmptyState, LoadingState, ErrorState } from './StatePack';
 
@@ -29,48 +34,26 @@ export function DataPanel() {
     }
   }, [fileTree.status, requestFileTree]);
 
+  // The path a retry must re-open is the one that was requested, not the last
+  // file that happened to read successfully (content keeps the old payload).
+  const retryPath = fileTree.selectedPath;
+
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,40%)_minmax(0,1fr)] gap-3 p-4 lg:grid-cols-[280px_1fr] lg:grid-rows-1">
-      <section aria-label={STRINGS.panels.dataTitle} className="min-h-0 overflow-y-auto">
+    // Mobile stacks the two panes at their natural height and scrolls the panel;
+    // the previous fixed 40/60 rows clipped the Editor's header/footer at 375px.
+    // The desktop two-column layout keeps the single fixed row and its own scroll.
+    <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto p-4 lg:grid-cols-[280px_1fr] lg:grid-rows-1 lg:overflow-hidden">
+      {/*
+        No section wrapper here: FileTree already renders the single named
+        "Workspace files" landmark. Nesting it in a second identically-labelled
+        section made screen readers announce the same workspace twice.
+      */}
+      <div className="min-h-0 max-h-[40vh] overflow-y-auto lg:max-h-none">
         <PanelTitle>{STRINGS.panels.dataTitle}</PanelTitle>
-        {fileTree.status === 'ok' ? (
-          <button
-            type="button"
-            className="type-mono-meta mb-2 rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
-            onClick={() => {
-              void requestFileTree();
-            }}
-          >
-            {STRINGS.controls.refresh} root
-          </button>
-        ) : null}
-        {fileTree.status === 'loading' ? <LoadingState /> : null}
-        {fileTree.status === 'error' ? (
-          <div className="space-y-2">
-            <ErrorState message={STRINGS.panels.dataError} />
-            {/*
-              M-020: the copy names Refresh, so the named control must exist and
-              re-run the same request path. requestFileTree is allowed from the
-              error state (it sets loading, then sends FILE_TREE_LIST again).
-            */}
-            <button
-              type="button"
-              className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100"
-              onClick={() => {
-                void requestFileTree();
-              }}
-            >
-              {STRINGS.controls.refresh}
-            </button>
-          </div>
-        ) : null}
-        {fileTree.status === 'ok' && fileTree.entries.length === 0 ? (
-          <EmptyState message={STRINGS.states.empty} />
-        ) : null}
         <FileTree
           nodes={buildFileTreeNodes(fileTree.entries)}
           selectedPath={fileTree.selectedPath}
-          root={STRINGS.panels.dataTitle}
+          root={FILE_TREE_COPY.root}
           status={FILE_TREE_STATUS[fileTree.status] ?? 'idle'}
           errorMessage={fileTree.status === 'error' ? STRINGS.panels.dataError : null}
           onSelectFile={(path) => {
@@ -84,24 +67,49 @@ export function DataPanel() {
           }}
           expandOnToggle={false}
         />
-      </section>
-      <section aria-label={STRINGS.panels.dataTitle} className="min-h-0 overflow-auto">
+      </div>
+      <section
+        aria-label="File preview"
+        aria-busy={fileTree.contentStatus === 'loading'}
+        className="min-h-fit overflow-auto lg:min-h-0"
+      >
         {fileTree.contentStatus === 'loading' ? <LoadingState /> : null}
-        {fileTree.contentStatus === 'error' ? <ErrorState message={STRINGS.states.unavailable} /> : null}
-        {fileTree.content === null && fileTree.contentStatus === 'idle' ? (
+        {fileTree.contentStatus === 'error' ? (
+          <div className="space-y-2">
+            <ErrorState message={STRINGS.states.unavailable} />
+            <button
+              type="button"
+              className="type-mono-meta rounded-[var(--radius-sm)] border border-hairline px-2 py-1 text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={
+                retryPath === null
+                  ? STRINGS.controls.retry
+                  : `${STRINGS.controls.retry} ${retryPath}`
+              }
+              disabled={retryPath === null}
+              onClick={() => {
+                if (retryPath !== null) {
+                  void openFile(retryPath);
+                }
+              }}
+            >
+              {STRINGS.controls.retry}
+            </button>
+          </div>
+        ) : null}
+        {fileTree.contentStatus === 'idle' ? (
           <EmptyState message={STRINGS.panels.dataPreviewHint} />
         ) : null}
-        {fileTree.content ? (
+        {/*
+          Only a confirmed FILE_CONTENT may render. While a read is loading or
+          after it failed, the previous file's text is stale and must not be
+          presented as the newly selected path.
+        */}
+        {fileTree.contentStatus === 'ok' && fileTree.content !== null ? (
           <Editor
             path={fileTree.content.path}
             value={fileTree.content.text}
             readOnly
             readOnlyReason="Workspace reads are preview-only here; approved mutations run through the agent tool path."
-            status={fileTree.contentStatus === 'error' ? 'error' : 'ready'}
-            errorMessage={fileTree.contentStatus === 'error' ? STRINGS.states.unavailable : null}
-            onRetry={() => {
-              void openFile(fileTree.content?.path ?? '');
-            }}
           />
         ) : null}
       </section>

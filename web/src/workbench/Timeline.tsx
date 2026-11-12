@@ -47,6 +47,10 @@ export interface TimelineProps {
 
 export const TIMELINE_COPY = {
   section: 'Run timeline',
+  /** Names the agent-filter tablist without repeating the section landmark name. */
+  tabsAria: 'Filter timeline by agent',
+  /** Names the event list without repeating the section landmark name. */
+  listAria: 'Timeline events',
   allAgents: 'All agents',
   loading: 'Loading timeline…',
   idle: 'Timeline has not loaded yet.',
@@ -162,10 +166,21 @@ export function groupTimelineSteps(
 ): readonly TimelineGroup[] {
   const ordered = sortTimelineSteps(steps);
   const known = timelineAgents(agents, ordered);
+  // One pass over the steps builds every group; the previous
+  // known.map(agent => ordered.filter(...)) was O(steps x agents) per render.
+  const byAgent = new Map<string, TimelineStep[]>();
+  for (const step of ordered) {
+    const bucket = byAgent.get(step.agentId);
+    if (bucket === undefined) {
+      byAgent.set(step.agentId, [step]);
+    } else {
+      bucket.push(step);
+    }
+  }
   return known
     .map((agent) => ({
       agent,
-      steps: ordered.filter((step) => step.agentId === agent.id),
+      steps: byAgent.get(agent.id) ?? [],
     }))
     .filter((group) => group.steps.length > 0);
 }
@@ -208,19 +223,29 @@ export function Timeline({
   const tabRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const baseId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const availableAgents = useMemo(() => timelineAgents(agents, steps), [agents, steps]);
+  const agentById = useMemo(
+    () => new Map(availableAgents.map((agent) => [agent.id, agent])),
+    [availableAgents],
+  );
+  const tabIds = useMemo(
+    () => [null, ...availableAgents.map((agent) => agent.id)],
+    [availableAgents],
+  );
   const controlled = selectedAgentId !== undefined;
   const requestedAgentId = controlled ? selectedAgentId : internalAgentId;
   const activeAgentId =
-    requestedAgentId !== null && availableAgents.some((agent) => agent.id === requestedAgentId)
-      ? requestedAgentId
-      : null;
-  const tabIds = [null, ...availableAgents.map((agent) => agent.id)];
+    requestedAgentId !== null && agentById.has(requestedAgentId) ? requestedAgentId : null;
   const activeIndex = Math.max(0, tabIds.indexOf(activeAgentId));
-  const orderedSteps = sortTimelineSteps(steps);
-  const visibleSteps =
-    activeAgentId === null
-      ? orderedSteps
-      : orderedSteps.filter((step) => step.agentId === activeAgentId);
+  // Sort/filter once per data change; this component re-renders on every
+  // selection/focus change and must not re-sort the whole run each time.
+  const orderedSteps = useMemo(() => sortTimelineSteps(steps), [steps]);
+  const visibleSteps = useMemo(
+    () =>
+      activeAgentId === null
+        ? orderedSteps
+        : orderedSteps.filter((step) => step.agentId === activeAgentId),
+    [orderedSteps, activeAgentId],
+  );
 
   useEffect(() => {
     if (focusRequest === null || typeof document === 'undefined') {
@@ -265,7 +290,7 @@ export function Timeline({
         {status === 'ready' ? (
           <div
             role="tablist"
-            aria-label={TIMELINE_COPY.section}
+            aria-label={TIMELINE_COPY.tabsAria}
             className="flex max-w-full gap-1 overflow-x-auto pb-0.5"
             onKeyDown={onTabKeyDown}
           >
@@ -342,11 +367,12 @@ export function Timeline({
         >
           {visibleSteps.length === 0 ? (
             <p className="type-body-l p-2 text-ink-500">
-              {emptyMessage ??
-                (activeAgentId === null ? TIMELINE_COPY.empty : TIMELINE_COPY.emptyForAgent)}
+              {activeAgentId === null
+                ? (emptyMessage ?? TIMELINE_COPY.empty)
+                : TIMELINE_COPY.emptyForAgent}
             </p>
           ) : (
-            <ol aria-label={TIMELINE_COPY.section} className="m-0 list-none space-y-2 p-0">
+            <ol aria-label={TIMELINE_COPY.listAria} className="m-0 list-none space-y-2 p-0">
               {visibleSteps.map((step) => (
                 <li
                   key={step.id}
@@ -384,7 +410,7 @@ export function Timeline({
                   <div className="type-mono-meta mt-1 flex flex-wrap gap-x-2 gap-y-1 text-meta">
                     <span title={step.agentId}>
                       {TIMELINE_COPY.agent}:{' '}
-                      {availableAgents.find((agent) => agent.id === step.agentId)?.label ?? step.agentId}
+                      {agentById.get(step.agentId)?.label ?? step.agentId}
                     </span>
                     {step.kind === undefined || step.kind === null ? null : <span>{step.kind}</span>}
                   </div>

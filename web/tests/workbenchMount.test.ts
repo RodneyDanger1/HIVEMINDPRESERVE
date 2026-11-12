@@ -11,6 +11,10 @@ describe('CAP-4 workbench mount', () => {
     expect(dataPanelSource).toContain('readOnly');
     expect(dataPanelSource).toContain('lg:grid-cols-[280px_1fr]');
     expect(dataPanelSource).toContain('grid-cols-1');
+    // OLD: fixed grid-rows 40%/1fr clipped the Editor at 375px. NEW: the mobile
+    // panel scrolls at natural row height; desktop keeps the fixed single row.
+    expect(dataPanelSource).not.toContain('grid-rows-[minmax(0,40%)_minmax(0,1fr)]');
+    expect(dataPanelSource).toContain('overflow-y-auto p-4 lg:grid-cols-[280px_1fr] lg:grid-rows-1');
   });
 
   it('mounts the real Timeline from server tool-call timestamps', () => {

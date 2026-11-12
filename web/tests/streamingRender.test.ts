@@ -148,10 +148,22 @@ describe('streaming render-back (REPLY_DELTA → REPLY_DONE)', () => {
 
   it('REPLY_DONE before any delta leaves no ghost assistant message', async () => {
     const { api, store } = await runningStore('run-2');
+    const before = store.getState().messages;
     api.emit({ name: 'REPLY_DONE', payload: { run_id: 'run-2', usage: usage() } });
     expect(assistantMessages(store)).toHaveLength(0);
     expect(store.getState().streamingRunId).toBeNull();
     expect(store.getState().messages).toHaveLength(1); // the user message only
+    // Nothing streamed: finalization returns the same array (no whole-transcript copy).
+    expect(store.getState().messages).toBe(before);
+  });
+
+  it('an empty delta is a no-op: no copy and no empty assistant row', async () => {
+    const { api, store } = await runningStore('run-empty');
+    const before = store.getState().messages;
+    api.emit({ name: 'REPLY_DELTA', payload: { run_id: 'run-empty', text_delta: '' } });
+    expect(store.getState().messages).toBe(before);
+    expect(assistantMessages(store)).toHaveLength(0);
+    expect(store.getState().streamingRunId).toBeNull();
   });
 
   it('keeps a second run’s deltas out of the first run’s finalized text', async () => {
@@ -187,9 +199,11 @@ describe('streaming render-back (REPLY_DELTA → REPLY_DONE)', () => {
     api.emit({ name: 'REPLY_DELTA', payload: { run_id: 'run-5', text_delta: 'done once' } });
     api.emit({ name: 'REPLY_DONE', payload: { run_id: 'run-5', usage: usage() } });
     const before = JSON.stringify(store.getState().messages);
+    const beforeRef = store.getState().messages;
 
     api.emit({ name: 'REPLY_DONE', payload: { run_id: 'run-5', usage: usage() } });
     expect(JSON.stringify(store.getState().messages)).toBe(before);
+    expect(store.getState().messages).toBe(beforeRef);
     expect(assistantMessages(store)).toHaveLength(1);
     expect(store.getState().streamingRunId).toBeNull();
   });

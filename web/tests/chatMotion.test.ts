@@ -7,8 +7,17 @@ import { parseFencedBlocks } from '../src/chat/ChatMotion';
  * no HTML interpretation and no synthesized content.
  */
 describe('parseFencedBlocks', () => {
+  it('returns no blocks for empty text', () => {
+    expect(parseFencedBlocks('')).toEqual([]);
+  });
+
   it('keeps fence-free text as one exact text block', () => {
     const text = 'Line one\n  indented line\nInline ``` ticks stay literal.';
+    expect(parseFencedBlocks(text)).toEqual([{ kind: 'text', text }]);
+  });
+
+  it('keeps a streamed reply with no fence bytes as one block', () => {
+    const text = 'A streamed answer\nwith a second line and trailing space ';
     expect(parseFencedBlocks(text)).toEqual([{ kind: 'text', text }]);
   });
 

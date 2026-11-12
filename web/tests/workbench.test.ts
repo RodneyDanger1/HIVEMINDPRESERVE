@@ -137,6 +137,9 @@ describe('CAP-4 FileTree', () => {
   it('renders loading, error and empty states without rows', () => {
     const idle = render(createElement(FileTree, { nodes, status: 'idle', onRefresh: noop }));
     expect(idle).toContain('File tree has not loaded yet.');
+    // Only the header refresh control; the idle body used to duplicate it with
+    // the same accessible name inside the same landmark.
+    expect(idle.split('<button').length - 1).toBe(1);
 
     const loading = render(createElement(FileTree, { nodes, status: 'loading', onRefresh: noop }));
     expect(loading).toContain('role="status"');
@@ -601,6 +604,32 @@ describe('CAP-4 Timeline', () => {
     expect(markup).toContain('first');
     expect(markup).not.toContain('second');
     expect(markup).toContain('01:01:00');
+    // OLD: tablist/list reused the section landmark name ("Run timeline") and
+    // announced it twice. NEW: each nested collection has its own distinct name.
+    expect(markup).toContain('aria-label="Filter timeline by agent"');
+    expect(markup).toContain('aria-label="Timeline events"');
+  });
+
+  it('does not reuse the run-level empty copy for an empty agent filter', () => {
+    const markup = render(
+      createElement(Timeline, {
+        status: 'ready',
+        agents: [{ id: 'a1', label: 'Planner' }],
+        steps: [
+          {
+            id: 's1',
+            at: '2026-11-11T01:00:00.000Z',
+            agentId: 'a2',
+            title: 'builder step',
+            status: 'ok',
+          },
+        ],
+        selectedAgentId: 'a1',
+        emptyMessage: 'Run-level empty copy.',
+      }),
+    );
+    expect(markup).toContain('No timeline events for this agent.');
+    expect(markup).not.toContain('Run-level empty copy.');
   });
 
   it('renders empty, loading and error states', () => {

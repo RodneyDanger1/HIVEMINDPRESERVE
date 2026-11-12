@@ -376,16 +376,12 @@ export function FileTree({
 
       {status === 'idle' ? (
         <div className="p-3">
+          {/*
+            The header already exposes the refresh control; a second button with
+            the same accessible name here made two "Refresh file tree" actions
+            appear in the same landmark.
+          */}
           <p className="type-body-l text-ink-500">{FILE_TREE_COPY.idle}</p>
-          {onRefresh === undefined ? null : (
-            <button
-              type="button"
-              className="type-label mt-2 rounded-[var(--radius-button)] border border-honey-500 bg-honey-300 px-3 py-1.5 text-ink-900 hover:bg-honey-400"
-              onClick={() => onRefresh()}
-            >
-              {FILE_TREE_COPY.refresh}
-            </button>
-          )}
         </div>
       ) : null}
 

@@ -37,6 +37,13 @@ function languageOf(info: string): string | undefined {
  * An unclosed fence stays plain text so an in-flight reply is never guessed at.
  */
 export function parseFencedBlocks(text: string): MessageBlock[] {
+  // Streaming hot path: most deltas carry no fence at all. The line scanner
+  // below is O(lines) per call; without this guard every token would re-scan
+  // the whole partial reply.
+  if (!text.includes('```')) {
+    return text.length === 0 ? [] : [{ kind: 'text', text }];
+  }
+
   const blocks: MessageBlock[] = [];
   let lineStart = 0;
   let plainStart = 0;

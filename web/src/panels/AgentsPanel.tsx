@@ -25,7 +25,38 @@ import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
 import { A2AInboxPanel } from './A2AInboxPanel';
 import { Timeline } from '../workbench';
-import type { TimelineAgent, TimelineStep } from '../workbench';
+import type { TimelineAgent, TimelineStatus, TimelineStep } from '../workbench';
+import type { ConnectionStatus } from '../api/client';
+
+/**
+ * The timeline is fed only by live server frames. It is therefore "ready" when
+ * the socket is open, or when it still holds steps recorded before a drop; an
+ * empty timeline on a dead connection is idle/loading, never a false "no
+ * events were recorded for this run".
+ */
+export function timelineStatusForConnection(
+  connection: ConnectionStatus,
+  recordedSteps: number,
+): TimelineStatus {
+  if (connection === 'open' || recordedSteps > 0) {
+    return 'ready';
+  }
+  return connection === 'connecting' || connection === 'reconnecting' ? 'loading' : 'idle';
+}
+
+function timelineConnectionNote(connection: ConnectionStatus): string | null {
+  switch (connection) {
+    case 'connecting':
+      return 'Connecting — the timeline will resume when the socket opens.';
+    case 'reconnecting':
+      return 'Reconnecting — showing the last recorded timeline.';
+    case 'closed':
+    case 'error':
+      return 'Disconnected — showing the last recorded timeline.';
+    default:
+      return null;
+  }
+}
 
 export function AgentsPanel() {
   const tasks = useUiStore((state) => state.tasks);
@@ -69,11 +100,19 @@ export function AgentsPanel() {
         ? 'running'
         : record.outcome === 'ok'
           ? 'ok'
-          : record.outcome === 'denied'
-            ? 'awaiting_approval'
+          : record.outcome === 'cancelled'
+            ? 'skipped'
             : 'failed',
     kind: 'tool',
   })), [toolActivity]);
+  const timelineStatus = timelineStatusForConnection(connection, timelineSteps.length);
+  const timelineNote =
+    timelineSteps.length > 0 ? timelineConnectionNote(connection) : null;
+  // Never claim a run recorded nothing when there is no run at all.
+  const timelineEmptyMessage =
+    run === null
+      ? 'No run yet — the timeline appears here once a run records tool calls.'
+      : 'No tool-call timeline has been recorded for this run.';
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-4">
@@ -129,19 +168,26 @@ export function AgentsPanel() {
         ))}
       </ul>
       <div
-        role="region"
-        aria-label={STRINGS.toolActivity.regionAria}
+        // One labelled landmark: ToolActivityPanel already renders the
+        // "Tool activity" section. A second role="region" wrapper here made
+        // screen readers announce the same activity list twice, and its label
+        // promised approvals that this wrapper never contains.
         data-testid="agents-tool-activity"
         className="surface-panel mt-3 rounded-[var(--radius-card)] p-3"
       >
         <ToolActivityPanel entries={toolActivity} />
       </div>
       <div className="mt-3">
+        {timelineNote === null ? null : (
+          <p role="status" className="type-mono-meta mb-2 text-meta">
+            {timelineNote}
+          </p>
+        )}
         <Timeline
           agents={timelineAgents}
           steps={timelineSteps}
-          status="ready"
-          emptyMessage="No tool-call timeline has been recorded for this run."
+          status={timelineStatus}
+          emptyMessage={timelineEmptyMessage}
         />
       </div>
       <AgentProfilesPanel />

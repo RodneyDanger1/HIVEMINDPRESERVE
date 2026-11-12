@@ -27,6 +27,8 @@ import { STRINGS } from '../src/state/strings';
 
 const SESSION = { token: 'test-token', schema: 'hiverouter.v1', last_seq: 0, ws: '/ws' };
 
+const countOf = (source: string, needle: string): number => source.split(needle).length - 1;
+
 const SOURCE_FILES = import.meta.glob('../src/**/*.{ts,tsx}', {
   query: '?raw',
   import: 'default',
@@ -148,7 +150,11 @@ describe('AgentsPanel mounts the tool-activity region (W12)', () => {
     });
 
     expect(markup).toContain('data-testid="agents-tool-activity"');
-    expect(markup).toContain(`aria-label="${STRINGS.toolActivity.regionAria}"`);
+    // OLD: the host div was role="region" with regionAria and nested the panel's
+    // own section region (duplicate landmark). NEW: ToolActivityPanel's section is
+    // the single named "Tool activity" region; the host stays an unlabelled div.
+    expect(markup).not.toContain(`aria-label="${STRINGS.toolActivity.regionAria}"`);
+    expect(countOf(markup, `aria-label="${STRINGS.toolActivity.sectionAria}"`)).toBe(1);
     // Exact e2e selectors stay: section[aria-label], h2 "Tool activity · N", ul aria.
     expect(markup).toContain(`aria-label="${STRINGS.toolActivity.sectionAria}"`);
     expect(markup).toContain(`${STRINGS.toolActivity.heading} · 2`);
@@ -170,6 +176,55 @@ describe('AgentsPanel mounts the tool-activity region (W12)', () => {
     expect(markup).toContain(STRINGS.panels.agentsEmpty);
     expect(markup).toContain(STRINGS.toolActivity.empty);
     expect(markup).not.toContain(`aria-label="${STRINGS.toolActivity.listAria}"`);
+  });
+});
+
+describe('AgentsPanel timeline status source', () => {
+  it('does not claim a recorded run timeline while disconnected with no steps', () => {
+    const markup = renderWith(createElement(AgentsPanel), { connection: 'closed' });
+    expect(markup).toContain('Timeline has not loaded yet.');
+    expect(markup).not.toContain('No tool-call timeline has been recorded for this run.');
+  });
+
+  it('never claims a run exists when the timeline is empty and no run loaded', () => {
+    const markup = renderWith(createElement(AgentsPanel), { connection: 'open' });
+    expect(markup).toContain('No run yet — the timeline appears here once a run records tool calls.');
+    expect(markup).not.toContain('No tool-call timeline has been recorded for this run.');
+  });
+
+  it('keeps already-recorded steps visible across a disconnect and marks them stale', () => {
+    const markup = renderWith(createElement(AgentsPanel), {
+      connection: 'closed',
+      toolActivity: [READ_OK],
+    });
+    expect(markup).toContain('Disconnected — showing the last recorded timeline.');
+    expect(markup).toContain('file_read · turn 1');
+    expect(markup).not.toContain('Timeline has not loaded yet.');
+  });
+
+  it('derives step status from the terminal tool outcome, not from an approval state', () => {
+    const denied: ToolActivityRecord = {
+      toolCallId: 'call_denied',
+      tool: 'file_write',
+      argsSha256: OK_ARGS,
+      turn: 3,
+      outcome: 'denied',
+      code: 'E_APPROVAL_DENIED',
+    };
+    const cancelled: ToolActivityRecord = {
+      toolCallId: 'call_cancelled',
+      tool: 'shell_exec',
+      argsSha256: PENDING_ARGS,
+      turn: 4,
+      outcome: 'cancelled',
+    };
+    const markup = renderWith(createElement(AgentsPanel), {
+      toolActivity: [denied, cancelled],
+    });
+    // OLD: a denied result rendered as "awaiting_approval" (it is terminal).
+    expect(markup).toContain('data-status="failed"');
+    expect(markup).toContain('data-status="skipped"');
+    expect(markup).not.toContain('data-status="awaiting_approval"');
   });
 });
 
@@ -234,7 +289,6 @@ describe('ApprovalOverlay renders from store approvals with STRINGS copy (W12)',
 });
 
 describe('mount uniqueness and disabled-state contract (W12 wave 4)', () => {
-  const countOf = (source: string, needle: string): number => source.split(needle).length - 1;
   const disabledCount = (markup: string): number => (markup.match(/disabled=""/g) ?? []).length;
 
   it('mounts each surface exactly once and never from App', () => {
@@ -275,7 +329,10 @@ describe('mount uniqueness and disabled-state contract (W12 wave 4)', () => {
 
   it('pins the exact e2e selector surface (host, section, list, row)', () => {
     const markup = renderWith(createElement(AgentsPanel), { toolActivity: [READ_OK] });
-    expect(markup).toMatch(/<div[^>]*role="region"[^>]*data-testid="agents-tool-activity"/);
+    expect(markup).toMatch(/<div[^>]*data-testid="agents-tool-activity"/);
+    // Single landmark: the nested panel section, never a second host region.
+    expect(markup).not.toMatch(/<div[^>]*role="region"[^>]*data-testid="agents-tool-activity"/);
+    expect(countOf(markup, `aria-label="${STRINGS.toolActivity.sectionAria}"`)).toBe(1);
     expect(markup).toContain(`<section aria-label="${STRINGS.toolActivity.sectionAria}"`);
     expect(markup).toContain(`<ul aria-label="${STRINGS.toolActivity.listAria}" aria-live="polite"`);
     expect(markup).toContain('data-outcome="ok"');

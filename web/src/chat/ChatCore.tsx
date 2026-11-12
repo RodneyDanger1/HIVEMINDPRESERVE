@@ -4,7 +4,7 @@
  * Submits only SUBMIT_PROMPT; replies stream from REPLY_DELTA events; every
  * refusal is named by ToastRegion, never silently dropped.
  */
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { isTerminal } from '../state/agentState';
@@ -76,6 +76,45 @@ const STARTERS = [
   { label: 'Explain a failure', prompt: 'Explain the last failure and propose the smallest safe fix.' },
 ] as const;
 
+/** DOM/transcript cap: long runs must not mount an unbounded message list. */
+export const MAX_RENDERED_CHAT_MESSAGES = 200;
+
+/** Newest slice of the transcript; identity is preserved when under the cap. */
+export function visibleChatMessages(messages: readonly ChatMessage[]): readonly ChatMessage[] {
+  return messages.length > MAX_RENDERED_CHAT_MESSAGES
+    ? messages.slice(messages.length - MAX_RENDERED_CHAT_MESSAGES)
+    : messages;
+}
+
+/**
+ * Finalized rows are identity-stable in the store, so memo stops every REPLY_DELTA
+ * from re-rendering (and re-parsing) the entire history. Only the streaming tail
+ * changes identity and re-renders.
+ */
+const ChatMessageRow = memo(function ChatMessageRow({ message }: { message: ChatMessage }) {
+  return (
+    <article
+      className={
+        'chat-message mb-2 rounded-[10px] px-2 py-1.5 last:mb-0 ' +
+        (message.role === 'assistant' ? 'bg-honey-100' : 'bg-panel-alt') +
+        (message.streaming ? ' chat-streaming' : '')
+      }
+    >
+      <div className="type-mono-meta text-meta">
+        {message.role === 'assistant' ? STRINGS.chat.assistantName : STRINGS.chat.userLabel}
+        {message.streaming ? ` · ${STRINGS.states.loading}` : ''}
+      </div>
+      <MessageBody text={message.text} />
+      {message.streaming ? (
+        <span
+          className="ml-0.5 inline-block h-[12px] w-[2px] animate-pulse bg-honey-500 align-middle"
+          aria-hidden="true"
+        />
+      ) : null}
+    </article>
+  );
+});
+
 export function ChatCore() {
   const messages = useUiStore((state) => state.messages);
   const submitPrompt = useUiStore((state) => state.submitPrompt);
@@ -91,7 +130,10 @@ export function ChatCore() {
   const keyPresent = useUiStore((state) => state.settings.keyPresent);
   const toolActivity = useUiStore((state) => state.toolActivity);
   const tasks = useUiStore((state) => state.tasks);
-  const activeAgents = Object.values(tasks).filter((task) => !isTerminal(task.state)).length;
+  const activeAgents = useMemo(
+    () => Object.values(tasks).filter((task) => !isTerminal(task.state)).length,
+    [tasks],
+  );
   const liveLabel =
     connection !== 'open'
       ? 'offline'
@@ -113,6 +155,15 @@ export function ChatCore() {
   const submitting = useMemo(
     () => Object.values(pending).some((entry) => entry.name === 'SUBMIT_PROMPT'),
     [pending],
+  );
+  const renderedMessages = useMemo(() => visibleChatMessages(messages), [messages]);
+  const hiddenMessageCount = messages.length - renderedMessages.length;
+  const recentActivity = useMemo(
+    () =>
+      [...toolActivity]
+        .sort((a, b) => a.turn - b.turn || a.toolCallId.localeCompare(b.toolCallId))
+        .slice(-4),
+    [toolActivity],
   );
 
   useEffect(() => {
@@ -266,11 +317,22 @@ export function ChatCore() {
           </div>
         )}
 
+        {hiddenMessageCount > 0 ? (
+          <p
+            role="status"
+            data-testid="chat-transcript-cap"
+            className="type-mono-meta mt-2 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-2 py-1 text-meta"
+          >
+            Showing the latest {MAX_RENDERED_CHAT_MESSAGES} of {messages.length} messages —{' '}
+            {hiddenMessageCount} earlier {hiddenMessageCount === 1 ? 'message is' : 'messages are'}{' '}
+            hidden.
+          </p>
+        ) : null}
+
         <div
           ref={listRef}
           className="mt-2 min-h-0 flex-1 overflow-y-auto rounded-[var(--radius-sm)] bg-panel-alt px-2 py-2"
-          aria-live="polite"
-          aria-label={STRINGS.chat.aria}
+          aria-label="Chat transcript"
         >
           {messages.length === 0 ? (
             <div>
@@ -300,22 +362,8 @@ export function ChatCore() {
               </div>
             </div>
           ) : (
-            messages.map((message) => (
-              <article
-                key={message.id}
-                className={
-                  'chat-message mb-2 rounded-[10px] px-2 py-1.5 last:mb-0 ' +
-                  (message.role === 'assistant' ? 'bg-honey-100' : 'bg-panel-alt') +
-                  (message.streaming ? ' chat-streaming' : '')
-                }
-              >
-                <div className="type-mono-meta text-meta">
-                  {message.role === 'assistant' ? STRINGS.chat.assistantName : STRINGS.chat.userLabel}
-                  {message.streaming ? ` · ${STRINGS.states.loading}` : ''}
-                </div>
-                <MessageBody text={message.text} />
-                {message.streaming ? <span className="ml-0.5 inline-block h-[12px] w-[2px] animate-pulse bg-honey-500 align-middle" aria-hidden="true" /> : null}
-              </article>
+            renderedMessages.map((message) => (
+              <ChatMessageRow key={message.id} message={message} />
             ))
           )}
           {toolActivity.length > 0 ? (
@@ -328,34 +376,31 @@ export function ChatCore() {
                 <span>{toolActivity.length}</span>
               </div>
               <ul className="mt-1 space-y-0.5">
-                {[...toolActivity]
-                  .sort((a, b) => a.turn - b.turn || a.toolCallId.localeCompare(b.toolCallId))
-                  .slice(-4)
-                  .map((entry) => (
-                    <li key={entry.toolCallId} className="type-mono-meta flex items-center gap-1.5 text-[11px]">
-                      <span className="text-ink-800">{entry.tool}</span>
-                      <span
-                        className={
-                          entry.outcome === 'ok'
-                            ? 'text-verify'
-                            : entry.outcome === 'pending'
-                              ? 'text-meta'
-                              : 'text-signal'
-                        }
-                      >
-                        {entry.outcome}
-                      </span>
-                      {entry.text === undefined || entry.text.length === 0 ? null : (
-                        <span className="min-w-0 flex-1 truncate text-meta">{entry.text}</span>
-                      )}
-                    </li>
-                  ))}
+                {recentActivity.map((entry) => (
+                  <li key={entry.toolCallId} className="type-mono-meta flex items-center gap-1.5 text-[11px]">
+                    <span className="text-ink-800">{entry.tool}</span>
+                    <span
+                      className={
+                        entry.outcome === 'ok'
+                          ? 'text-verify'
+                          : entry.outcome === 'pending'
+                            ? 'text-meta'
+                            : 'text-signal'
+                      }
+                    >
+                      {entry.outcome}
+                    </span>
+                    {entry.text === undefined || entry.text.length === 0 ? null : (
+                      <span className="min-w-0 flex-1 truncate text-meta">{entry.text}</span>
+                    )}
+                  </li>
+                ))}
               </ul>
             </section>
           ) : null}
           {streamingRunId ? (
             <div className="type-mono-meta flex items-center gap-2 text-meta" role="status">
-              {messages.some((message) => message.streaming && message.text.length > 0) ? null : (
+              {renderedMessages.some((message) => message.streaming && message.text.length > 0) ? null : (
                 <TypingDots />
               )}
               {STRINGS.agentStates.streaming}
