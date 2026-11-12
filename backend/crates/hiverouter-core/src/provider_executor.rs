@@ -824,7 +824,14 @@ impl ProviderExecutor for ProviderExecutorAdapter {
                     tool_calls,
                 )
             };
-            let assistant = assistant.with_reasoning_content(turn.reasoning.clone());
+            // Only attach reasoning when the provider actually returned some;
+            // an empty reasoning_content on a no-thinking continuation is a
+            // protocol lie and some endpoints reject it.
+            let assistant = if turn.reasoning.is_empty() {
+                assistant
+            } else {
+                assistant.with_reasoning_content(turn.reasoning.clone())
+            };
             messages.push(assistant);
             for (_, execution) in &turn.results {
                 messages.push(ChatMessage::tool_result(

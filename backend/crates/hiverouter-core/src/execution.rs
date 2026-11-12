@@ -2475,8 +2475,14 @@ impl RunEngine {
                 self.publish_returned_deltas(run.id, &review, &streamed);
                 self.add_run_usage(run.id, review.usage);
                 if !review.tool_calls.is_empty() {
-                    self.fail_task(run, &root_task, AgentState::Failed)?;
-                    return Err(Refusal::ProviderInvalidResponse);
+                    // The monitor is advisory and cannot act. A hallucinated
+                    // tool call must not fail a run whose tasks already
+                    // completed; ignore the calls and keep the review text.
+                    tracing::warn!(
+                        run_id = %run.id,
+                        calls = review.tool_calls.len(),
+                        "post-dispatch monitor returned tool calls; ignoring advisory calls"
+                    );
                 }
                 let note = review.text();
                 if !note.trim().is_empty() {
