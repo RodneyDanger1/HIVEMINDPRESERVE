@@ -668,6 +668,9 @@ function resolveExe(options) {
     return resolved;
   }
   const candidates = [
+    // Installed/portable builds keep the CLI beside the server binary; this
+    // path must come first because `REPO_ROOT` is not meaningful there.
+    path.join(__dirname, 'hiverouter.exe'),
     path.join(REPO_ROOT, 'dist', 'HiveMind', 'hiverouter.exe'),
     path.join(REPO_ROOT, 'target', 'release', 'hiverouter.exe'),
     path.join(REPO_ROOT, 'target', 'debug', 'hiverouter.exe'),

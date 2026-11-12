@@ -8,6 +8,8 @@
  * tokens; the animation names live in the shared motion stylesheet.
  */
 
+import { memo } from 'react';
+
 export type MessageBlock =
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'code'; readonly code: string; readonly language?: string };
@@ -154,7 +156,7 @@ export function CodeBlock({ code, language }: { code: string; language?: string 
 }
 
 /** Render message text safely: plain text keeps whitespace, fences become code. */
-export function MessageBody({ text }: { text: string }) {
+function MessageBodyImpl({ text }: { text: string }) {
   return (
     <>
       {parseFencedBlocks(text).map((block, index) =>
@@ -174,3 +176,7 @@ export function MessageBody({ text }: { text: string }) {
     </>
   );
 }
+
+/** Finalized messages keep their identity; streaming text changes re-parse only
+ * that message. */
+export const MessageBody = memo(MessageBodyImpl);
