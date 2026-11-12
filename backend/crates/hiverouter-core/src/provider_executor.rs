@@ -33,8 +33,11 @@ counts, roles, or topology, honor them exactly and do not add extra branch leads
 the smallest useful DAG (1..=8 nodes).";
 
 const TASK_SYSTEM: &str = "You are a HiveMind agent. Answer the assigned task directly and \
-concisely. Do not claim tool calls or side effects you did not perform. If the task cannot be \
-done from the provided context, say exactly what is missing.";
+concisely. Inspect before editing, prefer the smallest correct change, and after any mutation \
+verify with run_tests or git_diff plus a targeted read. Report only observed commands and results; \
+never claim a tool call or side effect you did not perform. Retry a failed step at most three \
+times, then report the blocker. If the task cannot be done from the provided context, say exactly \
+what is missing.";
 
 const ROOT_CONTROL_SYSTEM: &str = "You are the HiveMind HyperAgent controller. You receive \
 the operator goal and the plan. Return only tool calls: spawn_superagent to add one branch \
