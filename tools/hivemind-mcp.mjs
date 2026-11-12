@@ -133,6 +133,11 @@ async function handle(request) {
 }
 
 let buffer = '';
+let pending = 0;
+let ending = false;
+function finishIfDrained() {
+  if (ending && pending === 0) process.exit(0);
+}
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', (chunk) => {
   buffer += chunk;
@@ -149,7 +154,16 @@ process.stdin.on('data', (chunk) => {
       error(null, -32700, 'parse error');
       continue;
     }
-    void handle(request);
+    pending += 1;
+    void handle(request).finally(() => {
+      pending -= 1;
+      finishIfDrained();
+    });
   }
 });
-process.stdin.on('end', () => process.exit(0));
+// A client may close stdin immediately after sending tools/call. Do not exit
+// before the async HTTP response is written; drain pending requests first.
+process.stdin.on('end', () => {
+  ending = true;
+  finishIfDrained();
+});
