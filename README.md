@@ -120,11 +120,12 @@ The installed app boots and serves its UI/read/operator surfaces with
 ## 4. What it cannot do (current truth)
 
 - No autonomous coding, self-modification, continuous agent, or goal loop.
-- No mounted editor, file-diff review, integrated terminal/PTY, or workbench
-  UI yet; the new workbench components exist but are not mounted.
-- Repository index/search exists as an additive module and API surface, but it
-  is not yet injected into planner/agent prompts; `file_read`/`file_list` remain
-  the prompt-visible reads.
+- No file-diff review or integrated terminal/PTY yet; the Data surface now
+  mounts the real workbench file tree and a read-only editor over workspace
+  reads, while the remaining workbench panes exist unmounted.
+- Repository index/search exists as an additive module and API surface, and a
+  bounded, labelled workspace-context block is injected into planning and task
+  prompts at engine build; exact content still comes from file tools.
 - File checkpoints are wired for approved `file_write`/`apply_patch` mutations
   and exposed through checkpoint routes; there is no general editor undo UI yet.
   Graph snapshots remain run-state history, not a substitute for file rollback.
@@ -245,9 +246,10 @@ Sources: [DeepSeek release](https://api-docs.deepseek.com/news/news261017),
 HiveMind is **not yet a replacement for DeepSeek Harness, Hermes, Claude Code,
 Codex, Grok Build, or Antigravity**. It now has local sessions, a checkpoint
 journal for approved file mutations, a repo-index module, and a registered
-coding tool surface, but it still lacks a mounted editor/diff/terminal, full
-repo-context injection, plan/todo, headless CLI and MCP; its monitor is
-review-only and its learning loop is not executed-eval gated.
+coding tool surface and bounded repo-context injection, with a mounted
+read-only file tree/editor, but it still lacks diff review, terminal/PTY,
+plan/todo, headless CLI and MCP; its monitor is review-only and its learning loop
+is not executed-eval gated.
 
 The mandatory-first capability plan is
 [HIVEMIND-FINISH-PLAN-v3.md](docs/plans/HIVEMIND-FINISH-PLAN-v3.md) §0, with the detailed
