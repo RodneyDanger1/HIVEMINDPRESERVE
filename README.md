@@ -79,11 +79,11 @@ persona.
 
 | Tier | Registry allowlist |
 |---|---|
-| HyperAgent | `spawn_agent`, `report_result`, `finish` (root control is a separate local vocabulary) |
-| SuperAgent | `spawn_agent`, `ask_parent`, `send_to_sibling`, `report_result`, `finish`, `file_read`, `file_list`, `file_write`, `shell_exec`, `request_detached`, `web_fetch`, `vote_evolution` |
-| WorkerAgent | same as SuperAgent minus `vote_evolution` |
-| Subagent | `ask_parent`, `report_result`, `finish`, `file_read`, `file_list` |
-| ToolAgent | `file_read`, `file_list`, `file_write`, `shell_exec` — no producer |
+| HyperAgent | 13 registry grants; root control is a separate local vocabulary, so these grants are not the root control surface |
+| SuperAgent | 22 grants: original management/read/write/shell/web/detached/vote set plus the 10 coding tools |
+| WorkerAgent | 21 grants: original worker set plus the 10 coding tools |
+| Subagent | 11 grants: read/list/ask/report/finish plus read-only search and git-read tools |
+| ToolAgent | 14 grants in the census; no production producer |
 
 Capability additions extend the same tier allowlists: `fs_glob`, `fs_grep`, `file_read_range`, `apply_patch`, `run_tests`, `git_stage`, `git_commit`, `git_status`, `git_diff`, `git_log`. The census test derives the totals; they are not hand-maintained counts.
 

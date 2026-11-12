@@ -75,6 +75,10 @@ failed→failed, queued→queued; every other value renders with shape/text cue 
 
 ## 5. Refusal codes (Phase 1 table; UI must display code + how_to_fix)
 
+> This section is a Phase-1 subset. The live table has **79** codes; authoritative source is
+> `backend/crates/hiverouter-contract/src/refusal.rs` and `Refusal::ALL`. Capability work adds
+> `E_SESSION_NOT_FOUND`; do not treat this paragraph as a complete enumeration.
+
 Transport/UI: `E_ORIGIN_REJECTED`, `E_TOKEN_INVALID`, `E_RESYNC_REQUIRED`, `E_ZOOM_RANGE`, `E_HISTORY_GAP`, `E_DB_BUSY`,
 `E_WS_DISCONNECTED`; command/schema: `E_COMMAND_UNKNOWN`, `E_SCHEMA_INVALID`, `E_PROMPT_EMPTY`, `E_PROMPT_TOO_LONG`,
 `E_RUN_ACTIVE`, `E_KEY_MISSING`, `E_SPAWN_DEPTH`, `E_FANOUT_LIMIT`, `E_CYCLE`, `E_REWIRE_IN_FLIGHT`, `E_RUN_TERMINAL`,
