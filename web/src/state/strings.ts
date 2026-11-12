@@ -458,6 +458,11 @@ export const STRINGS = {
       howToFix: 'Submit a prompt to create a run first.',
       retryable: true,
     },
+    E_SESSION_NOT_FOUND: {
+      message: 'That session no longer exists.',
+      howToFix: 'Select an existing session or create a new one.',
+      retryable: false,
+    },
     E_RUN_TERMINAL: {
       message: 'The run is already terminal.',
       howToFix: 'Submit a new prompt; completed/cancelled/killed runs cannot be mutated.',

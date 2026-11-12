@@ -19,9 +19,9 @@ describe('refusal-code parity', () => {
     expect(frontend).toEqual(backendCodes());
   });
 
-  it('pins the frozen 78-code contract', () => {
-    expect(new Set(KNOWN_REFUSAL_CODES).size).toBe(78);
-    expect(KNOWN_REFUSAL_CODES.length).toBe(78);
+  it('pins the frozen 79-code contract', () => {
+    expect(new Set(KNOWN_REFUSAL_CODES).size).toBe(79);
+    expect(KNOWN_REFUSAL_CODES.length).toBe(79);
   });
 
   it('covers every client refusal with named copy and a fix', () => {

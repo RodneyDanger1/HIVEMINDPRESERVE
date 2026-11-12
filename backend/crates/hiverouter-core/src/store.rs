@@ -3134,20 +3134,16 @@ fn row_to_run(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {
     let id: String = row.get(0)?;
     let status: String = row.get(3)?;
     let error_code: Option<String> = row.get(4)?;
-    let created_at: String = row.get(5)?;
-    let updated_at: String = row.get(6)?;
     Ok(Run {
         id: id.parse().unwrap_or_else(|_| RunId::from_uuid(Uuid::nil())),
         project_id: row.get(1)?,
         prompt: row.get(2)?,
         status: parse_state(&status),
         error_code,
-        created_at: Timestamp::parse(&created_at).unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
-        updated_at: Timestamp::parse(&updated_at).unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+        created_at: timestamp_at(row, 5, "created_at")?,
+        updated_at: timestamp_at(row, 6, "updated_at")?,
         session_id: row.get(7)?,
-        permission_policy: crate::entities::PermissionPolicy::from_str(
-            &row.get::<_, String>(8).unwrap_or_else(|_| "classic".to_owned()),
-        ),
+        permission_policy: policy_at(row, 8)?,
     })
 }
 

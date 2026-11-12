@@ -76,7 +76,7 @@ impl HistoryReadModel {
         let indexed = self.snapshots.indexed_revisions(run_id)?;
         let mut revisions = Vec::with_capacity(indexed.len());
         for (revision, created_at) in indexed {
-            let created = Timestamp::parse(&created_at).unwrap_or_else(|_| Timestamp::from_unix_secs(0));
+            let created = Timestamp::parse(&created_at).map_err(|_| Refusal::InternalError)?;
             let run_status = self.snapshots.read(run_id, revision).ok().and_then(|envelope| envelope.run_status);
             revisions.push(RevisionMeta {
                 revision,

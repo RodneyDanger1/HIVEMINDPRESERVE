@@ -27,7 +27,9 @@ use hiverouter_core::db::{Database, MIGRATIONS};
 use hiverouter_core::entities::TaskRecord;
 use hiverouter_core::execution::{DeltaSink, ProviderExecutor, RunEngine, StreamedReply};
 use hiverouter_core::graph::GraphAuthority;
+use hiverouter_core::history::HistoryReadModel;
 use hiverouter_core::planner::Plan;
+use hiverouter_core::snapshot::SnapshotStore;
 use hiverouter_core::prompts::TemplateRegistry;
 use hiverouter_core::repo_index;
 use hiverouter_core::store::RunStore;
@@ -408,6 +410,43 @@ fn session_list_truth_defect_refuses_a_corrupt_timestamp_instead_of_1970() {
         .expect("repair timestamp");
     let sessions = store.sessions().expect("healthy sessions");
     assert!(sessions.iter().any(|candidate| candidate.id == healthy.id));
+}
+
+#[test]
+fn run_reader_truth_defect_refuses_a_corrupt_timestamp_instead_of_1970() {
+    let (database, store) = memory_store();
+    let run = store
+        .create_run("project-run-corrupt", "corrupt run", AgentState::Queued)
+        .expect("run");
+    database
+        .with_connection(|connection| {
+            connection.execute(
+                "UPDATE runs SET created_at = 'not-a-timestamp' WHERE id = ?1",
+                rusqlite::params![run.id.to_string()],
+            )?;
+            Ok(())
+        })
+        .expect("corrupt run timestamp");
+
+    assert!(
+        store.get_run(run.id).is_err(),
+        "get_run must refuse a corrupt created_at instead of fabricating 1970"
+    );
+    assert!(
+        store.list_runs(10).is_err(),
+        "list_runs must refuse a corrupt created_at instead of fabricating 1970"
+    );
+    assert!(
+        full_history(&database).runs(10).is_err(),
+        "history must not surface a fabricated 1970 timestamp"
+    );
+}
+
+fn full_history(database: &Arc<Database>) -> HistoryReadModel {
+    HistoryReadModel::new(
+        database.clone(),
+        SnapshotStore::new(std::env::temp_dir().as_path(), database.clone()),
+    )
 }
 
 #[test]
