@@ -778,6 +778,37 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Reads the same per-user DPAPI key file as the desktop launcher. The plaintext
+ * never reaches argv, logs, state, or output; only the child environment gets
+ * it. Returns null when absent/unreadable so startup stays honest and degraded.
+ */
+function readDesktopProviderKey(dataDir) {
+  if (process.env.DEEPSEEK_API_KEY) return null;
+  const keyPath = path.join(dataDir, 'provider.key');
+  if (!fs.existsSync(keyPath)) return null;
+  const escaped = keyPath.replace(/'/g, "''");
+  const script = [
+    'Add-Type -AssemblyName System.Security;',
+    `$b=[IO.File]::ReadAllBytes('${escaped}');`,
+    "$e=[Text.Encoding]::UTF8.GetBytes('HiveMind.ProviderKey.v1');",
+    "$p=[Security.Cryptography.ProtectedData]::Unprotect($b,$e,'CurrentUser');",
+    '[Console]::Out.Write([Convert]::ToBase64String($p))',
+  ].join(' ');
+  try {
+    const result = spawnSync(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-Command', script],
+      { encoding: 'utf8', windowsHide: true, timeout: 10_000 },
+    );
+    if (result.status !== 0 || !result.stdout?.trim()) return null;
+    const plain = Buffer.from(result.stdout.trim(), 'base64').toString('utf8').trim();
+    return plain.length > 0 ? plain : null;
+  } catch {
+    return null;
+  }
+}
+
 async function startServer(options) {
   const baseUrl = options.url ? assertLoopbackUrl(options.url) : assertLoopbackUrl(`http://${options.bind || `${DEFAULT_HOST}:${options.port || DEFAULT_PORT}`}`);
   const host = baseUrl.hostname;
@@ -870,6 +901,15 @@ async function startServer(options) {
   const stderrPath = path.join(dataDir, 'server.stderr.log');
   const stdoutFd = fs.openSync(stdoutPath, 'a');
   const stderrFd = fs.openSync(stderrPath, 'a');
+  const childEnv = { ...process.env };
+  if (!options.dryRun) {
+    const desktopKey = readDesktopProviderKey(dataDir);
+    if (desktopKey !== null) childEnv.DEEPSEEK_API_KEY = desktopKey;
+  }
+  const providerProfile = path.join(dataDir, 'provider.json');
+  if (fs.existsSync(providerProfile) && !childEnv.HIVEROUTER_PROVIDER_FILE) {
+    childEnv.HIVEROUTER_PROVIDER_FILE = providerProfile;
+  }
   let child;
   try {
     child = spawn(exe, args, {
@@ -877,7 +917,7 @@ async function startServer(options) {
       detached: true,
       windowsHide: true,
       stdio: ['ignore', stdoutFd, stderrFd],
-      env: process.env,
+      env: childEnv,
     });
   } catch (error) {
     throw cliError('E_SERVER_START_FAILED', `Could not spawn ${exe}: ${error.message}`, 'Check the executable path and permissions.', EXIT_NOT_RUNNING);
