@@ -644,7 +644,7 @@ fn table_names(database: &Database) -> Vec<String> {
 }
 
 #[test]
-fn v24_database_migrates_to_v27_without_losing_legacy_rows() {
+fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
     let database = Arc::new(Database::open_in_memory().expect("in-memory db"));
     seed_v24(&database);
     assert_eq!(database.schema_version().expect("version"), 24);
@@ -684,13 +684,14 @@ fn v24_database_migrates_to_v27_without_losing_legacy_rows() {
         .expect("seed v24 rows");
 
     let migrated = database.migrate().expect("migrate to head");
-    assert_eq!(migrated, 27, "the CAP head is v27 (25 sessions, 26 repo, 27 checkpoints)");
-    assert_eq!(database.schema_version().expect("version"), 27);
+    assert_eq!(migrated, 28, "the CAP head is v28 (25 sessions, 26 repo, 27 checkpoints, 28 jobs)");
+    assert_eq!(database.schema_version().expect("version"), 28);
     let applied = database.applied_migrations().expect("applied migrations");
     for (version, name) in [
         (25_i64, "sessions_policy_todos"),
         (26, "repo_index"),
         (27, "checkpoint_journal"),
+        (28, "jobs"),
     ] {
         assert!(
             applied.iter().any(|(applied_version, applied_name, _)| {
@@ -709,10 +710,11 @@ fn v24_database_migrates_to_v27_without_losing_legacy_rows() {
         "repo_chunks",
         "checkpoints",
         "checkpoint_blobs",
+        "jobs",
     ] {
         assert!(
             tables.iter().any(|name| name == expected),
-            "{expected} missing after v24 -> v27: {tables:?}"
+            "{expected} missing after v24 -> v28: {tables:?}"
         );
     }
 
@@ -769,7 +771,7 @@ fn v24_database_migrates_to_v27_without_losing_legacy_rows() {
         PermissionPolicy::Trusted
     );
 
-    // Reversibility: 27 -> 24 -> 27 must retain the legacy rows and restore
+    // Reversibility: 28 -> 24 -> 28 must retain the legacy rows and restore
     // the classic default on the forward pass.
     assert_eq!(database.migrate_down_to(24).expect("down to v24"), 24);
     let legacy_rows: i64 = database
@@ -782,7 +784,7 @@ fn v24_database_migrates_to_v27_without_losing_legacy_rows() {
         })
         .expect("legacy row after down");
     assert_eq!(legacy_rows, 1, "the down migration must not delete legacy runs");
-    assert_eq!(database.migrate().expect("re-up to head"), 27);
+    assert_eq!(database.migrate().expect("re-up to head"), 28);
     let after_roundtrip = store.get_run(run_id).expect("legacy run after roundtrip");
     assert_eq!(after_roundtrip.project_id, "legacy-project");
     assert_eq!(

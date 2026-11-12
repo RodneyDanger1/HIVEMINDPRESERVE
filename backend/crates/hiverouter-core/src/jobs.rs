@@ -38,6 +38,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use hiverouter_contract::{Refusal, Timestamp};
+use rusqlite::{params, Connection};
 use hiverouter_tools::env_safety;
 use hiverouter_tools::shell::is_shell_interpreter;
 use hiverouter_tools::{ToolError, WorkspaceJail};
@@ -47,6 +48,135 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::{Child, Command};
 use tokio::sync::{watch, OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::CancellationToken;
+
+/// Append-only job record schema (v28). Terminal snapshots survive restart;
+/// the in-memory registry remains the live authority for running jobs.
+pub const SCHEMA_V28: &str = r#"
+CREATE TABLE IF NOT EXISTS jobs (
+    id           TEXT PRIMARY KEY,
+    session_id   TEXT NOT NULL,
+    program      TEXT NOT NULL,
+    args_json    TEXT NOT NULL,
+    cwd          TEXT NOT NULL,
+    state        TEXT NOT NULL CHECK (state IN ('running','succeeded','failed','timed_out','killed')),
+    pid          INTEGER,
+    exit_code    INTEGER,
+    started_at   TEXT NOT NULL,
+    ended_at     TEXT,
+    timeout_ms   INTEGER NOT NULL,
+    output_tail  TEXT NOT NULL,
+    output_bytes INTEGER NOT NULL,
+    truncated    INTEGER NOT NULL CHECK (truncated IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_session ON jobs (session_id, started_at);
+"#;
+
+/// Down migration for v28.
+pub const SCHEMA_V28_DOWN: &str = "DROP INDEX IF EXISTS idx_jobs_session; DROP TABLE IF EXISTS jobs;";
+
+/// Migration descriptor installed by [`crate::db::MIGRATIONS`].
+#[must_use]
+pub const fn job_migration(version: i64) -> crate::db::Migration {
+    crate::db::Migration {
+        version,
+        name: "jobs",
+        up: SCHEMA_V28,
+        down: SCHEMA_V28_DOWN,
+    }
+}
+
+/// Persists one terminal (or live) snapshot. Upsert by id is idempotent.
+pub fn persist_job(connection: &Connection, snapshot: &JobSnapshot) -> rusqlite::Result<()> {
+    let args_json = serde_json::to_string(&snapshot.args).map_err(|error| {
+        rusqlite::Error::ToSqlConversionFailure(Box::new(error))
+    })?;
+    connection.execute(
+        "INSERT INTO jobs(id, session_id, program, args_json, cwd, state, pid, exit_code,
+                          started_at, ended_at, timeout_ms, output_tail, output_bytes, truncated)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)
+         ON CONFLICT(id) DO UPDATE SET
+             state=excluded.state, pid=excluded.pid, exit_code=excluded.exit_code,
+             ended_at=excluded.ended_at, output_tail=excluded.output_tail,
+             output_bytes=excluded.output_bytes, truncated=excluded.truncated",
+        params![
+            snapshot.id,
+            snapshot.session_id,
+            snapshot.program,
+            args_json,
+            snapshot.cwd,
+            snapshot.state.as_str(),
+            snapshot.pid.map(i64::from),
+            snapshot.exit_code.map(i64::from),
+            snapshot.started_at.as_str(),
+            snapshot.ended_at.as_ref().map(Timestamp::as_str),
+            i64::try_from(snapshot.timeout_ms).unwrap_or(i64::MAX),
+            snapshot.output.tail,
+            i64::try_from(snapshot.output.bytes).unwrap_or(i64::MAX),
+            if snapshot.output.truncated { 1 } else { 0 },
+        ],
+    )?;
+    Ok(())
+}
+
+/// Reads persisted snapshots, newest first.
+pub fn list_persisted_jobs(
+    connection: &Connection,
+    limit: u32,
+) -> Result<Vec<JobSnapshot>, rusqlite::Error> {
+    let mut statement = connection.prepare(
+        "SELECT id, session_id, program, args_json, cwd, state, pid, exit_code,
+                started_at, ended_at, timeout_ms, output_tail, output_bytes, truncated
+         FROM jobs ORDER BY started_at DESC, id DESC LIMIT ?1",
+    )?;
+    let rows = statement.query_map(params![i64::from(limit)], |row| {
+        let state: String = row.get(5)?;
+        let started: String = row.get(8)?;
+        let ended: Option<String> = row.get(9)?;
+        let args_json: String = row.get(3)?;
+        let args: Vec<String> = serde_json::from_str(&args_json).map_err(|error| {
+            rusqlite::Error::FromSqlConversionFailure(3, rusqlite::types::Type::Text, Box::new(error))
+        })?;
+        Ok(JobSnapshot {
+            id: row.get(0)?,
+            session_id: row.get(1)?,
+            program: row.get(2)?,
+            args,
+            cwd: row.get(4)?,
+            state: parse_job_state(&state).ok_or_else(|| {
+                rusqlite::Error::InvalidColumnType(5, "state".to_owned(), rusqlite::types::Type::Text)
+            })?,
+            pid: row.get::<_, Option<i64>>(6)?.and_then(|value| u32::try_from(value).ok()),
+            exit_code: row.get::<_, Option<i64>>(7)?.and_then(|value| i32::try_from(value).ok()),
+            started_at: Timestamp::parse(&started).map_err(|_| {
+                rusqlite::Error::InvalidColumnType(8, "started_at".to_owned(), rusqlite::types::Type::Text)
+            })?,
+            ended_at: match ended {
+                Some(raw) => Some(Timestamp::parse(&raw).map_err(|_| {
+                    rusqlite::Error::InvalidColumnType(9, "ended_at".to_owned(), rusqlite::types::Type::Text)
+                })?),
+                None => None,
+            },
+            timeout_ms: u64::try_from(row.get::<_, i64>(10)?).unwrap_or(0),
+            output: JobOutput {
+                tail: row.get(11)?,
+                bytes: u64::try_from(row.get::<_, i64>(12)?).unwrap_or(0),
+                truncated: row.get::<_, i64>(13)? != 0,
+            },
+        })
+    })?;
+    rows.collect()
+}
+
+fn parse_job_state(raw: &str) -> Option<JobState> {
+    match raw {
+        "running" => Some(JobState::Running),
+        "succeeded" => Some(JobState::Succeeded),
+        "failed" => Some(JobState::Failed),
+        "timed_out" => Some(JobState::TimedOut),
+        "killed" => Some(JobState::Killed),
+        _ => None,
+    }
+}
 
 /// Hard concurrency cap: at most four background jobs run at once.
 pub const MAX_CONCURRENT_JOBS: usize = 4;

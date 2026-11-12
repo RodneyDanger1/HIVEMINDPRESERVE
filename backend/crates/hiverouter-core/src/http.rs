@@ -1150,11 +1150,42 @@ async fn revert_run_checkpoints(
     }
 }
 
+fn persisted_jobs(
+    state: &Arc<AppState>,
+    limit: u32,
+) -> Result<Vec<crate::jobs::JobSnapshot>, Refusal> {
+    state.db.with_connection_refusal(|connection| {
+        crate::jobs::list_persisted_jobs(connection, limit)
+            .map_err(|error| hiverouter_tools::ToolError::from(error).refusal())
+    })
+}
+
+fn persist_job_snapshot(
+    state: &Arc<AppState>,
+    snapshot: &crate::jobs::JobSnapshot,
+) -> Result<(), Refusal> {
+    state.db.with_connection_refusal(|connection| {
+        crate::jobs::persist_job(connection, snapshot)
+            .map_err(|error| hiverouter_tools::ToolError::from(error).refusal())
+    })
+}
+
 async fn jobs_list(State(state): State<Arc<AppState>>) -> Response {
     let Some(jobs) = state.jobs.as_ref() else {
         return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
     };
-    (StatusCode::OK, Json(serde_json::json!({ "jobs": jobs.list_all() }))).into_response()
+    let mut all = jobs.list_all();
+    let known: std::collections::HashSet<String> =
+        all.iter().map(|job| job.id.clone()).collect();
+    match persisted_jobs(&state, 200) {
+        Ok(persisted) => {
+            all.extend(persisted.into_iter().filter(|job| !known.contains(&job.id)));
+        }
+        Err(error) => {
+            tracing::warn!(code = error.code(), "persisted job history unavailable");
+        }
+    }
+    (StatusCode::OK, Json(serde_json::json!({ "jobs": all }))).into_response()
 }
 
 async fn job_start(
@@ -1186,7 +1217,12 @@ async fn job_start(
         request = request.with_cwd(cwd);
     }
     match jobs.start(request).await {
-        Ok(snapshot) => (StatusCode::CREATED, Json(snapshot)).into_response(),
+        Ok(snapshot) => {
+            if let Err(error) = persist_job_snapshot(&state, &snapshot) {
+                tracing::warn!(code = error.code(), job_id = %snapshot.id, "job started but could not be persisted");
+            }
+            (StatusCode::CREATED, Json(snapshot)).into_response()
+        }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
 }
@@ -1200,7 +1236,15 @@ async fn job_detail(
     };
     match jobs.get(&job_id) {
         Ok(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
-        Err(error) => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+        Err(error) => {
+            let persisted = persisted_jobs(&state, 1_000)
+                .ok()
+                .and_then(|jobs| jobs.into_iter().find(|job| job.id == job_id));
+            match persisted {
+                Some(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
+                None => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+            }
+        }
     }
 }
 
@@ -1212,7 +1256,12 @@ async fn job_kill(
         return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
     };
     match jobs.kill(&job_id).await {
-        Ok(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
+        Ok(snapshot) => {
+            if let Err(error) = persist_job_snapshot(&state, &snapshot) {
+                tracing::warn!(code = error.code(), job_id = %snapshot.id, "killed job could not be persisted");
+            }
+            (StatusCode::OK, Json(snapshot)).into_response()
+        }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
 }

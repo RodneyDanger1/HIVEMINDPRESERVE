@@ -920,6 +920,7 @@ Migration {
     down: crate::repo_index::SCHEMA_V26_DOWN,
 },
 crate::checkpoint::checkpoint_migration(27),
+crate::jobs::job_migration(28),
 ];
 /// Database errors; each maps to a named refusal for the wire.
 #[derive(Debug, Error)]
@@ -1533,10 +1534,10 @@ mod tests {
     #[test]
     fn migrate_is_idempotent_and_records_bootstrap() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("first migrate"), 27);
-        assert_eq!(database.migrate().expect("second migrate"), 27);
+        assert_eq!(database.migrate().expect("first migrate"), 28);
+        assert_eq!(database.migrate().expect("second migrate"), 28);
         let applied = database.applied_migrations().expect("migrations");
-        assert_eq!(applied.len(), 27);
+        assert_eq!(applied.len(), 28);
         assert_eq!(applied[0].0, 1);
         assert_eq!(applied[0].1, "bootstrap");
         assert_eq!(applied[1].0, 2);
@@ -1573,7 +1574,7 @@ mod tests {
         assert_eq!(database.migrate_down_to(0).expect("down"), 0);
         assert_eq!(database.schema_version().expect("version"), 0);
         assert!(database.app_meta("schema_version").is_err());
-        assert_eq!(database.migrate().expect("re-migrate"), 27);
+        assert_eq!(database.migrate().expect("re-migrate"), 28);
         assert_eq!(
             database.app_meta("schema_version").expect("meta").as_deref(),
             Some(SCHEMA_VERSION)
@@ -1589,7 +1590,7 @@ mod tests {
             database.migrate().expect("migrate");
         }
         let reopened = Database::open(&path).expect("reopen");
-        assert_eq!(reopened.schema_version().expect("version"), 27);
+        assert_eq!(reopened.schema_version().expect("version"), 28);
         assert_eq!(reopened.path(), path);
     }
 
@@ -1744,7 +1745,7 @@ mod tests {
     #[test]
     fn tool_turn_migration_rolls_back_and_reapplies() {
         let database = Database::open_in_memory().expect("in-memory db");
-        assert_eq!(database.migrate().expect("migrate"), 27);
+        assert_eq!(database.migrate().expect("migrate"), 28);
         let run_id = RunId::new();
         let task_id = TaskId::new();
         insert_run(&database, run_id);
@@ -1779,7 +1780,7 @@ mod tests {
             .expect("table probe");
         assert_eq!(tool_tables, 0, "down migration must drop tool_turns");
 
-        assert_eq!(database.migrate().expect("re-migrate"), 27);
+        assert_eq!(database.migrate().expect("re-migrate"), 28);
         assert_eq!(
             database.run_tool_counters(run_id).expect("recreated counters"),
             (0, 0),
@@ -1803,7 +1804,7 @@ mod tests {
         database
             .with_connection(|connection| {
                 connection.execute(
-                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (28, 'future', ?1)",
+                    "INSERT INTO schema_migrations(version, name, applied_at) VALUES (29, 'future', ?1)",
                     rusqlite::params![Timestamp::now().as_str()],
                 )
             })
@@ -1813,12 +1814,12 @@ mod tests {
         assert!(matches!(
             error,
             DbError::SchemaNewer {
-                current: 28,
-                latest: 27
+                current: 29,
+                latest: 28
             }
         ));
         assert_eq!(database.applied_migrations().expect("after"), before);
-        assert_eq!(database.schema_version().expect("version"), 28);
+        assert_eq!(database.schema_version().expect("version"), 29);
     }
 
     #[test]
