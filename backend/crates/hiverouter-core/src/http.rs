@@ -1252,8 +1252,13 @@ async fn jobs_list(State(state): State<Arc<AppState>>) -> Response {
             .cmp(&left.started_at)
             .then_with(|| right.id.cmp(&left.id))
     });
+    let truncated = all.len() > 200;
     all.truncate(200);
-    (StatusCode::OK, Json(serde_json::json!({ "jobs": all }))).into_response()
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({ "jobs": all, "truncated": truncated })),
+    )
+        .into_response()
 }
 
 async fn job_start(
@@ -1276,10 +1281,14 @@ async fn job_start(
     else {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     };
-    let session_id = body
+    let Some(session_id) = body
         .get("session_id")
         .and_then(serde_json::Value::as_str)
-        .unwrap_or("manual");
+        .map(str::trim)
+        .filter(|session_id| !session_id.is_empty() && session_id.len() <= 160)
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
     let mut request = JobRequest::new(session_id, program, args);
     if let Some(cwd) = body.get("cwd").and_then(serde_json::Value::as_str) {
         request = request.with_cwd(cwd);
@@ -1304,15 +1313,16 @@ async fn job_detail(
     };
     match jobs.get(&job_id) {
         Ok(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
-        Err(error) => {
-            let persisted = persisted_jobs(&state, 1_000)
-                .ok()
-                .and_then(|jobs| jobs.into_iter().find(|job| job.id == job_id));
-            match persisted {
+        Err(error) => match persisted_jobs(&state, 1_000) {
+            Ok(jobs) => match jobs.into_iter().find(|job| job.id == job_id) {
                 Some(snapshot) => (StatusCode::OK, Json(snapshot)).into_response(),
                 None => refusal_response(StatusCode::NOT_FOUND, &error.refusal()),
+            },
+            // A store read failure is not evidence that the job is absent.
+            Err(read_error) => {
+                refusal_response(StatusCode::SERVICE_UNAVAILABLE, &read_error)
             }
-        }
+        },
     }
 }
 

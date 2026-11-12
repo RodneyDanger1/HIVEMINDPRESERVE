@@ -125,9 +125,17 @@ fn boot_reconciliation_marks_restart_orphaned_running_jobs_failed() {
         .expect("list jobs");
     let job = stored.iter().find(|job| job.id == "job-orphan").expect("job");
     assert_eq!(job.state, JobState::Failed);
-    assert!(job.ended_at.is_some(), "reconciled job needs a terminal time");
+    assert!(
+        job.ended_at.is_none(),
+        "the end time is unknown after a crash and must not be invented"
+    );
     assert_eq!(job.exit_code, None, "no exit code is invented");
-    assert!(job.output.tail.contains("process not recovered after server restart"));
+    assert_eq!(
+        job.output.tail, "clean\n",
+        "recorded output must not be rewritten with a synthetic marker"
+    );
+    assert_eq!(job.output.bytes, 6, "recorded byte count is unchanged");
+    assert!(!job.output.truncated, "no synthetic truncation flag");
     assert_eq!(
         db.with_connection(|connection| reconcile_running_jobs(connection))
             .expect("second reconcile"),

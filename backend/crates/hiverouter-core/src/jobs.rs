@@ -1,6 +1,6 @@
 //! Background job registry (CAP-5).
 //!
-//! One owner for explicit, approval-gated background child processes:
+//! One owner for explicit, allowlisted background child processes (operator/HTTP initiated; not an approval-gated tool):
 //!
 //! - a job is identified by a uuid-v7 id and carries its `session_id`, program,
 //!   direct argument vector, workspace-relative working directory, state, exit
@@ -49,7 +49,7 @@ use tokio::process::{Child, Command};
 use tokio::sync::{watch, OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::CancellationToken;
 
-/// Append-only job record schema (v28). Terminal snapshots survive restart;
+/// Latest-state job snapshot schema (v28). Terminal snapshots survive restart;
 /// the in-memory registry remains the live authority for running jobs.
 pub const SCHEMA_V28: &str = r#"
 CREATE TABLE IF NOT EXISTS jobs (
@@ -89,17 +89,14 @@ pub const fn job_migration(version: i64) -> crate::db::Migration {
 /// process cannot own the old child handle; pretending the job still runs would
 /// be a fabricated success. Returns the number of reconciled rows.
 pub fn reconcile_running_jobs(connection: &Connection) -> rusqlite::Result<usize> {
-    let now = Timestamp::now();
+    // The old process may have died before or after the child exited. Keep the
+    // row's recorded bytes/tail unchanged and leave ended_at NULL: the true
+    // outcome and end time are unknown. `failed` means "no owner after restart",
+    // not a measured exit.
     connection.execute(
-        "UPDATE jobs
-         SET state = 'failed',
-             ended_at = ?1,
-             output_tail = output_tail || ?2
+        "UPDATE jobs SET state = 'failed', ended_at = NULL
          WHERE state = 'running'",
-        params![
-            now.as_str(),
-            "\n[process not recovered after server restart; job marked failed]\n"
-        ],
+        [],
     )
 }
 
