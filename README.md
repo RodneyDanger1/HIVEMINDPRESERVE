@@ -164,14 +164,11 @@ Git, and .NET Framework `csc.exe`. Install is per-user under
 `%LOCALAPPDATA%\Programs\HiveMind\app`; data under `%LOCALAPPDATA%\HiveMind`.
 Desktop/Start Menu shortcuts are created.
 
-Current portable package identity (rebuilt 2026-11-12, `-NoZip`):
-
-- source commit: `9748556`; version `1.2.0-dev` (unreleased); `BUILD.json` `dirty:false`
-- server SHA-256: `57668d414a5b9b58346b6e196dc130fe018982c84208df6b37676301948ec4cb`
-- launcher SHA-256: `4655e9e000c0106167e718b137a2636a258dc928521e0474491ea28e713fbdb2`
-- packaged CLI SHA-256: `93e94dc725e45acd172cd0151cc1d9346284bf0b6dac29b313e4938fd32acc46`
-- packaged MCP SHA-256: `0269f25ff194f5e4baaf69da2be626a461ae924cd1adb4f402b0a05322af600b`
-- full file hashes: `dist/HiveMind/CHECKSUMS.txt`
+Current portable package identity is recorded at build time in
+`dist/HiveMind/BUILD.json` (commit/version/built_at/server and launcher hashes,
+`dirty` flag) and `dist/HiveMind/CHECKSUMS.txt` (every packaged file). Do not
+copy hashes into prose: they change on each rebuild. The last verified rebuild
+was 2026-11-12, `dirty:false`, schema v28, with CLI and MCP included.
 
 The install/health receipt is under [docs/evidence/live/](docs/evidence/live/);
 the current index is [INDEX.md](docs/evidence/live/INDEX.md). Health is
