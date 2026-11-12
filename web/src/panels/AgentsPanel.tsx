@@ -7,6 +7,7 @@
  * keyboard/screen-reader users find the activity list. No optimistic rows are
  * created here and this panel performs no store writes.
  */
+import { useMemo } from 'react';
 import { useUiStore } from '../state/context';
 import { NODE_KIND_LABELS } from '../state/agentState';
 import { spawnGate } from '../state/spawnMatrix';
@@ -39,13 +40,17 @@ export function AgentsPanel() {
   // the panel's ToolActivityEntry (same id/tool/hash/turn/outcome fields); the
   // store stays the single writer and this panel only reads.
   const toolActivity: readonly ToolActivityEntry[] = useUiStore((state) => state.toolActivity);
-  const list = Object.values(tasks);
-  const timelineAgents: readonly TimelineAgent[] = list.map((task) => ({
-    id: task.id,
-    label: task.label,
-    kind: task.kind,
-  }));
-  const timelineSteps: readonly TimelineStep[] = toolActivity.map((record) => ({
+  const list = useMemo(() => Object.values(tasks), [tasks]);
+  const timelineAgents: readonly TimelineAgent[] = useMemo(
+    () =>
+      list.map((task) => ({
+        id: task.id,
+        label: task.label,
+        kind: task.kind,
+      })),
+    [list],
+  );
+  const timelineSteps: readonly TimelineStep[] = useMemo(() => toolActivity.map((record) => ({
     id: record.toolCallId,
     // Empty means the wire did not carry a timestamp; Timeline renders it as
     // unknown and sorts it last instead of inventing a time.
@@ -68,7 +73,7 @@ export function AgentsPanel() {
             ? 'awaiting_approval'
             : 'failed',
     kind: 'tool',
-  }));
+  })), [toolActivity]);
 
   return (
     <div className="h-full min-h-0 overflow-y-auto p-4">
