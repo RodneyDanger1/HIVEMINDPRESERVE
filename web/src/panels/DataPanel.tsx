@@ -7,7 +7,16 @@
 import { useEffect } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
+import { Editor, FileTree, buildFileTreeNodes } from '../workbench';
+import type { FileTreeStatus } from '../workbench';
 import { PanelTitle, EmptyState, LoadingState, ErrorState } from './StatePack';
+
+const FILE_TREE_STATUS: Record<string, FileTreeStatus> = {
+  idle: 'idle',
+  loading: 'loading',
+  ok: 'ready',
+  error: 'error',
+};
 
 export function DataPanel() {
   const fileTree = useUiStore((state) => state.fileTree);
@@ -58,47 +67,23 @@ export function DataPanel() {
         {fileTree.status === 'ok' && fileTree.entries.length === 0 ? (
           <EmptyState message={STRINGS.states.empty} />
         ) : null}
-        <ul className="space-y-1">
-          {fileTree.entries.map((entry) => {
-            if (entry.kind === 'dir') {
-              return (
-                <li key={entry.path}>
-                  <button
-                    type="button"
-                    className="type-mono-code w-full truncate rounded-[var(--radius-sm)] border border-hairline bg-panel px-2 py-1 text-left text-ink-800 hover:bg-honey-100"
-                    onClick={() => {
-                      void requestFileTree(entry.path);
-                    }}
-                  >
-                    {entry.name}
-                    <span className="type-mono-meta ml-2 text-meta">/</span>
-                  </button>
-                </li>
-              );
-            }
-            return (
-              <li key={entry.path}>
-                <button
-                  type="button"
-                  className={
-                    'type-mono-code w-full truncate rounded-[var(--radius-sm)] border px-2 py-1 text-left ' +
-                    (fileTree.selectedPath === entry.path
-                      ? 'border-honey-400 bg-honey-100'
-                      : 'border-hairline bg-panel hover:bg-panel-alt')
-                  }
-                  onClick={() => {
-                    void openFile(entry.path);
-                  }}
-                >
-                  {entry.name}
-                  <span className="type-mono-meta ml-2 text-meta">
-                    {entry.size_bytes === null ? '—' : `${entry.size_bytes} B`}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <FileTree
+          nodes={buildFileTreeNodes(fileTree.entries)}
+          selectedPath={fileTree.selectedPath}
+          root={STRINGS.panels.dataTitle}
+          status={FILE_TREE_STATUS[fileTree.status] ?? 'idle'}
+          errorMessage={fileTree.status === 'error' ? STRINGS.panels.dataError : null}
+          onSelectFile={(path) => {
+            void openFile(path);
+          }}
+          onToggleDir={(path) => {
+            void requestFileTree(path);
+          }}
+          onRefresh={() => {
+            void requestFileTree();
+          }}
+          expandOnToggle={false}
+        />
       </section>
       <section aria-label={STRINGS.panels.dataTitle} className="min-h-0 overflow-auto">
         {fileTree.contentStatus === 'loading' ? <LoadingState /> : null}
@@ -107,14 +92,17 @@ export function DataPanel() {
           <EmptyState message={STRINGS.panels.dataPreviewHint} />
         ) : null}
         {fileTree.content ? (
-          <div className="surface-panel rounded-[var(--radius-md)] p-3">
-            <div className="type-mono-meta text-meta">
-              {fileTree.content.path} · {fileTree.content.bytes} B · sha {fileTree.content.sha256.slice(0, 12)}…
-            </div>
-            <pre className="type-mono-code mt-2 overflow-x-auto whitespace-pre-wrap text-ink-900">
-              {fileTree.content.text}
-            </pre>
-          </div>
+          <Editor
+            path={fileTree.content.path}
+            value={fileTree.content.text}
+            readOnly
+            readOnlyReason="Workspace reads are preview-only here; approved mutations run through the agent tool path."
+            status={fileTree.contentStatus === 'error' ? 'error' : 'ready'}
+            errorMessage={fileTree.contentStatus === 'error' ? STRINGS.states.unavailable : null}
+            onRetry={() => {
+              void openFile(fileTree.content?.path ?? '');
+            }}
+          />
         ) : null}
       </section>
     </div>
