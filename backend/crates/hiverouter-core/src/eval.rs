@@ -345,10 +345,35 @@ pub fn receipt_from_observation(
         expected_exit,
         actual_exit,
         state: state.to_owned(),
-        passed: state == "succeeded" && actual_exit == Some(expected_exit),
+        // A non-zero expected exit is legitimate: compare the actual code, but
+        // only for terminal process states (not timeout/kill, where no honest
+        // exit comparison exists).
+        passed: matches!(state, "succeeded" | "failed")
+            && actual_exit == Some(expected_exit),
         job_id: Some(job_id.to_owned()),
         output_sha256: output_sha256.to_owned(),
         output_bytes,
         created_at: Timestamp::now().as_str().to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn non_zero_expected_exit_can_pass_only_for_terminal_exit_states() {
+        let failed_expected = receipt_from_observation(
+            "s", "c", "git.exe", &[], 129, "job", "failed", Some(129), "h", 0,
+        );
+        assert!(failed_expected.passed);
+        let succeeded_wrong = receipt_from_observation(
+            "s", "c", "git.exe", &[], 0, "job", "succeeded", Some(1), "h", 0,
+        );
+        assert!(!succeeded_wrong.passed);
+        let timed_out = receipt_from_observation(
+            "s", "c", "git.exe", &[], 129, "job", "timed_out", Some(129), "h", 0,
+        );
+        assert!(!timed_out.passed);
     }
 }

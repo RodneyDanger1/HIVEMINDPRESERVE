@@ -87,17 +87,24 @@ pub fn create_candidate(
     connection: &Connection,
     candidate: &LessonCandidate,
 ) -> rusqlite::Result<()> {
+    let mut compared: Vec<(String, String, i64)> = Vec::new();
     for eval_id in [&candidate.baseline_eval_id, &candidate.candidate_eval_id] {
-        let passed: i64 = connection.query_row(
-            "SELECT passed FROM eval_runs WHERE id = ?1",
+        let row: (String, String, i64) = connection.query_row(
+            "SELECT suite_id, case_id, passed FROM eval_runs WHERE id = ?1",
             params![eval_id],
-            |row| row.get(0),
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
         )?;
-        if passed != 1 {
+        if row.2 != 1 {
             return Err(rusqlite::Error::InvalidParameterName(
                 "lesson candidate requires two passing eval receipts".to_owned(),
             ));
         }
+        compared.push(row);
+    }
+    if compared[0].0 != compared[1].0 || compared[0].1 != compared[1].1 {
+        return Err(rusqlite::Error::InvalidParameterName(
+            "baseline and candidate receipts must cover the same suite/case".to_owned(),
+        ));
     }
     connection.execute(
         "INSERT INTO lesson_candidates
@@ -178,6 +185,16 @@ pub fn activate_candidate(
     get_candidate(connection, id)
 }
 
+/// Compensates a failed activation (DB active, ledger append failed).
+pub fn reset_activation(connection: &Connection, id: &str) -> rusqlite::Result<()> {
+    connection.execute(
+        "UPDATE lesson_candidates SET status = 'pending', activated_at = NULL
+         WHERE id = ?1 AND status = 'active'",
+        params![id],
+    )?;
+    Ok(())
+}
+
 /// Marks one active candidate rolled back.
 pub fn rollback_candidate(
     connection: &Connection,
@@ -215,7 +232,10 @@ pub fn rolled_back_line(candidate: &LessonCandidate) -> String {
     serde_json::json!({
         "state": "rolled_back_lesson",
         "proposal_id": candidate.id,
-        "rolled_back_at": candidate.rolled_back_at,
+        "rolled_back_at": candidate
+            .rolled_back_at
+            .clone()
+            .unwrap_or_else(|| Timestamp::now().as_str().to_owned()),
     })
     .to_string()
 }

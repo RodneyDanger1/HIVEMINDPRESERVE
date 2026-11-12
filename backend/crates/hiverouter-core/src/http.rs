@@ -1524,6 +1524,16 @@ async fn eval_metrics(
     let Some(suite_id) = params.get("suite_id").map(String::as_str).filter(|value| !value.is_empty()) else {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     };
+    let exists = match state.db.with_connection(|connection| {
+        crate::eval::get_suite(connection, suite_id)
+    }) {
+        Ok(Some(_)) => true,
+        Ok(None) => false,
+        Err(_) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
+    };
+    if !exists {
+        return refusal_response(StatusCode::NOT_FOUND, &Refusal::PathNotFound);
+    }
     match state.db.with_connection(|connection| {
         crate::eval::suite_metrics(connection, suite_id)
     }) {
@@ -1639,23 +1649,28 @@ async fn learning_activate(
         Ok(hash) => hash,
         Err(_) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
     };
-    let line = crate::learning::applied_lesson_line(&candidate, &receipt_sha256);
-    if let Err(refusal) = append_lesson_line(&path, &line) {
-        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
-    }
-    match state.db.with_connection(|connection| {
+    // DB activation first; the ledger append is the outbox step. If the append
+    // fails, compensate the DB so a later boot cannot admit a line for a
+    // candidate that never became active.
+    let active = match state.db.with_connection(|connection| {
         crate::learning::activate_candidate(connection, &candidate_id)
     }) {
-        Ok(Some(active)) => {
-            state.engine.reload_authorized_lessons(&path);
-            (StatusCode::OK, Json(active)).into_response()
-        }
-        Ok(None) => refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
+        Ok(Some(active)) => active,
+        Ok(None) => return refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
         Err(error) => {
             tracing::warn!("lesson activation write failed: {error}");
-            refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError)
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError);
         }
+    };
+    let line = crate::learning::applied_lesson_line(&active, &receipt_sha256);
+    if let Err(refusal) = append_lesson_line(&path, &line) {
+        let _ = state.db.with_connection(|connection| {
+            crate::learning::reset_activation(connection, &candidate_id)
+        });
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
     }
+    state.engine.reload_authorized_lessons(&path);
+    (StatusCode::OK, Json(active)).into_response()
 }
 
 async fn learning_rollback(
@@ -1663,11 +1678,24 @@ async fn learning_rollback(
     Path(candidate_id): Path<String>,
 ) -> Response {
     let path = evolution_lesson_path(&state);
+    let candidate = match state.db.with_connection(|connection| {
+        crate::learning::get_candidate(connection, &candidate_id)
+    }) {
+        Ok(Some(candidate)) if candidate.status == "active" => candidate,
+        Ok(_) => return refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
+        Err(error) => {
+            tracing::warn!("lesson rollback read failed: {error}");
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError);
+        }
+    };
+    // Tombstone first: if the ledger cannot be written, do not claim rollback.
+    if let Err(refusal) = append_lesson_line(&path, &crate::learning::rolled_back_line(&candidate)) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
     match state.db.with_connection(|connection| {
         crate::learning::rollback_candidate(connection, &candidate_id)
     }) {
         Ok(Some(candidate)) => {
-            let _ = append_lesson_line(&path, &crate::learning::rolled_back_line(&candidate));
             state.engine.reload_authorized_lessons(&path);
             (StatusCode::OK, Json(candidate)).into_response()
         }
