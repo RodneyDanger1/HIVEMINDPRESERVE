@@ -625,6 +625,42 @@ async fn lesson_candidate_requires_two_passing_evals_and_rolls_back() {
     );
 }
 
+#[tokio::test]
+async fn eval_suite_runs_cases_and_reports_metrics() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let (status, suite) = post(
+        &server,
+        "/api/eval/suites",
+        &serde_json::json!({
+            "name": "smoke",
+            "cases": [{
+                "case_id": "cargo-version",
+                "program": "cargo.exe",
+                "args": ["--version"],
+                "expected_exit_code": 0
+            }]
+        }),
+    )
+    .await;
+    assert_eq!(status, 201, "suite: {suite:?}");
+    let suite_id = suite["id"].as_str().expect("suite id");
+    let (status, run) = post(
+        &server,
+        &format!("/api/eval/suites/{suite_id}/run"),
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(status, 200, "suite run: {run:?}");
+    assert_eq!(run["metrics"]["total"], 1);
+    assert_eq!(run["metrics"]["passed"], 1);
+    assert_eq!(run["metrics"]["failed"], 0);
+    assert_eq!(run["receipts"][0]["passed"], true);
+    let (status, metrics) = get(&server, &format!("/api/eval/metrics?suite_id={suite_id}")).await;
+    assert_eq!(status, 200);
+    assert_eq!(metrics["total"], 1);
+}
+
 // --- unknown job refusal ----------------------------------------------------
 
 #[tokio::test]
@@ -797,7 +833,7 @@ fn table_names(database: &Database) -> Vec<String> {
 }
 
 #[test]
-fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
+fn v24_database_migrates_to_v31_without_losing_legacy_rows() {
     let database = Arc::new(Database::open_in_memory().expect("in-memory db"));
     seed_v24(&database);
     assert_eq!(database.schema_version().expect("version"), 24);
@@ -837,8 +873,8 @@ fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
         .expect("seed v24 rows");
 
     let migrated = database.migrate().expect("migrate to head");
-    assert_eq!(migrated, 30, "the CAP head is v30 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval, 30 lessons)");
-    assert_eq!(database.schema_version().expect("version"), 30);
+    assert_eq!(migrated, 31, "the CAP head is v31 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval, 30 lessons, 31 eval suites)");
+    assert_eq!(database.schema_version().expect("version"), 31);
     let applied = database.applied_migrations().expect("applied migrations");
     for (version, name) in [
         (25_i64, "sessions_policy_todos"),
@@ -847,6 +883,7 @@ fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
         (28, "jobs"),
         (29, "executed_eval"),
         (30, "lesson_candidates"),
+        (31, "eval_suites"),
     ] {
         assert!(
             applied.iter().any(|(applied_version, applied_name, _)| {
@@ -868,6 +905,8 @@ fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
         "jobs",
         "eval_runs",
         "lesson_candidates",
+        "eval_suites",
+        "eval_cases",
     ] {
         assert!(
             tables.iter().any(|name| name == expected),
@@ -928,7 +967,7 @@ fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
         PermissionPolicy::Trusted
     );
 
-    // Reversibility: 30 -> 24 -> 30 must retain the legacy rows and restore
+    // Reversibility: 31 -> 24 -> 31 must retain the legacy rows and restore
     // the classic default on the forward pass.
     assert_eq!(database.migrate_down_to(24).expect("down to v24"), 24);
     let legacy_rows: i64 = database
@@ -941,7 +980,7 @@ fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
         })
         .expect("legacy row after down");
     assert_eq!(legacy_rows, 1, "the down migration must not delete legacy runs");
-    assert_eq!(database.migrate().expect("re-up to head"), 30);
+    assert_eq!(database.migrate().expect("re-up to head"), 31);
     let after_roundtrip = store.get_run(run_id).expect("legacy run after roundtrip");
     assert_eq!(after_roundtrip.project_id, "legacy-project");
     assert_eq!(

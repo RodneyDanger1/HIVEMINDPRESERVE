@@ -793,6 +793,12 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/jobs/{job_id}/kill", post(job_kill))
         .route("/api/eval/runs", get(eval_runs_list))
         .route("/api/eval/run", post(eval_run))
+        .route(
+            "/api/eval/suites",
+            get(eval_suites_list).post(eval_suite_create),
+        )
+        .route("/api/eval/suites/{suite_id}/run", post(eval_suite_run))
+        .route("/api/eval/metrics", get(eval_metrics))
         .route("/api/memory/context/{task_id}", get(task_memory_context))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
@@ -1358,6 +1364,171 @@ async fn job_kill(
             refusal_response(StatusCode::NOT_FOUND, &Refusal::JobNotFound)
         }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    }
+}
+
+async fn eval_suites_list(State(state): State<Arc<AppState>>) -> Response {
+    match state.db.with_connection(|connection| crate::eval::list_suites(connection, 100)) {
+        Ok(suites) => (StatusCode::OK, Json(serde_json::json!({ "suites": suites }))).into_response(),
+        Err(error) => {
+            tracing::warn!("eval suite list failed: {error}");
+            refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError)
+        }
+    }
+}
+
+async fn eval_suite_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(name) = body.get("name").and_then(serde_json::Value::as_str).map(str::trim) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(cases) = body.get("cases").and_then(serde_json::Value::as_array) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if name.is_empty() || name.chars().count() > 120 || cases.is_empty() || cases.len() > 32 {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let mut parsed = Vec::with_capacity(cases.len());
+    for case in cases {
+        let Some(case_id) = case.get("case_id").and_then(serde_json::Value::as_str).map(str::trim) else {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        };
+        let Some(program) = case.get("program").and_then(serde_json::Value::as_str).map(str::trim) else {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        };
+        let Some(args) = case.get("args").and_then(serde_json::Value::as_array) else {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        };
+        let Some(args) = args
+            .iter()
+            .map(|value| value.as_str().map(ToOwned::to_owned))
+            .collect::<Option<Vec<_>>>()
+        else {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        };
+        let expected_exit = match case.get("expected_exit_code") {
+            None => 0,
+            Some(value) => match value.as_i64().and_then(|value| i32::try_from(value).ok()) {
+                Some(value) if (-1..=255).contains(&value) => value,
+                _ => return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid),
+            },
+        };
+        if case_id.is_empty()
+            || case_id.chars().count() > 120
+            || program.is_empty()
+            || program.len() > 120
+        {
+            return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+        }
+        parsed.push(crate::eval::EvalCase {
+            case_id: case_id.to_owned(),
+            program: program.to_owned(),
+            args,
+            expected_exit,
+        });
+    }
+    let suite = crate::eval::EvalSuite {
+        id: uuid::Uuid::now_v7().to_string(),
+        name: name.to_owned(),
+        description: body
+            .get("description")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .chars()
+            .take(400)
+            .collect(),
+        cases: parsed,
+        created_at: hiverouter_contract::Timestamp::now().as_str().to_owned(),
+    };
+    match state.db.with_connection(|connection| crate::eval::create_suite(connection, &suite)) {
+        Ok(()) => (StatusCode::CREATED, Json(suite)).into_response(),
+        Err(error) => {
+            tracing::warn!("eval suite create refused: {error}");
+            refusal_response(StatusCode::CONFLICT, &Refusal::InternalError)
+        }
+    }
+}
+
+async fn eval_suite_run(
+    State(state): State<Arc<AppState>>,
+    Path(suite_id): Path<String>,
+) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    let suite = match state.db.with_connection(|connection| crate::eval::get_suite(connection, &suite_id)) {
+        Ok(Some(suite)) => suite,
+        Ok(None) => return refusal_response(StatusCode::NOT_FOUND, &Refusal::PathNotFound),
+        Err(error) => {
+            tracing::warn!("eval suite read failed: {error}");
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError);
+        }
+    };
+    let mut receipts = Vec::with_capacity(suite.cases.len());
+    for case in &suite.cases {
+        let started = match jobs
+            .start(crate::jobs::JobRequest::new("eval", case.program.clone(), case.args.clone()))
+            .await
+        {
+            Ok(snapshot) => snapshot,
+            Err(error) => return refusal_response(StatusCode::CONFLICT, &error.refusal()),
+        };
+        let terminal = match jobs.wait(&started.id).await {
+            Ok(snapshot) => snapshot,
+            Err(error) => return refusal_response(StatusCode::CONFLICT, &error.refusal()),
+        };
+        let sha = hiverouter_tools::sha256::sha256_hex(terminal.output.tail.as_bytes());
+        let receipt = crate::eval::receipt_from_observation(
+            &suite.id,
+            &case.case_id,
+            &case.program,
+            &case.args,
+            case.expected_exit,
+            &terminal.id,
+            terminal.state.as_str(),
+            terminal.exit_code,
+            &sha,
+            terminal.output.bytes,
+        );
+        if let Err(error) = state.db.with_connection(|connection| {
+            crate::eval::record_eval(connection, &receipt)
+        }) {
+            tracing::error!("eval suite receipt could not be stored: {error}");
+            return refusal_response(StatusCode::INTERNAL_SERVER_ERROR, &Refusal::InternalError);
+        }
+        receipts.push(receipt);
+    }
+    let metrics = match state.db.with_connection(|connection| {
+        crate::eval::suite_metrics(connection, &suite_id)
+    }) {
+        Ok(metrics) => metrics,
+        Err(_) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
+    };
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "suite_id": suite_id,
+            "receipts": receipts,
+            "metrics": metrics,
+        })),
+    )
+        .into_response()
+}
+
+async fn eval_metrics(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<std::collections::BTreeMap<String, String>>,
+) -> Response {
+    let Some(suite_id) = params.get("suite_id").map(String::as_str).filter(|value| !value.is_empty()) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    match state.db.with_connection(|connection| {
+        crate::eval::suite_metrics(connection, suite_id)
+    }) {
+        Ok(metrics) => (StatusCode::OK, Json(metrics)).into_response(),
+        Err(_) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
     }
 }
 

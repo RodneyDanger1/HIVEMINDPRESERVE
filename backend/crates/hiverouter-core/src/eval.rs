@@ -141,6 +141,187 @@ pub fn list_eval(connection: &Connection, limit: u32) -> Result<Vec<EvalReceipt>
     rows.collect()
 }
 
+/// Eval suite/case schema (v31).
+pub const SCHEMA_V31: &str = r#"
+CREATE TABLE IF NOT EXISTS eval_suites (
+    id          TEXT PRIMARY KEY NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS eval_cases (
+    id            TEXT PRIMARY KEY NOT NULL,
+    suite_id      TEXT NOT NULL REFERENCES eval_suites(id) ON DELETE CASCADE,
+    case_id       TEXT NOT NULL,
+    program       TEXT NOT NULL,
+    args_json     TEXT NOT NULL,
+    expected_exit INTEGER NOT NULL,
+    created_at    TEXT NOT NULL,
+    UNIQUE (suite_id, case_id)
+);
+CREATE INDEX IF NOT EXISTS idx_eval_cases_suite ON eval_cases (suite_id, case_id);
+"#;
+
+/// Down migration for v31.
+pub const SCHEMA_V31_DOWN: &str =
+    "DROP INDEX IF EXISTS idx_eval_cases_suite; DROP TABLE IF EXISTS eval_cases; DROP TABLE IF EXISTS eval_suites;";
+
+/// Migration descriptor for v31.
+#[must_use]
+pub const fn eval_suite_migration(version: i64) -> crate::db::Migration {
+    crate::db::Migration {
+        version,
+        name: "eval_suites",
+        up: SCHEMA_V31,
+        down: SCHEMA_V31_DOWN,
+    }
+}
+
+/// One eval suite.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvalSuite {
+    /// Suite id.
+    pub id: String,
+    /// Display name.
+    pub name: String,
+    /// Description.
+    pub description: String,
+    /// Cases in declaration order.
+    pub cases: Vec<EvalCase>,
+    /// Creation time.
+    pub created_at: String,
+}
+
+/// One eval case definition.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvalCase {
+    /// Stable case id within the suite.
+    pub case_id: String,
+    /// Bare executable name.
+    pub program: String,
+    /// Direct arguments.
+    pub args: Vec<String>,
+    /// Expected exit code.
+    pub expected_exit: i32,
+}
+
+/// Aggregate metrics for one suite.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EvalMetrics {
+    /// Suite id.
+    pub suite_id: String,
+    /// Number of receipts.
+    pub total: u64,
+    /// Passing receipts.
+    pub passed: u64,
+    /// Failing receipts.
+    pub failed: u64,
+}
+
+/// Inserts a suite and its cases in one transaction.
+pub fn create_suite(connection: &Connection, suite: &EvalSuite) -> rusqlite::Result<()> {
+    let transaction = connection.unchecked_transaction()?;
+    transaction.execute(
+        "INSERT INTO eval_suites(id, name, description, created_at) VALUES (?1,?2,?3,?4)",
+        params![suite.id, suite.name, suite.description, suite.created_at],
+    )?;
+    for case in &suite.cases {
+        let args_json = serde_json::to_string(&case.args)
+            .map_err(|error| rusqlite::Error::ToSqlConversionFailure(Box::new(error)))?;
+        transaction.execute(
+            "INSERT INTO eval_cases(id, suite_id, case_id, program, args_json, expected_exit, created_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7)",
+            params![
+                uuid::Uuid::now_v7().to_string(),
+                suite.id,
+                case.case_id,
+                case.program,
+                args_json,
+                i64::from(case.expected_exit),
+                suite.created_at,
+            ],
+        )?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
+/// Lists suites with their cases, newest first.
+pub fn list_suites(connection: &Connection, limit: u32) -> Result<Vec<EvalSuite>, rusqlite::Error> {
+    let mut statement = connection.prepare(
+        "SELECT id, name, description, created_at FROM eval_suites
+         ORDER BY created_at DESC, id DESC LIMIT ?1",
+    )?;
+    let rows = statement.query_map(params![i64::from(limit)], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, String>(3)?,
+        ))
+    })?;
+    let mut suites = Vec::new();
+    for row in rows {
+        let (id, name, description, created_at) = row?;
+        let mut case_statement = connection.prepare(
+            "SELECT case_id, program, args_json, expected_exit FROM eval_cases
+             WHERE suite_id = ?1 ORDER BY case_id ASC",
+        )?;
+        let cases = case_statement
+            .query_map(params![id], |row| {
+                let args_json: String = row.get(2)?;
+                let args = serde_json::from_str(&args_json).map_err(|error| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        2,
+                        rusqlite::types::Type::Text,
+                        Box::new(error),
+                    )
+                })?;
+                Ok(EvalCase {
+                    case_id: row.get(0)?,
+                    program: row.get(1)?,
+                    args,
+                    expected_exit: i32::try_from(row.get::<_, i64>(3)?).unwrap_or(0),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        suites.push(EvalSuite {
+            id,
+            name,
+            description,
+            cases,
+            created_at,
+        });
+    }
+    Ok(suites)
+}
+
+/// Reads one suite with cases.
+pub fn get_suite(connection: &Connection, suite_id: &str) -> Result<Option<EvalSuite>, rusqlite::Error> {
+    let suites = list_suites(connection, 1_000)?;
+    Ok(suites.into_iter().find(|suite| suite.id == suite_id))
+}
+
+/// Aggregate pass/fail metrics for one suite.
+pub fn suite_metrics(
+    connection: &Connection,
+    suite_id: &str,
+) -> Result<EvalMetrics, rusqlite::Error> {
+    let (total, passed): (i64, i64) = connection.query_row(
+        "SELECT COUNT(*), COALESCE(SUM(passed), 0) FROM eval_runs WHERE suite_id = ?1",
+        params![suite_id],
+        |row| Ok((row.get(0)?, row.get(1)?)),
+    )?;
+    let total = u64::try_from(total).unwrap_or(0);
+    let passed = u64::try_from(passed).unwrap_or(0);
+    Ok(EvalMetrics {
+        suite_id: suite_id.to_owned(),
+        total,
+        passed,
+        failed: total.saturating_sub(passed),
+    })
+}
+
 /// Creates a receipt from an observed job terminal state.
 #[must_use]
 pub fn receipt_from_observation(
