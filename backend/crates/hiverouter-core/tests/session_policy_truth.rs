@@ -516,6 +516,39 @@ async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
     assert_eq!(refusal["code"], "E_SCHEMA_INVALID");
 }
 
+// --- local skills routes ----------------------------------------------------
+
+#[tokio::test]
+async fn skill_routes_list_metadata_and_refuse_unknown_ids() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let skills_dir = server.state.config.data_dir.join("skills");
+    fs::create_dir_all(&skills_dir).expect("skills dir");
+    fs::write(
+        skills_dir.join("review.json"),
+        r#"{"id":"review","name":"Review","description":"Verify before claiming","instructions":"Run tests."}"#,
+    )
+    .expect("skill file");
+
+    let (status, list) = get(&server, "/api/skills").await;
+    assert_eq!(status, 200, "{list:?}");
+    assert_eq!(list["skills"].as_array().map(Vec::len), Some(1));
+    assert_eq!(list["skills"][0]["id"], "review");
+    assert_eq!(list["skills"][0]["name"], "Review");
+    assert!(
+        list["skills"][0].get("instructions").is_none(),
+        "list metadata must not expose instructions"
+    );
+
+    let (status, detail) = get(&server, "/api/skills/review").await;
+    assert_eq!(status, 200, "{detail:?}");
+    assert_eq!(detail["instructions"], "Run tests.");
+
+    let (status, refusal) = get(&server, "/api/skills/missing").await;
+    assert_eq!(status, 404);
+    assert_eq!(refusal["code"], "E_PATH_NOT_FOUND");
+}
+
 // --- POST /api/sessions/{id}/policy ---------------------------------------
 
 #[tokio::test]
