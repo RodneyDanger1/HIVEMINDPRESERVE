@@ -584,8 +584,8 @@ async fn ws_submit_prompt_refuses_an_explicit_unknown_policy() {
     );
 }
 
-#[test]
-fn valid_session_and_policy_decode_and_the_engine_persists_them() {
+#[tokio::test]
+async fn valid_session_and_policy_decode_and_the_engine_persists_them() {
     // Build the exact envelope the UI would send; `handle_client_text` passes it
     // through `schema::decode_command`, so decoding here is the transport gate.
     let session_id = Uuid::now_v7().to_string();

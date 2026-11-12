@@ -261,10 +261,20 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
             "approval boot reaper failed; restart-orphaned rows may remain pending (no in-process waiter survives)"
         ),
     }
-    Arc::new(
+    let bridge =
         ToolsBridge::new_with_data_dir(&config.workspace_root, &config.data_dir, db.clone())
-            .with_side_effects_enabled(config.side_effects_enabled),
-    )
+            .with_side_effects_enabled(config.side_effects_enabled);
+    let bridge = match CheckpointJournal::open(db.clone(), &config.workspace_root) {
+        Ok(journal) => bridge.with_checkpoint_journal(journal),
+        Err(error) => {
+            tracing::warn!(
+                code = error.code(),
+                "checkpoint journal unavailable; approved file mutations will not be revertible"
+            );
+            bridge
+        }
+    };
+    Arc::new(bridge)
 }
 
 /// Builds the production executor. Missing key or disabled provider falls back
@@ -944,10 +954,9 @@ async fn session_detail(
         Ok(session) => session,
         Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
     };
-    let runs = match store.list_runs(200) {
+    let runs = match store.runs_for_session(&session.id) {
         Ok(runs) => runs
             .into_iter()
-            .filter(|run| run.session_id.as_deref() == Some(session.id.as_str()))
             .map(|run| {
                 serde_json::json!({
                     "run_id": run.id.to_string(),

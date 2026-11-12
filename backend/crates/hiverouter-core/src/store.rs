@@ -367,6 +367,12 @@ impl RunStore {
         session_id: Option<&str>,
         permission_policy: PermissionPolicy,
     ) -> Result<Run, Refusal> {
+        if let Some(session_id) = session_id {
+            let session = self.session(session_id)?;
+            if session.project_id != project_id {
+                return Err(Refusal::SessionNotFound);
+            }
+        }
         let now = Timestamp::now();
         let run = Run {
             id: RunId::new(),
@@ -458,13 +464,9 @@ impl RunStore {
                         project_id: row.get(1)?,
                         name: row.get(2)?,
                         workspace_root: row.get(3)?,
-                        permission_policy: PermissionPolicy::from_str(
-                            &row.get::<_, String>(4).unwrap_or_else(|_| "classic".to_owned()),
-                        ),
-                        created_at: Timestamp::parse(&row.get::<_, String>(5)?)
-                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
-                        updated_at: Timestamp::parse(&row.get::<_, String>(6)?)
-                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+                        permission_policy: policy_at(row, 4)?,
+                        created_at: timestamp_at(row, 5, "created_at")?,
+                        updated_at: timestamp_at(row, 6, "updated_at")?,
                     })
                 })?;
                 let mut sessions = Vec::new();
@@ -492,22 +494,9 @@ impl RunStore {
                                 project_id: row.get(1)?,
                                 name: row.get(2)?,
                                 workspace_root: row.get(3)?,
-                                permission_policy: PermissionPolicy::from_str(
-                                    &row.get::<_, String>(4)
-                                        .map_err(|_| rusqlite::Error::InvalidColumnType(4, "permission_policy".into(), rusqlite::types::Type::Text))?,
-                                ),
-                                created_at: Timestamp::parse(
-                                    &row.get::<_, String>(5).map_err(|_| {
-                                        rusqlite::Error::InvalidColumnType(5, "created_at".into(), rusqlite::types::Type::Text)
-                                    })?,
-                                )
-                                .map_err(|_| rusqlite::Error::InvalidColumnType(5, "created_at".into(), rusqlite::types::Type::Text))?,
-                                updated_at: Timestamp::parse(
-                                    &row.get::<_, String>(6).map_err(|_| {
-                                        rusqlite::Error::InvalidColumnType(6, "updated_at".into(), rusqlite::types::Type::Text)
-                                    })?,
-                                )
-                                .map_err(|_| rusqlite::Error::InvalidColumnType(6, "updated_at".into(), rusqlite::types::Type::Text))?,
+                                permission_policy: policy_at(row, 4)?,
+                                created_at: timestamp_at(row, 5, "created_at")?,
+                                updated_at: timestamp_at(row, 6, "updated_at")?,
                             })
                         },
                     )
@@ -524,6 +513,7 @@ impl RunStore {
         kind: &str,
         detail_json: &serde_json::Value,
     ) -> Result<(), Refusal> {
+        self.session(session_id)?;
         self.db
             .with_connection(|connection| {
                 connection.execute(
@@ -583,6 +573,7 @@ impl RunStore {
 
     /// Adds a todo to a session.
     pub fn add_todo(&self, session_id: &str, text: &str) -> Result<Todo, Refusal> {
+        self.session(session_id)?;
         let todo = Todo {
             id: Uuid::now_v7().to_string(),
             session_id: session_id.to_owned(),
@@ -620,8 +611,7 @@ impl RunStore {
                         seq: row.get::<_, i64>(2)? as u64,
                         text: row.get(3)?,
                         state: row.get(4)?,
-                        created_at: Timestamp::parse(&row.get::<_, String>(5)?)
-                            .unwrap_or_else(|_| Timestamp::from_unix_secs(0)),
+                        created_at: timestamp_at(row, 5, "created_at")?,
                     })
                 })?;
                 let mut todos = Vec::new();
@@ -691,6 +681,24 @@ impl RunStore {
                         row_to_run,
                     )
                     .optional()
+            })
+            .map_err(map)
+    }
+
+    /// Lists runs bound to one session, newest first.
+    pub fn runs_for_session(&self, session_id: &str) -> Result<Vec<Run>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, project_id, prompt, status, error_code, created_at, updated_at, session_id, permission_policy
+                     FROM runs WHERE session_id = ?1 ORDER BY created_at DESC, id DESC",
+                )?;
+                let rows = statement.query_map(params![session_id], row_to_run)?;
+                let mut runs = Vec::new();
+                for row in rows {
+                    runs.push(row?);
+                }
+                Ok(runs)
             })
             .map_err(map)
     }
@@ -3098,6 +3106,28 @@ fn hyper_summary_rows(
         entries.push(row?);
     }
     Ok(entries)
+}
+
+fn timestamp_at(
+    row: &rusqlite::Row<'_>,
+    index: usize,
+    field: &str,
+) -> rusqlite::Result<Timestamp> {
+    let raw: String = row.get(index)?;
+    Timestamp::parse(&raw).map_err(|_| {
+        rusqlite::Error::InvalidColumnType(index, field.to_owned(), rusqlite::types::Type::Text)
+    })
+}
+
+fn policy_at(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<PermissionPolicy> {
+    let raw: String = row.get(index)?;
+    PermissionPolicy::from_str_strict(&raw).ok_or_else(|| {
+        rusqlite::Error::InvalidColumnType(
+            index,
+            "permission_policy".to_owned(),
+            rusqlite::types::Type::Text,
+        )
+    })
 }
 
 fn row_to_run(row: &rusqlite::Row<'_>) -> rusqlite::Result<Run> {

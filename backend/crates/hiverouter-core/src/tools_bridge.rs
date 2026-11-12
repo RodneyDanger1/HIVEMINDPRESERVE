@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use hiverouter_contract::command;
-use hiverouter_contract::{event, Refusal, RunId, TaskId, Timestamp};
+use hiverouter_contract::{event, PermissionPolicy, Refusal, RunId, TaskId, Timestamp};
 use hiverouter_tools::approval::{ApprovalRequest, ApprovalResolution};
 use hiverouter_tools::git::{Git, GitDiffRequest, GitLogRequest};
 use hiverouter_tools::jail::WorkspaceJail;
@@ -46,6 +46,7 @@ pub struct ToolsBridge {
     jail_error: Option<String>,
     gate: hiverouter_tools::approval::ApprovalGate,
     workspace_root: PathBuf,
+    data_dir: Option<PathBuf>,
     db: Arc<Database>,
     /// The one open append-only ledger per directory: a single instance keeps
     /// the per-file monotonic `seq` counter and its write lock meaningful across
@@ -94,6 +95,7 @@ impl ToolsBridge {
             jail_error,
             gate: hiverouter_tools::approval::ApprovalGate::new(),
             workspace_root: workspace_root.to_path_buf(),
+            data_dir: None,
             db,
             ledger: Mutex::new(None),
             side_effects_enabled: true,
@@ -118,7 +120,9 @@ impl ToolsBridge {
             data_dir.to_path_buf(),
             Self::approval_ledger_dir(data_dir),
         ];
-        Self::new_with_denied_paths(workspace_root, &denied, db)
+        let mut bridge = Self::new_with_denied_paths(workspace_root, &denied, db);
+        bridge.data_dir = Some(data_dir.to_path_buf());
+        bridge
     }
 
     /// Replaces the denied data directory on an existing bridge.
@@ -134,6 +138,7 @@ impl ToolsBridge {
         let (jail, jail_error) = Self::open_jail_with_denies(&self.workspace_root, &denied);
         self.jail = jail;
         self.jail_error = jail_error;
+        self.data_dir = Some(data_dir.to_path_buf());
         self
     }
 
@@ -270,10 +275,57 @@ impl ToolsBridge {
     /// # Errors
     /// `E_INTERNAL_ERROR` when the count cannot be read.
     pub fn approval_count_for_run(&self, run_id: RunId) -> Result<u64, Refusal> {
+        // Policy auto-grants are audited decisions, not human waits. Counting
+        // them against MAX_APPROVAL_WAITS_PER_RUN would block a trusted run
+        // after eight edits even though no operator prompt ever occurred.
         self.db.with_connection_refusal(|conn| {
-            hiverouter_tools::approval::count_for_run(conn, run_id)
-                .map_err(|error| error.refusal())
+            let count: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM approvals
+                     WHERE run_id = ?1 AND COALESCE(reason, '') NOT LIKE 'policy:%'",
+                    rusqlite::params![run_id.to_string()],
+                    |row| row.get(0),
+                )
+                .map_err(|error| ToolError::from(error).refusal())?;
+            u64::try_from(count).map_err(|_| Refusal::InternalError)
         })
+    }
+
+    /// Issues and immediately resolves one single-use policy grant. The grant is
+    /// bound to the exact run/tool_call/tool/args and is ledgers as
+    /// `reason = policy:<name>` before the execution path consumes it. This is
+    /// not an approval bypass: `execute_approved_bound` still performs preflight,
+    /// bound-grant CAS, jail and at-most-once checks.
+    pub fn grant_policy_approval(
+        &self,
+        run_id: RunId,
+        task_id: TaskId,
+        tool_call_id: &str,
+        tool: &str,
+        args: &serde_json::Value,
+        policy: PermissionPolicy,
+    ) -> Result<String, Refusal> {
+        let request = self.request_model_tool_approval(
+            run_id,
+            task_id,
+            tool_call_id,
+            tool,
+            args,
+        )?;
+        let nonce = request.nonce.ok_or(Refusal::ApprovalRequired)?;
+        let payload = command::ApprovalResolve {
+            approval_id: request.approval_id,
+            nonce,
+            decision: "approve".to_owned(),
+            reason: Some(format!("policy:{}", policy.as_str())),
+        };
+        let ledger_dir = self
+            .data_dir
+            .as_ref()
+            .map(|data_dir| Self::approval_ledger_dir(data_dir))
+            .ok_or(Refusal::InternalError)?;
+        self.resolve_approval_ledgered(&payload, &ledger_dir)?;
+        Ok(request.approval_id.to_string())
     }
 
     /// Verifies and consumes the execution grant for one side-effect tool call.

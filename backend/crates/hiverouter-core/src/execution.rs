@@ -2908,7 +2908,13 @@ impl RunEngine {
                                                 ),
                                             )
                                         }
-                                        _ => {
+                                        tool_loop::PolicyDecision::Execute => {
+                                            self.execute_policy_granted(
+                                                run, task, &plan, token,
+                                            )
+                                            .await?
+                                        }
+                                        tool_loop::PolicyDecision::AskApproval => {
                                             // D12: count the attempt before the wait so a
                                             // deny/timeout cannot retry for free.
                                             self.db
@@ -3555,6 +3561,56 @@ impl RunEngine {
 
     /// Approve path: persist Running, then one granted-executor call
     /// (preflight -> single-use grant CAS -> exactly one effect).
+    async fn execute_policy_granted(
+        &self,
+        run: &Run,
+        task: &TaskRecord,
+        plan: &ToolCallPlan,
+        token: &CancellationToken,
+    ) -> Result<ToolExecution, Refusal> {
+        let tools = self.tools.as_ref().ok_or(Refusal::InternalError)?;
+        let tier = task_agent_tier(task);
+        if let Err(refusal) = self.authorize_tool_call(task, plan) {
+            return Ok(ToolExecution::refused(
+                plan.tool_call_id.clone(),
+                refusal.code(),
+                format!(
+                    "the policy-granted tool {:?} is not authorized for task role {:?}",
+                    plan.tool, task.role
+                ),
+            ));
+        }
+        let approval_id = tools.grant_policy_approval(
+            run.id,
+            task.id,
+            &plan.tool_call_id,
+            &plan.tool,
+            &plan.args,
+            run.permission_policy,
+        )?;
+        let executed = tools
+            .execute_approved_bound(
+                &self.shell_policy,
+                &self.tool_registry,
+                tier,
+                run.id,
+                &approval_id,
+                &plan.tool_call_id,
+                &plan.tool,
+                &plan.args,
+                Some(token),
+            )
+            .await?;
+        Ok(match executed {
+            hiverouter_tools::executor::ExecutedTool::Ok { text } => {
+                ToolExecution::ok(plan.tool_call_id.clone(), text)
+            }
+            hiverouter_tools::executor::ExecutedTool::Refused { code, detail } => {
+                ToolExecution::refused(plan.tool_call_id.clone(), code, detail)
+            }
+        })
+    }
+
     async fn resume_and_execute(
         &self,
         run: &Run,
