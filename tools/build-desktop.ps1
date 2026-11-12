@@ -69,9 +69,16 @@ Get-ChildItem -LiteralPath $outDir -Filter 'HiveMindLauncher-*.exe' -File -Error
 Copy-Item -LiteralPath $launcherExe -Destination (Join-Path $outDir 'HiveMind.exe') -Force
 Remove-Item -LiteralPath $launcherExe -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath $server -Destination $outDir -Force
-foreach ($script in @('set-provider-key.ps1', 'set-provider-profile.ps1')) {
+foreach ($script in @(
+    'set-provider-key.ps1',
+    'set-provider-profile.ps1',
+    'hivemind-cli.mjs',
+    'hivemind.cmd',
+    'hivemind.ps1'
+)) {
     $source = Join-Path $root "tools\$script"
     if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $outDir -Force }
+    else { throw "required packaged tool is missing: $source" }
 }
 @"
 HiveMind portable desktop build
@@ -96,6 +103,12 @@ The key is never written into this folder, source, command lines, or logs.
 
 Install for this user (shortcuts, first-run setup):
   powershell -ExecutionPolicy Bypass -File install-desktop.ps1
+
+The adjacent agent-native CLI is `hivemind.cmd` (Node >= 22.12 required):
+  hivemind.cmd status --json
+  hivemind.cmd run --prompt "..." --json
+  hivemind.cmd jobs --json
+  hivemind.cmd --help
 
 No Tauri, no Visual Studio, no MSVC Build Tools are required.
 The UI is the same embedded web/dist served by the Rust binary.

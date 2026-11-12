@@ -44,7 +44,7 @@ Copy-Item -LiteralPath $server -Destination $InstallRoot -Force
 if (Test-Path -LiteralPath (Join-Path $source 'README.txt')) {
     Copy-Item -LiteralPath (Join-Path $source 'README.txt') -Destination $InstallRoot -Force
 }
-foreach ($extra in @('set-provider-key.ps1', 'set-provider-profile.ps1', 'CHECKSUMS.txt', 'BUILD.json')) {
+foreach ($extra in @('set-provider-key.ps1', 'set-provider-profile.ps1', 'hivemind-cli.mjs', 'hivemind.cmd', 'hivemind.ps1', 'CHECKSUMS.txt', 'BUILD.json')) {
     $candidate = Join-Path $root "tools\$extra"
     if (-not (Test-Path -LiteralPath $candidate)) { $candidate = Join-Path $source $extra }
     if (Test-Path -LiteralPath $candidate) {
