@@ -261,6 +261,16 @@ fn build_tools(db: &Arc<Database>, config: &Config) -> Arc<ToolsBridge> {
             "approval boot reaper failed; restart-orphaned rows may remain pending (no in-process waiter survives)"
         ),
     }
+    match db.with_connection(|connection| crate::jobs::reconcile_running_jobs(connection)) {
+        Ok(0) => {}
+        Ok(reconciled) => tracing::warn!(
+            reconciled,
+            "marked restart-orphaned background jobs failed; no old child handle survives"
+        ),
+        Err(error) => tracing::error!(
+            "job boot reconciliation failed; persisted jobs may claim running without an owner: {error}"
+        ),
+    }
     let bridge =
         ToolsBridge::new_with_data_dir(&config.workspace_root, &config.data_dir, db.clone())
             .with_side_effects_enabled(config.side_effects_enabled);

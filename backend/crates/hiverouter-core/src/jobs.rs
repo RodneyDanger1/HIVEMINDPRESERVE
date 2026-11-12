@@ -85,6 +85,24 @@ pub const fn job_migration(version: i64) -> crate::db::Migration {
     }
 }
 
+/// Marks any snapshot left `running` by a previous process as failed. A new
+/// process cannot own the old child handle; pretending the job still runs would
+/// be a fabricated success. Returns the number of reconciled rows.
+pub fn reconcile_running_jobs(connection: &Connection) -> rusqlite::Result<usize> {
+    let now = Timestamp::now();
+    connection.execute(
+        "UPDATE jobs
+         SET state = 'failed',
+             ended_at = ?1,
+             output_tail = output_tail || ?2
+         WHERE state = 'running'",
+        params![
+            now.as_str(),
+            "\n[process not recovered after server restart; job marked failed]\n"
+        ],
+    )
+}
+
 /// Persists one terminal (or live) snapshot. Upsert by id is idempotent.
 pub fn persist_job(connection: &Connection, snapshot: &JobSnapshot) -> rusqlite::Result<()> {
     let args_json = serde_json::to_string(&snapshot.args).map_err(|error| {

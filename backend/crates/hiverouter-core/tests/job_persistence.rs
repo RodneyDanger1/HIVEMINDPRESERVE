@@ -5,7 +5,7 @@ use std::sync::Arc;
 use hiverouter_contract::Timestamp;
 use hiverouter_core::db::{Database, MIGRATIONS};
 use hiverouter_core::jobs::{
-    list_persisted_jobs, persist_job, JobOutput, JobSnapshot, JobState,
+    list_persisted_jobs, persist_job, reconcile_running_jobs, JobOutput, JobSnapshot, JobState,
 };
 
 fn snapshot(id: &str, state: JobState, ended_at: Option<Timestamp>) -> JobSnapshot {
@@ -17,7 +17,7 @@ fn snapshot(id: &str, state: JobState, ended_at: Option<Timestamp>) -> JobSnapsh
         cwd: ".".to_owned(),
         state,
         pid: Some(4242),
-        exit_code: Some(0),
+        exit_code: if state.is_terminal() { Some(0) } else { None },
         started_at: Timestamp::now(),
         ended_at,
         timeout_ms: 300_000,
@@ -71,4 +71,34 @@ fn v28_records_terminal_jobs_and_reads_them_back() {
     let live = stored.iter().find(|job| job.id == "job-running").expect("running job");
     assert_eq!(live.state, JobState::Failed);
     assert_eq!(live.exit_code, Some(1));
+}
+
+#[test]
+fn boot_reconciliation_marks_restart_orphaned_running_jobs_failed() {
+    let temp = tempfile::tempdir().expect("temp");
+    let db = Arc::new(Database::open(&temp.path().join("hive.db")).expect("db"));
+    db.migrate().expect("migrate");
+    let running = snapshot("job-orphan", JobState::Running, None);
+    db.with_connection(|connection| persist_job(connection, &running))
+        .expect("persist running job");
+
+    let reconciled = db
+        .with_connection(|connection| reconcile_running_jobs(connection))
+        .expect("reconcile");
+    assert_eq!(reconciled, 1);
+
+    let stored = db
+        .with_connection(|connection| list_persisted_jobs(connection, 10))
+        .expect("list jobs");
+    let job = stored.iter().find(|job| job.id == "job-orphan").expect("job");
+    assert_eq!(job.state, JobState::Failed);
+    assert!(job.ended_at.is_some(), "reconciled job needs a terminal time");
+    assert_eq!(job.exit_code, None, "no exit code is invented");
+    assert!(job.output.tail.contains("process not recovered after server restart"));
+    assert_eq!(
+        db.with_connection(|connection| reconcile_running_jobs(connection))
+            .expect("second reconcile"),
+        0,
+        "reconciliation must be idempotent"
+    );
 }
