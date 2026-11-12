@@ -115,9 +115,26 @@ pub fn load_authorized_lessons(path: &std::path::Path) -> Vec<String> {
     let Ok(text) = std::fs::read_to_string(path) else {
         return Vec::new();
     };
+    // A rollback line removes the same proposal from the prompt set; otherwise
+    // the earlier applied line would keep injecting a rolled-back lesson.
+    let rolled_back: std::collections::HashSet<String> = text
+        .lines()
+        .filter_map(|line| serde_json::from_str::<serde_json::Value>(line).ok())
+        .filter(|value| value.get("state").and_then(serde_json::Value::as_str) == Some("rolled_back_lesson"))
+        .filter_map(|value| value.get("proposal_id").and_then(serde_json::Value::as_str).map(str::to_owned))
+        .collect();
     text.lines()
         .filter(|line| !line.trim().is_empty())
         .take(64)
+        .filter(|line| {
+            let Some(value) = serde_json::from_str::<serde_json::Value>(line).ok() else {
+                return false;
+            };
+            value
+                .get("proposal_id")
+                .and_then(serde_json::Value::as_str)
+                .is_none_or(|proposal_id| !rolled_back.contains(proposal_id))
+        })
         .filter_map(|line| {
             let value = serde_json::from_str::<serde_json::Value>(line).ok()?;
             // Boot trust is receipt-bound: a hand-written lesson line without a

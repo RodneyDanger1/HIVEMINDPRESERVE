@@ -24,6 +24,7 @@ pub mod graph;
 pub mod handshake;
 pub mod history;
 pub mod http;
+pub mod learning;
 pub mod planner;
 pub mod prompts;
 pub mod provider_executor;

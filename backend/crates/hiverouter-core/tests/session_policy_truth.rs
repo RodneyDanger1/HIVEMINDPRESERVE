@@ -560,6 +560,71 @@ async fn executed_eval_records_real_exit_and_never_fakes_pass() {
     assert_eq!(list["eval_runs"].as_array().map(Vec::len), Some(2));
 }
 
+#[tokio::test]
+async fn lesson_candidate_requires_two_passing_evals_and_rolls_back() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let eval_body = serde_json::json!({
+        "suite_id": "lesson",
+        "case_id": "cargo",
+        "program": "cargo.exe",
+        "args": ["--version"],
+        "expected_exit_code": 0
+    });
+    let (status, baseline) = post(&server, "/api/eval/run", &eval_body).await;
+    assert_eq!(status, 201, "baseline: {baseline:?}");
+    let (status, candidate_eval) = post(&server, "/api/eval/run", &eval_body).await;
+    assert_eq!(status, 201, "candidate: {candidate_eval:?}");
+    let baseline_id = baseline["id"].as_str().expect("baseline id");
+    let candidate_eval_id = candidate_eval["id"].as_str().expect("candidate id");
+
+    let (status, candidate) = post(
+        &server,
+        "/api/learning/candidates",
+        &serde_json::json!({
+            "candidate_key": "verify-first",
+            "title": "verify every mutation",
+            "body": "After a mutation, run tests before claiming success.",
+            "baseline_eval_id": baseline_id,
+            "candidate_eval_id": candidate_eval_id
+        }),
+    )
+    .await;
+    assert_eq!(status, 201, "candidate: {candidate:?}");
+    let candidate_id = candidate["id"].as_str().expect("candidate id");
+
+    let (status, active) = post(
+        &server,
+        &format!("/api/learning/candidates/{candidate_id}/activate"),
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(status, 200, "activate: {active:?}");
+    assert_eq!(active["status"], "active");
+    let lesson_path = server
+        .state
+        .config
+        .data_dir
+        .join("evolution")
+        .join("LESSONS.jsonl");
+    let lessons = hiverouter_core::execution::load_authorized_lessons(&lesson_path);
+    assert_eq!(lessons.len(), 1, "activated lesson: {lessons:?}");
+    assert!(lessons[0].contains("run tests before claiming success"));
+
+    let (status, rolled) = post(
+        &server,
+        &format!("/api/learning/candidates/{candidate_id}/rollback"),
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(status, 200, "rollback: {rolled:?}");
+    assert_eq!(rolled["status"], "rolled_back");
+    assert!(
+        hiverouter_core::execution::load_authorized_lessons(&lesson_path).is_empty(),
+        "a rolled-back lesson must not be injected into prompts"
+    );
+}
+
 // --- unknown job refusal ----------------------------------------------------
 
 #[tokio::test]
@@ -692,7 +757,7 @@ async fn session_policy_update_refuses_bad_input_and_unknown_sessions() {
     assert_eq!(response["code"], "E_SESSION_NOT_FOUND", "{response}");
 }
 
-// --- v24 -> v27 migration --------------------------------------------------
+// --- v24 -> v30 migration --------------------------------------------------
 
 fn seed_v24(database: &Database) {
     database
@@ -732,7 +797,7 @@ fn table_names(database: &Database) -> Vec<String> {
 }
 
 #[test]
-fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
+fn v24_database_migrates_to_v30_without_losing_legacy_rows() {
     let database = Arc::new(Database::open_in_memory().expect("in-memory db"));
     seed_v24(&database);
     assert_eq!(database.schema_version().expect("version"), 24);
@@ -772,8 +837,8 @@ fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
         .expect("seed v24 rows");
 
     let migrated = database.migrate().expect("migrate to head");
-    assert_eq!(migrated, 29, "the CAP head is v29 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval)");
-    assert_eq!(database.schema_version().expect("version"), 29);
+    assert_eq!(migrated, 30, "the CAP head is v30 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval, 30 lessons)");
+    assert_eq!(database.schema_version().expect("version"), 30);
     let applied = database.applied_migrations().expect("applied migrations");
     for (version, name) in [
         (25_i64, "sessions_policy_todos"),
@@ -781,6 +846,7 @@ fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
         (27, "checkpoint_journal"),
         (28, "jobs"),
         (29, "executed_eval"),
+        (30, "lesson_candidates"),
     ] {
         assert!(
             applied.iter().any(|(applied_version, applied_name, _)| {
@@ -801,10 +867,11 @@ fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
         "checkpoint_blobs",
         "jobs",
         "eval_runs",
+        "lesson_candidates",
     ] {
         assert!(
             tables.iter().any(|name| name == expected),
-            "{expected} missing after v24 -> v29: {tables:?}"
+            "{expected} missing after v24 -> v30: {tables:?}"
         );
     }
 
@@ -861,7 +928,7 @@ fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
         PermissionPolicy::Trusted
     );
 
-    // Reversibility: 29 -> 24 -> 29 must retain the legacy rows and restore
+    // Reversibility: 30 -> 24 -> 30 must retain the legacy rows and restore
     // the classic default on the forward pass.
     assert_eq!(database.migrate_down_to(24).expect("down to v24"), 24);
     let legacy_rows: i64 = database
@@ -874,7 +941,7 @@ fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
         })
         .expect("legacy row after down");
     assert_eq!(legacy_rows, 1, "the down migration must not delete legacy runs");
-    assert_eq!(database.migrate().expect("re-up to head"), 29);
+    assert_eq!(database.migrate().expect("re-up to head"), 30);
     let after_roundtrip = store.get_run(run_id).expect("legacy run after roundtrip");
     assert_eq!(after_roundtrip.project_id, "legacy-project");
     assert_eq!(

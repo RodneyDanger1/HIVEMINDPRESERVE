@@ -725,6 +725,18 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             post(rollback_evolution_lesson),
         )
         .route("/api/evolution/lessons", get(evolution_lessons))
+        .route(
+            "/api/learning/candidates",
+            get(learning_candidates).post(learning_candidate_create),
+        )
+        .route(
+            "/api/learning/candidates/{candidate_id}/activate",
+            post(learning_activate),
+        )
+        .route(
+            "/api/learning/candidates/{candidate_id}/rollback",
+            post(learning_rollback),
+        )
         .route("/api/a2a/pending", get(a2a_pending))
         .route("/api/a2a/messages", get(a2a_messages))
         .route("/api/remotes", get(remote_list).post(remote_create))
@@ -1347,6 +1359,166 @@ async fn job_kill(
         }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
+}
+
+async fn learning_candidates(State(state): State<Arc<AppState>>) -> Response {
+    match state.db.with_connection(|connection| {
+        crate::learning::list_candidates(connection, 100)
+    }) {
+        Ok(candidates) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "candidates": candidates })),
+        )
+            .into_response(),
+        Err(error) => {
+            tracing::warn!("lesson candidate list failed: {error}");
+            refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError)
+        }
+    }
+}
+
+async fn learning_candidate_create(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let field = |name: &str, max: usize| {
+        body.get(name)
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty() && value.chars().count() <= max)
+            .map(ToOwned::to_owned)
+    };
+    let Some(candidate_key) = field("candidate_key", 120) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(title) = field("title", 400) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(body_text) = field("body", 8_000) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(baseline_eval_id) = field("baseline_eval_id", 80) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(candidate_eval_id) = field("candidate_eval_id", 80) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    if baseline_eval_id == candidate_eval_id {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let candidate = crate::learning::LessonCandidate {
+        id: uuid::Uuid::now_v7().to_string(),
+        candidate_key,
+        title,
+        body: body_text,
+        baseline_eval_id,
+        candidate_eval_id,
+        status: "pending".to_owned(),
+        created_at: hiverouter_contract::Timestamp::now().as_str().to_owned(),
+        activated_at: None,
+        rolled_back_at: None,
+    };
+    match state.db.with_connection(|connection| {
+        crate::learning::create_candidate(connection, &candidate)
+    }) {
+        Ok(()) => (StatusCode::CREATED, Json(candidate)).into_response(),
+        Err(error) => {
+            tracing::warn!("lesson candidate refused: {error}");
+            refusal_response(StatusCode::CONFLICT, &Refusal::InternalError)
+        }
+    }
+}
+
+async fn learning_activate(
+    State(state): State<Arc<AppState>>,
+    Path(candidate_id): Path<String>,
+) -> Response {
+    let path = evolution_lesson_path(&state);
+    let outcome = state.db.with_connection(|connection| {
+        let candidate = crate::learning::get_candidate(connection, &candidate_id)?;
+        let Some(candidate) = candidate else {
+            return Ok(None);
+        };
+        if candidate.status != "pending"
+            || !crate::learning::evals_passed(
+                connection,
+                &candidate.baseline_eval_id,
+                &candidate.candidate_eval_id,
+            )?
+        {
+            return Ok(None);
+        }
+        Ok(Some(candidate))
+    });
+    let candidate = match outcome {
+        Ok(Some(candidate)) => candidate,
+        Ok(None) => return refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
+        Err(error) => {
+            tracing::warn!("lesson activation read failed: {error}");
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError);
+        }
+    };
+    let receipt_sha256 = match state.db.with_connection(|connection| {
+        connection.query_row(
+            "SELECT output_sha256 FROM eval_runs WHERE id = ?1",
+            rusqlite::params![candidate.candidate_eval_id],
+            |row| row.get::<_, String>(0),
+        )
+    }) {
+        Ok(hash) => hash,
+        Err(_) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError),
+    };
+    let line = crate::learning::applied_lesson_line(&candidate, &receipt_sha256);
+    if let Err(refusal) = append_lesson_line(&path, &line) {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+    }
+    match state.db.with_connection(|connection| {
+        crate::learning::activate_candidate(connection, &candidate_id)
+    }) {
+        Ok(Some(active)) => {
+            state.engine.reload_authorized_lessons(&path);
+            (StatusCode::OK, Json(active)).into_response()
+        }
+        Ok(None) => refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
+        Err(error) => {
+            tracing::warn!("lesson activation write failed: {error}");
+            refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError)
+        }
+    }
+}
+
+async fn learning_rollback(
+    State(state): State<Arc<AppState>>,
+    Path(candidate_id): Path<String>,
+) -> Response {
+    let path = evolution_lesson_path(&state);
+    match state.db.with_connection(|connection| {
+        crate::learning::rollback_candidate(connection, &candidate_id)
+    }) {
+        Ok(Some(candidate)) => {
+            let _ = append_lesson_line(&path, &crate::learning::rolled_back_line(&candidate));
+            state.engine.reload_authorized_lessons(&path);
+            (StatusCode::OK, Json(candidate)).into_response()
+        }
+        Ok(None) => refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired),
+        Err(error) => {
+            tracing::warn!("lesson rollback failed: {error}");
+            refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError)
+        }
+    }
+}
+
+fn append_lesson_line(path: &std::path::Path, line: &str) -> Result<(), Refusal> {
+    use std::io::Write as _;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|_| Refusal::InternalError)?;
+    }
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|_| Refusal::InternalError)?;
+    writeln!(file, "{line}").map_err(|_| Refusal::InternalError)
 }
 
 async fn eval_runs_list(State(state): State<Arc<AppState>>) -> Response {
