@@ -49,8 +49,6 @@ pub fn command_samples() -> Vec<Command> {
         Command::TemplateInsert(TemplateInsert {
             template_id: "template-1".to_owned(),
             project_id: "project-1".to_owned(),
-            session_id: None,
-            permission_policy: None,
         }),
         Command::HistoryRevisionSet(HistoryRevisionSet {
             run_id: RunId::new(),

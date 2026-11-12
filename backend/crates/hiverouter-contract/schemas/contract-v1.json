@@ -123,12 +123,57 @@
         "project_id": {
           "description": "Project/workspace the run belongs to.",
           "type": "string"
+        },
+        "session_id": {
+          "description": "Optional session binding; old clients omit it.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "permission_policy": {
+          "description": "Optional explicit permission policy; old clients omit it and get `classic`.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PermissionPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
         "text",
         "project_id"
-      ]
+      ],
+      "$defs": {
+        "PermissionPolicy": {
+          "description": "Permission policy for a run.",
+          "oneOf": [
+            {
+              "description": "Current behavior: every Mutate/Execute/Network asks.",
+              "type": "string",
+              "const": "classic"
+            },
+            {
+              "description": "Read-only: no writes or commands.",
+              "type": "string",
+              "const": "plan"
+            },
+            {
+              "description": "Workspace edits auto-approved; shell/network ask.",
+              "type": "string",
+              "const": "standard"
+            },
+            {
+              "description": "Explicit opt-in: full local coding without per-action prompts.",
+              "type": "string",
+              "const": "trusted"
+            }
+          ]
+        }
+      }
     },
     "SPAWN_SUB_HIVE": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
