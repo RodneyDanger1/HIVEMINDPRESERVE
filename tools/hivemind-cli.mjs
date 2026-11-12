@@ -150,6 +150,18 @@ const COMMANDS = {
     transport: 'http',
     args: [ARG('limit', 'number', false, 'Max runs (default 20, max 100).')],
   },
+  jobs: {
+    summary: 'List background jobs (live + persisted), newest first.',
+    safety: 'read',
+    transport: 'http',
+    args: [ARG('limit', 'number', false, 'Max jobs (default 50, max 200).')],
+  },
+  job: {
+    summary: 'Read one background job by id.',
+    safety: 'read',
+    transport: 'http',
+    args: [ARG('job', 'uuid', true, 'Background job id.')],
+  },
   revisions: {
     summary: 'List committed revisions for one run.',
     safety: 'read',
@@ -1509,6 +1521,18 @@ async function executeRead(command, options, baseUrl) {
       const body = await httpJson(baseUrl, '/api/history/runs');
       const limit = limitOption(options, 20);
       return { ...body, runs: (body.runs || []).slice(0, limit), truncated: (body.runs || []).length > limit };
+    }
+    case 'jobs': {
+      const body = await httpJson(baseUrl, '/api/jobs');
+      const limit = limitOption(options, 50, 200);
+      return { ...body, jobs: (body.jobs || []).slice(0, limit), truncated: (body.jobs || []).length > limit };
+    }
+    case 'job': {
+      const jobId = String(options.job || '').trim();
+      if (!/^[0-9a-fA-F-]{8,80}$/.test(jobId)) {
+        throw usageFailure('--job must be a job id', 'Use the id returned by POST /api/jobs.');
+      }
+      return httpJson(baseUrl, `/api/jobs/${encodeURIComponent(jobId)}`);
     }
     case 'revisions':
       return httpJson(baseUrl, `/api/history/runs/${runIdOption(options)}/revisions`);
