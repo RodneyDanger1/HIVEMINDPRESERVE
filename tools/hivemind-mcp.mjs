@@ -12,10 +12,33 @@
  * Mutation is deliberately absent: approval-gated actions belong to the CLI/UI
  * where the human decision is recorded, not to an MCP client.
  */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import process from 'node:process';
 
 const CLI_VERSION = '1.0.0';
-const DEFAULT_URL = process.env.HIVEROUTER_URL || 'http://127.0.0.1:8099';
+const DATA_DIR = path.resolve(
+  process.env.HIVEROUTER_DATA_DIR ||
+    path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'HiveMind'),
+);
+function cliStateUrl() {
+  try {
+    const state = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'agent-cli-state.json'), 'utf8'));
+    return typeof state.url === 'string' ? state.url : null;
+  } catch {
+    return null;
+  }
+}
+function launchToken() {
+  try {
+    const token = fs.readFileSync(path.join(DATA_DIR, 'launch.token'), 'utf8').trim();
+    return token.length > 0 ? token : null;
+  } catch {
+    return null;
+  }
+}
+const DEFAULT_URL = process.env.HIVEROUTER_URL || cliStateUrl() || 'http://127.0.0.1:8099';
 const TOOLS = [
   {
     name: 'hivemind_status',
@@ -56,8 +79,11 @@ function error(id, code, message) {
 
 async function localFetch(pathname) {
   const base = DEFAULT_URL.replace(/\/$/, '');
+  const launch = launchToken();
+  const sessionHeaders = { Accept: 'application/json' };
+  if (launch) sessionHeaders['x-hivemind-launch'] = launch;
   const sessionResponse = await fetch(`${base}/api/session`, {
-    headers: { Accept: 'application/json' },
+    headers: sessionHeaders,
   });
   if (!sessionResponse.ok) {
     throw new Error(`session unavailable (HTTP ${sessionResponse.status})`);
@@ -65,6 +91,7 @@ async function localFetch(pathname) {
   const session = await sessionResponse.json();
   const headers = { Accept: 'application/json' };
   if (session.token) headers.Authorization = `Bearer ${session.token}`;
+  if (launch) headers['x-hivemind-launch'] = launch;
   const response = await fetch(`${base}${pathname}`, { headers });
   if (!response.ok) {
     throw new Error(`${pathname} returned HTTP ${response.status}`);

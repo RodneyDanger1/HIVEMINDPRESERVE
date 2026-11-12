@@ -46,6 +46,8 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const LOCAL_APP_DATA = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 const DEFAULT_DATA_DIR = process.env.HIVEROUTER_DATA_DIR || path.join(LOCAL_APP_DATA, 'HiveMind');
 const HUMAN = Boolean(process.stdout.isTTY) && process.env.NO_COLOR === undefined;
+/** Per-launch token written by the desktop launcher; never printed. */
+let ACTIVE_LAUNCH_TOKEN = null;
 
 // ---------------------------------------------------------------------------
 // Command registry: the single source of truth for discovery, help and schema.
@@ -622,6 +624,15 @@ function dataDirectory(options) {
   return path.resolve(options.dataDir || process.env.HIVEROUTER_DATA_DIR || DEFAULT_DATA_DIR);
 }
 
+function readLaunchToken(options) {
+  try {
+    const token = fs.readFileSync(path.join(dataDirectory(options), 'launch.token'), 'utf8').trim();
+    return token.length > 0 ? token : null;
+  } catch {
+    return null;
+  }
+}
+
 function statePath(options) {
   return path.join(dataDirectory(options), 'agent-cli-state.json');
 }
@@ -783,8 +794,18 @@ function sleep(ms) {
  * never reaches argv, logs, state, or output; only the child environment gets
  * it. Returns null when absent/unreadable so startup stays honest and degraded.
  */
-function readDesktopProviderKey(dataDir) {
-  if (process.env.DEEPSEEK_API_KEY) return null;
+function providerKeyEnvName(dataDir) {
+  try {
+    const profile = JSON.parse(fs.readFileSync(path.join(dataDir, 'provider.json'), 'utf8'));
+    if (profile && profile.api_type === 'tokenlabs') return 'HIVEROUTER_API_KEY';
+  } catch {
+    // missing/invalid profile keeps the documented DeepSeek default
+  }
+  return 'DEEPSEEK_API_KEY';
+}
+
+function readDesktopProviderKey(dataDir, envName) {
+  if (process.env[envName]) return null;
   const keyPath = path.join(dataDir, 'provider.key');
   if (!fs.existsSync(keyPath)) return null;
   const escaped = keyPath.replace(/'/g, "''");
@@ -903,8 +924,9 @@ async function startServer(options) {
   const stderrFd = fs.openSync(stderrPath, 'a');
   const childEnv = { ...process.env };
   if (!options.dryRun) {
-    const desktopKey = readDesktopProviderKey(dataDir);
-    if (desktopKey !== null) childEnv.DEEPSEEK_API_KEY = desktopKey;
+    const keyEnv = providerKeyEnvName(dataDir);
+    const desktopKey = readDesktopProviderKey(dataDir, keyEnv);
+    if (desktopKey !== null) childEnv[keyEnv] = desktopKey;
   }
   const providerProfile = path.join(dataDir, 'provider.json');
   if (fs.existsSync(providerProfile) && !childEnv.HIVEROUTER_PROVIDER_FILE) {
@@ -1108,6 +1130,7 @@ async function fetchWithTimeout(url, { timeoutMs = 15_000, ...init } = {}) {
 async function httpJson(baseUrl, route, { method = 'GET', body, timeoutMs } = {}) {
   const url = new URL(route, baseUrl);
   const headers = { accept: 'application/json', origin: baseUrl.origin };
+  if (ACTIVE_LAUNCH_TOKEN) headers['x-hivemind-launch'] = ACTIVE_LAUNCH_TOKEN;
   if (body !== undefined) headers['content-type'] = 'application/json';
   const response = await fetchWithTimeout(url, {
     method,
@@ -1986,7 +2009,10 @@ async function executeLocal(command, options, baseUrl) {
 }
 
 function openUi(baseUrl, options) {
-  const url = baseUrl.href.replace(/\/$/, '');
+  const base = baseUrl.href.replace(/\/$/, '');
+  const url = ACTIVE_LAUNCH_TOKEN
+    ? `${base}/?launch=${encodeURIComponent(ACTIVE_LAUNCH_TOKEN)}`
+    : base;
   const browser = options.browser || findBrowser();
   if (!browser) {
     throw cliError('E_BROWSER_NOT_FOUND', 'No Edge or Chrome executable found.', 'Pass --browser <path>.', EXIT.REFUSAL);
@@ -2146,6 +2172,7 @@ async function main() {
   try {
     parsed = parseArgs(process.argv.slice(2));
     options = parsed.options;
+    ACTIVE_LAUNCH_TOKEN = readLaunchToken(options);
     const argv = [...parsed.positional];
     const command = argv.shift();
     if (options.version || command === '-V' || command === '--version') {
