@@ -140,7 +140,7 @@ The installed app boots and serves its UI/read/operator surfaces with
 - No HiveWire implementation in this repository; `ws.rs` is the UI WebSocket.
 - No network remotes; remotes are in-process fixtures; daemons have no live
   scheduler.
-- No headless `run` CLI, MCP server, extension API, or documented HTTP contract.
+- The packaged agent-native CLI (`hivemind.cmd`) supports headless status/run/read/mutate commands; the MCP stdio server exposes read-only `hivemind_status`, `hivemind_runs`, and `hivemind_jobs`. There is no extension API or fully documented HTTP contract.
 - No OS sandbox; `shell_exec` is approval-gated arbitrary code.
 - No live 40-node provider run, clean-profile install proof, or strict release
   seal; no keyed live proof is claimed in this repository.
@@ -249,9 +249,9 @@ HiveMind is **not yet a replacement for DeepSeek Harness, Hermes, Claude Code,
 Codex, Grok Build, or Antigravity**. It now has local sessions, a checkpoint
 journal for approved file mutations, a repo-index module, and a registered
 coding tool surface and bounded repo-context injection, with a mounted
-read-only file tree/editor, but it still lacks diff review, terminal/PTY,
-plan/todo, headless CLI and MCP; its monitor is review-only and its learning loop
-is not executed-eval gated.
+read-only file tree/editor, packaged headless CLI and read-only MCP stdio, but it
+still lacks diff review, terminal/PTY, plan/todo and MCP mutation tools; its
+monitor is review-only and its learning loop is not executed-eval gated.
 
 The mandatory-first capability plan is
 [HIVEMIND-FINISH-PLAN-v3.md](docs/plans/HIVEMIND-FINISH-PLAN-v3.md) §0, with the detailed
