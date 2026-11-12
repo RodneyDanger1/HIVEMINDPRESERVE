@@ -4,14 +4,25 @@
  * The splash is intentionally a real boot surface, not a decorative cover:
  * it reports the live socket state, disappears only after the connection is
  * settled (or a bounded wait expires), and never blocks an offline UI forever.
+ * It can always be dismissed early with Escape or the skip control.
+ *
  * Its material is the HiveMind "HoneyGlass" system: a frosted glass pane
  * (Glassmorphism), an inset neumorphic loading well, and one liquid-glass
  * honeycomb focal cluster. All color comes from the FigCraft token mirror.
  */
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useUiStore } from '../state/context';
-
-type SplashPhase = 'visible' | 'leaving' | 'gone';
+import { STRINGS } from '../state/strings';
+import {
+  SPLASH_FADE_MS,
+  SPLASH_MIN_VISIBLE_MS,
+  splashConnectionLabel,
+  splashLeaveDelayMs,
+  splashProgress,
+  splashSettled,
+  splashStatusLine,
+  type SplashPhase,
+} from './splashPhase';
 
 const HEX_CELLS = [
   { x: 50, y: 10, size: 24, delay: '0ms' },
@@ -25,52 +36,55 @@ const HEX_CELLS = [
   { x: 30, y: 78, size: 16, delay: '100ms' },
 ] as const;
 
-function connectionLabel(connection: string): string {
-  if (connection === 'open') return 'The hive is awake';
-  if (connection === 'error' || connection === 'closed') return 'Runtime is offline';
-  if (connection === 'reconnecting') return 'Rejoining the hive';
-  return 'Bringing the hive online';
-}
-
 export function HiveMindSplash() {
   const connection = useUiStore((state) => state.connection);
   const [phase, setPhase] = useState<SplashPhase>('visible');
   const [minimumElapsed, setMinimumElapsed] = useState(false);
-  const settled = connection === 'open' || connection === 'error' || connection === 'closed';
+  const [skipped, setSkipped] = useState(false);
+  const settled = splashSettled(connection);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMinimumElapsed(true), 1_600);
+    const timer = window.setTimeout(() => setMinimumElapsed(true), SPLASH_MIN_VISIBLE_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!minimumElapsed) return undefined;
-    const canLeave = settled;
-    const timer = window.setTimeout(
-      () => setPhase('leaving'),
-      canLeave ? 0 : 4_400,
-    );
+    if (phase !== 'visible') return undefined;
+    const delay = splashLeaveDelayMs({ minimumElapsed, settled, skipped });
+    if (delay === null) return undefined;
+    const timer = window.setTimeout(() => setPhase('leaving'), delay);
     return () => window.clearTimeout(timer);
-  }, [minimumElapsed, settled]);
+  }, [minimumElapsed, settled, skipped, phase]);
+
+  // Escape always dismisses the veil: a startup screen must never trap the operator.
+  useEffect(() => {
+    if (phase !== 'visible') return undefined;
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setSkipped(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'leaving') return undefined;
-    const timer = window.setTimeout(() => setPhase('gone'), 420);
+    const timer = window.setTimeout(() => setPhase('gone'), SPLASH_FADE_MS);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
   if (phase === 'gone') return null;
 
-  const label = connectionLabel(connection);
-  const progress = settled ? 100 : connection === 'connecting' ? 46 : 18;
+  const label = splashConnectionLabel(connection);
+  const progress = splashProgress(connection);
 
   return (
     <div
       className={`splash-root${phase === 'leaving' ? ' splash-leaving' : ''}`}
       data-splash="hivemind"
-      role="status"
-      aria-live="polite"
-      aria-label="HiveMind is starting"
+      data-phase={phase}
     >
       <div className="splash-ambient" aria-hidden="true" />
       <div className="splash-glass" data-testid="hivemind-splash">
@@ -108,7 +122,7 @@ export function HiveMindSplash() {
             local hive that plans, delegates, remembers, and reports what actually happened.
           </p>
 
-          <div className="splash-loading">
+          <div className="splash-loading" role="status" aria-live="polite">
             <div className="splash-loading-label">
               <span className="splash-dot" aria-hidden="true" />
               <span>{label}</span>
@@ -124,13 +138,22 @@ export function HiveMindSplash() {
             >
               <span className="splash-fill" style={{ width: `${progress}%` }} />
             </div>
-            <p className="splash-status">
-              {connection === 'open'
-                ? 'Connected to the local runtime. Opening the workspace.'
-                : connection === 'error' || connection === 'closed'
-                  ? 'The local runtime is offline. The workspace will open with a named refusal.'
-                  : 'Opening the local socket and loading the live hive state.'}
-            </p>
+            <p className="splash-status">{splashStatusLine(connection)}</p>
+            <button
+              type="button"
+              data-testid="splash-skip"
+              aria-label={STRINGS.splash.skipAria}
+              title={STRINGS.splash.skipHint}
+              onClick={() => setSkipped(true)}
+              className="type-mono-meta mt-2 cursor-pointer rounded-[var(--radius-pill)] border px-2.5 py-1"
+              style={{
+                borderColor: 'var(--color-hairline)',
+                background: 'var(--color-panel)',
+                color: 'var(--color-ink-700)',
+              }}
+            >
+              {STRINGS.splash.skip}
+            </button>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -15,13 +15,26 @@ namespace HiveMindLauncher
         private const string Host = "127.0.0.1";
         private const int FirstPort = 8099;
         private const int LastPort = 8199;
+        /// <summary>How many free ports to try when a start attempt loses a race.</summary>
+        private const int MaxStartAttempts = 3;
+        /// <summary>Per-attempt health bound. A healthy boot is measured at 2.7-5.5s.</summary>
+        private const int HealthTimeoutMs = 20000;
         private const string Edge = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
-        private const string Chrome = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+        private const string ChromeX86 = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
+        private const string ChromeX64 = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
         private const string KeyEntropy = "HiveMind.ProviderKey.v1";
+        /// <summary>Marker written into the /health body by the HiveMind server.</summary>
+        private const string HealthSchemaMarker = "\"schema\":\"hiverouter";
+        private const string HealthBootMarker = "\"boot_id\":";
 
         [STAThread]
         private static void Main()
         {
+            Process serverProcess = null;
+            string data = null;
+            bool ownsServer = false;
+            // The server must never be orphaned or left behind by an error path:
+            // every early return below runs this finally.
             try
             {
                 string server = ResolveServer();
@@ -35,85 +48,62 @@ namespace HiveMindLauncher
                     return;
                 }
 
-                string data = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "HiveMind");
+                data = ResolveDataRoot();
                 Directory.CreateDirectory(data);
                 string launchToken = LoadOrCreateLaunchToken(data);
+                string workspaceRoot = ResolveWorkspaceRoot(data);
 
-                int port = FindUsablePort();
+                int port = FindReusablePort();
+                string failure = null;
                 if (port == 0)
                 {
-                    MessageBox.Show(
-                        "No free loopback port was found between " + FirstPort + " and " + LastPort + ".",
-                        "HiveMind",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-                    return;
-                }
-                Process serverProcess = null;
-                if (!PortOpen(port))
-                {
-                    string workspaceRoot = ResolveWorkspaceRoot();
-                    var start = new ProcessStartInfo
+                    if (!TryStartServer(server, workspaceRoot, data, launchToken, out serverProcess, out port, out failure))
                     {
-                        FileName = server,
-                        Arguments = "--bind " + Host + ":" + port + " --data-dir \"" + data + "\" --workspace-root \"" + workspaceRoot + "\"",
-                        WorkingDirectory = workspaceRoot,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        // Never redirect without concurrent readers: a chatty child can
-                        // fill a pipe and deadlock before health is reachable.
-                        RedirectStandardOutput = false,
-                        RedirectStandardError = false,
-                    };
-                    ApplyProviderKey(start);
-                    start.EnvironmentVariables["HIVEROUTER_LAUNCH_TOKEN"] = launchToken;
-                    serverProcess = Process.Start(start);
-                    if (serverProcess == null || !WaitForHealth(port, 60000))
-                    {
-                        if (serverProcess != null && !serverProcess.HasExited)
-                        {
-                            serverProcess.Kill();
-                        }
                         MessageBox.Show(
-                            "HiveMind started but its local server did not become ready within 60 seconds.",
+                            "HiveMind could not start its local server.\n\n" + (failure ?? "No free loopback port was available between " + FirstPort + " and " + LastPort + "."),
                             "HiveMind",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
                         return;
                     }
+                    ownsServer = true;
                 }
 
-                string profile = Path.Combine(data, "window");
-                Directory.CreateDirectory(profile);
-                string browserPath = File.Exists(Edge) ? Edge : Chrome;
-                var browser = new ProcessStartInfo
+                WriteRuntimeFile(data, port, serverProcess);
+                bool trackableWindow;
+                Process window = LaunchWindow(port, launchToken, data, out trackableWindow, out failure);
+                if (window == null && !trackableWindow)
                 {
-                    FileName = browserPath,
-                    Arguments = "--app=http://" + Host + ":" + port
-                        + "/?launch=" + launchToken
-                        + " --window-size=1440,900 --user-data-dir=\"" + profile + "\"",
-                    UseShellExecute = false,
-                };
-                Process window = Process.Start(browser);
-                if (window != null)
-                {
-                    var openedAt = DateTime.UtcNow;
-                    window.WaitForExit();
-                    // If Edge handed the URL to an already-running HiveMind window,
-                    // its new process exits immediately; in that case the existing
-                    // window still owns the server and it must not be killed.
-                    var lifetime = DateTime.UtcNow - openedAt;
-                    if (serverProcess != null && lifetime.TotalSeconds >= 3 && !serverProcess.HasExited)
-                    {
-                        serverProcess.Kill();
-                    }
+                    MessageBox.Show(
+                        "HiveMind's server is running, but no browser window could be opened.\n\n" + failure,
+                        "HiveMind",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    // The server stays up: the user can open the printed URL later,
+                    // and the next launch reuses the healthy instance.
+                    ownsServer = false;
+                    return;
                 }
-                else if (serverProcess != null && !serverProcess.HasExited)
+                if (window == null)
                 {
-                    serverProcess.Kill();
+                    // The URL was handed to the default browser, which we cannot wait on.
+                    // Keep the server alive and let the launcher exit; the next launch
+                    // reuses it through the health probe.
+                    ownsServer = false;
+                    return;
                 }
+
+                var openedAt = DateTime.UtcNow;
+                window.WaitForExit();
+                // If Edge handed the URL to an already-running HiveMind window,
+                // its new process exits immediately; in that case the existing
+                // window still owns the server and it must not be killed.
+                var lifetime = DateTime.UtcNow - openedAt;
+                if (ShouldKillOwnedServer(ownsServer, serverProcess, lifetime))
+                {
+                    Kill(serverProcess);
+                }
+                ownsServer = false;
             }
             catch (Exception error)
             {
@@ -123,12 +113,162 @@ namespace HiveMindLauncher
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+            finally
+            {
+                if (ownsServer)
+                {
+                    Kill(serverProcess);
+                }
+                if (data != null)
+                {
+                    RemoveRuntimeFile(data);
+                }
+            }
+        }
+
+        private static bool ShouldKillOwnedServer(bool ownsServer, Process serverProcess, TimeSpan lifetime)
+        {
+            return ownsServer
+                && serverProcess != null
+                && lifetime.TotalSeconds >= 3
+                && !serverProcess.HasExited;
+        }
+
+        private static void Kill(Process process)
+        {
+            try
+            {
+                if (process != null && !process.HasExited)
+                {
+                    process.Kill();
+                }
+            }
+            catch
+            {
+                // A process that already exited is the expected outcome here.
+            }
         }
 
         /// <summary>
-        /// Loads the provider key from a DPAPI-encrypted per-user file and
-        /// injects it into the server child's environment. The key is never
-        /// written to source, a command line, a log, or stdout/stderr.
+        /// Data root: <c>install.json</c> beside the launcher (written by
+        /// install-desktop.ps1) wins, so a custom -DataRoot is honoured instead of
+        /// being silently replaced by the per-user default.
+        /// </summary>
+        private static string ResolveDataRoot()
+        {
+            string configured = ReadInstallValue("data_root");
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                return configured;
+            }
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HiveMind");
+        }
+
+        /// <summary>
+        /// Workspace root: explicit env override, then install.json, then
+        /// &lt;data&gt;\workspace. Installed data and the agent workspace stay per-user;
+        /// never point agents at the whole Documents folder or a developer checkout.
+        /// </summary>
+        private static string ResolveWorkspaceRoot(string data)
+        {
+            string configured = Environment.GetEnvironmentVariable("HIVEMIND_WORKSPACE_ROOT");
+            if (!string.IsNullOrWhiteSpace(configured) && Directory.Exists(configured))
+            {
+                return configured;
+            }
+            string installed = ReadInstallValue("workspace_root");
+            if (!string.IsNullOrWhiteSpace(installed))
+            {
+                Directory.CreateDirectory(installed);
+                return installed;
+            }
+            string workspace = Path.Combine(data, "workspace");
+            Directory.CreateDirectory(workspace);
+            return workspace;
+        }
+
+        private static string ReadInstallValue(string key)
+        {
+            try
+            {
+                var file = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "install.json");
+                if (!File.Exists(file))
+                {
+                    return null;
+                }
+                return ReadJsonString(File.ReadAllText(file), key);
+            }
+            catch
+            {
+                // A damaged install record falls back to the documented default.
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Reads one string value out of a small flat JSON object (install.json /
+        /// provider.json) without a JSON dependency, honouring JSON escapes.
+        /// </summary>
+        private static string ReadJsonString(string text, string key)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+            string marker = "\"" + key + "\"";
+            int index = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (index < 0)
+            {
+                return null;
+            }
+            int colon = text.IndexOf(':', index + marker.Length);
+            if (colon < 0)
+            {
+                return null;
+            }
+            int cursor = colon + 1;
+            while (cursor < text.Length && char.IsWhiteSpace(text[cursor]))
+            {
+                cursor++;
+            }
+            if (cursor >= text.Length || text[cursor] != '"')
+            {
+                return null;
+            }
+            var value = new StringBuilder();
+            for (int i = cursor + 1; i < text.Length; i++)
+            {
+                char current = text[i];
+                if (current == '\\' && i + 1 < text.Length)
+                {
+                    char escape = text[++i];
+                    switch (escape)
+                    {
+                        case 'n': value.Append('\n'); break;
+                        case 'r': value.Append('\r'); break;
+                        case 't': value.Append('\t'); break;
+                        case 'b': value.Append('\b'); break;
+                        case 'f': value.Append('\f'); break;
+                        default: value.Append(escape); break;
+                    }
+                    continue;
+                }
+                if (current == '"')
+                {
+                    string parsed = value.ToString();
+                    return parsed.Length == 0 ? null : parsed;
+                }
+                value.Append(current);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Loads or creates the per-launch secret that gates browser reads. The file
+        /// lives in the per-user data directory and is never logged or written into
+        /// the package folder.
         /// </summary>
         private static string LoadOrCreateLaunchToken(string data)
         {
@@ -153,19 +293,70 @@ namespace HiveMindLauncher
             return token;
         }
 
-        private static void ApplyProviderKey(ProcessStartInfo start)
+        /// <summary>
+        /// Records the live port so the installer and diagnostics do not have to
+        /// guess which port in 8099..8199 the launcher chose.
+        /// </summary>
+        private static void WriteRuntimeFile(string data, int port, Process serverProcess)
         {
-            var data = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "HiveMind");
-            var keyEnv = ResolveApiType(data) == "tokenlabs"
-                ? "HIVEROUTER_API_KEY"
-                : "DEEPSEEK_API_KEY";
+            try
+            {
+                var runtime = new StringBuilder();
+                runtime.Append("{\n");
+                runtime.Append("  \"port\": ").Append(port).Append(",\n");
+                runtime.Append("  \"pid\": ")
+                    .Append(serverProcess != null && !serverProcess.HasExited ? serverProcess.Id : 0)
+                    .Append(",\n");
+                runtime.Append("  \"started_at\": \"").Append(DateTime.UtcNow.ToString("o")).Append("\",\n");
+                runtime.Append("  \"data_root\": \"").Append(JsonEscape(data)).Append("\"\n");
+                runtime.Append("}\n");
+                File.WriteAllText(Path.Combine(data, "runtime.json"), runtime.ToString(), new UTF8Encoding(false));
+            }
+            catch
+            {
+                // The runtime record is a convenience; a locked data dir must not
+                // stop the app from starting.
+            }
+        }
+
+        private static void RemoveRuntimeFile(string data)
+        {
+            try
+            {
+                var file = Path.Combine(data, "runtime.json");
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
+            }
+            catch
+            {
+                // Stale runtime records are detected by probing the recorded port.
+            }
+        }
+
+        private static string JsonEscape(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        /// <summary>
+        /// Loads the provider key from a DPAPI-encrypted per-user file and
+        /// injects it into the server child's environment. The key is never
+        /// written to source, a command line, a log, or stdout/stderr.
+        /// </summary>
+        private static void ApplyProviderKey(ProcessStartInfo start, string data)
+        {
+            string apiType = ResolveApiType(data);
+            string keyEnv = apiType == "tokenlabs" ? "HIVEROUTER_API_KEY" : "DEEPSEEK_API_KEY";
             var key = LoadProviderKey(data, keyEnv);
             if (!string.IsNullOrWhiteSpace(key))
             {
                 start.EnvironmentVariables[keyEnv] = key;
             }
+            // The server resolves the profile from LOCALAPPDATA by default; point it
+            // at the same file this launcher read so a custom data root stays coherent.
+            start.EnvironmentVariables["HIVEROUTER_PROVIDER_FILE"] = Path.Combine(data, "provider.json");
         }
 
         private static string ResolveApiType(string data)
@@ -173,36 +364,23 @@ namespace HiveMindLauncher
             var configured = Environment.GetEnvironmentVariable("HIVEROUTER_API_TYPE");
             if (!string.IsNullOrWhiteSpace(configured))
             {
-                return configured.Equals("tokenlabs", StringComparison.OrdinalIgnoreCase)
-                    || configured.Equals("tokenlab", StringComparison.OrdinalIgnoreCase)
-                    ? "tokenlabs"
-                    : "deepseek";
+                return NormalizeApiType(configured);
             }
             try
             {
                 var profile = Path.Combine(data, "provider.json");
                 if (File.Exists(profile))
                 {
-                    var text = File.ReadAllText(profile);
-                    var marker = "\"api_type\"";
-                    var index = text.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-                    if (index >= 0)
+                    string text = File.ReadAllText(profile);
+                    string apiType = ReadJsonString(text, "api_type");
+                    if (!string.IsNullOrWhiteSpace(apiType))
                     {
-                        var colon = text.IndexOf(':', index + marker.Length);
-                        var first = colon < 0 ? -1 : text.IndexOf('"', colon + 1);
-                        var second = first < 0 ? -1 : text.IndexOf('"', first + 1);
-                        if (first >= 0 && second > first)
-                        {
-                            var value = text.Substring(first + 1, second - first - 1).Trim();
-                            return value.Equals("tokenlabs", StringComparison.OrdinalIgnoreCase)
-                                || value.Equals("tokenlab", StringComparison.OrdinalIgnoreCase)
-                                ? "tokenlabs"
-                                : "deepseek";
-                        }
+                        return NormalizeApiType(apiType);
                     }
-                    if (text.IndexOf("\"tokenlab\"", StringComparison.OrdinalIgnoreCase) >= 0)
+                    string name = ReadJsonString(text, "name");
+                    if (!string.IsNullOrWhiteSpace(name))
                     {
-                        return "tokenlabs";
+                        return NormalizeApiType(name);
                     }
                 }
             }
@@ -211,6 +389,16 @@ namespace HiveMindLauncher
                 // A damaged profile falls back to the documented DeepSeek default.
             }
             return "deepseek";
+        }
+
+        private static string NormalizeApiType(string value)
+        {
+            return value.Equals("tokenlabs", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("tokenlab", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("custom", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("external", StringComparison.OrdinalIgnoreCase)
+                ? "tokenlabs"
+                : "deepseek";
         }
 
         private static string LoadProviderKey(string data, string keyEnv)
@@ -235,25 +423,9 @@ namespace HiveMindLauncher
             return Environment.GetEnvironmentVariable(keyEnv) ?? string.Empty;
         }
 
-        private static string ResolveWorkspaceRoot()
-        {
-            string configured = Environment.GetEnvironmentVariable("HIVEMIND_WORKSPACE_ROOT");
-            if (!string.IsNullOrWhiteSpace(configured) && Directory.Exists(configured))
-            {
-                return configured;
-            }
-            // Installed data and agent workspace stay per-user; never point agents at
-            // the whole Documents folder or at a developer checkout.
-            string data = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "HiveMind");
-            string workspace = Path.Combine(data, "workspace");
-            Directory.CreateDirectory(workspace);
-            return workspace;
-        }
-
         private static string ResolveServer()
-        {            string besideLauncher = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hiverouter.exe");
+        {
+            string besideLauncher = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hiverouter.exe");
             if (File.Exists(besideLauncher))
             {
                 return besideLauncher;
@@ -273,21 +445,129 @@ namespace HiveMindLauncher
             return File.Exists(target) ? target : null;
         }
 
-        /// <summary>Reuses a healthy HiveMind or finds a free loopback port.</summary>
-        private static int FindUsablePort()
+        /// <summary>Reuses a healthy HiveMind server already listening in range.</summary>
+        private static int FindReusablePort()
         {
             for (int port = FirstPort; port <= LastPort; port++)
             {
-                if (!PortOpen(port))
-                {
-                    return port;
-                }
-                if (HealthOk(port))
+                if (PortOpen(port) && HealthIsHiveMind(port))
                 {
                     return port;
                 }
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Starts the server on the first free loopback port. A start attempt that
+        /// loses a race (another process grabbed the port, or a concurrent launcher
+        /// won) is retried on the next free port instead of being reported as a
+        /// 20-second "did not become ready" timeout.
+        /// </summary>
+        private static bool TryStartServer(
+            string server,
+            string workspaceRoot,
+            string data,
+            string launchToken,
+            out Process serverProcess,
+            out int port,
+            out string failure)
+        {
+            serverProcess = null;
+            port = 0;
+            failure = null;
+            int attempts = 0;
+            for (int candidate = FirstPort; candidate <= LastPort; candidate++)
+            {
+                if (PortOpen(candidate))
+                {
+                    continue;
+                }
+                if (attempts >= MaxStartAttempts)
+                {
+                    failure = "Gave up after " + attempts + " start attempts; the last error was: " + (failure ?? "unknown");
+                    return false;
+                }
+                attempts++;
+                if (TryStartOn(server, workspaceRoot, data, launchToken, candidate, out serverProcess, out failure))
+                {
+                    port = candidate;
+                    return true;
+                }
+            }
+            if (failure == null)
+            {
+                failure = "No free loopback port was found between " + FirstPort + " and " + LastPort + ".";
+            }
+            return false;
+        }
+
+        private static bool TryStartOn(
+            string server,
+            string workspaceRoot,
+            string data,
+            string launchToken,
+            int candidate,
+            out Process serverProcess,
+            out string failure)
+        {
+            serverProcess = null;
+            failure = null;
+            ProcessStartInfo start;
+            try
+            {
+                start = new ProcessStartInfo
+                {
+                    FileName = server,
+                    Arguments = "--bind " + Host + ":" + candidate + " --data-dir \"" + data + "\" --workspace-root \"" + workspaceRoot + "\"",
+                    WorkingDirectory = workspaceRoot,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    // Never redirect without concurrent readers: a chatty child can
+                    // fill a pipe and deadlock before health is reachable.
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                };
+                ApplyProviderKey(start, data);
+                start.EnvironmentVariables["HIVEROUTER_LAUNCH_TOKEN"] = launchToken;
+                serverProcess = Process.Start(start);
+            }
+            catch (Exception error)
+            {
+                failure = "The server process could not be started: " + error.Message;
+                serverProcess = null;
+                return false;
+            }
+            if (serverProcess == null)
+            {
+                failure = "The server process did not start.";
+                return false;
+            }
+            if (WaitForHealth(candidate, HealthTimeoutMs, serverProcess))
+            {
+                return true;
+            }
+            bool exited = serverProcess.HasExited;
+            int exitCode = 0;
+            if (exited)
+            {
+                try
+                {
+                    exitCode = serverProcess.ExitCode;
+                }
+                catch
+                {
+                    exitCode = 0;
+                }
+            }
+            Kill(serverProcess);
+            failure = exited
+                ? "hiverouter.exe exited with code " + exitCode + " before it became healthy on port " + candidate
+                    + ". A port conflict or an unwritable data directory (" + data + ") is the usual cause."
+                : "hiverouter.exe did not answer /health on port " + candidate + " within "
+                    + (HealthTimeoutMs / 1000) + " seconds.";
+            serverProcess = null;
+            return false;
         }
 
         private static bool PortOpen(int port)
@@ -296,7 +576,12 @@ namespace HiveMindLauncher
             {
                 using (var client = new TcpClient())
                 {
-                    client.Connect(Host, port);
+                    var connect = client.BeginConnect(Host, port, null, null);
+                    if (!connect.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(300)))
+                    {
+                        return false;
+                    }
+                    client.EndConnect(connect);
                     return true;
                 }
             }
@@ -306,34 +591,125 @@ namespace HiveMindLauncher
             }
         }
 
-        private static bool HealthOk(int port)
+        /// <summary>
+        /// True only for this product's /health: another local app listening in the
+        /// port range must not be mistaken for a HiveMind server.
+        /// </summary>
+        private static bool HealthIsHiveMind(int port)
+        {
+            string body = ReadHealthBody(port);
+            return body != null && HealthBodyIsHiveMind(body);
+        }
+
+        private static bool HealthBodyIsHiveMind(string body)
+        {
+            if (string.IsNullOrEmpty(body))
+            {
+                return false;
+            }
+            string compact = body.Replace(" ", string.Empty)
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty)
+                .Replace("\t", string.Empty);
+            return compact.IndexOf(HealthSchemaMarker, StringComparison.Ordinal) >= 0
+                && compact.IndexOf(HealthBootMarker, StringComparison.Ordinal) >= 0;
+        }
+
+        private static string ReadHealthBody(int port)
         {
             try
             {
-                using (var client = new WebClient())
+                var request = (HttpWebRequest)WebRequest.Create("http://" + Host + ":" + port + "/health");
+                request.Proxy = null;
+                request.Timeout = 1500;
+                request.ReadWriteTimeout = 1500;
+                request.KeepAlive = false;
+                using (var response = (HttpWebResponse)request.GetResponse())
+                using (var reader = new StreamReader(response.GetResponseStream()))
                 {
-                    client.DownloadString("http://" + Host + ":" + port + "/health");
-                    return true;
+                    return reader.ReadToEnd();
                 }
             }
             catch
             {
-                return false;
+                return null;
             }
         }
 
-        private static bool WaitForHealth(int port, int timeoutMs)
+        private static bool WaitForHealth(int port, int timeoutMs, Process serverProcess)
         {
             var until = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < until)
             {
-                if (HealthOk(port))
+                if (HealthIsHiveMind(port))
                 {
                     return true;
                 }
-                Thread.Sleep(300);
+                if (serverProcess != null && serverProcess.HasExited)
+                {
+                    return false;
+                }
+                Thread.Sleep(250);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Opens the UI in an app window. Returns the window process when it can be
+        /// tracked; when the URL is handed to the default browser,
+        /// <paramref name="trackable"/> is true and the process is null.
+        /// </summary>
+        private static Process LaunchWindow(
+            int port,
+            string launchToken,
+            string data,
+            out bool trackable,
+            out string failure)
+        {
+            trackable = false;
+            failure = null;
+            string url = "http://" + Host + ":" + port + "/?launch=" + launchToken;
+            string profile = Path.Combine(data, "window");
+            Directory.CreateDirectory(profile);
+            string[] candidates = { Edge, ChromeX86, ChromeX64 };
+            foreach (var browserPath in candidates)
+            {
+                if (!File.Exists(browserPath))
+                {
+                    continue;
+                }
+                try
+                {
+                    var browser = new ProcessStartInfo
+                    {
+                        FileName = browserPath,
+                        Arguments = "--app=" + url
+                            + " --window-size=1440,900 --user-data-dir=\"" + profile + "\"",
+                        UseShellExecute = false,
+                    };
+                    Process window = Process.Start(browser);
+                    if (window != null)
+                    {
+                        return window;
+                    }
+                }
+                catch (Exception error)
+                {
+                    failure = "The browser window could not be opened: " + error.Message;
+                }
+            }
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                trackable = true;
+                return null;
+            }
+            catch (Exception error)
+            {
+                failure = "No Edge or Chrome installation was found and the default browser could not open "
+                    + url + " (" + error.Message + "). Open that address manually.";
+                return null;
+            }
         }
     }
 }

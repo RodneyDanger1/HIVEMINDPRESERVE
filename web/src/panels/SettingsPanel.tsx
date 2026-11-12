@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { apiBaseUrl } from '../api/client';
+import { resolveProviderProfileForm, type ProviderProfileResponse } from '../api/providerProfile';
 import { fetchWithBoundTimeout } from '../api/http';
 import { failureText, httpFailure } from '../api/failure';
 import { STRINGS } from '../state/strings';
@@ -112,15 +113,6 @@ function readAmbientPreference(): number {
   }
 }
 
-type ProviderProfile = {
-  readonly name?: string;
-  readonly api_type?: string;
-  readonly base_url?: string;
-  readonly model?: string;
-  readonly wire_model?: string;
-  readonly key_env?: string;
-};
-
 /**
  * Saves the non-secret provider profile. The key is never typed here: it is
  * stored separately by tools\set-provider-key.ps1 (Windows DPAPI) and injected
@@ -143,16 +135,15 @@ function ProviderProfileEditor() {
     })
       .then(async (response) => {
         if (!response.ok) throw await httpFailure(response, 'GET /api/provider/profile');
-        const body = (await response.json()) as {
-          profile?: ProviderProfile | null;
-          active?: ProviderProfile;
-        };
-        const current = body.profile ?? body.active ?? null;
-        if (cancelled || current === null) return;
-        if (current.api_type !== undefined) setApiType(current.api_type);
-        setBaseUrl(current.base_url ?? '');
-        setWireModel(current.wire_model ?? '');
-        if (current.model !== undefined) setModel(current.model);
+        const body = (await response.json()) as ProviderProfileResponse;
+        if (cancelled) return;
+        // The saved file may omit fields the live server fills in (the installer
+        // writes no base_url for DeepSeek); show what the server is really using.
+        const form = resolveProviderProfileForm(body);
+        setApiType(form.apiType);
+        setBaseUrl(form.baseUrl);
+        setWireModel(form.wireModel);
+        setModel(form.model);
       })
       .catch((error: unknown) => {
         if (!cancelled) setNotice(failureText(error, 'Provider profile unavailable.'));
