@@ -1989,7 +1989,7 @@ async fn clear_run_memory(
         }
         Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
-    match state.engine.store.clear_run_memory(run_id) {
+    match state.engine.store.clear_run_memory(run_id, "http", reason) {
         Ok(receipt) => (
             [(header::CACHE_CONTROL, "no-store")],
             Json(serde_json::json!({

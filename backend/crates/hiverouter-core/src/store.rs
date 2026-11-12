@@ -444,6 +444,20 @@ impl RunStore {
                         session.updated_at.as_str()
                     ],
                 )?;
+                connection.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES (?1, ?2, 'session_created', ?3, ?4)",
+                    params![
+                        Uuid::now_v7().to_string(),
+                        session.id,
+                        serde_json::json!({
+                            "project_id": session.project_id,
+                            "policy": session.permission_policy.as_str()
+                        })
+                        .to_string(),
+                        Timestamp::now().as_str()
+                    ],
+                )?;
                 Ok(())
             })
             .map_err(map)?;
@@ -559,10 +573,24 @@ impl RunStore {
         let changed = self
             .db
             .with_connection(|connection| {
-                connection.execute(
+                let now = Timestamp::now();
+                let changed = connection.execute(
                     "UPDATE sessions SET permission_policy = ?1, updated_at = ?2 WHERE id = ?3",
-                    params![policy.as_str(), Timestamp::now().as_str(), session_id],
-                )
+                    params![policy.as_str(), now.as_str(), session_id],
+                )?;
+                if changed == 1 {
+                    connection.execute(
+                        "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                         VALUES (?1, ?2, 'policy_changed', ?3, ?4)",
+                        params![
+                            Uuid::now_v7().to_string(),
+                            session_id,
+                            serde_json::json!({ "policy": policy.as_str() }).to_string(),
+                            now.as_str()
+                        ],
+                    )?;
+                }
+                Ok(changed)
             })
             .map_err(map)?;
         if changed == 0 {
@@ -588,6 +616,16 @@ impl RunStore {
                     "INSERT INTO todos(id, session_id, seq, text, state, created_at)
                      VALUES (?1, ?2, (SELECT COALESCE(MAX(seq), 0) + 1 FROM todos WHERE session_id = ?2), ?3, 'open', ?4)",
                     params![todo.id, todo.session_id, todo.text, todo.created_at.as_str()],
+                )?;
+                connection.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES (?1, ?2, 'todo_added', ?3, ?4)",
+                    params![
+                        Uuid::now_v7().to_string(),
+                        todo.session_id,
+                        serde_json::json!({ "todo_id": todo.id, "text": todo.text }).to_string(),
+                        todo.created_at.as_str()
+                    ],
                 )?;
                 Ok(())
             })
@@ -2063,7 +2101,12 @@ impl RunStore {
     ///
     /// # Errors
     /// Database refusal.
-    pub fn clear_run_memory(&self, run_id: RunId) -> Result<MemoryClearReceipt, Refusal> {
+    pub fn clear_run_memory(
+        &self,
+        run_id: RunId,
+        actor: &str,
+        reason: &str,
+    ) -> Result<MemoryClearReceipt, Refusal> {
         self.db
             .with_connection(|connection| {
                 let transaction = connection.transaction()?;
@@ -2080,6 +2123,25 @@ impl RunStore {
                     "UPDATE memory_banks SET closed_at = ?2, rev = rev + 1
                      WHERE run_id = ?1 AND closed_at IS NULL",
                     params![run_id.to_string(), Timestamp::now().as_str()],
+                )?;
+                // The wipe itself is the audit event; keep it in the same
+                // transaction as the deletes so a clear cannot be unlogged.
+                append_memory_journal(
+                    &transaction,
+                    &run_id.to_string(),
+                    "",
+                    "",
+                    "clear_run",
+                    "operator",
+                    Some(actor),
+                    &serde_json::json!({
+                        "reason": reason,
+                        "flat_rows": flat_rows,
+                        "bank_entries": bank_entries,
+                        "banks_closed": banks_closed,
+                    })
+                    .to_string(),
+                    Timestamp::now().as_str(),
                 )?;
                 transaction.commit()?;
                 Ok(MemoryClearReceipt {

@@ -8,12 +8,13 @@ It is **not AGI**, not a self-modifying agent, and not yet a general coding harn
 **Working tree:** `1.2.0-dev` (unreleased). **Sealed release:** `1.1.0` — the sealed
 version remains the release authority; the working tree is pre-release and unsealed.
 
-**Truth baseline (observed 2026-11-11):** product commit `806251b`; audit
-commit `44e0535`; installed build `806251b` (`dirty:false`); schema `hiverouter.v1`
-version **24**; `/health` is `degraded` with `E_KEY_MISSING`; docs truth checker
-**19/19 PASS**; latest offline battery **8/8 PASS** at `1129349` with
-`working_tree_dirty:true` (audit docs in the tree), so it is **not** a clean
-release seal.
+**Truth baseline (observed 2026-11-12, integration branch):** capability work is
+on `integration/capability-absorb`; schema is **v28** (sessions/policy, repo index,
+checkpoints, jobs); the registry has **22 tools / 81 grants / 80 named refusals**;
+`/health` is `degraded` with `E_KEY_MISSING` in a keyless profile; docs truth
+checker **19/19 PASS**; the full backend workspace gate passes. This is
+**pre-release** work, not a clean release seal; the sealed `1.1.0` remains the
+release authority.
 
 Read the full evidence and boundary before relying on any claim:
 [truth report](docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md),

@@ -2361,7 +2361,11 @@ impl RunEngine {
         // result. The root row was seeded as Running at plan time and kept out
         // of the queued consumer, so its graph state is repaired to Running
         // here and snapshotted before the provider call.
-        if has_aggregators || plan.nodes.len() > 1 {
+        // Root control can add a branch to a single-node plan, so the gate must
+        // use the post-dispatch task set, not only the pre-control plan size.
+        let dispatched_tasks = self.store.tasks_for_run(run.id)?.len();
+        let post_plan_work = dispatched_tasks > plan.nodes.len() + 1;
+        if has_aggregators || plan.nodes.len() > 1 || post_plan_work {
             if token.is_cancelled() {
                 return Err(Refusal::ToolCancelled);
             }
@@ -4916,9 +4920,12 @@ impl RunEngine {
                                 .as_ref()
                                 .and_then(|remote| remote.list_remotes().ok())
                                 .is_some_and(|remotes| {
+                                    // The DB unique index is global for active
+                                    // names; checking only this root's owner
+                                    // would let a cross-run collision fail the
+                                    // whole run at insert time.
                                     remotes.iter().any(|remote| {
-                                        remote.owner_id == root.id.to_string()
-                                            && remote.display_name.eq_ignore_ascii_case(name)
+                                        remote.display_name.eq_ignore_ascii_case(name)
                                     })
                                 })
                         });
@@ -6079,6 +6086,11 @@ impl RunEngine {
             self.store
                 .append_message(run.id, ChatRole::Assistant, &text)?;
         }
+        // Persist the result before publishing success/completion: a record
+        // failure must not leave a Completed task with no result.
+        self.store.record_task_result(run.id, task.id, &text)?;
+        self.store
+            .update_task_state(task.id, AgentState::Completed)?;
         self.publish(
             Event::ReplyDone(ReplyDone {
                 run_id: run.id,
@@ -6087,9 +6099,6 @@ impl RunEngine {
             Some(run.id),
             None,
         );
-        self.store
-            .update_task_state(task.id, AgentState::Completed)?;
-        self.store.record_task_result(run.id, task.id, &text)?;
         self.add_run_usage(run.id, reply.usage);
         if !text.trim().is_empty() && memory_text_is_safe(&text) {
             let bounded: String = text.chars().take(2_000).collect();

@@ -60,6 +60,14 @@ pub struct ToolsBridge {
     checkpoint_journal: Option<CheckpointJournal>,
 }
 
+/// Appends the SQLite sidecar suffix to the whole path (`foo.sqlite` ->
+/// `foo.sqlite-wal`) instead of replacing the extension.
+fn sqlite_sidecar(path: &Path, suffix: &str) -> PathBuf {
+    let mut value = path.as_os_str().to_os_string();
+    value.push(suffix);
+    PathBuf::from(value)
+}
+
 impl ToolsBridge {
     /// Creates a bridge that denies the conventional `<workspace_root>/data`
     /// subtree **and** the directory containing the SQLite database.
@@ -126,8 +134,8 @@ impl ToolsBridge {
         let db_path = db.path();
         for candidate in [
             db_path.to_path_buf(),
-            db_path.with_extension("db-wal"),
-            db_path.with_extension("db-shm"),
+            sqlite_sidecar(db_path, "-wal"),
+            sqlite_sidecar(db_path, "-shm"),
         ] {
             denied.push(candidate);
         }

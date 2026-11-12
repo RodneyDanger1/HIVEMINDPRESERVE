@@ -296,6 +296,16 @@ async fn memory_clear_is_run_scoped_and_requires_a_terminal_run() {
     .await;
     assert_eq!(status, 200, "clear: {response}");
     assert!(response.contains("\"bank_entries\":1"), "{response}");
+    let journal = server
+        .state
+        .engine
+        .store
+        .memory_journal_for_run(run.id, 10)
+        .expect("journal");
+    assert!(
+        journal.iter().any(|(action, _, _, _)| action == "clear_run"),
+        "the destructive clear must leave a journal row: {journal:?}"
+    );
     assert!(
         server
             .state
