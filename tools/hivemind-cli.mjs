@@ -923,6 +923,7 @@ async function startServer(options) {
 }
 
 async function stopServer(options) {
+  requireYes(options, 'stop');
   const state = readState(options);
   if (state === null) {
     if (options.pid) {
@@ -1888,8 +1889,11 @@ async function executeLocal(command, options, baseUrl) {
       } catch (error) {
         report.checks.push({ name: 'server', ok: false, code: error.code, detail: error.message });
       }
+      // `state` is optional (a server can be managed externally); a missing
+      // provider key is not "ready" for live work. Transport-only readiness is
+      // reported separately by `status`.
       report.ready = report.checks.every((check) =>
-        check.name === 'provider_key' || check.name === 'state' ? true : check.ok,
+        check.name === 'state' ? true : check.ok,
       );
       return report;
     }
@@ -2056,9 +2060,9 @@ function humanHelp(command) {
     'Usage: hivemind-cli <command> [options]',
     '',
     'Lifecycle: start, stop, restart, status, doctor, open, logs',
-    'Read: health, diagnose, runs, revisions, state, messages, agent-messages, roster, profiles, memory, projects, models, balance, usage',
-    'Mutate: submit, run, cancel, kill, rewire, spawn-subhive, approve, deny, template',
-    'Protocol: select-revision, settings, file-tree, file-read, chat-pin, watch',
+    'Read: health, diagnose, runtime, runs, revisions, state, messages, agent-messages, roster, profiles, memory, projects, models, balance, usage, jobs, job',
+    'Mutate: submit, run, cancel, kill, rewire, spawn-subhive, approve, deny, template, settings, file-tree, file-read',
+    'Protocol: select-revision, chat-pin, watch',
     'Discovery: commands, schema, version',
     '',
     'Global: --json --format json|table|jsonl --url --data-dir --timeout-ms --dry-run --yes --no-color',
