@@ -286,6 +286,22 @@ pub enum CheckpointError {
         /// Journal sequence.
         seq: u64,
     },
+    /// The entry cannot be deleted in the requested mode: a void was asked for a
+    /// completed mutation, or a no-op discard was asked for an entry whose
+    /// after-state differs from its pre-image.
+    ///
+    /// A completed entry is never deleted: once the mutation ran its pre-image
+    /// is the only copy of the operator's bytes, so dropping it would destroy
+    /// the ability to restore.
+    #[error("checkpoint ({run_id}, {seq}) cannot be removed: {reason}")]
+    NotRemovable {
+        /// Run id as stored.
+        run_id: String,
+        /// Journal sequence.
+        seq: u64,
+        /// Why the row was kept.
+        reason: &'static str,
+    },
     /// The file no longer matches the recorded after-state (external drift).
     #[error(
         "checkpoint drift at {path:?}: expected {expected}, found {actual}; \
@@ -326,6 +342,7 @@ impl CheckpointError {
             Self::CheckpointNotFound { .. }
             | Self::DuplicateSeq { .. }
             | Self::Incomplete { .. }
+            | Self::NotRemovable { .. }
             | Self::Drift { .. }
             | Self::Corrupt(_)
             | Self::Io(_) => Refusal::InternalError,
@@ -640,6 +657,58 @@ impl CheckpointJournal {
                 "checkpoint ({run_id}, {seq}) completed concurrently with a different after-state"
             )))
         }
+    }
+
+    /// Deletes an **incomplete** journal entry: a captured pre-image whose
+    /// mutation never ran.
+    ///
+    /// This is the approval hook's cleanup path. The pre-image is captured
+    /// before the execution grant is verified; when the grant is refused no
+    /// effect happened, so the entry records a mutation that never occurred.
+    /// Deleting it keeps `restore_to` usable (an incomplete newest entry would
+    /// refuse the whole rewind) and drops the pre-image blob once no other entry
+    /// references it.
+    ///
+    /// The call is idempotent: a missing entry returns `Ok(false)`. A completed
+    /// entry is **never** deleted - once the mutation ran its pre-image is the
+    /// only copy of the operator's bytes - and is refused as
+    /// [`CheckpointError::NotRemovable`].
+    ///
+    /// # Errors
+    /// [`CheckpointError::NotRemovable`] for a completed entry, plus
+    /// database/I/O failures.
+    pub fn void_entry(&self, run_id: RunId, seq: u64) -> Result<bool, CheckpointError> {
+        self.remove_entry(run_id, seq, EntryRemoval::IncompleteOnly)
+    }
+
+    /// Records the settled after-state of a mutation attempt, discarding the
+    /// entry when the attempt left the file byte-identical.
+    ///
+    /// Call this once the mutation attempt has settled, success or failure:
+    ///
+    /// - a write that changed the file (or created/deleted it) returns
+    ///   `Some(entry)` with the recorded after-state;
+    /// - a byte-identical no-op write, or an `apply_patch` that rejected its
+    ///   hunk without writing, returns `None` and deletes the entry, because
+    ///   there is nothing to restore. Recording a "mutation" that did not
+    ///   change a byte would make the journal lie and would make a later rewind
+    ///   rewrite a no-op file it believes it is restoring.
+    ///
+    /// # Errors
+    /// [`CheckpointError::CheckpointNotFound`] for an unknown entry,
+    /// [`CheckpointError::Corrupt`] for a conflicting after-state (the file
+    /// changed without a journal entry), plus jail/database/I/O failures.
+    pub fn record_after_or_discard(
+        &self,
+        run_id: RunId,
+        seq: u64,
+    ) -> Result<Option<FileCheckpoint>, CheckpointError> {
+        let completed = self.record_after(run_id, seq)?;
+        if completed.after.as_ref() == Some(&completed.before) {
+            self.remove_entry(run_id, seq, EntryRemoval::NoOp)?;
+            return Ok(None);
+        }
+        Ok(Some(completed))
     }
 
     /// Reads one journal entry.
@@ -1078,6 +1147,94 @@ impl CheckpointJournal {
 
     // --- persistence --------------------------------------------------------
 
+    /// Deletes one journal entry under an explicit safety mode, and drops its
+    /// content-addressed pre-image only when no other entry still references it.
+    ///
+    /// The row is re-read inside the delete transaction, so a concurrent
+    /// `record_after` that completed the entry is refused rather than erased.
+    fn remove_entry(
+        &self,
+        run_id: RunId,
+        seq: u64,
+        mode: EntryRemoval,
+    ) -> Result<bool, CheckpointError> {
+        let seq_i64 = i64::try_from(seq).map_err(|_| {
+            refused(
+                Refusal::ToolSchema,
+                format!("checkpoint seq {seq} exceeds the SQLite INTEGER range"),
+            )
+        })?;
+        let run_text = run_id.to_string();
+        let outcome: Result<bool, CheckpointError> = self
+            .database
+            .with_connection(|connection| {
+                let transaction = connection.transaction()?;
+                let row: Option<RowRemoval> = transaction
+                    .query_row(
+                        "SELECT completed, before_sha256, before_size, after_sha256, after_size
+                         FROM checkpoints WHERE run_id = ?1 AND seq = ?2",
+                        rusqlite::params![run_text, seq_i64],
+                        |row| {
+                            Ok(RowRemoval {
+                                completed: row.get(0)?,
+                                before_sha256: row.get(1)?,
+                                before_size: row.get(2)?,
+                                after_sha256: row.get(3)?,
+                                after_size: row.get(4)?,
+                            })
+                        },
+                    )
+                    .optional()?;
+                let Some(row) = row else {
+                    transaction.commit()?;
+                    return Ok(Ok(false));
+                };
+                let removable = match mode {
+                    EntryRemoval::IncompleteOnly => row.completed == 0,
+                    EntryRemoval::NoOp => {
+                        row.completed == 1
+                            && row.before_sha256 == row.after_sha256
+                            && row.before_size == row.after_size
+                    }
+                };
+                if !removable {
+                    // Dropping the transaction rolls the read back; nothing is
+                    // deleted.
+                    return Ok(Err(CheckpointError::NotRemovable {
+                        run_id: run_text,
+                        seq,
+                        reason: mode.not_removable_reason(),
+                    }));
+                }
+                let deleted = transaction.execute(
+                    "DELETE FROM checkpoints WHERE run_id = ?1 AND seq = ?2",
+                    rusqlite::params![run_text, seq_i64],
+                )?;
+                if deleted != 1 {
+                    return Ok(Err(CheckpointError::Corrupt(format!(
+                        "checkpoint ({run_text}, {seq}) disappeared during removal"
+                    ))));
+                }
+                // Targeted orphan cleanup: the pre-image is shared by digest, so
+                // only delete it when no remaining entry references it.
+                if let Some(sha256) = row.before_sha256 {
+                    transaction.execute(
+                        "DELETE FROM checkpoint_blobs
+                         WHERE sha256 = ?1
+                           AND sha256 NOT IN (
+                               SELECT before_sha256 FROM checkpoints
+                               WHERE before_sha256 IS NOT NULL
+                           )",
+                        rusqlite::params![sha256],
+                    )?;
+                }
+                transaction.commit()?;
+                Ok(Ok(true))
+            })
+            .map_err(CheckpointError::Db)?;
+        outcome
+    }
+
     fn require_run(&self, run_id: RunId) -> Result<(), CheckpointError> {
         let count: i64 = self
             .database
@@ -1166,6 +1323,34 @@ struct PathPlan {
     expected: FileState,
     target: FileState,
     seqs: Vec<u64>,
+}
+
+/// How [`CheckpointJournal::remove_entry`] is allowed to delete a row.
+#[derive(Clone, Copy)]
+enum EntryRemoval {
+    /// Only an entry whose after-state is still unknown (no mutation ran).
+    IncompleteOnly,
+    /// Only a completed entry whose after-state equals its pre-image.
+    NoOp,
+}
+
+impl EntryRemoval {
+    /// Human-readable reason used when the row is refused deletion.
+    fn not_removable_reason(self) -> &'static str {
+        match self {
+            Self::IncompleteOnly => "it already records a mutation (completed)",
+            Self::NoOp => "its after-state differs from the pre-image",
+        }
+    }
+}
+
+/// The columns [`CheckpointJournal::remove_entry`] needs to decide safely.
+struct RowRemoval {
+    completed: i64,
+    before_sha256: Option<String>,
+    before_size: Option<i64>,
+    after_sha256: Option<String>,
+    after_size: Option<i64>,
 }
 
 /// Blob to insert for a journal entry.

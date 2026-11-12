@@ -32,7 +32,12 @@ use hiverouter_tools::ledger::{append_approval_decision, RunLedger, LEDGER_FILE_
 use hiverouter_tools::tool::{GitDiffArgs, GitLogArgs, GitStatusArgs};
 use hiverouter_tools::ToolError;
 
+use crate::checkpoint::{CheckpointError, CheckpointJournal, FileCheckpoint};
 use crate::db::Database;
+
+/// How many times the bridge re-allocates a checkpoint sequence when a
+/// concurrent call for the same run took it first (bounded retry, never a loop).
+const CHECKPOINT_SEQ_ATTEMPTS: u8 = 3;
 
 /// Wired tools capabilities for the local server.
 #[derive(Debug)]
@@ -48,6 +53,10 @@ pub struct ToolsBridge {
     ledger: Mutex<Option<(PathBuf, RunLedger)>>,
     /// Config-owned side-effect kill switch (never a raw env read at execute time).
     side_effects_enabled: bool,
+    /// Optional CAP-5 journal: when present, a `file_write` / `apply_patch`
+    /// before-image is captured before the grant CAS and settled after the
+    /// mutation attempt. `None` leaves the pre-CAP-5 path byte-for-byte intact.
+    checkpoint_journal: Option<CheckpointJournal>,
 }
 
 impl ToolsBridge {
@@ -88,6 +97,7 @@ impl ToolsBridge {
             db,
             ledger: Mutex::new(None),
             side_effects_enabled: true,
+            checkpoint_journal: None,
         }
     }
 
@@ -191,6 +201,25 @@ impl ToolsBridge {
     pub fn with_side_effects_enabled(mut self, enabled: bool) -> Self {
         self.side_effects_enabled = enabled;
         self
+    }
+
+    /// Installs the CAP-5 checkpoint journal used to snapshot the before-image
+    /// of a file-mutating granted side effect (`file_write`, `apply_patch`).
+    ///
+    /// The journal is optional and additive: without it the execution path is
+    /// unchanged. It must be opened over the **same** workspace root as this
+    /// bridge - a mismatch is refused with `E_INTERNAL_ERROR` before the grant
+    /// is verified rather than silently snapshotting a different file.
+    #[must_use]
+    pub fn with_checkpoint_journal(mut self, journal: CheckpointJournal) -> Self {
+        self.checkpoint_journal = Some(journal);
+        self
+    }
+
+    /// The installed checkpoint journal, when CAP-5 journalling is enabled.
+    #[must_use]
+    pub fn checkpoint_journal(&self) -> Option<&CheckpointJournal> {
+        self.checkpoint_journal.as_ref()
     }
 
     /// Whether the global side-effect kill switch is enabled.
@@ -317,6 +346,13 @@ impl ToolsBridge {
     /// consent; after the CAS exactly one effect is attempted and the grant
     /// stays consumed even if that effect fails (at-most-once).
     ///
+    /// When a CAP-5 journal is installed (see
+    /// [`Self::with_checkpoint_journal`]) a `file_write` / `apply_patch`
+    /// before-image is captured **after** preflight and **before** the grant
+    /// CAS, so a capture failure never consumes the approval; a refused grant
+    /// voids the capture, so it leaves no restorable checkpoint; a successful
+    /// mutation records its after-image.
+    ///
     /// # Errors
     /// Named refusals from preflight, `E_APPROVAL_REQUIRED` / `E_APPROVAL_REPLAY`
     /// from the grant CAS, or an execution error after the grant was consumed.
@@ -409,7 +445,10 @@ impl ToolsBridge {
         .map_err(Self::map_tool_error)?;
         let tool_id = hiverouter_tools::ToolId::from_id(tool).ok_or(Refusal::ToolNotFound)?;
         let now_unix_secs = Timestamp::now().unix_secs().unwrap_or(0);
-        match binding {
+        // CAP-5: snapshot the file before the grant CAS. A capture failure
+        // returns here, so the approval is still unconsumed.
+        let captured = self.capture_file_checkpoint(run_id, tool_id, args)?;
+        let grant = match binding {
             Some((approval_id, tool_call_id)) => self.verify_tool_grant_bound(
                 approval_id,
                 tool_call_id,
@@ -417,17 +456,171 @@ impl ToolsBridge {
                 tool_id,
                 args,
                 now_unix_secs,
-            )?,
-            None => self.verify_tool_grant(run_id, tool_id, args, now_unix_secs)?,
+            ),
+            None => self.verify_tool_grant(run_id, tool_id, args, now_unix_secs),
+        };
+        if let Err(refusal) = grant {
+            // A refused grant executed nothing: void the capture so a denied
+            // call never leaves a restorable checkpoint behind.
+            if let Some(captured) = captured.as_ref() {
+                self.void_file_checkpoint(run_id, captured);
+            }
+            return Err(refusal);
         }
-        hiverouter_tools::side_effects::commit_side_effect(
+        match hiverouter_tools::side_effects::commit_side_effect(
             jail,
             shell_policy,
             prepared,
             cancellation,
         )
         .await
-        .map_err(Self::map_tool_error)
+        {
+            Ok(executed) => {
+                if let Some(captured) = captured.as_ref() {
+                    if let Err(error) = self.settle_file_checkpoint(run_id, captured) {
+                        // The effect landed but the after-image could not be
+                        // recorded. Reporting success would claim a restorable
+                        // checkpoint that does not exist; the grant stays
+                        // consumed either way (at-most-once, no duplicate).
+                        tracing::error!(
+                            code = error.code(),
+                            run_id = %run_id,
+                            seq = captured.seq,
+                            path = %captured.path,
+                            "side effect committed but its checkpoint after-image could not be recorded"
+                        );
+                        return Err(error.refusal());
+                    }
+                }
+                Ok(executed)
+            }
+            Err(error) => {
+                if let Some(captured) = captured.as_ref() {
+                    // The commit failed after consent was consumed. Settle
+                    // truthfully: an atomic file writer does not leave a partial
+                    // file, but a failure after the replace must not discard a
+                    // real before-image.
+                    if let Err(settle) = self.settle_file_checkpoint(run_id, captured) {
+                        tracing::error!(
+                            code = settle.code(),
+                            run_id = %run_id,
+                            seq = captured.seq,
+                            path = %captured.path,
+                            "failed side effect left an incomplete checkpoint that could not be settled"
+                        );
+                    }
+                }
+                Err(Self::map_tool_error(error))
+            }
+        }
+    }
+
+    /// Captures the before-image of the one file a granted tool will mutate.
+    ///
+    /// Returns `None` when no journal is installed or the tool is not a
+    /// single-file mutation. Runs **after** the read-only preflight (a doomed
+    /// call never creates a journal row) and **before** the grant CAS (a capture
+    /// failure never spends consent).
+    fn capture_file_checkpoint(
+        &self,
+        run_id: RunId,
+        tool: hiverouter_tools::ToolId,
+        args: &serde_json::Value,
+    ) -> Result<Option<FileCheckpoint>, Refusal> {
+        let Some(journal) = self.checkpoint_journal.as_ref() else {
+            return Ok(None);
+        };
+        let Some(path) = Self::checkpoint_target(tool, args)? else {
+            return Ok(None);
+        };
+        let bridge_root = self.require_jail()?.root();
+        if journal.jail().root() != bridge_root {
+            // Journalling a path resolved against another root would snapshot
+            // the wrong file; refuse before the grant rather than lie.
+            tracing::error!(
+                bridge_root = %bridge_root.display(),
+                journal_root = %journal.jail().root().display(),
+                "checkpoint journal was opened over a different workspace root; refusing before the grant"
+            );
+            return Err(Refusal::InternalError);
+        }
+        let mut attempts = 0_u8;
+        loop {
+            let seq = journal.next_seq(run_id).map_err(|error| error.refusal())?;
+            match journal.journal_before(run_id, seq, path) {
+                Ok(checkpoint) => return Ok(Some(checkpoint)),
+                // A concurrent granted call for the same run took this sequence
+                // between `next_seq` and the insert. Re-allocate a bounded
+                // number of times; a persistent collision is still a refusal
+                // before the grant, so no approval is burned.
+                Err(CheckpointError::DuplicateSeq { .. }) if attempts < CHECKPOINT_SEQ_ATTEMPTS => {
+                    attempts = attempts.saturating_add(1);
+                }
+                Err(error) => return Err(error.refusal()),
+            }
+        }
+    }
+
+    /// The workspace path a granted tool mutates, when the journal must snapshot
+    /// it. Only the two single-file mutation tools have a before-image.
+    fn checkpoint_target(
+        tool: hiverouter_tools::ToolId,
+        args: &serde_json::Value,
+    ) -> Result<Option<&str>, Refusal> {
+        if !matches!(
+            tool,
+            hiverouter_tools::ToolId::FileWrite | hiverouter_tools::ToolId::ApplyPatch
+        ) {
+            return Ok(None);
+        }
+        // Preflight already validated the schema; a missing/non-string path is
+        // still refused by name instead of silently skipping the snapshot.
+        match args.get("path").and_then(serde_json::Value::as_str) {
+            Some(path) if !path.trim().is_empty() => Ok(Some(path)),
+            _ => Err(Refusal::ToolSchema),
+        }
+    }
+
+    /// Settles the journal entry after a mutation attempt (success or failure).
+    ///
+    /// A byte-identical outcome (an `apply_patch` rejection or a no-op write)
+    /// removes the entry; a real change records the after-image.
+    fn settle_file_checkpoint(
+        &self,
+        run_id: RunId,
+        checkpoint: &FileCheckpoint,
+    ) -> Result<(), CheckpointError> {
+        let Some(journal) = self.checkpoint_journal.as_ref() else {
+            // A capture only exists when a journal was installed; losing it
+            // here is an internal inconsistency, never a silent skip.
+            return Err(CheckpointError::Corrupt(
+                "captured a file checkpoint without an installed journal".to_owned(),
+            ));
+        };
+        journal
+            .record_after_or_discard(run_id, checkpoint.seq)
+            .map(|_| ())
+    }
+
+    /// Voids a captured but never-executed checkpoint after a refused grant.
+    ///
+    /// The entry is incomplete and therefore not restorable even if the void
+    /// itself fails; a void failure is logged because a stale incomplete entry
+    /// makes a later full-run rewind refuse.
+    fn void_file_checkpoint(&self, run_id: RunId, checkpoint: &FileCheckpoint) {
+        let Some(journal) = self.checkpoint_journal.as_ref() else {
+            return;
+        };
+        if let Err(error) = journal.void_entry(run_id, checkpoint.seq) {
+            tracing::error!(
+                code = error.code(),
+                run_id = %run_id,
+                seq = checkpoint.seq,
+                path = %checkpoint.path,
+                "refused grant left an incomplete checkpoint that could not be voided; \
+                 it is not restorable but may block a full rewind"
+            );
+        }
     }
 
     /// Whether the workspace jail is usable.
