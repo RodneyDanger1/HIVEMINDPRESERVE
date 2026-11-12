@@ -299,6 +299,8 @@ const COMMANDS = {
       ARG('prompt', 'string', false, 'Prompt text (1..8000 chars).'),
       ARG('prompt-file', 'path', false, 'Read prompt text from a UTF-8 file.'),
       ARG('project', 'string', false, 'Project id (default workspace).'),
+      ARG('session', 'string', false, 'Optional named session id to bind the run.'),
+      ARG('policy', 'string', false, 'Permission policy: classic|plan|standard|trusted.'),
       ARG('wait', 'boolean', false, 'Watch until the run is terminal.'),
       ARG('timeout-ms', 'number', false, 'Wait limit (default 120000).'),
     ],
@@ -311,6 +313,8 @@ const COMMANDS = {
       ARG('prompt', 'string', false, 'Prompt text (1..8000 chars).'),
       ARG('prompt-file', 'path', false, 'Read prompt text from a UTF-8 file.'),
       ARG('project', 'string', false, 'Project id (default workspace).'),
+      ARG('session', 'string', false, 'Optional named session id to bind the run.'),
+      ARG('policy', 'string', false, 'Permission policy: classic|plan|standard|trusted.'),
       ARG('timeout-ms', 'number', false, 'Wait limit (default 180000).'),
     ],
   },
@@ -1646,7 +1650,22 @@ async function executeMutation(command, options, baseUrl) {
     case 'submit':
     case 'run': {
       const text = await resolvePrompt(options);
-      const result = await wsCommand(baseUrl, 'SUBMIT_PROMPT', { text, project_id: projectOption(options) }, { awaitEvent: 'RUN_CREATED' });
+      const payload = { text, project_id: projectOption(options) };
+      if (options.session !== undefined) {
+        const session = String(options.session).trim();
+        if (!/^[0-9a-fA-F-]{8,80}$/.test(session)) {
+          throw cliError('E_SCHEMA_INVALID', '--session must be a session id.', 'Use GET /api/sessions to list session ids.');
+        }
+        payload.session_id = session;
+      }
+      if (options.policy !== undefined) {
+        const policy = String(options.policy).trim();
+        if (!['classic', 'plan', 'standard', 'trusted'].includes(policy)) {
+          throw cliError('E_SCHEMA_INVALID', '--policy must be classic|plan|standard|trusted.', 'Omit it to use classic.');
+        }
+        payload.permission_policy = policy;
+      }
+      const result = await wsCommand(baseUrl, 'SUBMIT_PROMPT', payload, { awaitEvent: 'RUN_CREATED' });
       const runId = typeof result.event?.payload?.run_id === 'string'
         ? result.event.payload.run_id
         : (typeof result.ack.payload?.run_id === 'string' ? result.ack.payload.run_id : null);
