@@ -116,10 +116,21 @@ impl ToolsBridge {
     /// commands then refuse `E_FILE_TREE_UNAVAILABLE`).
     #[must_use]
     pub fn new_with_data_dir(workspace_root: &Path, data_dir: &Path, db: Arc<Database>) -> Self {
-        let denied = vec![
+        let mut denied = vec![
             data_dir.to_path_buf(),
             Self::approval_ledger_dir(data_dir),
         ];
+        // A custom `--db` may live outside `data_dir`; deny the exact database
+        // file and its SQLite sidecars without denying a parent that may also
+        // contain the workspace.
+        let db_path = db.path();
+        for candidate in [
+            db_path.to_path_buf(),
+            db_path.with_extension("db-wal"),
+            db_path.with_extension("db-shm"),
+        ] {
+            denied.push(candidate);
+        }
         let mut bridge = Self::new_with_denied_paths(workspace_root, &denied, db);
         bridge.data_dir = Some(data_dir.to_path_buf());
         bridge
@@ -1791,5 +1802,19 @@ mod tests {
         );
         assert_eq!(rows[0]["outcome"].as_str(), Some("allowed"));
         assert_eq!(rows[1]["outcome"].as_str(), Some("denied"));
+    }
+
+    #[test]
+    fn custom_database_file_and_sidecars_are_denied_inside_the_workspace() {
+        let temp = tempfile::tempdir().expect("temp");
+        let workspace = temp.path().join("workspace");
+        std::fs::create_dir_all(&workspace).expect("workspace");
+        let db = Arc::new(Database::open(&workspace.join("hive.db")).expect("database"));
+        db.migrate().expect("migrations");
+        let bridge = ToolsBridge::new_with_data_dir(&workspace, &temp.path().join("data"), db);
+        let jail = bridge.jail.as_ref().expect("workspace jail");
+        assert!(jail.resolve("hive.db").is_err(), "database file must be denied");
+        assert!(jail.resolve("hive.db-wal").is_err(), "database WAL must be denied");
+        assert!(jail.resolve("hive.db-shm").is_err(), "database SHM must be denied");
     }
 }
