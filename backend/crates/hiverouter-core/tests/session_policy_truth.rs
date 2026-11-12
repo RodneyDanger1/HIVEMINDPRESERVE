@@ -516,6 +516,50 @@ async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
     assert_eq!(refusal["code"], "E_SCHEMA_INVALID");
 }
 
+// --- executed eval ----------------------------------------------------------
+
+#[tokio::test]
+async fn executed_eval_records_real_exit_and_never_fakes_pass() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let (status, receipt) = post(
+        &server,
+        "/api/eval/run",
+        &json!({
+            "suite_id": "smoke",
+            "case_id": "cargo-version",
+            "program": "cargo.exe",
+            "args": ["--version"],
+            "expected_exit_code": 0
+        }),
+    )
+    .await;
+    assert_eq!(status, 201, "eval: {receipt:?}");
+    assert_eq!(receipt["passed"], true);
+    assert_eq!(receipt["actual_exit"], 0);
+    assert_eq!(receipt["state"], "succeeded");
+
+    let (status, receipt) = post(
+        &server,
+        "/api/eval/run",
+        &json!({
+            "suite_id": "smoke",
+            "case_id": "expected-mismatch",
+            "program": "cargo.exe",
+            "args": ["--version"],
+            "expected_exit_code": 7
+        }),
+    )
+    .await;
+    assert_eq!(status, 201, "eval mismatch: {receipt:?}");
+    assert_eq!(receipt["passed"], false, "a mismatch must not pass");
+    assert_eq!(receipt["actual_exit"], 0);
+
+    let (status, list) = get(&server, "/api/eval/runs").await;
+    assert_eq!(status, 200);
+    assert_eq!(list["eval_runs"].as_array().map(Vec::len), Some(2));
+}
+
 // --- unknown job refusal ----------------------------------------------------
 
 #[tokio::test]
@@ -688,7 +732,7 @@ fn table_names(database: &Database) -> Vec<String> {
 }
 
 #[test]
-fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
+fn v24_database_migrates_to_v29_without_losing_legacy_rows() {
     let database = Arc::new(Database::open_in_memory().expect("in-memory db"));
     seed_v24(&database);
     assert_eq!(database.schema_version().expect("version"), 24);
@@ -728,14 +772,15 @@ fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
         .expect("seed v24 rows");
 
     let migrated = database.migrate().expect("migrate to head");
-    assert_eq!(migrated, 28, "the CAP head is v28 (25 sessions, 26 repo, 27 checkpoints, 28 jobs)");
-    assert_eq!(database.schema_version().expect("version"), 28);
+    assert_eq!(migrated, 29, "the CAP head is v29 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval)");
+    assert_eq!(database.schema_version().expect("version"), 29);
     let applied = database.applied_migrations().expect("applied migrations");
     for (version, name) in [
         (25_i64, "sessions_policy_todos"),
         (26, "repo_index"),
         (27, "checkpoint_journal"),
         (28, "jobs"),
+        (29, "executed_eval"),
     ] {
         assert!(
             applied.iter().any(|(applied_version, applied_name, _)| {
@@ -755,10 +800,11 @@ fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
         "checkpoints",
         "checkpoint_blobs",
         "jobs",
+        "eval_runs",
     ] {
         assert!(
             tables.iter().any(|name| name == expected),
-            "{expected} missing after v24 -> v28: {tables:?}"
+            "{expected} missing after v24 -> v29: {tables:?}"
         );
     }
 
@@ -815,7 +861,7 @@ fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
         PermissionPolicy::Trusted
     );
 
-    // Reversibility: 28 -> 24 -> 28 must retain the legacy rows and restore
+    // Reversibility: 29 -> 24 -> 29 must retain the legacy rows and restore
     // the classic default on the forward pass.
     assert_eq!(database.migrate_down_to(24).expect("down to v24"), 24);
     let legacy_rows: i64 = database
@@ -828,7 +874,7 @@ fn v24_database_migrates_to_v28_without_losing_legacy_rows() {
         })
         .expect("legacy row after down");
     assert_eq!(legacy_rows, 1, "the down migration must not delete legacy runs");
-    assert_eq!(database.migrate().expect("re-up to head"), 28);
+    assert_eq!(database.migrate().expect("re-up to head"), 29);
     let after_roundtrip = store.get_run(run_id).expect("legacy run after roundtrip");
     assert_eq!(after_roundtrip.project_id, "legacy-project");
     assert_eq!(

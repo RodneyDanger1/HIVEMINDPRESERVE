@@ -779,6 +779,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/jobs", get(jobs_list).post(job_start))
         .route("/api/jobs/{job_id}", get(job_detail))
         .route("/api/jobs/{job_id}/kill", post(job_kill))
+        .route("/api/eval/runs", get(eval_runs_list))
+        .route("/api/eval/run", post(eval_run))
         .route("/api/memory/context/{task_id}", get(task_memory_context))
         .route("/api/projects", get(projects))
         .route("/api/provider/models", get(provider_models))
@@ -1345,6 +1347,93 @@ async fn job_kill(
         }
         Err(error) => refusal_response(StatusCode::CONFLICT, &error.refusal()),
     }
+}
+
+async fn eval_runs_list(State(state): State<Arc<AppState>>) -> Response {
+    let receipts = match state.db.with_connection(|connection| {
+        crate::eval::list_eval(connection, 100)
+    }) {
+        Ok(receipts) => receipts,
+        Err(error) => {
+            tracing::warn!("eval receipt list failed: {error}");
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::InternalError);
+        }
+    };
+    (StatusCode::OK, Json(serde_json::json!({ "eval_runs": receipts }))).into_response()
+}
+
+async fn eval_run(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(jobs) = state.jobs.as_ref() else {
+        return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &Refusal::FileTreeUnavailable);
+    };
+    let Some(suite_id) = body.get("suite_id").and_then(serde_json::Value::as_str).map(str::trim) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(case_id) = body.get("case_id").and_then(serde_json::Value::as_str).map(str::trim) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(program) = body.get("program").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(args) = body.get("args").and_then(serde_json::Value::as_array) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let Some(args) = args
+        .iter()
+        .map(|value| value.as_str().map(ToOwned::to_owned))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let expected_exit = match body.get("expected_exit_code") {
+        None => 0,
+        Some(value) => match value.as_i64().and_then(|value| i32::try_from(value).ok()) {
+            Some(value) if (-1..=255).contains(&value) => value,
+            _ => return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid),
+        },
+    };
+    if suite_id.is_empty()
+        || case_id.is_empty()
+        || suite_id.len() > 120
+        || case_id.len() > 120
+        || program.trim().is_empty()
+    {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    }
+    let request = crate::jobs::JobRequest::new("eval", program, args.clone());
+    let started = match jobs.start(request).await {
+        Ok(snapshot) => snapshot,
+        Err(error) => return refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    };
+    let terminal = match jobs.wait(&started.id).await {
+        Ok(snapshot) => snapshot,
+        Err(error) => return refusal_response(StatusCode::CONFLICT, &error.refusal()),
+    };
+    let output_sha256 = hiverouter_tools::sha256::sha256_hex(terminal.output.tail.as_bytes());
+    let state_label = terminal.state.as_str();
+    let receipt = crate::eval::receipt_from_observation(
+        suite_id,
+        case_id,
+        program,
+        &args,
+        expected_exit,
+        &terminal.id,
+        state_label,
+        terminal.exit_code,
+        &output_sha256,
+        terminal.output.bytes,
+    );
+    let persisted = state.db.with_connection(|connection| {
+        crate::eval::record_eval(connection, &receipt)
+    });
+    if let Err(error) = persisted {
+        tracing::error!("eval receipt could not be stored: {error}");
+        return refusal_response(StatusCode::INTERNAL_SERVER_ERROR, &Refusal::InternalError);
+    }
+    (StatusCode::CREATED, Json(receipt)).into_response()
 }
 
 async fn history_runs(State(state): State<Arc<AppState>>) -> Response {

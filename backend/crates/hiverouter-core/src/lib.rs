@@ -17,6 +17,7 @@ pub mod context;
 pub mod daemon;
 pub mod db;
 pub mod entities;
+pub mod eval;
 pub mod evolution_gate;
 pub mod execution;
 pub mod graph;
