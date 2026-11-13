@@ -1,0 +1,202 @@
+{
+ "schema": "hivemind.figcraft-proposal-assets.v1",
+ "producer": "FigCraft-ChatDock",
+ "generated_at": "2026-11-13T11:42:44-06:00",
+ "status": "PROPOSED",
+ "watchdog_audited": false,
+ "served": false,
+ "reason_not_served": "The served FigCraft catalog is the accepted 21-board set covered by web/tests/figcraftAssets.test.ts; this proposal must be accepted and that test updated before it can be served. It is real FigCraft evidence, but it is not watchdog-audited design truth.",
+ "design_file": {
+  "path": "docs/ui/figcraft/ChatDock/ChatDock-Help.figcraft",
+  "sha256": "422A0E6C4261DB0383E51E01828DD55E69900E89B0AD4AEE07030CB0D0781080",
+  "bytes": 109877,
+  "frame": "13 · Chat Dock & Help",
+  "width": 1440.0,
+  "height": 1800.0,
+  "nodes": 388,
+  "missing_fonts": []
+ },
+ "tool": {
+  "name": "figcraft-cli",
+  "version": "figcraft-cli 0.17.0",
+  "command_schema_source": "figcraft-cli commands --json (2026-11-13)",
+  "verified_commands": [
+   "file.new",
+   "file.saveAs",
+   "frame.create",
+   "node.create",
+   "text.create"
+  ]
+ },
+ "commands": {
+  "path": "docs/ui/figcraft/ChatDock/build/commands.json",
+  "sha256": "77A28DACBB08F58E3126EF4664C6CADD2841A2FB2237626FE9AA73057D578C06",
+  "count": 389
+ },
+ "board": {
+  "id": "chatdock-help",
+  "owner": "figcraft-hivemind",
+  "title": "13 · Chat Dock & Help",
+  "width": 1440,
+  "height": 1800,
+  "source_svg": "docs/ui/figcraft/ChatDock/exports/chatdock-help.svg",
+  "source_png": "docs/ui/figcraft/ChatDock/exports/chatdock-help.png",
+  "source_png_2x": "docs/ui/figcraft/ChatDock/exports/chatdock-help@2x.png",
+  "sha256_svg": "8EFE3B97F34357CECF53DE059701002CCA95B557213CF72107B1C454CC481A92",
+  "sha256_png": "A05261E69FE84C6FF5B3DBCF37DEAE97369CD7934E3D11FF9F5D3FCAFDE542FB",
+  "sha256_png_2x": "F35E22481BEB6D6115F13B23DA4698A9C02DE84A4FE104FA381A4010FE8A0485",
+  "bytes": {
+   "svg": 2102451,
+   "png": 720780,
+   "png_2x": 1829296
+  },
+  "dimensions": {
+   "board": [
+    1440,
+    1800
+   ],
+   "svg": "vector",
+   "png": [
+    1440,
+    1800
+   ],
+   "png_2x": [
+    2880,
+    3600
+   ]
+  },
+  "surfaces": [
+   {
+    "surfaceId": "NEW-CHAT-DOCK",
+    "name": "Full-width bottom chat dock (1128 px at 1440)"
+   },
+   {
+    "surfaceId": "NEW-HELP",
+    "name": "Help nav destination: tutorials + feature explanations"
+   }
+  ]
+ },
+ "source_refs": [
+  {
+   "path": "web/src/chat/chatDock.ts",
+   "claim": "DEFAULT_CHAT_HEIGHT=560, MIN=420, MAX=760, tray=240"
+  },
+  {
+   "path": "web/src/chat/ChatCore.tsx",
+   "claim": "w-full dock, 64x12 grip, CONTROLS / STATE & SETTINGS / CLEAR / HIDE footer"
+  },
+  {
+   "path": "web/src/panels/HelpPanel.tsx",
+   "claim": "Help tutorials, feature explanations and buttons"
+  },
+  {
+   "path": "web/src/tokens/tokens.ts",
+   "claim": "20 printed swatches; LAYOUT header 52, rail 72, library 240"
+  },
+  {
+   "path": "ledgers/visual-dock-8099/VISUALS-FINDINGS.md",
+   "claim": "dock/resize defects observed in the running UI"
+  },
+  {
+   "path": "commit e83a444",
+   "claim": "new UI: full-width dock, help tab"
+  }
+ ],
+ "source_files": [
+  {
+   "path": "web/src/chat/ChatCore.tsx",
+   "sha256": "6EE26F99CA8B4C39D171B84AAA1FE2CBB9818BDF91F0265049411F5330E14AB6"
+  },
+  {
+   "path": "web/src/chat/chatDock.ts",
+   "sha256": "EB0CE07346AA66C97C4FD3F40E07A0E1576FEB59A54531F34EC5009A912E34F4"
+  },
+  {
+   "path": "web/src/panels/HelpPanel.tsx",
+   "sha256": "2992D4CC7601730CC6DF07660C95DDD2149A8493F272FDF5248BAEABAE781FD5"
+  },
+  {
+   "path": "web/src/tokens/tokens.ts",
+   "sha256": "60AFFD1871C396CDA7BA308B223F51592221D7F65EE8193AD6BE3A78733E5B2E"
+  },
+  {
+   "path": "ledgers/visual-dock-8099/VISUALS-FINDINGS.md",
+   "sha256": "38D99FC03B9DAAE1A3C12E177A8D516F0A6E6441A30F50C79E51BB40408DD8F2"
+  }
+ ],
+ "build": {
+  "steps": [
+   "python docs/ui/figcraft/ChatDock/build/build_chatdock.py",
+   "figcraft-cli run docs/ui/figcraft/ChatDock/build/commands.json",
+   "python docs/ui/figcraft/ChatDock/build/publish_chatdock.py"
+  ],
+  "cli": "C:\\Program Files\\FigCraft\\figcraft-cli.exe"
+ },
+ "notes": [
+  "One 1440x1800 proposal frame with two scenes: the new full-width chat dock and the Help nav destination.",
+  "Values are read from the current UI source and tokens; no runtime screenshot is embedded and no pixel fidelity is claimed.",
+  "The board is labelled PROPOSED on its face and is not in ASSETS-INDEX.json / the served catalog."
+ ],
+ "checks": [
+  {
+   "check": "one frame named '13 · Chat Dock & Help'",
+   "status": "PASS",
+   "detail": "['13 · Chat Dock & Help']"
+  },
+  {
+   "check": "frame is 1440x1800",
+   "status": "PASS",
+   "detail": "1440.0x1800.0"
+  },
+  {
+   "check": "no missing fonts",
+   "status": "PASS",
+   "detail": "[]"
+  },
+  {
+   "check": "command script is non-empty",
+   "status": "PASS",
+   "detail": "389 commands"
+  },
+  {
+   "check": "only verified CLI commands",
+   "status": "PASS",
+   "detail": "file.new,file.saveAs,frame.create,node.create,text.create"
+  },
+  {
+   "check": "SVG exported non-empty",
+   "status": "PASS",
+   "detail": "2102451 bytes"
+  },
+  {
+   "check": "PNG exported non-empty",
+   "status": "PASS",
+   "detail": "720780 bytes"
+  },
+  {
+   "check": "@2x PNG exported non-empty",
+   "status": "PASS",
+   "detail": "1829296 bytes"
+  },
+  {
+   "check": "PNG dimensions 1440x1800",
+   "status": "PASS",
+   "detail": "[1440, 1800]"
+  },
+  {
+   "check": "@2x PNG dimensions 2880x3600",
+   "status": "PASS",
+   "detail": "[2880, 3600]"
+  },
+  {
+   "check": "SVG declares 1440x1800",
+   "status": "PASS",
+   "detail": "<svg width=\"1440\" height=\"1800\" viewBox=\"0 0 1440 1800\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\""
+  },
+  {
+   "check": "no legacy HiveRouter brand in SVG",
+   "status": "PASS",
+   "detail": "HiveRouter occurrences=0"
+  }
+ ]
+}

@@ -1,0 +1,216 @@
+{
+  "name": "01-1440-dock-help",
+  "status": "PASS",
+  "startedAt": "2026-11-13T17:24:48.804Z",
+  "baseURL": "http://127.0.0.1:8100/#/workspace/workspace",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "steps": [
+    {
+      "step": "initial-1440",
+      "dock": {
+        "x": 72,
+        "y": 340,
+        "w": 1368,
+        "h": 560,
+        "right": 1440,
+        "bottom": 900
+      }
+    },
+    {
+      "step": "initial-stored-height",
+      "initialStored": null,
+      "initialHeight": 560
+    },
+    {
+      "step": "after-drag",
+      "dock": {
+        "x": 72,
+        "y": 220,
+        "w": 1368,
+        "h": 680,
+        "right": 1440,
+        "bottom": 900
+      },
+      "storedAfterDrag": "680"
+    },
+    {
+      "step": "after-reload",
+      "dock": {
+        "x": 72,
+        "y": 220,
+        "w": 1368,
+        "h": 680,
+        "right": 1440,
+        "bottom": 900
+      }
+    },
+    {
+      "step": "controls-open",
+      "dock": {
+        "x": 72,
+        "y": 52,
+        "w": 1368,
+        "h": 848,
+        "right": 1440,
+        "bottom": 900
+      },
+      "ariaExpanded": "true"
+    },
+    {
+      "step": "state-open",
+      "dock": {
+        "x": 72,
+        "y": 52,
+        "w": 1368,
+        "h": 848,
+        "right": 1440,
+        "bottom": 900
+      },
+      "stateAria": "true",
+      "controlsAria": "false"
+    },
+    {
+      "step": "help",
+      "heading": "What do you want to do?",
+      "tutorialTitles": [
+        "First run",
+        "The dock",
+        "Safety"
+      ],
+      "hasDockTutorial": true,
+      "hasCapabilityText": true,
+      "helpTextLength": 1912
+    }
+  ],
+  "checks": [
+    {
+      "name": "dock x flush to 72px rail",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "dock right edge flush to 1440",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "dock bottom flush to 900",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "resize separator visible",
+      "pass": true,
+      "detail": "{\"x\":724,\"y\":352,\"w\":64,\"h\":12,\"right\":788,\"bottom\":364}"
+    },
+    {
+      "name": "drag upward increases dock height by ~120px",
+      "pass": true,
+      "detail": "before=560 after=680"
+    },
+    {
+      "name": "dock bottom stays fixed after resize",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":220,\"w\":1368,\"h\":680,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "resized height persisted to localStorage",
+      "pass": true,
+      "detail": "stored=680 measured=680"
+    },
+    {
+      "name": "resize persists across reload",
+      "pass": true,
+      "detail": "beforeReload=680 afterReload=680"
+    },
+    {
+      "name": "dock bottom stays fixed after reload",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":220,\"w\":1368,\"h\":680,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "CONTROLS expands the dock (210px tray, clamped by the 848px max-height)",
+      "pass": true,
+      "detail": "closed=680 open=848 clampApplied=true"
+    },
+    {
+      "name": "CONTROLS sets aria-expanded",
+      "pass": true,
+      "detail": "true"
+    },
+    {
+      "name": "bottom stays fixed when CONTROLS expands",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":52,\"w\":1368,\"h\":848,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "CONTROLS tray renders spawn control",
+      "pass": true,
+      "detail": "Spawn sub-hive button count"
+    },
+    {
+      "name": "STATE & SETTINGS expands",
+      "pass": true,
+      "detail": "state aria-expanded"
+    },
+    {
+      "name": "CONTROLS collapses when STATE opens",
+      "pass": true,
+      "detail": "controls aria-expanded"
+    },
+    {
+      "name": "bottom stays fixed when STATE expands",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":52,\"w\":1368,\"h\":848,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "STATE tray shows provider row",
+      "pass": true,
+      "detail": "provider label"
+    },
+    {
+      "name": "Help page loads",
+      "pass": true,
+      "detail": "h1 What do you want to do?"
+    },
+    {
+      "name": "Help page carries tutorial sections First run / The dock / Safety",
+      "pass": true,
+      "detail": "[\"First run\",\"The dock\",\"Safety\"]"
+    },
+    {
+      "name": "Help tutorial describes dock resize",
+      "pass": true,
+      "detail": "tutorial copy"
+    },
+    {
+      "name": "Help capability card names the no-screen limit",
+      "pass": true,
+      "detail": "capability copy"
+    },
+    {
+      "name": "zero console errors",
+      "pass": true,
+      "detail": "0 error console message(s)"
+    },
+    {
+      "name": "zero page errors",
+      "pass": true,
+      "detail": "0 uncaught page error(s)"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "artifacts": [
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\01-1440-initial.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\02-1440-after-resize.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\03-1440-after-reload.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\04-1440-controls.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\05-1440-state.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-112806\\06-help.png"
+  ]
+}

@@ -10,9 +10,9 @@
 export type SplashPhase = 'visible' | 'leaving' | 'gone';
 
 /** Minimum time the veil stays up so the boot does not flash. */
-export const SPLASH_MIN_VISIBLE_MS = 1_600;
+export const SPLASH_MIN_VISIBLE_MS = 4_200;
 /** Longest extra wait for a socket that never settles. */
-export const SPLASH_OFFLINE_GRACE_MS = 4_400;
+export const SPLASH_OFFLINE_GRACE_MS = 1_800;
 /** Fade-out duration before the veil unmounts. */
 export const SPLASH_FADE_MS = 420;
 

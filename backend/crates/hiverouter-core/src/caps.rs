@@ -15,7 +15,7 @@ pub const MAX_AGENTS: u64 = 64;
 /// The accepted plan cap is 40 nodes; a 40-node plan plus the root and the
 /// planner needs more than 40 sends, so the call cap must not make the node cap
 /// unreachable.
-pub const MAX_CALLS: u64 = 64;
+pub const MAX_CALLS: u64 = 128;
 
 /// Effective cap configuration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -93,7 +93,7 @@ mod tests {
         assert_eq!(caps.check_spawn(1, 7, 0), Ok(()));
         assert_eq!(caps.check_spawn(1, 8, 0), Err(Refusal::FanoutLimit));
         assert_eq!(caps.check_spawn(1, 0, 64), Err(Refusal::AgentLimit));
-        assert_eq!(caps.check_calls(64), Ok(()));
-        assert_eq!(caps.check_calls(65), Err(Refusal::CallLimit));
+        assert_eq!(caps.check_calls(MAX_CALLS), Ok(()));
+        assert_eq!(caps.check_calls(MAX_CALLS + 1), Err(Refusal::CallLimit));
     }
 }

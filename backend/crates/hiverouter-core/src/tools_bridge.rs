@@ -124,14 +124,40 @@ impl ToolsBridge {
     /// commands then refuse `E_FILE_TREE_UNAVAILABLE`).
     #[must_use]
     pub fn new_with_data_dir(workspace_root: &Path, data_dir: &Path, db: Arc<Database>) -> Self {
-        let mut denied = vec![
-            data_dir.to_path_buf(),
-            Self::approval_ledger_dir(data_dir),
-        ];
+        let denied = Self::data_denials(workspace_root, data_dir, db.path());
+        let mut bridge = Self::new_with_denied_paths(workspace_root, &denied, db);
+        bridge.data_dir = Some(data_dir.to_path_buf());
+        bridge
+    }
+
+    /// When the workspace lives under `data_dir` (the default desktop layout),
+    /// denying the whole data directory would deny every workspace file. In
+    /// that case deny only the sensitive data surfaces; otherwise keep the
+    /// stronger whole-directory denial for an external workspace.
+    fn data_denials(workspace_root: &Path, data_dir: &Path, db_path: &Path) -> Vec<PathBuf> {
+        let workspace_inside_data = workspace_root.starts_with(data_dir);
+        let mut denied = Vec::new();
+        if !workspace_inside_data {
+            denied.push(data_dir.to_path_buf());
+        }
+        denied.push(Self::approval_ledger_dir(data_dir));
+        for name in [
+            "audit",
+            "ledger",
+            "snapshots",
+            "window",
+            "provider.key",
+            "runtime.json",
+            "launch.token",
+            "server.stdout.log",
+            "server.stderr.log",
+            "launcher.log",
+        ] {
+            denied.push(data_dir.join(name));
+        }
         // A custom `--db` may live outside `data_dir`; deny the exact database
         // file and its SQLite sidecars without denying a parent that may also
         // contain the workspace.
-        let db_path = db.path();
         for candidate in [
             db_path.to_path_buf(),
             sqlite_sidecar(db_path, "-wal"),
@@ -139,9 +165,7 @@ impl ToolsBridge {
         ] {
             denied.push(candidate);
         }
-        let mut bridge = Self::new_with_denied_paths(workspace_root, &denied, db);
-        bridge.data_dir = Some(data_dir.to_path_buf());
-        bridge
+        denied
     }
 
     /// Replaces the denied data directory on an existing bridge.
@@ -150,10 +174,8 @@ impl ToolsBridge {
     /// data root; production wiring should prefer [`Self::new_with_data_dir`].
     #[must_use]
     pub fn with_data_dir(mut self, data_dir: &Path) -> Self {
-        let denied = vec![
-            data_dir.to_path_buf(),
-            Self::approval_ledger_dir(data_dir),
-        ];
+        let db_path = self.db.path();
+        let denied = Self::data_denials(&self.workspace_root, data_dir, db_path);
         let (jail, jail_error) = Self::open_jail_with_denies(&self.workspace_root, &denied);
         self.jail = jail;
         self.jail_error = jail_error;
@@ -1101,15 +1123,153 @@ impl ToolsBridge {
         })
     }
 
+    /// The configured data directory, when the bridge was built with one.
+    #[must_use]
+    pub fn data_dir(&self) -> Option<&Path> {
+        self.data_dir.as_deref()
+    }
+
+    /// The real audit directory (`<data_dir>/audit`) used by the JSON audit
+    /// sink, when the bridge has a data directory.
+    #[must_use]
+    pub fn audit_log_dir(&self) -> Option<PathBuf> {
+        self.data_dir
+            .as_ref()
+            .map(|data_dir| crate::http::health::audit_dir(data_dir))
+    }
+
     /// `/diagnose` payload from the tools health/derived census layer.
     ///
+    /// The tools layer derives its pure payload with `audit_log_dir: null`; this
+    /// bridge owns the `data_dir`, so it inserts the real audit directory, the
+    /// whitelisted log file metadata, and the recent refusal scan before the
+    /// payload leaves the server. No key or token value is read into the payload.
+    ///
     /// # Errors
-    /// `E_INTERNAL_ERROR` when the capability census is inconsistent.
+    /// `E_INTERNAL_ERROR` when the capability census is inconsistent or a
+    /// payload fragment cannot be serialised.
     pub fn diagnostics(&self) -> Result<serde_json::Value, Refusal> {
         let db_ok = self.db.schema_version().is_ok();
         let key_present = self.settings_status().key_present;
-        hiverouter_tools::health::diagnostics(db_ok, key_present)
-            .map_err(|error| error.refusal())
+        let mut value = hiverouter_tools::health::diagnostics(db_ok, key_present)
+            .map_err(|error| error.refusal())?;
+        let audit_dir = self.audit_log_dir();
+        let log_files = self
+            .data_dir
+            .as_deref()
+            .map(crate::http::health::log_file_metadata)
+            .unwrap_or_default();
+        let audit_scan = audit_dir
+            .as_deref()
+            .map(|dir| crate::http::health::recent_refusals(dir, 10));
+        let recent_refusals = audit_scan
+            .as_ref()
+            .map(|scan| scan.recent.clone())
+            .unwrap_or_default();
+        if let Some(object) = value.as_object_mut() {
+            object.insert(
+                "audit_log_dir".to_owned(),
+                serde_json::json!(audit_dir
+                    .as_ref()
+                    .map(|path| path.to_string_lossy().into_owned())),
+            );
+            object.insert(
+                "log_files".to_owned(),
+                serde_json::to_value(log_files).map_err(|_| Refusal::InternalError)?,
+            );
+            object.insert(
+                "audit_scan".to_owned(),
+                serde_json::to_value(audit_scan).map_err(|_| Refusal::InternalError)?,
+            );
+            object.insert(
+                "recent_refusals".to_owned(),
+                serde_json::to_value(recent_refusals)
+                    .map_err(|_| Refusal::InternalError)?,
+            );
+        }
+        Ok(value)
+    }
+
+    /// Secret-free self-diagnosis summary for the `harness_diagnose` tool.
+    ///
+    /// `scope` selects one section (`all`, `health`, `logs`, `refusals`); an
+    /// unknown scope is a named schema refusal rather than a silent default.
+    /// `limit` bounds the recent-refusal rows (1..=50). The payload contains no
+    /// key, bearer token, file body, or caller-supplied path: log truth is
+    /// metadata only (name, size, mtime, newest audit file) and refusals carry
+    /// only timestamp/code/run/tool/permission class.
+    ///
+    /// # Errors
+    /// `E_SCHEMA_INVALID` for an unknown scope, `E_INTERNAL_ERROR` when the
+    /// capability census or a payload fragment cannot be serialised.
+    pub fn harness_diagnose(
+        &self,
+        scope: &str,
+        limit: usize,
+    ) -> Result<serde_json::Value, Refusal> {
+        let scope = match scope {
+            "all" | "health" | "logs" | "refusals" => scope,
+            _ => {
+                return Err(Refusal::SchemaInvalid);
+            }
+        };
+        let limit = limit.clamp(1, crate::http::health::MAX_RECENT_REFUSALS);
+        let db_ok = self.db.schema_version().is_ok();
+        let key_present = self.settings_status().key_present;
+        let census = hiverouter_tools::standard_census().map_err(|error| error.refusal())?;
+        let audit_dir = self.audit_log_dir();
+        let log_files = self
+            .data_dir
+            .as_deref()
+            .map(crate::http::health::log_file_metadata)
+            .unwrap_or_default();
+        let audit_scan = audit_dir
+            .as_deref()
+            .map(|dir| crate::http::health::recent_refusals(dir, limit));
+        let refusals = audit_scan
+            .as_ref()
+            .map(|scan| scan.recent.clone())
+            .unwrap_or_default();
+        let include_health = matches!(scope, "all" | "health");
+        let include_logs = matches!(scope, "all" | "logs");
+        let include_refusals = matches!(scope, "all" | "refusals");
+        Ok(serde_json::json!({
+            "schema": "hiverouter.harness_diagnose.v1",
+            "scope": scope,
+            "generated_at": Timestamp::now().to_string(),
+            "health": if include_health {
+                serde_json::json!({
+                    "db_ok": db_ok,
+                    "provider_key_present": key_present,
+                    "side_effects_enabled": self.side_effects_enabled,
+                    "data_dir": self.data_dir.as_ref().map(|path| path.display().to_string()),
+                    "audit_log_dir": audit_dir.as_ref().map(|path| path.display().to_string()),
+                    "tool_count": census.tool_count,
+                    "grant_count": census.grant_count(),
+                })
+            } else {
+                serde_json::Value::Null
+            },
+            "logs": if include_logs {
+                serde_json::json!({
+                    "files": log_files,
+                    "newest_audit_file": audit_scan.as_ref().and_then(|scan| scan.file.clone()),
+                    "audit_bytes": audit_scan.as_ref().map(|scan| scan.bytes),
+                    "audit_truncated": audit_scan.as_ref().map(|scan| scan.truncated),
+                })
+            } else {
+                serde_json::Value::Null
+            },
+            "refusals": if include_refusals {
+                serde_json::json!({
+                    "catalog_count": census.refusal_count,
+                    "recent": refusals,
+                    "corrupt_audit_lines": audit_scan.as_ref().map(|scan| scan.corrupt_lines),
+                })
+            } else {
+                serde_json::Value::Null
+            },
+        }))
     }
 
     /// Contract event for an approval resolution (`approve`/`deny` echo).
@@ -1813,6 +1973,60 @@ mod tests {
         );
         assert_eq!(rows[0]["outcome"].as_str(), Some("allowed"));
         assert_eq!(rows[1]["outcome"].as_str(), Some("denied"));
+    }
+
+    #[test]
+    fn harness_diagnose_is_scope_bounded_and_secret_free() {
+        let (_temp, data, _db, bridge) = seeded_data_bridge();
+        let audit = data.join("audit");
+        std::fs::create_dir_all(&audit).expect("audit dir");
+        std::fs::write(
+            audit.join("audit.jsonl.2026-11-13"),
+            "{\"timestamp\":\"2026-11-13T00:00:00Z\",\"level\":\"WARN\",\"message\":\"refusal\",\"code\":\"E_APPROVAL_TIMEOUT\",\"run_id\":\"run-1\",\"tool\":\"shell_exec\",\"permission_class\":\"execute\"}\n",
+        )
+        .expect("audit row");
+
+        let value = bridge.harness_diagnose("all", 500).expect("summary");
+        assert_eq!(value["schema"], "hiverouter.harness_diagnose.v1");
+        assert_eq!(value["scope"], "all");
+        assert_eq!(
+            value["health"]["audit_log_dir"].as_str().expect("audit dir"),
+            data.join("audit").display().to_string()
+        );
+        assert_eq!(value["logs"]["files"].as_array().expect("files").len(), 4);
+        let refusals = value["refusals"]["recent"]
+            .as_array()
+            .expect("recent refusals");
+        assert_eq!(refusals.len(), 1);
+        assert_eq!(refusals[0]["code"], "E_APPROVAL_TIMEOUT");
+        assert_eq!(refusals[0]["tool"], "shell_exec");
+        let rendered = value.to_string();
+        assert!(!rendered.contains("Bearer "));
+        assert!(!rendered.contains("sk-"));
+
+        assert_eq!(
+            bridge
+                .harness_diagnose("not-a-scope", 1)
+                .expect_err("unknown scope")
+                .code(),
+            "E_SCHEMA_INVALID"
+        );
+        let logs_only = bridge.harness_diagnose("logs", 5).expect("logs scope");
+        assert!(logs_only["health"].is_null());
+        assert!(logs_only["refusals"].is_null());
+        assert!(!logs_only["logs"].is_null());
+        let refusals_only = bridge
+            .harness_diagnose("refusals", 5)
+            .expect("refusals scope");
+        assert!(refusals_only["health"].is_null());
+        assert!(refusals_only["logs"].is_null());
+        assert_eq!(
+            refusals_only["refusals"]["recent"]
+                .as_array()
+                .expect("recent")
+                .len(),
+            1
+        );
     }
 
     #[test]

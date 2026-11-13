@@ -1,0 +1,115 @@
+{
+  "name": "03-375-mobile",
+  "status": "PASS",
+  "startedAt": "2026-11-13T17:21:38.972Z",
+  "baseURL": "http://127.0.0.1:8100/#/workspace/workspace",
+  "viewport": {
+    "width": 375,
+    "height": 667
+  },
+  "steps": [
+    {
+      "step": "375-initial",
+      "dock": {
+        "x": 0,
+        "y": 54,
+        "w": 375,
+        "h": 557,
+        "right": 375,
+        "bottom": 611
+      },
+      "layout": {
+        "innerWidth": 375,
+        "docScrollWidth": 375,
+        "bodyScrollWidth": 375,
+        "inlineHeight": "560px",
+        "computedHeight": "557px",
+        "clientHeight": 557,
+        "scrollHeight": 557,
+        "composerRect": {
+          "x": 25,
+          "y": 433.1875,
+          "right": 230,
+          "bottom": 485,
+          "w": 205,
+          "h": 51.8125
+        }
+      }
+    },
+    {
+      "step": "375-controls",
+      "dock": {
+        "x": 0,
+        "y": 54,
+        "w": 375,
+        "h": 557,
+        "right": 375,
+        "bottom": 611
+      },
+      "layout": {
+        "innerWidth": 375,
+        "docScrollWidth": 375,
+        "bodyScrollWidth": 375
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "375: no horizontal document scroll",
+      "pass": true,
+      "detail": "{\"innerWidth\":375,\"docScrollWidth\":375,\"bodyScrollWidth\":375,\"inlineHeight\":\"560px\",\"computedHeight\":\"557px\",\"clientHeight\":557,\"scrollHeight\":557,\"composerRect\":{\"x\":25,\"y\":433.1875,\"right\":230,\"bottom\":485,\"w\":205,\"h\":51.8125}}"
+    },
+    {
+      "name": "375: dock sits above bottom nav (bottom≈611)",
+      "pass": true,
+      "detail": "{\"x\":0,\"y\":54,\"w\":375,\"h\":557,\"right\":375,\"bottom\":611}"
+    },
+    {
+      "name": "375: dock x is 0 and right is 375",
+      "pass": true,
+      "detail": "{\"x\":0,\"y\":54,\"w\":375,\"h\":557,\"right\":375,\"bottom\":611}"
+    },
+    {
+      "name": "375: dock auto-height is content-driven, not the desktop pixel floor",
+      "pass": true,
+      "detail": "{\"inlineHeight\":\"560px\",\"computedHeight\":\"557px\",\"clientHeight\":557,\"scrollHeight\":557}"
+    },
+    {
+      "name": "375: composer fully inside viewport",
+      "pass": true,
+      "detail": "{\"x\":25,\"y\":433.1875,\"right\":230,\"bottom\":485,\"w\":205,\"h\":51.8125}"
+    },
+    {
+      "name": "375 CONTROLS: no horizontal scroll",
+      "pass": true,
+      "detail": "{\"innerWidth\":375,\"docScrollWidth\":375,\"bodyScrollWidth\":375}"
+    },
+    {
+      "name": "375 CONTROLS: bottom stays fixed",
+      "pass": true,
+      "detail": "{\"x\":0,\"y\":54,\"w\":375,\"h\":557,\"right\":375,\"bottom\":611}"
+    },
+    {
+      "name": "375 CONTROLS: composer remains visible",
+      "pass": true,
+      "detail": "composer hidden"
+    },
+    {
+      "name": "zero console errors",
+      "pass": true,
+      "detail": "0 error console message(s)"
+    },
+    {
+      "name": "zero page errors",
+      "pass": true,
+      "detail": "0 uncaught page error(s)"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "artifacts": [
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\11-375-initial.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\12-375-controls.png"
+  ]
+}

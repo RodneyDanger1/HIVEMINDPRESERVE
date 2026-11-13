@@ -1,0 +1,60 @@
+{
+    "gate":  "uiux-gate",
+    "verdict":  "PASS",
+    "ranAt":  "2026-11-13T11:25:57.0526258-06:00",
+    "command":  "node node_modules/playwright/cli.js test specs/uiux-gate.spec.ts --project=chrome --workers=1 --reporter=list",
+    "baseUrl":  "http://127.0.0.1:8100",
+    "gitHead":  "e83a4446dbf251cbec9a5433c32541f5e93756b8",
+    "gitStatus":  "M backend/crates/hiverouter-core/src/http.rs\r\n M backend/crates/hiverouter-core/src/tools_bridge.rs\r\n M docs/ui/figcraft/ASSETS-INDEX.json\r\n M tools/build_assets_index.py\r\n M web/public/figcraft/SOURCES.json\r\n M web/src/chat/ChatCore.tsx\r\n M web/src/figcraft/catalog.ts\r\n M web/src/figcraft/types.ts\r\n M web/src/panels/GuideOverlay.tsx\r\n M web/src/panels/HelpPanel.tsx\r\n M web/src/panels/InfoTip.tsx\r\n M web/src/panels/NavIcon.tsx\r\n M web/src/panels/NavRail.tsx\r\n M web/src/styles/index.css\r\n M web/src/styles/motion.css\r\n?? backend/crates/hiverouter-core/src/health.rs\r\n?? docs/evidence/live/uiux-gate-20261113-111911/\r\n?? docs/evidence/live/uiux-gate-20261113-112806/\r\n?? e2e/specs/uiux-gate.spec.ts\r\n?? tools/build-figcraft-catalog.mjs\r\n?? web/src/chat/chatDock.ts",
+    "server":  {
+                   "exe":  "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\target\\release\\hiverouter.exe",
+                   "exeMtime":  "2026-11-13T11:15:07.6684539-06:00",
+                   "exeSha256":  "DC9F68C7DAAF06D87442C902FAAEBEE2563DF981AB474DE91C38A2E9DEEE6B2C",
+                   "pid":  46176,
+                   "dataDir":  "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\data",
+                   "keyPresent":  false,
+                   "schema":  "hiverouter.v1"
+               },
+    "results":  [
+                    {
+                        "file":  "01-1440-dock-help.json",
+                        "status":  "PASS",
+                        "checks":  23,
+                        "passed":  23,
+                        "consoleErrors":  0,
+                        "pageErrors":  0,
+                        "failedRequests":  0,
+                        "viewport":  {
+                                         "width":  1440,
+                                         "height":  900
+                                     }
+                    },
+                    {
+                        "file":  "02-refusal-clear-dismiss.json",
+                        "status":  "PASS",
+                        "checks":  11,
+                        "passed":  11,
+                        "consoleErrors":  0,
+                        "pageErrors":  0,
+                        "failedRequests":  0,
+                        "viewport":  {
+                                         "width":  1440,
+                                         "height":  900
+                                     }
+                    },
+                    {
+                        "file":  "03-375-mobile.json",
+                        "status":  "PASS",
+                        "checks":  10,
+                        "passed":  10,
+                        "consoleErrors":  0,
+                        "pageErrors":  0,
+                        "failedRequests":  0,
+                        "viewport":  {
+                                         "width":  375,
+                                         "height":  667
+                                     }
+                    }
+                ],
+    "note":  "No paid provider run: refusal test is gated on STATE showing key=missing before typing/submitting; zero POST /api requests observed."
+}

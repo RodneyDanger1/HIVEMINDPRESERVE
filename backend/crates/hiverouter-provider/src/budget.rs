@@ -26,13 +26,13 @@ use crate::pricing::PricingTable;
 pub const RUN_COST_CAP_USD_CENTS: i64 = 50;
 
 /// B2: combined prompt+completion token budget per run (PROPOSED-POLICY).
-pub const TOKEN_BUDGET_COMBINED: u64 = 400_000;
+pub const TOKEN_BUDGET_COMBINED: u64 = 800_000;
 
 /// B3: provider call cap per run, including retries (PROPOSED-POLICY).
 /// Maximum provider calls per run. The accepted plan cap is 40 nodes; the
 /// planner, root control and final synthesis mean a 40-node run needs more
 /// than 40 sends, so the call cap cannot be lower than the node cap.
-pub const CALL_CAP: u32 = 64;
+pub const CALL_CAP: u32 = 128;
 
 /// B4: maximum spawn depth (Hyper → Super → Worker).
 pub const MAX_SPAWN_DEPTH: u8 = 3;
@@ -828,8 +828,8 @@ mod tests {
     fn defaults_match_blueprint_policy_values() {
         let limits = BudgetLimits::default();
         assert_eq!(limits.run_cost_cap_usd, Decimal::from_str("0.50").unwrap());
-        assert_eq!(limits.token_budget_combined, 400_000);
-        assert_eq!(limits.call_cap, 64);
+        assert_eq!(limits.token_budget_combined, 800_000);
+        assert_eq!(limits.call_cap, 128);
         assert_eq!(limits.max_attempts, 3);
         assert_eq!(MAX_SPAWN_DEPTH, 3);
         assert_eq!(FANOUT_LIMIT, 8);

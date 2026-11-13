@@ -7,10 +7,12 @@
 import {
   memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useUiStore, useUiStoreApi } from '../state/context';
@@ -19,6 +21,14 @@ import { isTerminal } from '../state/agentState';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
 import { clientRefusal } from '../api/refusals';
+import { approvalActionsEnabled } from '../state/approval';
+import {
+  approvalActionAriaLabel,
+  approvalQueueLabel,
+  clampApprovalIndex,
+  formatExpiry,
+  networkApprovalTargetKnown,
+} from '../panels/ApprovalOverlay';
 import { InfoTip } from '../panels/InfoTip';
 import { ControlBar } from '../panels/ControlBar';
 import { DOT_STATES, visualFor } from '../state/agentState';
@@ -26,26 +36,34 @@ import { StateDot } from '../flow/nodes';
 import { APP_VERSION } from '../version';
 import { CONTROL_INTENTS } from '../state/chatIntents';
 import type { ChatMessage, ToastRefusal } from '../state/store';
+import {
+  CHAT_HEIGHT_STORAGE_KEY,
+  DEFAULT_CHAT_HEIGHT,
+  MAX_CHAT_HEIGHT,
+  MIN_CHAT_HEIGHT,
+  clampChatHeight,
+  dockHeight,
+  readChatHeight,
+  type DockTab,
+} from './chatDock';
 import { MessageBody, TypingDots, WorkingBee } from './ChatMotion';
 
-const CHAT_HEIGHT_KEY = 'hivemind.chat-height';
-const MIN_CHAT_HEIGHT = 300;
-const DOCK_TRAY_HEIGHT = 210;
+/**
+ * Layout effect on the client (restore the live drag height before paint),
+ * plain effect during static/server rendering where layout effects do not run.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-function readChatHeight(): number {
-  try {
-    const stored = localStorage.getItem(CHAT_HEIGHT_KEY);
-    if (stored === null) return 560;
-    const raw = Number(stored);
-    // The old 390/480 defaults left too little transcript once a run refusal
-    // or the session panel was visible; migrate those exact defaults forward
-    // without overriding a deliberate larger resize.
-    if (raw === 390 || raw === 480) return 560;
-    return Number.isFinite(raw) ? Math.min(760, Math.max(MIN_CHAT_HEIGHT, raw)) : 560;
-  } catch {
-    return 560;
-  }
-}
+export {
+  DEFAULT_CHAT_HEIGHT,
+  DOCK_TRAY_HEIGHT,
+  MAX_CHAT_HEIGHT,
+  MIN_CHAT_HEIGHT,
+  clampChatHeight,
+  dockHeight,
+  readChatHeight,
+} from './chatDock';
 
 const SESSION_STORAGE_KEY = 'hivemind.session-id';
 const POLICY_STORAGE_KEY = 'hivemind.session-policy';
@@ -181,10 +199,30 @@ export function ChatCore() {
   const keyPresent = settings.keyPresent;
   const approvals = useUiStore((state) => state.approvals);
   const resolvingApprovals = useUiStore((state) => state.resolvingApprovals);
+  const approvalResolve = useUiStore((state) => state.approvalResolve);
   const resolveApproval = useUiStore((state) => state.resolveApproval);
-  const pendingApproval = approvals[0] ?? null;
+  const retryApproval = useUiStore((state) => state.retryApproval);
+  const dismissApproval = useUiStore((state) => state.dismissApproval);
+  const [approvalCursor, setApprovalCursor] = useState(0);
+  const [approvalNow, setApprovalNow] = useState(() => Date.now());
+  const approvalIndex = clampApprovalIndex(approvalCursor, approvals.length);
+  const pendingApproval = approvals[approvalIndex] ?? null;
+  const pendingApprovalResolve =
+    pendingApproval === null ? undefined : approvalResolve[pendingApproval.approvalId];
+  const approvalActions =
+    pendingApproval === null
+      ? null
+      : approvalActionsEnabled({
+          record: pendingApproval,
+          resolve: pendingApprovalResolve,
+          nowMs: approvalNow,
+          connection,
+        });
   const approvalBusy =
-    pendingApproval === null || resolvingApprovals.includes(pendingApproval.approvalId);
+    pendingApproval !== null &&
+    (resolvingApprovals.includes(pendingApproval.approvalId) ||
+      pendingApprovalResolve?.status === 'resolving' ||
+      pendingApprovalResolve?.status === 'awaiting_server');
   const toolActivity = useUiStore((state) => state.toolActivity);
   const tasks = useUiStore((state) => state.tasks);
   const activeAgents = useMemo(
@@ -217,32 +255,106 @@ export function ChatCore() {
   const [attachError, setAttachError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [chatHeight, setChatHeight] = useState(readChatHeight);
-  const [dockTab, setDockTab] = useState<'controls' | 'state' | null>(null);
+  const [dockTab, setDockTab] = useState<DockTab>(null);
   const [resizing, setResizing] = useState(false);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const liveHeightRef = useRef(chatHeight);
   const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
+  const resizeFrameRef = useRef<number | null>(null);
+  const pendingHeightRef = useRef<number | null>(null);
 
-  const startResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    resizeRef.current = { startY: event.clientY, startHeight: chatHeight };
-    setResizing(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const moveResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    if (resizeRef.current === null) return;
-    const next = Math.min(
-      760,
-      Math.max(MIN_CHAT_HEIGHT, resizeRef.current.startHeight + (resizeRef.current.startY - event.clientY)),
-    );
-    setChatHeight(next);
-  };
-  const endResize = (): void => {
-    resizeRef.current = null;
-    setResizing(false);
+  const persistChatHeight = (height: number): void => {
     try {
-      localStorage.setItem(CHAT_HEIGHT_KEY, String(chatHeight));
+      localStorage.setItem(CHAT_HEIGHT_STORAGE_KEY, String(height));
     } catch {
-      // Selection still works for this session.
+      // Storage is optional; the in-memory resize still works.
     }
   };
+
+  /** Commit a height through React (keyboard/reset) and persist it. */
+  const commitChatHeight = (height: number): void => {
+    const next = clampChatHeight(height);
+    liveHeightRef.current = next;
+    setChatHeight(next);
+    persistChatHeight(next);
+  };
+
+  /** Paint the drag height straight to the panel: no per-frame React render. */
+  const paintChatHeight = (height: number): void => {
+    liveHeightRef.current = height;
+    if (panelRef.current !== null) {
+      panelRef.current.style.height = `${dockHeight(height, dockTab)}px`;
+    }
+  };
+
+  const startResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 0) return;
+    resizeRef.current = { startY: event.clientY, startHeight: liveHeightRef.current };
+    pendingHeightRef.current = clampChatHeight(liveHeightRef.current);
+    // Remove the height transition before the first move so the drag tracks
+    // the pointer instead of easing behind it.
+    if (panelRef.current !== null) {
+      panelRef.current.style.transition = 'none';
+    }
+    setResizing(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const moveResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const origin = resizeRef.current;
+    if (origin === null) return;
+    const next = clampChatHeight(origin.startHeight + (origin.startY - event.clientY));
+    pendingHeightRef.current = next;
+    if (resizeFrameRef.current !== null) return;
+    resizeFrameRef.current = window.requestAnimationFrame(() => {
+      resizeFrameRef.current = null;
+      const pending = pendingHeightRef.current;
+      if (pending !== null) paintChatHeight(pending);
+    });
+  };
+  const endResize = (): void => {
+    if (resizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+      resizeFrameRef.current = null;
+    }
+    const pending = pendingHeightRef.current;
+    resizeRef.current = null;
+    pendingHeightRef.current = null;
+    setResizing(false);
+    commitChatHeight(pending ?? liveHeightRef.current);
+  };
+  const onResizeKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      commitChatHeight(liveHeightRef.current + (event.key === 'ArrowUp' ? 24 : -24));
+      return;
+    }
+    if (event.key === 'Home') {
+      event.preventDefault();
+      commitChatHeight(DEFAULT_CHAT_HEIGHT);
+      return;
+    }
+    if (event.key === 'End') {
+      event.preventDefault();
+      commitChatHeight(MAX_CHAT_HEIGHT);
+    }
+  };
+  useEffect(
+    () => () => {
+      if (resizeFrameRef.current !== null) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+      }
+    },
+    [],
+  );
+  // A drag paints directly to the panel. Any unrelated render during that
+  // drag (streaming reply, store echo) would otherwise restore the last React
+  // height, so put the live drag height back before the browser paints.
+  useIsomorphicLayoutEffect(() => {
+    const node = panelRef.current;
+    if (node !== null) {
+      node.style.height = `${dockHeight(resizing ? liveHeightRef.current : chatHeight, dockTab)}px`;
+    }
+  });
   const fileTreeRoot = useUiStore((state) => state.fileTree.root);
   const projectId = useUiStore((state) => state.project.id);
   const [configuredWorkspace, setConfiguredWorkspace] = useState<string | null>(null);
@@ -490,10 +602,45 @@ export function ChatCore() {
     if (node) {
       // An empty thread must show its starters from the top. Scrolling an
       // empty log to its measured height hid the first starter under the
-      // header once the root-control block was added.
-      node.scrollTop = messages.length === 0 ? 0 : node.scrollHeight;
+      // header once the root-control block was added. A pending approval is
+      // the exception: it is a decision the operator must see.
+      node.scrollTop =
+        messages.length === 0 && pendingApproval === null ? 0 : node.scrollHeight;
     }
-  }, [messages]);
+    // A pending approval arrives as a transcript row; bring it into view when
+    // it appears or when the operator pages through the queue.
+  }, [messages, approvals.length, approvalIndex, pendingApproval?.approvalId]);
+
+  const hasApprovalExpiry = approvals.some((approval) => Boolean(approval.expiresAt));
+  useEffect(() => {
+    setApprovalCursor((current) => clampApprovalIndex(current, approvals.length));
+  }, [approvals.length]);
+  useEffect(() => {
+    if (!chat.visible || !hasApprovalExpiry) return undefined;
+    const timer = window.setInterval(() => {
+      setApprovalNow(Date.now());
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [chat.visible, hasApprovalExpiry]);
+
+  const approvalRemaining =
+    pendingApproval === null ? null : formatExpiry(pendingApproval.expiresAt, approvalNow);
+  const approvalExpiryLabel =
+    approvalRemaining === null
+      ? ''
+      : approvalRemaining === STRINGS.approval.expiry.unknown
+        ? STRINGS.approval.expiry.unknown
+        : approvalRemaining === STRINGS.approval.expiry.expired
+          ? STRINGS.approval.expiry.expired
+          : `${STRINGS.approval.expiry.expiresIn} ${approvalRemaining}`;
+  const approvalTargetKnown =
+    pendingApproval === null ||
+    networkApprovalTargetKnown(pendingApproval.tool, pendingApproval.argsPreview);
+  // The store's dismiss action only removes terminal approvals that have a
+  // resolve record. A client-clock expiry without one cannot be dismissed, so
+  // do not render a button that would silently do nothing.
+  const approvalDismissable =
+    approvalActions?.dismiss === true && pendingApprovalResolve !== undefined;
 
   if (!chat.visible) {
     // The header owns the one canonical Show/Hide control; a second floating
@@ -565,6 +712,35 @@ export function ChatCore() {
     void submit();
   };
 
+  /** Shared fail-closed gate for the inline approval decisions. */
+  const decideApproval = (decision: 'approve' | 'deny'): void => {
+    if (pendingApproval === null || approvalActions === null) return;
+    const enabled =
+      decision === 'approve' ? approvalActions.approve : approvalActions.deny;
+    if (!enabled) return;
+    if (
+      decision === 'approve' &&
+      !networkApprovalTargetKnown(pendingApproval.tool, pendingApproval.argsPreview)
+    ) {
+      return;
+    }
+    void resolveApproval(
+      pendingApproval.approvalId,
+      decision,
+      decision === 'deny' ? 'operator denied in chat' : undefined,
+    );
+  };
+
+  const dismissRunError = (): void => {
+    setDismissedErrorRunId(runId);
+    const composer = composerRef.current;
+    if (composer !== null && !composer.disabled) {
+      composer.focus();
+    } else {
+      listRef.current?.focus();
+    }
+  };
+
   const attachFile = async (file: File | null): Promise<void> => {
     if (file === null) return;
     if (file.size > 60_000) {
@@ -586,30 +762,36 @@ export function ChatCore() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 left-[72px] z-40 flex items-end justify-center max-[640px]:bottom-14 max-[640px]:left-0">
+    <div className="pointer-events-none fixed bottom-0 left-[72px] right-0 z-40 flex items-end justify-center max-[640px]:bottom-14 max-[640px]:left-0">
       <section
+        ref={panelRef}
+        id="chat-core-panel"
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex max-h-[calc(100vh-52px)] w-full flex-col rounded-t-[18px] border-x-0 border-b-0 p-3 max-[640px]:!h-auto max-[640px]:max-h-[calc(100dvh-110px)] max-[640px]:overflow-y-auto"
+        className="chat-core pointer-events-auto surface-panel z-40 flex max-h-[calc(100vh-52px)] w-full flex-col overflow-hidden rounded-t-[18px] border-x-0 border-b-0 p-3 max-[640px]:!h-auto max-[640px]:max-h-[calc(100dvh-110px)] max-[640px]:overflow-y-auto"
         style={{
-          height: chatHeight + (dockTab === null ? 0 : DOCK_TRAY_HEIGHT),
+          height: dockHeight(chatHeight, dockTab),
           boxShadow: 'var(--shadow-e2)',
           border: 'none',
-          transition:
-            reduced || resizing
-              ? 'none'
-              : 'height 180ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms ease',
+          transition: reduced || resizing ? 'none' : 'height 180ms cubic-bezier(0.2, 0, 0, 1)',
         }}
       >
         <div
           role="separator"
           aria-label="Resize chat panel"
           aria-orientation="horizontal"
-          title="Drag to resize"
-          className="mx-auto mb-1 h-3 w-16 shrink-0 cursor-row-resize touch-none rounded-full bg-white/35 hover:bg-white/60"
+          aria-controls="chat-core-panel"
+          aria-valuemin={MIN_CHAT_HEIGHT}
+          aria-valuemax={MAX_CHAT_HEIGHT}
+          aria-valuenow={chatHeight}
+          aria-valuetext={`${chatHeight} pixels tall`}
+          tabIndex={0}
+          title="Drag to resize; Arrow Up/Down adjusts; Home resets"
+          className="mx-auto mb-1 h-3 w-16 shrink-0 cursor-row-resize touch-none select-none rounded-full bg-white/35 hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900"
           onPointerDown={startResize}
           onPointerMove={moveResize}
           onPointerUp={endResize}
           onPointerCancel={endResize}
+          onKeyDown={onResizeKeyDown}
         />
         <header
           className="-mx-3 mb-2 flex h-11 items-center justify-between gap-2 rounded-t-[18px] px-3 text-white"
@@ -646,9 +828,10 @@ export function ChatCore() {
             </span>
             <button
               type="button"
-              className="type-mono-meta flex min-h-6 min-w-6 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10 min-h-11 min-w-11"
+              className="type-mono-meta flex min-h-11 min-w-11 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey-200"
               onClick={() => setChatVisible(false)}
               aria-label={STRINGS.chat.closeAria}
+              title="Hide the chat dock (the hive stays)"
             >
               ×
             </button>
@@ -658,32 +841,36 @@ export function ChatCore() {
         {runRefusal === null || runId === dismissedErrorRunId ? null : (
           <div
             role="alert"
-            className="mt-2 rounded-[var(--radius-sm)] border border-signal bg-ink-900 px-2 py-1.5 text-canvas"
+            className="mt-2 flex min-w-0 items-center gap-2 rounded-[var(--radius-sm)] border border-signal bg-ink-900 px-2 py-1 text-canvas"
           >
-            <div className="flex items-center gap-2">
-              <span className="type-label text-honey-200">Run refused</span>
-              <span className="type-mono-meta text-honey-200">{runRefusal.code}</span>
-              <button
-                type="button"
-                className="type-mono-meta ml-auto min-h-7 min-w-7 rounded-[4px] border border-white/20 text-honey-100 hover:bg-white/10"
-                aria-label="Dismiss run refusal"
-                onClick={() => setDismissedErrorRunId(runId)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="mt-1 line-clamp-2 text-[12px] leading-[16px]">{runRefusal.message}</div>
-            <details className="mt-1">
-              <summary className="type-mono-meta cursor-pointer text-[10px] text-honey-100/85">
-                What to do
-              </summary>
-              <div className="mt-1 text-[11px] leading-4 text-honey-100/85">
-                {runRefusal.how_to_fix}
-                {runErrorCode === 'E_SCHEMA_INVALID'
+            <span className="type-label shrink-0 text-honey-200">RUN REFUSED</span>
+            <span className="type-mono-meta shrink-0 text-[10px] text-honey-200">
+              {runRefusal.code}
+            </span>
+            <span
+              className="min-w-0 flex-1 truncate text-[11px] leading-4 text-canvas/85"
+              title={`${runRefusal.message} ${runRefusal.how_to_fix}${
+                runErrorCode === 'E_SCHEMA_INVALID'
                   ? ' The planner returned a plan that did not match the schema; retry once, then shorten the prompt if it repeats.'
-                  : ''}
-              </div>
-            </details>
+                  : ''
+              }`}
+            >
+              {runRefusal.message}
+            </span>
+            <button
+              type="button"
+              className="type-mono-meta min-h-8 shrink-0 rounded-[4px] border border-white/25 px-2 py-0.5 text-[10px] text-honey-100 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-honey-200"
+              aria-label={`Dismiss the ${runRefusal.code} run error`}
+              onClick={dismissRunError}
+            >
+              Dismiss error
+            </button>
+            <span className="sr-only">
+              {runRefusal.how_to_fix}
+              {runErrorCode === 'E_SCHEMA_INVALID'
+                ? ' The planner returned a plan that did not match the schema; retry once, then shorten the prompt if it repeats.'
+                : ''}
+            </span>
           </div>
         )}
 
@@ -701,7 +888,9 @@ export function ChatCore() {
 
         <div
           ref={listRef}
-          className="mt-2 min-h-0 flex-1 overflow-y-auto rounded-[var(--radius-sm)] bg-panel-alt px-2 py-2"
+          tabIndex={0}
+          role="region"
+          className="mt-2 min-h-[140px] flex-1 overflow-y-auto rounded-[var(--radius-sm)] bg-panel-alt px-2 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink-700"
           aria-label="Chat transcript"
         >
           {messages.length === 0 ? (
@@ -776,195 +965,137 @@ export function ChatCore() {
               {STRINGS.agentStates.streaming}
             </div>
           ) : null}
+          {pendingApproval === null ? null : (
+            <section
+              role="alert"
+              aria-busy={approvalBusy}
+              aria-label={`Approval needed: ${pendingApproval.tool}`}
+              data-testid="chat-inline-approval"
+              className="mt-2 rounded-[10px] border border-amber bg-panel-alt px-2.5 py-2"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="type-mono-meta text-[10px] tracking-[0.1em] text-ink-800">
+                  APPROVAL NEEDED
+                </span>
+                <span className="type-mono-code min-w-0 flex-1 truncate text-[10px] text-ink-900">
+                  {pendingApproval.tool}
+                </span>
+                {approvalExpiryLabel.length === 0 ? null : (
+                  <span
+                    className="type-mono-meta text-[10px] text-meta"
+                    aria-hidden="true"
+                    title={approvalExpiryLabel}
+                  >
+                    {approvalExpiryLabel}
+                  </span>
+                )}
+              </div>
+              {approvals.length > 1 ? (
+                <div className="mt-1 flex items-center justify-between gap-2 rounded-[6px] border border-hairline bg-panel px-1.5 py-0.5">
+                  <button
+                    type="button"
+                    aria-label={STRINGS.approval.queue.previous}
+                    className="type-mono-meta rounded-[4px] px-1.5 py-0.5 text-[10px] text-ink-700 hover:bg-honey-100 disabled:opacity-40"
+                    disabled={approvalIndex === 0}
+                    onClick={() =>
+                      setApprovalCursor(clampApprovalIndex(approvalIndex - 1, approvals.length))
+                    }
+                  >
+                    {STRINGS.approval.queue.previousShort}
+                  </button>
+                  <span className="type-mono-meta text-[10px] text-meta">
+                    {approvalQueueLabel(approvalIndex, approvals.length)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={STRINGS.approval.queue.next}
+                    className="type-mono-meta rounded-[4px] px-1.5 py-0.5 text-[10px] text-ink-700 hover:bg-honey-100 disabled:opacity-40"
+                    disabled={approvalIndex >= approvals.length - 1}
+                    onClick={() =>
+                      setApprovalCursor(clampApprovalIndex(approvalIndex + 1, approvals.length))
+                    }
+                  >
+                    {STRINGS.approval.queue.nextShort}
+                  </button>
+                </div>
+              ) : null}
+              {pendingApproval.argsPreview ? (
+                <p className="mt-1 line-clamp-2 break-all font-mono text-[10px] leading-4 text-ink-500">
+                  {pendingApproval.argsPreview}
+                </p>
+              ) : null}
+              {pendingApproval.nonce === null ? (
+                <p className="mt-1 text-[10px] leading-4 text-signal">
+                  {STRINGS.approval.nonceMissing}
+                </p>
+              ) : null}
+              {approvalTargetKnown ? null : (
+                <p role="status" className="mt-1 type-label text-signal">
+                  {STRINGS.approval.networkTargetMissing}
+                </p>
+              )}
+              {approvalBusy ? (
+                <p role="status" className="mt-1 type-mono-meta text-[10px] text-meta">
+                  {STRINGS.approval.resolving}
+                </p>
+              ) : null}
+              {pendingApprovalResolve?.refusal ? (
+                <p className="mt-1 text-[10px] leading-4 text-signal">
+                  {STRINGS.approval.resolveFailed}: {pendingApprovalResolve.refusal.code} —{' '}
+                  {pendingApprovalResolve.refusal.message}
+                </p>
+              ) : null}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {approvalActions?.retry ? (
+                  <button
+                    type="button"
+                    className="type-mono-meta min-h-8 rounded-[6px] border border-hairline px-2 py-0.5 text-[10px] text-ink-700 hover:bg-honey-100"
+                    onClick={() => void retryApproval(pendingApproval.approvalId)}
+                  >
+                    {STRINGS.approval.retry}
+                  </button>
+                ) : null}
+                {approvalDismissable ? (
+                  <button
+                    type="button"
+                    className="type-mono-meta min-h-8 rounded-[6px] border border-hairline px-2 py-0.5 text-[10px] text-ink-700 hover:bg-honey-100"
+                    onClick={() => dismissApproval(pendingApproval.approvalId)}
+                  >
+                    {STRINGS.approval.dismiss}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label={approvalActionAriaLabel('deny', pendingApproval.tool)}
+                  disabled={approvalBusy || approvalActions?.deny !== true}
+                  className="type-label ml-auto min-h-8 rounded-[6px] border border-signal px-2 py-0.5 text-[11px] text-signal disabled:opacity-50"
+                  onClick={() => decideApproval('deny')}
+                >
+                  {STRINGS.controls.deny}
+                </button>
+                <button
+                  type="button"
+                  aria-label={approvalActionAriaLabel('approve', pendingApproval.tool)}
+                  disabled={
+                    approvalBusy || approvalActions?.approve !== true || !approvalTargetKnown
+                  }
+                  className="type-label min-h-8 rounded-[6px] border border-verify bg-verify/10 px-2 py-0.5 text-[11px] font-semibold text-verify disabled:opacity-50"
+                  onClick={() => decideApproval('approve')}
+                >
+                  {STRINGS.controls.approve}
+                </button>
+              </div>
+            </section>
+          )}
         </div>
 
-        <details className="mt-2 max-h-[132px] shrink-0 overflow-y-auto rounded-[8px] border border-hairline bg-panel-alt/50 px-2 py-1">
-          <summary className="type-mono-meta cursor-pointer select-none text-[10px] tracking-[0.08em] text-ink-700">
-            SESSION &amp; PERMISSIONS · {permissionPolicy}
-          </summary>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
-            SESSION
-            <select
-              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
-              value={namedSession}
-              disabled={connection !== 'open' || replaying}
-              onChange={(event) => {
-                const nextId = event.target.value;
-                setNamedSession(nextId);
-                setActiveSessionId(nextId || null);
-                const chosen = sessions.find((session) => session.id === nextId);
-                if (chosen?.permission_policy) setPermissionPolicy(chosen.permission_policy);
-              }}
-            >
-              <option value="">Default session</option>
-              {sessions.map((session) => (
-                <option key={session.id} value={session.id}>
-                  {session.name}
-                  {session.archived_at ? ' (archived)' : ''}
-                </option>
-              ))}
-            </select>
-            {sessionLoadError ? (
-              <span className="text-signal">Sessions unavailable; default will be used.</span>
-            ) : null}
-          </label>
-          <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
-            POLICY
-            <select
-              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900 disabled:cursor-not-allowed disabled:opacity-60"
-              value={permissionPolicy}
-              disabled={connection !== 'open' || replaying}
-              title={
-                namedSession
-                  ? 'Policy for this named session/run'
-                  : 'Policy for a new session or the default run'
-              }
-              onChange={(event) =>
-                void changePolicy(
-                  event.target.value as 'classic' | 'plan' | 'standard' | 'trusted',
-                )
-              }
-            >
-              <option value="classic" title="approve every side effect">classic — ask</option>
-              <option value="plan" title="refuse mutations">plan — no writes</option>
-              <option value="standard" title="auto-approve workspace edits">standard — workspace</option>
-              <option value="trusted" title="explicit full-local opt-in">trusted — full local</option>
-            </select>
-          </label>
-        </div>
-        <button
-          type="button"
-          aria-pressed={permissionPolicy === 'trusted'}
-          className={
-            'type-mono-meta mt-1 flex items-center gap-1.5 rounded-[8px] border px-2 py-1 text-[10px] ' +
-            (permissionPolicy === 'trusted'
-              ? 'border-signal bg-signal/10 text-signal'
-              : 'border-hairline bg-panel text-ink-700 hover:bg-honey-100')
-          }
-          title="Trusted policy runs side effects without approval prompts. Use only in a workspace you trust."
-          onClick={() => void changePolicy(permissionPolicy === 'trusted' ? 'classic' : 'trusted')}
-        >
-          <span aria-hidden="true">{permissionPolicy === 'trusted' ? '●' : '○'}</span>
-          AUTO-APPROVE {permissionPolicy === 'trusted' ? 'ON' : 'OFF'}
-        </button>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <label className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
-            <input
-              type="checkbox"
-              checked={includeArchived}
-              disabled={connection !== 'open'}
-              onChange={(event) => setIncludeArchived(event.target.checked)}
-            />
-            Show archived
-          </label>
-          <button
-            type="button"
-            className="type-mono-meta rounded-[6px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 disabled:opacity-50"
-            disabled={!selectedSession || sessionBusy || connection !== 'open'}
-            title={
-              selectedSession
-                ? 'Archive or restore the selected named session'
-                : 'Select a named session to enable archive'
-            }
-            onClick={() => void toggleArchive()}
-          >
-            {selectedSession?.archived_at ? 'Restore session' : 'Archive session'}
-          </button>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1">
-          <label className="sr-only" htmlFor="new-session-name">
-            New session name
-          </label>
-          <input
-            id="new-session-name"
-            className="type-mono-code min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 py-0.5 text-[10px] text-ink-900"
-            placeholder="New session name"
-            value={newSessionName}
-            disabled={sessionBusy || connection !== 'open'}
-            onChange={(event) => setNewSessionName(event.target.value)}
-          />
-          <button
-            type="button"
-            className="type-mono-meta rounded-[6px] border border-honey-500 bg-honey-300 px-1.5 py-0.5 text-[10px] font-semibold text-ink-900 disabled:opacity-50"
-            disabled={
-              sessionBusy ||
-              connection !== 'open' ||
-              !sessionWorkspace ||
-              newSessionName.trim().length === 0
-            }
-            title={
-              sessionWorkspace
-                ? 'Create a named session in the current workspace'
-                : 'Workspace is not loaded yet'
-            }
-            onClick={() => void createSession()}
-          >
-            Create
-          </button>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1 max-[640px]:hidden">
-          <span className="flex items-center gap-1 type-mono-meta text-[10px] tracking-[0.12em] text-meta">
-            ROOT CONTROL
-            <InfoTip label="What root control does">
-              These buttons only fill the composer. The server decides whether the HyperAgent may
-              spawn a remote or daemon; nothing is spawned by clicking here.
-            </InfoTip>
-          </span>
-          {CONTROL_INTENTS.map((intent) => (
-            <button
-              key={intent.id}
-              type="button"
-              className="type-label rounded-[8px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 hover:bg-honey-100 disabled:opacity-50"
-              data-control-intent={intent.id}
-              disabled={connection !== 'open' || replaying}
-              title={`Fill the composer with a SUBMIT_PROMPT asking the HyperAgent root control for ${intent.label.toLowerCase()}. The server decides; no spawn is claimed here.`}
-              onClick={() => {
-                setDraft(intent.prompt);
-                composerRef.current?.focus();
-              }}
-            >
-              {intent.label}
-            </button>
-          ))}
-        </div>
-
-        </details>
-        {pendingApproval ? (
-          <div role="alert" className="mt-2 rounded-[10px] border border-amber bg-panel-alt px-2.5 py-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="type-mono-meta text-[10px] tracking-[0.1em] text-ink-800">
-                APPROVAL NEEDED
-              </span>
-              <span className="type-mono-code truncate text-[10px] text-ink-900">{pendingApproval.tool}</span>
-            </div>
-            {pendingApproval.argsPreview ? (
-              <p className="mt-1 line-clamp-2 break-all font-mono text-[10px] leading-4 text-ink-500">
-                {pendingApproval.argsPreview}
-              </p>
-            ) : null}
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                type="button"
-                aria-label={`Approve ${pendingApproval.tool}`}
-                disabled={approvalBusy || pendingApproval.nonce === null || connection !== 'open'}
-                className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] border border-verify bg-verify/10 text-[11px] font-semibold text-verify disabled:opacity-50"
-                onClick={() => void resolveApproval(pendingApproval.approvalId, 'approve')}
-              >
-                <span aria-hidden="true">✓</span> Approve
-              </button>
-              <button
-                type="button"
-                aria-label={`Deny ${pendingApproval.tool}`}
-                disabled={approvalBusy || pendingApproval.nonce === null || connection !== 'open'}
-                className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] border border-signal bg-signal/10 text-[11px] font-semibold text-signal disabled:opacity-50"
-                onClick={() => void resolveApproval(pendingApproval.approvalId, 'deny', 'operator denied in chat')}
-              >
-                <span aria-hidden="true">✕</span> Deny
-              </button>
-            </div>
-          </div>
-        ) : null}
+        {/*
+         * Composer zone. Kept as a shrink-0 sticky block: the transcript can
+         * scroll/shrink, but the prompt input and the footer controls stay on
+         * screen. Session/policy/archive/create/root controls live in the
+         * STATE & SETTINGS tray below, never in the transcript column.
+         */}
+        <div className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 shrink-0 border-t border-hairline bg-panel px-3 pb-3 pt-2">
         <form className="mt-2 flex h-14 items-center gap-2 rounded-[12px] border border-hairline bg-panel px-3" onSubmit={onSubmit}>
           <label className="sr-only" htmlFor="composer">
             {STRINGS.composer.placeholder}
@@ -1038,6 +1169,7 @@ export function ChatCore() {
             <button
               type="button"
               aria-expanded={dockTab === 'controls'}
+              aria-controls="chat-dock-tray"
               className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-700 hover:bg-honey-100 aria-expanded:bg-honey-200"
               onClick={() => setDockTab(dockTab === 'controls' ? null : 'controls')}
             >
@@ -1046,6 +1178,7 @@ export function ChatCore() {
             <button
               type="button"
               aria-expanded={dockTab === 'state'}
+              aria-controls="chat-dock-tray"
               className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-700 hover:bg-honey-100 aria-expanded:bg-honey-200"
               onClick={() => setDockTab(dockTab === 'state' ? null : 'state')}
             >
@@ -1060,43 +1193,217 @@ export function ChatCore() {
             >
               CLEAR
             </button>
-            <button
-              type="button"
-              aria-label="Hide the chat dock"
-              className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-500 hover:bg-honey-100"
-              onClick={() => setChatVisible(false)}
-            >
-              HIDE
-            </button>
           </div>
           {dockTab === null ? null : (
-            <div className="dock-tray mt-1 max-h-[190px] overflow-y-auto">
+            <div
+              id="chat-dock-tray"
+              role="region"
+              aria-label={
+                dockTab === 'controls' ? 'Chat controls' : 'Chat state and settings'
+              }
+              className="dock-tray mt-1 max-h-[190px] overflow-y-auto rounded-[8px] border border-hairline bg-panel-alt/60 px-2 py-1"
+            >
               {dockTab === 'controls' ? (
                 <ControlBar />
               ) : (
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-1 py-1">
-                  <span className="type-mono-meta text-[10px] text-meta">provider</span>
-                  <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.provider ?? '—'}</span>
-                  <span className="type-mono-meta text-[10px] text-meta">model</span>
-                  <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.model ?? '—'}</span>
-                  <span className="type-mono-meta text-[10px] text-meta">key</span>
-                  <span className="type-mono-code text-[10px] text-ink-800">{settings.keyPresent === null ? '—' : settings.keyPresent ? 'present' : 'missing'}</span>
-                  <span className="type-mono-meta text-[10px] text-meta">reasoning</span>
-                  <span className="type-mono-code text-[10px] text-ink-800">{settings.reasoningEffort ?? '—'}</span>
-                  <span className="type-mono-meta text-[10px] text-meta">version</span>
-                  <span className="type-mono-code text-[10px] text-ink-800">{APP_VERSION}</span>
-                  <div className="col-span-2 mt-1 flex flex-wrap gap-2 border-t border-hairline pt-1">
-                    {DOT_STATES.map((state) => (
-                      <span key={state} className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
-                        <StateDot state={state} size={7} />
-                        {visualFor(state).label}
-                      </span>
-                    ))}
+                <div className="space-y-1 px-0.5 py-0.5">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
+                    <span className="type-mono-meta text-[10px] text-meta">provider</span>
+                    <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.provider ?? '—'}</span>
+                    <span className="type-mono-meta text-[10px] text-meta">model</span>
+                    <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.model ?? '—'}</span>
+                    <span className="type-mono-meta text-[10px] text-meta">key</span>
+                    <span className="type-mono-code text-[10px] text-ink-800">{settings.keyPresent === null ? '—' : settings.keyPresent ? 'present' : 'missing'}</span>
+                    <span className="type-mono-meta text-[10px] text-meta">reasoning</span>
+                    <span className="type-mono-code text-[10px] text-ink-800">{settings.reasoningEffort ?? '—'}</span>
+                    <span className="type-mono-meta text-[10px] text-meta">version</span>
+                    <span className="type-mono-code text-[10px] text-ink-800">{APP_VERSION}</span>
+                    <div className="col-span-2 mt-1 flex flex-wrap gap-2 border-t border-hairline pt-1">
+                      {DOT_STATES.map((state) => (
+                        <span key={state} className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
+                          <StateDot state={state} size={7} />
+                          {visualFor(state).label}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                  <details className="max-h-[168px] overflow-y-auto rounded-[6px] border border-hairline bg-panel px-2 py-1">
+                    <summary className="type-mono-meta cursor-pointer select-none truncate text-[10px] tracking-[0.08em] text-ink-700">
+                      SESSION &amp; PERMISSIONS · {permissionPolicy} ·{' '}
+                      {selectedSession?.name ?? 'Default session'}
+                      {sessionLoadError ? ' · unavailable' : ''}
+                    </summary>
+                    <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
+                        SESSION
+                        <select
+                          className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
+                          value={namedSession}
+                          disabled={connection !== 'open' || replaying}
+                          onChange={(event) => {
+                            const nextId = event.target.value;
+                            setNamedSession(nextId);
+                            setActiveSessionId(nextId || null);
+                            const chosen = sessions.find((session) => session.id === nextId);
+                            if (chosen?.permission_policy) setPermissionPolicy(chosen.permission_policy);
+                          }}
+                        >
+                          <option value="">Default session</option>
+                          {sessions.map((session) => (
+                            <option key={session.id} value={session.id}>
+                              {session.name}
+                              {session.archived_at ? ' (archived)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
+                        POLICY
+                        <select
+                          className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900 disabled:cursor-not-allowed disabled:opacity-60"
+                          value={permissionPolicy}
+                          disabled={connection !== 'open' || replaying}
+                          title={
+                            namedSession
+                              ? 'Policy for this named session/run'
+                              : 'Policy for a new session or the default run'
+                          }
+                          onChange={(event) =>
+                            void changePolicy(
+                              event.target.value as 'classic' | 'plan' | 'standard' | 'trusted',
+                            )
+                          }
+                        >
+                          <option value="classic" title="approve every side effect">classic — ask</option>
+                          <option value="plan" title="refuse mutations">plan — no writes</option>
+                          <option value="standard" title="auto-approve workspace edits">standard — workspace</option>
+                          <option value="trusted" title="explicit full-local opt-in">trusted — full local</option>
+                        </select>
+                      </label>
+                    </div>
+                    {sessionLoadError ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] text-signal">
+                        <span>Sessions unavailable; default will be used.</span>
+                        <button
+                          type="button"
+                          className="type-mono-meta rounded-[4px] border border-signal px-1.5 py-0.5 text-[10px] text-signal hover:bg-signal/10 disabled:opacity-50"
+                          disabled={connection !== 'open'}
+                          title={
+                            connection === 'open'
+                              ? 'Reload the session list'
+                              : 'Reconnect before reloading sessions'
+                          }
+                          onClick={() => {
+                            setSessionLoadError(false);
+                            setSessionReload((current) => current + 1);
+                          }}
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      aria-pressed={permissionPolicy === 'trusted'}
+                      className={
+                        'type-mono-meta mt-1 flex items-center gap-1.5 rounded-[8px] border px-2 py-1 text-[10px] ' +
+                        (permissionPolicy === 'trusted'
+                          ? 'border-signal bg-signal/10 text-signal'
+                          : 'border-hairline bg-panel text-ink-700 hover:bg-honey-100')
+                      }
+                      title="Trusted policy runs side effects without approval prompts. Use only in a workspace you trust."
+                      onClick={() => void changePolicy(permissionPolicy === 'trusted' ? 'classic' : 'trusted')}
+                    >
+                      <span aria-hidden="true">{permissionPolicy === 'trusted' ? '●' : '○'}</span>
+                      AUTO-APPROVE {permissionPolicy === 'trusted' ? 'ON' : 'OFF'}
+                    </button>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <label className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
+                        <input
+                          type="checkbox"
+                          checked={includeArchived}
+                          disabled={connection !== 'open'}
+                          onChange={(event) => setIncludeArchived(event.target.checked)}
+                        />
+                        Show archived
+                      </label>
+                      <button
+                        type="button"
+                        className="type-mono-meta rounded-[6px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 disabled:opacity-50"
+                        disabled={!selectedSession || sessionBusy || connection !== 'open'}
+                        title={
+                          selectedSession
+                            ? 'Archive or restore the selected named session'
+                            : 'Select a named session to enable archive'
+                        }
+                        onClick={() => void toggleArchive()}
+                      >
+                        {selectedSession?.archived_at ? 'Restore session' : 'Archive session'}
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      <label className="sr-only" htmlFor="new-session-name">
+                        New session name
+                      </label>
+                      <input
+                        id="new-session-name"
+                        className="type-mono-code min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 py-0.5 text-[10px] text-ink-900"
+                        placeholder="New session name"
+                        value={newSessionName}
+                        disabled={sessionBusy || connection !== 'open'}
+                        onChange={(event) => setNewSessionName(event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="type-mono-meta rounded-[6px] border border-honey-500 bg-honey-300 px-1.5 py-0.5 text-[10px] font-semibold text-ink-900 disabled:opacity-50"
+                        disabled={
+                          sessionBusy ||
+                          connection !== 'open' ||
+                          !sessionWorkspace ||
+                          newSessionName.trim().length === 0
+                        }
+                        title={
+                          sessionWorkspace
+                            ? 'Create a named session in the current workspace'
+                            : 'Workspace is not loaded yet'
+                        }
+                        onClick={() => void createSession()}
+                      >
+                        Create
+                      </button>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      <span className="flex items-center gap-1 type-mono-meta text-[10px] tracking-[0.12em] text-meta">
+                        ROOT CONTROL
+                        <InfoTip label="What root control does">
+                          These buttons only fill the composer. The server decides whether the
+                          HyperAgent may spawn a remote or daemon; nothing is spawned by clicking
+                          here.
+                        </InfoTip>
+                      </span>
+                      {CONTROL_INTENTS.map((intent) => (
+                        <button
+                          key={intent.id}
+                          type="button"
+                          className="type-label rounded-[8px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 hover:bg-honey-100 disabled:opacity-50"
+                          data-control-intent={intent.id}
+                          disabled={connection !== 'open' || replaying}
+                          title={`Fill the composer with a SUBMIT_PROMPT asking the HyperAgent root control for ${intent.label.toLowerCase()}. The server decides; no spawn is claimed here.`}
+                          onClick={() => {
+                            setDraft(intent.prompt);
+                            composerRef.current?.focus();
+                          }}
+                        >
+                          {intent.label}
+                        </button>
+                      ))}
+                    </div>
+                  </details>
                 </div>
               )}
             </div>
           )}
+        </div>
         </div>
       </section>
     </div>

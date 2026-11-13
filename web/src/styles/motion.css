@@ -409,7 +409,14 @@
   .motion-toast-enter,
   .motion-progress-sheen::after,
   .motion-work-bee,
-  .motion-connection-live {
+  .motion-connection-live,
+  .guide-veil,
+  .guide-panel,
+  .guide-section,
+  .hm-nav-tile.is-active::before,
+  .help-ambient::before,
+  .guide-ambient::before,
+  [data-approval-priority] > [role="alert"] {
     animation: none !important;
     will-change: auto;
   }
@@ -433,7 +440,14 @@
 [data-reduced-motion="true"] .motion-toast-enter,
 [data-reduced-motion="true"] .motion-progress-sheen::after,
 [data-reduced-motion="true"] .motion-work-bee,
-[data-reduced-motion="true"] .motion-connection-live {
+[data-reduced-motion="true"] .motion-connection-live,
+[data-reduced-motion="true"] .guide-veil,
+[data-reduced-motion="true"] .guide-panel,
+[data-reduced-motion="true"] .guide-section,
+[data-reduced-motion="true"] .hm-nav-tile.is-active::before,
+[data-reduced-motion="true"] .help-ambient::before,
+[data-reduced-motion="true"] .guide-ambient::before,
+[data-reduced-motion="true"] [data-approval-priority] > [role="alert"] {
   animation: none !important;
   will-change: auto;
 }
@@ -498,4 +512,94 @@
 
 [data-ambient-motion="off"] .honeycomb-ripple {
   display: none !important;
+}
+
+/* ------------------------------------------------------------------------- */
+/* 11. Help, guide, nav and toast finish.                                    */
+/* One entrance curve (0.22, 0.61, 0.36, 1), transform/opacity only, finite  */
+/* where the motion marks a state change and slow/small where it is ambient. */
+/* ------------------------------------------------------------------------- */
+
+@keyframes motion-guide-veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes motion-guide-veil-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes motion-guide-panel-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.985;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+@keyframes motion-guide-panel-out {
+  from {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    translate: 0 6px;
+    scale: 0.99;
+  }
+}
+
+@keyframes motion-guide-section-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes motion-pollen-drift {
+  from {
+    transform: translate3d(-6px, 4px, 0);
+  }
+  to {
+    transform: translate3d(8px, -10px, 0);
+  }
+}
+
+@keyframes motion-nav-cell-in {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+  to {
+    opacity: 0.7;
+    scale: 1;
+  }
+}
+
+@keyframes motion-toast-sheen {
+  from {
+    background-position: 130% 0, 0 0;
+  }
+  to {
+    background-position: -40% 0, 0 0;
+  }
 }

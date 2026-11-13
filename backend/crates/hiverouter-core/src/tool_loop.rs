@@ -61,7 +61,7 @@ pub fn decide_policy(
 /// Maximum model turns in one task before the run fails closed.
 pub const MAX_TOOL_TURNS: u32 = 12;
 /// Maximum tool calls across one run.
-pub const MAX_CALLS_PER_RUN: u32 = 40;
+pub const MAX_CALLS_PER_RUN: u32 = 100;
 /// Maximum tool result body retained in memory (events carry the hash/bytes only).
 pub const MAX_TOOL_RESULT_BYTES: usize = 65_536;
 /// Maximum committed approval waits per run; the next request is refused with

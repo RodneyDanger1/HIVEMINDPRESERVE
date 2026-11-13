@@ -14,6 +14,9 @@ use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use hiverouter_contract::Refusal;
 
+#[path = "health.rs"]
+pub mod health;
+
 /// Optional per-launch secret; when set, `/api/session` requires the matching
 /// `x-hivemind-launch` header supplied by the launcher URL.
 const LAUNCH_TOKEN_ENV: &str = "HIVEROUTER_LAUNCH_TOKEN";
@@ -676,6 +679,7 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/health", get(health))
         .route("/diagnose", get(diagnose))
         .route("/api/runtime", get(runtime_status))
+        .route("/api/logs", get(logs))
         .route("/api/session", get(api_session))
         .route("/api/skills", get(skills_list))
         .route("/api/skills/{skill_id}", get(skill_detail))
@@ -978,6 +982,109 @@ async fn diagnose(State(state): State<Arc<AppState>>) -> Response {
         )
             .into_response(),
     }
+}
+
+/// `GET /api/logs?source=launcher|stdout|stderr|audit&tail=N`.
+///
+/// Origin/peer gate and launcher-token gate (the latter runs in
+/// [`mutation_auth`] for every `/api/*` GET) precede any file access. The
+/// handler accepts only the four whitelisted sources; the path itself is never
+/// caller-controlled. Bodies are capped at 64 KiB and redacted by
+/// [`health::read_log_tail_with_secrets`]. `Cache-Control: no-store` is set on
+/// every outcome so log material is never cached by a browser or proxy.
+async fn logs(
+    State(state): State<Arc<AppState>>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    Query(params): Query<BTreeMap<String, String>>,
+) -> Response {
+    let origin = headers
+        .get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok());
+    let origin_allowed = match origin {
+        Some(origin) => state.session.is_origin_allowed(Some(origin)),
+        // Same-origin fetches normally carry no Origin header; only a loopback
+        // peer may use that path.
+        None => peer.ip().is_loopback(),
+    };
+    if !origin_allowed {
+        return log_route_error(
+            StatusCode::FORBIDDEN,
+            Refusal::OriginRejected,
+            "the request Origin is not the local HiveMind UI",
+        );
+    }
+    if let Some(unknown) = params
+        .keys()
+        .find(|key| !matches!(key.as_str(), "source" | "tail"))
+    {
+        return log_route_error(
+            StatusCode::BAD_REQUEST,
+            Refusal::SchemaInvalid,
+            &format!("unknown query parameter {unknown:?}; accepted: source, tail"),
+        );
+    }
+    let Some(source_value) = params.get("source") else {
+        return log_route_error(
+            StatusCode::BAD_REQUEST,
+            Refusal::SchemaInvalid,
+            "source is required: launcher, stdout, stderr or audit",
+        );
+    };
+    let Some(source) = health::LogSource::parse(source_value.trim()) else {
+        return log_route_error(
+            StatusCode::BAD_REQUEST,
+            Refusal::SchemaInvalid,
+            "source must be exactly one of: launcher, stdout, stderr, audit",
+        );
+    };
+    let tail = match params.get("tail") {
+        None => health::DEFAULT_TAIL_LINES,
+        Some(raw) => match raw.trim().parse::<usize>() {
+            Ok(value) if value > 0 => value,
+            _ => {
+                return log_route_error(
+                    StatusCode::BAD_REQUEST,
+                    Refusal::SchemaInvalid,
+                    "tail must be a positive integer line count",
+                );
+            }
+        },
+    };
+    let extra_secrets = [state.session.token().to_owned()];
+    match health::read_log_tail_with_secrets(&state.config.data_dir, source, tail, &extra_secrets) {
+        Ok(body) => (
+            StatusCode::OK,
+            [(header::CACHE_CONTROL, "no-store")],
+            Json(body),
+        )
+            .into_response(),
+        Err(error) => {
+            let status = match error.refusal() {
+                Refusal::PathNotFound => StatusCode::NOT_FOUND,
+                Refusal::PathOutsideJail => StatusCode::FORBIDDEN,
+                Refusal::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+                _ => StatusCode::BAD_REQUEST,
+            };
+            log_route_error(status, error.refusal(), error.detail())
+        }
+    }
+}
+
+/// JSON refusal body for the log route, always `no-store`.
+fn log_route_error(status: StatusCode, refusal: Refusal, detail: &str) -> Response {
+    (
+        status,
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(serde_json::json!({
+            "code": refusal.code(),
+            "message": refusal.message(),
+            "how_to_fix": refusal.how_to_fix(),
+            "retryable": refusal.retryable(),
+            "detail": detail,
+        })),
+    )
+        .into_response()
 }
 
 async fn skills_list(State(state): State<Arc<AppState>>) -> Response {

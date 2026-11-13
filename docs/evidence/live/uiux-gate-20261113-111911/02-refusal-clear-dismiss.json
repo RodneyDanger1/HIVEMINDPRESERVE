@@ -1,0 +1,77 @@
+{
+  "name": "02-refusal-clear-dismiss",
+  "status": "FAIL",
+  "startedAt": "2026-11-13T17:21:27.227Z",
+  "baseURL": "http://127.0.0.1:8100/#/workspace/workspace",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "steps": [
+    {
+      "step": "key-status",
+      "missingCount": 1
+    },
+    {
+      "step": "refusal-raised",
+      "text": "REFUSED BY NAME · NOT SILENT\nE_KEY_MISSING\n\nNo provider key is configured on the local server.\n\nSET THE CONFIGURED PROVIDER KEY IN THE SERVER PROCESS ENVIRONMENT (DEEPSEEK_API_KEY FOR DEEPSEEK), THEN RESTART THE SERVER.\n\nDISMISS"
+    }
+  ],
+  "checks": [
+    {
+      "name": "server reports provider key missing before any submit",
+      "pass": true,
+      "detail": "missing label count=1"
+    },
+    {
+      "name": "submit enabled with text and open socket",
+      "pass": true,
+      "detail": "submit disabled"
+    },
+    {
+      "name": "visible refusal names E_KEY_MISSING",
+      "pass": true,
+      "detail": "REFUSED BY NAME · NOT SILENT\nE_KEY_MISSING\n\nNo provider key is configured on the local server.\n\nSET THE CONFIGURED PROVIDER KEY IN THE SERVER PROCESS ENVIRONMENT (DEEPSEEK_API_KEY FOR DEEPSEEK), THEN "
+    },
+    {
+      "name": "refusal is labelled REFUSED BY NAME",
+      "pass": true,
+      "detail": "REFUSED BY NAME · NOT SILENT\nE_KEY_MISSING\n\nNo provider key is configured on the local server.\n\nSET THE CONFIGURED PROVIDER KEY IN THE SERVER PROCESS ENVIRONMENT (DEEPSEEK_API_KEY FOR DEEPSEEK), THEN "
+    },
+    {
+      "name": "CLEAR removes the visible refusal",
+      "pass": true,
+      "detail": "E_KEY_MISSING alert still present"
+    },
+    {
+      "name": "CLEAR issued no POST /api request",
+      "pass": true,
+      "detail": "[]"
+    },
+    {
+      "name": "refusal toast exposes Dismiss",
+      "pass": false,
+      "detail": "Dismiss button count"
+    },
+    {
+      "name": "zero console errors",
+      "pass": true,
+      "detail": "0 error console message(s)"
+    },
+    {
+      "name": "zero page errors",
+      "pass": true,
+      "detail": "0 uncaught page error(s)"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "artifacts": [
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\07-refusal-visible.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\08-after-clear.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\09-refusal-again.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\FAIL-02-refusal-clear-dismiss.png"
+  ],
+  "error": "Error: GATE FAIL: refusal toast exposes Dismiss — Dismiss button count\n    at check (file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:86:20)\n    at file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:313:7\n    at withEvidence (file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:104:5)\n    at file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:273:5\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1646:9\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1135:11\n    at TimeoutManager.withRunnable (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:403:14)\n    at TestInfoImpl._runWithTimeout (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1133:7)\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1644:7\n    at WorkerMain._runTest (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1617:5)\n    at WorkerMain.runTestGroup (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1519:9)\n    at process.<anonymous> (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\common\\index.js:2032:25)"
+}

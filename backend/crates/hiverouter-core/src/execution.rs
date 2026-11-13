@@ -24,7 +24,8 @@ use hiverouter_tools::approval::{ApprovalDecision, ApprovalResolution};
 use hiverouter_tools::shell::ShellPolicy;
 use hiverouter_tools::{
     execute_read_only, AgentTier, AskParentArgs, ExecutedTool as ToolsExecutedTool,
-    PermissionClass, SendToSiblingArgs, SpawnAgentArgs, ToolId, ToolRegistry, WorkspaceJail,
+    HarnessDiagnoseArgs, PermissionClass, SendToSiblingArgs, SpawnAgentArgs, ToolId, ToolRegistry,
+    WorkspaceJail,
 };
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -3509,6 +3510,36 @@ impl RunEngine {
                     plan.tool
                 ),
             );
+        }
+        if plan.tool == ToolId::HarnessDiagnose.id() {
+            let Some(tools) = self.tools.as_ref() else {
+                return ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    Refusal::FileTreeUnavailable.code(),
+                    "the diagnostics bridge is unavailable; nothing was read".to_owned(),
+                );
+            };
+            let args: HarnessDiagnoseArgs = match serde_json::from_value(plan.args.clone()) {
+                Ok(args) => args,
+                Err(_) => {
+                    return ToolExecution::refused(
+                        plan.tool_call_id.clone(),
+                        Refusal::SchemaInvalid.code(),
+                        "harness_diagnose arguments did not match {scope,limit}".to_owned(),
+                    );
+                }
+            };
+            return match tools.harness_diagnose(&args.scope, args.limit.unwrap_or(10)) {
+                Ok(value) => ToolExecution::ok(
+                    plan.tool_call_id.clone(),
+                    tool_loop::bounded_tool_text(&value.to_string()),
+                ),
+                Err(refusal) => ToolExecution::refused(
+                    plan.tool_call_id.clone(),
+                    refusal.code(),
+                    "harness_diagnose refused the requested diagnostic scope".to_owned(),
+                ),
+            };
         }
         let Some(workspace) = self.tool_workspace.as_ref() else {
             return ToolExecution::refused(

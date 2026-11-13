@@ -157,6 +157,8 @@ pub enum ToolId {
     GitDiff,
     /// Read recent git log.
     GitLog,
+    /// Read the harness's own health, log metadata, and refusal diagnostics.
+    HarnessDiagnose,
 }
 
 impl ToolId {
@@ -186,6 +188,7 @@ impl ToolId {
             ToolId::GitStatus => "git_status",
             ToolId::GitDiff => "git_diff",
             ToolId::GitLog => "git_log",
+            ToolId::HarnessDiagnose => "harness_diagnose",
         }
     }
 
@@ -320,6 +323,22 @@ pub struct VoteEvolutionArgs {
 pub struct WebFetchArgs {
     /// Public HTTPS URL to fetch once; redirects are not followed.
     pub url: String,
+}
+
+/// Arguments for [`ToolId::HarnessDiagnose`].
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct HarnessDiagnoseArgs {
+    /// Diagnostic scope.
+    #[serde(default = "default_diagnose_scope")]
+    pub scope: String,
+    /// Maximum recent refusal rows (1..=50).
+    #[serde(default)]
+    pub limit: Option<usize>,
+}
+
+fn default_diagnose_scope() -> String {
+    "all".to_owned()
 }
 
 /// Arguments for [`ToolId::FileRead`].
@@ -695,6 +714,12 @@ impl ToolRegistry {
                 PermissionClass::Read,
                 schema_of!(GitLogArgs),
             ),
+            contract(
+                ToolId::HarnessDiagnose,
+                "Read this harness's own health, log metadata, and recent refusal summary. Read-only; returns no secrets or raw log bodies.",
+                PermissionClass::Read,
+                schema_of!(HarnessDiagnoseArgs),
+            ),
         ] {
             contracts.insert(contract.id, contract);
         }
@@ -716,6 +741,7 @@ impl ToolRegistry {
                 ToolId::GitStatus,
                 ToolId::GitDiff,
                 ToolId::GitLog,
+                ToolId::HarnessDiagnose,
             ],
         );
         allowlists.insert(
@@ -743,6 +769,7 @@ impl ToolRegistry {
                 ToolId::GitStatus,
                 ToolId::GitDiff,
                 ToolId::GitLog,
+                ToolId::HarnessDiagnose,
             ],
         );
         allowlists.insert(
@@ -931,7 +958,7 @@ mod tests {
             let empty = serde_json::json!({});
             if matches!(
                 id,
-                ToolId::FileList | ToolId::GitStatus | ToolId::GitDiff | ToolId::GitLog
+                ToolId::FileList | ToolId::GitStatus | ToolId::GitDiff | ToolId::GitLog | ToolId::HarnessDiagnose
             ) {
                 assert!(contract.validate_args(&empty).is_ok());
             } else {

@@ -1,0 +1,72 @@
+[
+    {
+        "file":  "01-1440-initial.png",
+        "bytes":  232942,
+        "sha256":  "548ACCF0AA9EFEE86918DD5A96E9D03C2F32E27069AD2E9052A072EB7D759525"
+    },
+    {
+        "file":  "02-1440-after-resize.png",
+        "bytes":  141400,
+        "sha256":  "AD666A628A9C88E5772FA47C40B307239D262D8441C27F6F0B00A5A721EB15E9"
+    },
+    {
+        "file":  "03-1440-after-reload.png",
+        "bytes":  554807,
+        "sha256":  "767AFB95B983A6079830F356EE2CCEF6FBD93E529B03560682DDD1B116D16C98"
+    },
+    {
+        "file":  "04-1440-controls.png",
+        "bytes":  96834,
+        "sha256":  "2A961FEEAB4D62247B34E7215AEF4BCBE5B1E933A5CBEE180CA4BFABEC2ADE15"
+    },
+    {
+        "file":  "05-1440-state.png",
+        "bytes":  92766,
+        "sha256":  "0D41AC4F0F16BCA9D29389D76AE6E202D36318355E38EF96F0232BA4A6976AED"
+    },
+    {
+        "file":  "06-help.png",
+        "bytes":  180871,
+        "sha256":  "95E26726D340900112DF11CFC1946236D4A274F93DC171AF02AA36A7A6059ED9"
+    },
+    {
+        "file":  "07-refusal-visible.png",
+        "bytes":  119045,
+        "sha256":  "2C902241EA149194D86234FE76E1B617B8FEBFA97AF7BF8CD83684FAC7577BA6"
+    },
+    {
+        "file":  "08-after-clear.png",
+        "bytes":  106461,
+        "sha256":  "9844D20B524DC711B5F683D5CF4863F6E205FA176152A3F746ABD6FA6EBC8071"
+    },
+    {
+        "file":  "09-refusal-again.png",
+        "bytes":  128023,
+        "sha256":  "7FD954C97D27752301F64CD2FAFD68B5D79C07A8AD211F15E4A00073ACF67F8D"
+    },
+    {
+        "file":  "10-after-dismiss.png",
+        "bytes":  116129,
+        "sha256":  "427FAE28DC5A86DD721978CE72E58C14B4B900C50662D6204138627B4B8100F7"
+    },
+    {
+        "file":  "11-375-initial.png",
+        "bytes":  190639,
+        "sha256":  "83917632E16483955E9E251859EAA701526E372E8DD19062082BEB7150D68031"
+    },
+    {
+        "file":  "12-375-controls.png",
+        "bytes":  54435,
+        "sha256":  "C20F6FCD957BA7C2E0D39AEBA54B9884717362F5631FFD0AE132E471D8741CE9"
+    },
+    {
+        "file":  "FAIL-01-1440-dock-help.png",
+        "bytes":  180871,
+        "sha256":  "95E26726D340900112DF11CFC1946236D4A274F93DC171AF02AA36A7A6059ED9"
+    },
+    {
+        "file":  "FAIL-02-refusal-clear-dismiss.png",
+        "bytes":  115898,
+        "sha256":  "1C564DC007DC9C09424B184BFA56695130F2E0933D79BE429FF27C715130B9DC"
+    }
+]

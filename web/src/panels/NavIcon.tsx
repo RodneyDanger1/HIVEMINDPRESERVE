@@ -5,7 +5,7 @@ export function NavIcon({ id, active }: { readonly id: NavSection; readonly acti
   const stroke = active ? 'var(--color-honey-300)' : 'var(--color-ink-700)';
   const common = { fill: 'none', stroke, strokeWidth: 1.6, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       {id === 'workspace' ? (
         <path {...common} d="M12 2.8 20 7.2v9.6L12 21.2 4 16.8V7.2Z M12 7.4l4 2.3v4.6l-4 2.3-4-2.3V9.7Z" />
       ) : null}
@@ -29,9 +29,15 @@ export function NavIcon({ id, active }: { readonly id: NavSection; readonly acti
       ) : null}
       {id === 'help' ? (
         <>
+          <path
+            {...common}
+            fill={active ? 'var(--color-honey-300)' : 'none'}
+            fillOpacity={active ? 0.24 : 0}
+            d="M12 5.9 17.2 8.9v6L12 17.9 6.8 14.9v-6Z"
+          />
           <path {...common} d="M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3Z" />
-          <path {...common} d="M9.6 9.2a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.8-1.1 1.6" />
-          <path {...common} d="M12 16.6h.01" />
+          <path {...common} d="M9.8 9.6a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1.1.8-1.1 1.5" />
+          <path {...common} d="M12 16.4h.01" />
         </>
       ) : null}
     </svg>

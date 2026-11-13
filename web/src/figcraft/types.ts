@@ -10,6 +10,29 @@
 /** Accepted FigCraft manifest sets (one owner per board). */
 export type FigCraftOwner = 'figcraft-hivemind' | 'figcraft-a' | 'figcraft-b';
 
+/**
+ * Audit provenance of one board. Only `watchdog-audited` means the UI watchdog
+ * ledger accepted that board. `self-verified` means the owning set's own verify
+ * report passed; `proposed` means the set labels the board as a proposal or
+ * PROPOSED-ADDITION. Neither may be shown as watchdog-accepted.
+ */
+export type FigCraftAuditStatus =
+  | 'watchdog-audited'
+  | 'self-verified'
+  | 'proposed'
+  | 'unverified';
+
+/** Per-board audit evidence, generated from ASSETS-INDEX.json. */
+export interface FigCraftAudit {
+  readonly status: FigCraftAuditStatus;
+  /** Watchdog verdict (`PASS` / `PASS-WITH-NOTES`) when one exists. */
+  readonly verdict: string | null;
+  /** Ledger or verify-report path that backs the status, when one exists. */
+  readonly ledger: string | null;
+  /** One-line human-readable basis for the status. */
+  readonly basis: string;
+}
+
 /** One selectable manifest set rendered as an accessible tab. */
 export interface FigCraftGroup {
   readonly id: FigCraftOwner;
@@ -42,6 +65,8 @@ export interface FigCraftBoard {
   readonly sha256: string;
   /** Manifest file the board was read from. */
   readonly manifest: string;
+  /** Audit provenance; never claim more than this says. */
+  readonly audit: FigCraftAudit;
   /** Surfaces this board covers (empty for pure design boards). */
   readonly surfaces: readonly FigCraftSurface[];
 }

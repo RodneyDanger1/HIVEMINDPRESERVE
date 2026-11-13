@@ -1,7 +1,7 @@
 /**
  * Accessible FigCraft representation gallery (Lead task-11).
  *
- * Renders the accepted FigCraft boards copied from `docs/ui/figcraft/**` into
+ * Renders the FigCraft boards copied from `docs/ui/figcraft/**` into
  * `web/public/figcraft/`. Static, read-only representation: selecting a board
  * never mutates application state and no network request is made beyond the
  * SVG `<img>` load from the Vite public asset path.
@@ -12,14 +12,59 @@
  *   alt text; the preview is a labelled region with a polite live status;
  * - a board whose SVG cannot load degrades to an explicit "preview
  *   unavailable" note (never a broken image or a fabricated preview).
+ *
+ * Audit honesty: each board carries its generated audit status. This gallery
+ * never presents a self-verified or proposed board as watchdog-audited.
  */
 import { useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 
-import { FIGCRAFT_BOARDS, FIGCRAFT_GROUPS } from './catalog';
+import { FIGCRAFT_BOARDS, FIGCRAFT_COUNTS, FIGCRAFT_GROUPS } from './catalog';
 import type { FigCraftBoard, FigCraftGroup, FigCraftOwner } from './types';
 
 const SECONDARY_SURFACE_LIMIT = 8;
+
+/** Human audit label; never inflate self-verified/proposed into watchdog-accepted. */
+function auditLabel(board: FigCraftBoard): string {
+  const { status, verdict } = board.audit;
+  if (status === 'watchdog-audited') {
+    return `watchdog-audited (${verdict ?? 'PASS'})`;
+  }
+  if (status === 'self-verified') {
+    return 'self-verified - not watchdog-audited';
+  }
+  if (status === 'proposed') {
+    return 'proposed - not watchdog-audited';
+  }
+  return 'unverified - no accepted audit evidence';
+}
+
+function auditShortLabel(board: FigCraftBoard): string {
+  const { status, verdict } = board.audit;
+  if (status === 'watchdog-audited') {
+    return `watchdog ${verdict ?? 'PASS'}`;
+  }
+  if (status === 'self-verified') {
+    return 'self-verified';
+  }
+  if (status === 'proposed') {
+    return 'PROPOSED';
+  }
+  return 'UNVERIFIED';
+}
+
+function auditTone(board: FigCraftBoard): string {
+  if (board.audit.status === 'watchdog-audited') {
+    return 'text-verify';
+  }
+  if (board.audit.status === 'proposed') {
+    return 'text-amber';
+  }
+  if (board.audit.status === 'unverified') {
+    return 'text-signal';
+  }
+  return 'text-ink-500';
+}
 
 /**
  * Roving tablist target. `null` when no group exists, so callers cannot do a
@@ -49,7 +94,7 @@ function boardAltText(board: FigCraftBoard): string {
     board.surfaces.length === 0
       ? 'a design board with no mapped surface'
       : `${board.surfaces.length} mapped surface${board.surfaces.length === 1 ? '' : 's'}`;
-  return `${board.title} — ${ownerLabel(board.owner)} board, ${board.width} by ${board.height} pixels, ${surfaces}`;
+  return `${board.title} — ${ownerLabel(board.owner)} board, ${board.width} by ${board.height} pixels, ${surfaces}, ${auditLabel(board)}`;
 }
 
 function boardMeta(board: FigCraftBoard): string {
@@ -105,7 +150,10 @@ function BoardCard(props: {
             {board.title}
           </span>
         </button>
-        <figcaption className="type-mono-meta mt-1 truncate px-1 text-ink-500">{boardMeta(board)}</figcaption>
+        <figcaption className="type-mono-meta mt-1 px-1 text-ink-500">
+          <span className="block truncate">{boardMeta(board)}</span>
+          <span className={`block truncate ${auditTone(board)}`}>{auditShortLabel(board)}</span>
+        </figcaption>
       </figure>
     </li>
   );
@@ -123,7 +171,7 @@ function BoardGrid(props: {
   if (boards.length === 0) {
     return (
       <p role="status" className="type-mono-code rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-3 py-2 text-ink-500">
-        {group.label} has no accepted boards in the catalog. Nothing is rendered rather than fabricated.
+        {group.label} has no boards in the catalog. Nothing is rendered rather than fabricated.
       </p>
     );
   }
@@ -152,7 +200,7 @@ function BoardPreview(props: {
   if (board === null) {
     return (
       <p className="type-mono-code m-0 text-ink-500">
-        Select a board to preview its accepted SVG, dimensions, provenance and covered surfaces.
+        Select a board to preview its FigCraft SVG, dimensions, provenance and covered surfaces.
       </p>
     );
   }
@@ -162,7 +210,7 @@ function BoardPreview(props: {
     <div className="flex min-h-0 flex-col gap-3">
       {unavailable ? (
         <p role="note" className="type-mono-code m-0 rounded-[var(--radius-sm)] border border-amber bg-panel-alt px-3 py-2 text-ink-800">
-          Preview unavailable — the accepted SVG could not be loaded from the public asset path. Source
+          Preview unavailable — the FigCraft SVG could not be loaded from the public asset path. Source
           evidence: {board.sourcePath}
         </p>
       ) : (
@@ -191,7 +239,24 @@ function BoardPreview(props: {
         <dd className="type-mono-code m-0 break-all text-ink-800">{board.sha256}</dd>
         <dt className="type-mono-meta text-ink-500">manifest</dt>
         <dd className="type-mono-code m-0 break-all text-ink-800">{board.manifest}</dd>
+        <dt className="type-mono-meta text-ink-500">audit</dt>
+        <dd className={`type-mono-code m-0 ${auditTone(board)}`}>{auditLabel(board)}</dd>
+        <dt className="type-mono-meta text-ink-500">audit basis</dt>
+        <dd className="type-mono-code m-0 break-words text-ink-800">{board.audit.basis}</dd>
+        <dt className="type-mono-meta text-ink-500">audit source</dt>
+        <dd className="type-mono-code m-0 break-all text-ink-800">{board.audit.ledger ?? 'none'}</dd>
       </dl>
+      {board.audit.status === 'proposed' ? (
+        <p role="note" className="type-mono-code m-0 rounded-[var(--radius-sm)] border border-amber bg-panel-alt px-3 py-2 text-ink-800">
+          Proposed board: it is real FigCraft evidence, but it is not watchdog-audited and does not
+          change the accepted design truth. Do not treat it as an approved surface.
+        </p>
+      ) : board.audit.status === 'self-verified' ? (
+        <p role="note" className="type-mono-code m-0 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-3 py-2 text-ink-800">
+          Self-verified board: the owning set's own verify report passed, but this board is not in the
+          watchdog ledger. Only the A/B sets are watchdog-audited.
+        </p>
+      ) : null}
       {surfaces.length > 0 ? (
         <div className="min-h-0">
           <div className="type-label text-ink-500">Surfaces covered by this board</div>
@@ -287,7 +352,7 @@ export function FigCraftGallery() {
   if (FIGCRAFT_BOARDS.length === 0) {
     return (
       <p role="status" className="type-mono-code m-0 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-3 py-2 text-ink-500">
-        No accepted FigCraft boards exist in the catalog. The representation surface is unavailable rather
+        No FigCraft boards exist in the catalog. The representation surface is unavailable rather
         than fabricated.
       </p>
     );
@@ -325,6 +390,12 @@ export function FigCraftGallery() {
           );
         })}
       </div>
+      <p role="note" className="type-mono-meta m-0 rounded-[var(--radius-sm)] border border-hairline bg-panel-alt px-3 py-2 text-ink-500">
+        Audit provenance is shown per board: {FIGCRAFT_COUNTS.watchdogAuditedBoards} watchdog-audited,{' '}
+        {FIGCRAFT_COUNTS.selfVerifiedBoards} self-verified (not watchdog-audited),{' '}
+        {FIGCRAFT_COUNTS.proposedBoards} proposed (not watchdog-audited). The watchdog verdict{' '}
+        {FIGCRAFT_COUNTS.watchdog} covers the A/B sets only; it is not a verdict on the HiveMind set.
+      </p>
       <div className="grid min-h-0 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         <div className="min-w-0">
           {FIGCRAFT_GROUPS.map((group) => {

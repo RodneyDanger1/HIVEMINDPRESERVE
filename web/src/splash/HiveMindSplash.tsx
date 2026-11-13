@@ -12,6 +12,7 @@
  */
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useUiStore } from '../state/context';
+import { APP_VERSION } from '../version';
 import { STRINGS } from '../state/strings';
 import {
   SPLASH_FADE_MS,
@@ -108,7 +109,7 @@ export function HiveMindSplash() {
         </div>
 
         <div className="splash-content">
-          <p className="splash-kicker">LOCAL HMARS · SPATIAL EXECUTION</p>
+          <p className="splash-kicker">LOCAL HMARS · SPATIAL EXECUTION · v{APP_VERSION}</p>
           <h1 className="splash-wordmark" aria-label="HiveMind">
             <span>HiveMind</span>
             <svg className="splash-drip" viewBox="0 0 260 18" aria-hidden="true">
@@ -157,8 +158,8 @@ export function HiveMindSplash() {
           </div>
         </div>
 
-        <p className="splash-credit" aria-label="Designed by Riley Christensen">
-          Designed by <span>Riley Christensen</span>
+        <p className="splash-credit" aria-label={`HiveMind version ${APP_VERSION}; designed by Riley Christensen`}>
+          v{APP_VERSION} · Designed by <span>Riley Christensen</span>
         </p>
       </div>
     </div>

@@ -1,0 +1,6512 @@
+[
+ {
+  "command": "file.new",
+  "params": {
+   "name": "HiveMind Chat Dock & Help (proposed)"
+  }
+ },
+ {
+  "command": "frame.create",
+  "params": {
+   "x": 0,
+   "y": 0,
+   "width": 1440,
+   "height": 1800,
+   "name": "13 · Chat Dock & Help",
+   "props": {
+    "fill": "#F8F4EB"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 0,
+   "width": 1440,
+   "height": 96,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 96,
+   "width": 1440,
+   "height": 1,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 32,
+   "y": 28,
+   "width": 38,
+   "height": 38,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 9.12
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 42.11457935717166,
+   "y": 36.739999999999995,
+   "width": 17.770841285656683,
+   "height": 20.520000000000003,
+   "parent": 2,
+   "path": "M 0.00 5.13 L 8.89 0.00 L 17.77 5.13 L 17.77 15.39 L 8.89 20.52 L 0.00 15.39 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind · FigCraft 13",
+   "x": 88,
+   "y": 24,
+   "parent": 2,
+   "props": {
+    "fontSize": 21,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CHAT DOCK + HELP · NEW UI DESIGN PROPOSAL",
+   "x": 88,
+   "y": 54,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#75663F",
+    "letterSpacing": "12%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "dock 1128x560 (min 420 / max 760, tray +240) · rail 72 · library 240 · header 52 · illustrative values, no runtime data",
+   "x": 88,
+   "y": 72,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "2%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1030,
+   "y": 26,
+   "width": 378,
+   "height": 40,
+   "parent": 2,
+   "props": {
+    "fill": "#FFF7F5",
+    "cornerRadius": 8,
+    "stroke": "#B23A2E",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PROPOSED · NOT WATCHDOG-AUDITED · NOT SERVED",
+   "x": 1044,
+   "y": 39,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#B23A2E",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "evidence: web/src/chat/ChatCore.tsx · chatDock.ts · web/src/panels/HelpPanel.tsx",
+   "x": 1030,
+   "y": 74,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "2%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 96,
+   "width": 1440,
+   "height": 52,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 148,
+   "width": 1440,
+   "height": 1,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 16,
+   "y": 107,
+   "width": 30,
+   "height": 30,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 7.199999999999999
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 23.985194229346046,
+   "y": 113.9,
+   "width": 14.029611541307908,
+   "height": 16.200000000000003,
+   "parent": 2,
+   "path": "M 0.00 4.05 L 7.01 0.00 L 14.03 4.05 L 14.03 12.15 L 7.01 16.20 L 0.00 12.15 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind",
+   "x": 54,
+   "y": 111,
+   "parent": 2,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Bold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1024,
+   "y": 108,
+   "width": 116,
+   "height": 28,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIDE CHAT",
+   "x": 1034,
+   "y": 116.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1150,
+   "y": 106,
+   "width": 32,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "?",
+   "x": 1161,
+   "y": 112,
+   "parent": 2,
+   "props": {
+    "fontSize": 13,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1194,
+   "y": 108,
+   "width": 104,
+   "height": 28,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1205,
+   "y": 119,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#3F7A55"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CONNECTED",
+   "x": 1218,
+   "y": 117,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1312,
+   "y": 104,
+   "width": 32,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "cornerRadius": 999
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HM",
+   "x": 1322,
+   "y": 114,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "OPERATOR",
+   "x": 1350,
+   "y": 116,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SCENE 13A / CHAT DOCK",
+   "x": 900,
+   "y": 117,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#A0916F",
+    "letterSpacing": "10%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 148,
+   "width": 72,
+   "height": 848,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 72,
+   "y": 148,
+   "width": 1,
+   "height": 848,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 12,
+   "y": 166,
+   "width": 48,
+   "height": 48,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 11
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 28.205771365940052,
+   "y": 179.0,
+   "width": 15.588457268119894,
+   "height": 18,
+   "parent": 2,
+   "path": "M 0.00 4.50 L 7.79 0.00 L 15.59 4.50 L 15.59 13.50 L 7.79 18.00 L 0.00 13.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Workspace",
+   "x": -4,
+   "y": 220,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Medium",
+    "fill": "#282010",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33,
+   "y": 272,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 27,
+   "y": 279,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 39,
+   "y": 279,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agents",
+   "x": -4,
+   "y": 312,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 364,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 371,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 378,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Data",
+   "x": -4,
+   "y": 404,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 28.205771365940052,
+   "y": 455.0,
+   "width": 15.588457268119894,
+   "height": 18,
+   "parent": 2,
+   "path": "M 0.00 4.50 L 7.79 0.00 L 15.59 4.50 L 15.59 13.50 L 7.79 18.00 L 0.00 13.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.7
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Models",
+   "x": -4,
+   "y": 496,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 27,
+   "y": 548,
+   "width": 18,
+   "height": 16,
+   "parent": 2,
+   "path": "M 0 8 L 8 8 L 12 2 L 18 2 M 8 8 L 12 14 L 18 14",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Routing",
+   "x": -4,
+   "y": 588,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 27,
+   "y": 643,
+   "width": 18,
+   "height": 12,
+   "parent": 2,
+   "path": "M 2 12 A 12 12 0 0 1 16 12 M 5 9 A 8 8 0 0 1 13 9",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33.5,
+   "y": 650.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Remote",
+   "x": -4,
+   "y": 680,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 28,
+   "y": 732,
+   "width": 16,
+   "height": 16,
+   "parent": 2,
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33,
+   "y": 737,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Settings",
+   "x": -4,
+   "y": 772,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 26,
+   "y": 821,
+   "width": 20,
+   "height": 20,
+   "parent": 2,
+   "props": {
+    "fill": "none",
+    "cornerRadius": 999,
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.8
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "?",
+   "x": 31,
+   "y": 824,
+   "parent": 2,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Help",
+   "x": -4,
+   "y": 864,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 72,
+   "y": 148,
+   "width": 240,
+   "height": 848,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 148,
+   "width": 1,
+   "height": 848,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 164,
+   "width": 216,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Project: HiveMind AI",
+   "x": 96,
+   "y": 172,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Medium",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 276,
+   "y": 177,
+   "width": 7,
+   "height": 4.8999999999999995,
+   "parent": 2,
+   "path": "M 0 0 L 3.5 4.2 L 7.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 208,
+   "width": 104,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKSPACE",
+   "x": 94,
+   "y": 214,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 194,
+   "y": 208,
+   "width": 70,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SWARM",
+   "x": 204,
+   "y": 214,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 238,
+   "width": 80,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ROUTING",
+   "x": 94,
+   "y": 244,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 170,
+   "y": 238,
+   "width": 80,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HISTORY",
+   "x": 180,
+   "y": 244,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "AGENTS IN RUN",
+   "x": 84,
+   "y": 278,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3 ACTIVE · 1 QUEUED",
+   "x": 84,
+   "y": 292,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 308,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 314.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SUPER #69a5678a",
+   "x": 108,
+   "y": 315,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 317.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 338,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 344.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKER #0da1931a",
+   "x": 108,
+   "y": 345,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 347.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 368,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 374.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKER #e41b9538",
+   "x": 108,
+   "y": 375,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 377.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#C88030"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TEMPLATES · 8",
+   "x": 84,
+   "y": 418,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 434,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 440.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "agent",
+   "x": 106,
+   "y": 440,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 440,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 462,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 468.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "chatbot",
+   "x": 106,
+   "y": 468,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 490,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 496.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "code-reviewer",
+   "x": 106,
+   "y": 496,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 518,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 524.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "content-writer",
+   "x": 106,
+   "y": 524,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 546,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 552.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "data-analyst",
+   "x": 106,
+   "y": 552,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 574,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 580.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "planner",
+   "x": 106,
+   "y": 580,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 580,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 602,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 608.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "subagent",
+   "x": 106,
+   "y": 608,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 608,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 630,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 636.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "superagent",
+   "x": 106,
+   "y": 636,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 636,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 738,
+   "width": 216,
+   "height": 66,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 8
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TIP",
+   "x": 96,
+   "y": 748,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#8A5A1C",
+    "letterSpacing": "12%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Drag the dock grip up or down; Help lives in the nav rail.",
+   "x": 96,
+   "y": 762,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 12,
+    "textAutoResize": "height"
+   },
+   "width": 192
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "STATE & SETTINGS",
+   "x": 84,
+   "y": 970,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 286,
+   "y": 971,
+   "width": 7,
+   "height": 4.8999999999999995,
+   "parent": 2,
+   "path": "M 0 0 L 3.5 4.2 L 7.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 148,
+   "width": 1128,
+   "height": 848,
+   "parent": 2,
+   "props": {
+    "fill": "#F8F4EB"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 273.8948822334847,
+   "y": 104.0,
+   "width": 1333.6791218280357,
+   "height": 1012.0,
+   "parent": 2,
+   "path": "M 0.0 22.0 L 38.1 0.0 L 76.2 22.0 L 76.2 66.0 L 38.1 88.0 L 0.0 66.0 Z M 76.2 22.0 L 114.3 0.0 L 152.4 22.0 L 152.4 66.0 L 114.3 88.0 L 76.2 66.0 Z M 152.4 22.0 L 190.5 0.0 L 228.6 22.0 L 228.6 66.0 L 190.5 88.0 L 152.4 66.0 Z M 228.6 22.0 L 266.7 0.0 L 304.8 22.0 L 304.8 66.0 L 266.7 88.0 L 228.6 66.0 Z M 304.8 22.0 L 342.9 0.0 L 381.1 22.0 L 381.1 66.0 L 342.9 88.0 L 304.8 66.0 Z M 381.1 22.0 L 419.2 0.0 L 457.3 22.0 L 457.3 66.0 L 419.2 88.0 L 381.1 66.0 Z M 457.3 22.0 L 495.4 0.0 L 533.5 22.0 L 533.5 66.0 L 495.4 88.0 L 457.3 66.0 Z M 533.5 22.0 L 571.6 0.0 L 609.7 22.0 L 609.7 66.0 L 571.6 88.0 L 533.5 66.0 Z M 609.7 22.0 L 647.8 0.0 L 685.9 22.0 L 685.9 66.0 L 647.8 88.0 L 609.7 66.0 Z M 685.9 22.0 L 724.0 0.0 L 762.1 22.0 L 762.1 66.0 L 724.0 88.0 L 685.9 66.0 Z M 762.1 22.0 L 800.2 0.0 L 838.3 22.0 L 838.3 66.0 L 800.2 88.0 L 762.1 66.0 Z M 838.3 22.0 L 876.4 0.0 L 914.5 22.0 L 914.5 66.0 L 876.4 88.0 L 838.3 66.0 Z M 914.5 22.0 L 952.6 0.0 L 990.7 22.0 L 990.7 66.0 L 952.6 88.0 L 914.5 66.0 Z M 990.7 22.0 L 1028.8 0.0 L 1066.9 22.0 L 1066.9 66.0 L 1028.8 88.0 L 990.7 66.0 Z M 1066.9 22.0 L 1105.0 0.0 L 1143.2 22.0 L 1143.2 66.0 L 1105.0 88.0 L 1066.9 66.0 Z M 1143.2 22.0 L 1181.3 0.0 L 1219.4 22.0 L 1219.4 66.0 L 1181.3 88.0 L 1143.2 66.0 Z M 1219.4 22.0 L 1257.5 0.0 L 1295.6 22.0 L 1295.6 66.0 L 1257.5 88.0 L 1219.4 66.0 Z M 38.1 88.0 L 76.2 66.0 L 114.3 88.0 L 114.3 132.0 L 76.2 154.0 L 38.1 132.0 Z M 114.3 88.0 L 152.4 66.0 L 190.5 88.0 L 190.5 132.0 L 152.4 154.0 L 114.3 132.0 Z M 190.5 88.0 L 228.6 66.0 L 266.7 88.0 L 266.7 132.0 L 228.6 154.0 L 190.5 132.0 Z M 266.7 88.0 L 304.8 66.0 L 342.9 88.0 L 342.9 132.0 L 304.8 154.0 L 266.7 132.0 Z M 342.9 88.0 L 381.1 66.0 L 419.2 88.0 L 419.2 132.0 L 381.1 154.0 L 342.9 132.0 Z M 419.2 88.0 L 457.3 66.0 L 495.4 88.0 L 495.4 132.0 L 457.3 154.0 L 419.2 132.0 Z M 495.4 88.0 L 533.5 66.0 L 571.6 88.0 L 571.6 132.0 L 533.5 154.0 L 495.4 132.0 Z M 571.6 88.0 L 609.7 66.0 L 647.8 88.0 L 647.8 132.0 L 609.7 154.0 L 571.6 132.0 Z M 647.8 88.0 L 685.9 66.0 L 724.0 88.0 L 724.0 132.0 L 685.9 154.0 L 647.8 132.0 Z M 724.0 88.0 L 762.1 66.0 L 800.2 88.0 L 800.2 132.0 L 762.1 154.0 L 724.0 132.0 Z M 800.2 88.0 L 838.3 66.0 L 876.4 88.0 L 876.4 132.0 L 838.3 154.0 L 800.2 132.0 Z M 876.4 88.0 L 914.5 66.0 L 952.6 88.0 L 952.6 132.0 L 914.5 154.0 L 876.4 132.0 Z M 952.6 88.0 L 990.7 66.0 L 1028.8 88.0 L 1028.8 132.0 L 990.7 154.0 L 952.6 132.0 Z M 1028.8 88.0 L 1066.9 66.0 L 1105.0 88.0 L 1105.0 132.0 L 1066.9 154.0 L 1028.8 132.0 Z M 1105.0 88.0 L 1143.2 66.0 L 1181.3 88.0 L 1181.3 132.0 L 1143.2 154.0 L 1105.0 132.0 Z M 1181.3 88.0 L 1219.4 66.0 L 1257.5 88.0 L 1257.5 132.0 L 1219.4 154.0 L 1181.3 132.0 Z M 1257.5 88.0 L 1295.6 66.0 L 1333.7 88.0 L 1333.7 132.0 L 1295.6 154.0 L 1257.5 132.0 Z M 0.0 154.0 L 38.1 132.0 L 76.2 154.0 L 76.2 198.0 L 38.1 220.0 L 0.0 198.0 Z M 76.2 154.0 L 114.3 132.0 L 152.4 154.0 L 152.4 198.0 L 114.3 220.0 L 76.2 198.0 Z M 152.4 154.0 L 190.5 132.0 L 228.6 154.0 L 228.6 198.0 L 190.5 220.0 L 152.4 198.0 Z M 228.6 154.0 L 266.7 132.0 L 304.8 154.0 L 304.8 198.0 L 266.7 220.0 L 228.6 198.0 Z M 304.8 154.0 L 342.9 132.0 L 381.1 154.0 L 381.1 198.0 L 342.9 220.0 L 304.8 198.0 Z M 381.1 154.0 L 419.2 132.0 L 457.3 154.0 L 457.3 198.0 L 419.2 220.0 L 381.1 198.0 Z M 457.3 154.0 L 495.4 132.0 L 533.5 154.0 L 533.5 198.0 L 495.4 220.0 L 457.3 198.0 Z M 533.5 154.0 L 571.6 132.0 L 609.7 154.0 L 609.7 198.0 L 571.6 220.0 L 533.5 198.0 Z M 609.7 154.0 L 647.8 132.0 L 685.9 154.0 L 685.9 198.0 L 647.8 220.0 L 609.7 198.0 Z M 685.9 154.0 L 724.0 132.0 L 762.1 154.0 L 762.1 198.0 L 724.0 220.0 L 685.9 198.0 Z M 762.1 154.0 L 800.2 132.0 L 838.3 154.0 L 838.3 198.0 L 800.2 220.0 L 762.1 198.0 Z M 838.3 154.0 L 876.4 132.0 L 914.5 154.0 L 914.5 198.0 L 876.4 220.0 L 838.3 198.0 Z M 914.5 154.0 L 952.6 132.0 L 990.7 154.0 L 990.7 198.0 L 952.6 220.0 L 914.5 198.0 Z M 990.7 154.0 L 1028.8 132.0 L 1066.9 154.0 L 1066.9 198.0 L 1028.8 220.0 L 990.7 198.0 Z M 1066.9 154.0 L 1105.0 132.0 L 1143.2 154.0 L 1143.2 198.0 L 1105.0 220.0 L 1066.9 198.0 Z M 1143.2 154.0 L 1181.3 132.0 L 1219.4 154.0 L 1219.4 198.0 L 1181.3 220.0 L 1143.2 198.0 Z M 1219.4 154.0 L 1257.5 132.0 L 1295.6 154.0 L 1295.6 198.0 L 1257.5 220.0 L 1219.4 198.0 Z M 38.1 220.0 L 76.2 198.0 L 114.3 220.0 L 114.3 264.0 L 76.2 286.0 L 38.1 264.0 Z M 114.3 220.0 L 152.4 198.0 L 190.5 220.0 L 190.5 264.0 L 152.4 286.0 L 114.3 264.0 Z M 190.5 220.0 L 228.6 198.0 L 266.7 220.0 L 266.7 264.0 L 228.6 286.0 L 190.5 264.0 Z M 266.7 220.0 L 304.8 198.0 L 342.9 220.0 L 342.9 264.0 L 304.8 286.0 L 266.7 264.0 Z M 342.9 220.0 L 381.1 198.0 L 419.2 220.0 L 419.2 264.0 L 381.1 286.0 L 342.9 264.0 Z M 419.2 220.0 L 457.3 198.0 L 495.4 220.0 L 495.4 264.0 L 457.3 286.0 L 419.2 264.0 Z M 495.4 220.0 L 533.5 198.0 L 571.6 220.0 L 571.6 264.0 L 533.5 286.0 L 495.4 264.0 Z M 571.6 220.0 L 609.7 198.0 L 647.8 220.0 L 647.8 264.0 L 609.7 286.0 L 571.6 264.0 Z M 647.8 220.0 L 685.9 198.0 L 724.0 220.0 L 724.0 264.0 L 685.9 286.0 L 647.8 264.0 Z M 724.0 220.0 L 762.1 198.0 L 800.2 220.0 L 800.2 264.0 L 762.1 286.0 L 724.0 264.0 Z M 800.2 220.0 L 838.3 198.0 L 876.4 220.0 L 876.4 264.0 L 838.3 286.0 L 800.2 264.0 Z M 876.4 220.0 L 914.5 198.0 L 952.6 220.0 L 952.6 264.0 L 914.5 286.0 L 876.4 264.0 Z M 952.6 220.0 L 990.7 198.0 L 1028.8 220.0 L 1028.8 264.0 L 990.7 286.0 L 952.6 264.0 Z M 1028.8 220.0 L 1066.9 198.0 L 1105.0 220.0 L 1105.0 264.0 L 1066.9 286.0 L 1028.8 264.0 Z M 1105.0 220.0 L 1143.2 198.0 L 1181.3 220.0 L 1181.3 264.0 L 1143.2 286.0 L 1105.0 264.0 Z M 1181.3 220.0 L 1219.4 198.0 L 1257.5 220.0 L 1257.5 264.0 L 1219.4 286.0 L 1181.3 264.0 Z M 1257.5 220.0 L 1295.6 198.0 L 1333.7 220.0 L 1333.7 264.0 L 1295.6 286.0 L 1257.5 264.0 Z M 0.0 286.0 L 38.1 264.0 L 76.2 286.0 L 76.2 330.0 L 38.1 352.0 L 0.0 330.0 Z M 76.2 286.0 L 114.3 264.0 L 152.4 286.0 L 152.4 330.0 L 114.3 352.0 L 76.2 330.0 Z M 152.4 286.0 L 190.5 264.0 L 228.6 286.0 L 228.6 330.0 L 190.5 352.0 L 152.4 330.0 Z M 228.6 286.0 L 266.7 264.0 L 304.8 286.0 L 304.8 330.0 L 266.7 352.0 L 228.6 330.0 Z M 304.8 286.0 L 342.9 264.0 L 381.1 286.0 L 381.1 330.0 L 342.9 352.0 L 304.8 330.0 Z M 381.1 286.0 L 419.2 264.0 L 457.3 286.0 L 457.3 330.0 L 419.2 352.0 L 381.1 330.0 Z M 457.3 286.0 L 495.4 264.0 L 533.5 286.0 L 533.5 330.0 L 495.4 352.0 L 457.3 330.0 Z M 533.5 286.0 L 571.6 264.0 L 609.7 286.0 L 609.7 330.0 L 571.6 352.0 L 533.5 330.0 Z M 609.7 286.0 L 647.8 264.0 L 685.9 286.0 L 685.9 330.0 L 647.8 352.0 L 609.7 330.0 Z M 685.9 286.0 L 724.0 264.0 L 762.1 286.0 L 762.1 330.0 L 724.0 352.0 L 685.9 330.0 Z M 762.1 286.0 L 800.2 264.0 L 838.3 286.0 L 838.3 330.0 L 800.2 352.0 L 762.1 330.0 Z M 838.3 286.0 L 876.4 264.0 L 914.5 286.0 L 914.5 330.0 L 876.4 352.0 L 838.3 330.0 Z M 914.5 286.0 L 952.6 264.0 L 990.7 286.0 L 990.7 330.0 L 952.6 352.0 L 914.5 330.0 Z M 990.7 286.0 L 1028.8 264.0 L 1066.9 286.0 L 1066.9 330.0 L 1028.8 352.0 L 990.7 330.0 Z M 1066.9 286.0 L 1105.0 264.0 L 1143.2 286.0 L 1143.2 330.0 L 1105.0 352.0 L 1066.9 330.0 Z M 1143.2 286.0 L 1181.3 264.0 L 1219.4 286.0 L 1219.4 330.0 L 1181.3 352.0 L 1143.2 330.0 Z M 1219.4 286.0 L 1257.5 264.0 L 1295.6 286.0 L 1295.6 330.0 L 1257.5 352.0 L 1219.4 330.0 Z M 38.1 352.0 L 76.2 330.0 L 114.3 352.0 L 114.3 396.0 L 76.2 418.0 L 38.1 396.0 Z M 114.3 352.0 L 152.4 330.0 L 190.5 352.0 L 190.5 396.0 L 152.4 418.0 L 114.3 396.0 Z M 190.5 352.0 L 228.6 330.0 L 266.7 352.0 L 266.7 396.0 L 228.6 418.0 L 190.5 396.0 Z M 266.7 352.0 L 304.8 330.0 L 342.9 352.0 L 342.9 396.0 L 304.8 418.0 L 266.7 396.0 Z M 342.9 352.0 L 381.1 330.0 L 419.2 352.0 L 419.2 396.0 L 381.1 418.0 L 342.9 396.0 Z M 419.2 352.0 L 457.3 330.0 L 495.4 352.0 L 495.4 396.0 L 457.3 418.0 L 419.2 396.0 Z M 495.4 352.0 L 533.5 330.0 L 571.6 352.0 L 571.6 396.0 L 533.5 418.0 L 495.4 396.0 Z M 571.6 352.0 L 609.7 330.0 L 647.8 352.0 L 647.8 396.0 L 609.7 418.0 L 571.6 396.0 Z M 647.8 352.0 L 685.9 330.0 L 724.0 352.0 L 724.0 396.0 L 685.9 418.0 L 647.8 396.0 Z M 724.0 352.0 L 762.1 330.0 L 800.2 352.0 L 800.2 396.0 L 762.1 418.0 L 724.0 396.0 Z M 800.2 352.0 L 838.3 330.0 L 876.4 352.0 L 876.4 396.0 L 838.3 418.0 L 800.2 396.0 Z M 876.4 352.0 L 914.5 330.0 L 952.6 352.0 L 952.6 396.0 L 914.5 418.0 L 876.4 396.0 Z M 952.6 352.0 L 990.7 330.0 L 1028.8 352.0 L 1028.8 396.0 L 990.7 418.0 L 952.6 396.0 Z M 1028.8 352.0 L 1066.9 330.0 L 1105.0 352.0 L 1105.0 396.0 L 1066.9 418.0 L 1028.8 396.0 Z M 1105.0 352.0 L 1143.2 330.0 L 1181.3 352.0 L 1181.3 396.0 L 1143.2 418.0 L 1105.0 396.0 Z M 1181.3 352.0 L 1219.4 330.0 L 1257.5 352.0 L 1257.5 396.0 L 1219.4 418.0 L 1181.3 396.0 Z M 1257.5 352.0 L 1295.6 330.0 L 1333.7 352.0 L 1333.7 396.0 L 1295.6 418.0 L 1257.5 396.0 Z M 0.0 418.0 L 38.1 396.0 L 76.2 418.0 L 76.2 462.0 L 38.1 484.0 L 0.0 462.0 Z M 76.2 418.0 L 114.3 396.0 L 152.4 418.0 L 152.4 462.0 L 114.3 484.0 L 76.2 462.0 Z M 152.4 418.0 L 190.5 396.0 L 228.6 418.0 L 228.6 462.0 L 190.5 484.0 L 152.4 462.0 Z M 228.6 418.0 L 266.7 396.0 L 304.8 418.0 L 304.8 462.0 L 266.7 484.0 L 228.6 462.0 Z M 304.8 418.0 L 342.9 396.0 L 381.1 418.0 L 381.1 462.0 L 342.9 484.0 L 304.8 462.0 Z M 381.1 418.0 L 419.2 396.0 L 457.3 418.0 L 457.3 462.0 L 419.2 484.0 L 381.1 462.0 Z M 457.3 418.0 L 495.4 396.0 L 533.5 418.0 L 533.5 462.0 L 495.4 484.0 L 457.3 462.0 Z M 533.5 418.0 L 571.6 396.0 L 609.7 418.0 L 609.7 462.0 L 571.6 484.0 L 533.5 462.0 Z M 609.7 418.0 L 647.8 396.0 L 685.9 418.0 L 685.9 462.0 L 647.8 484.0 L 609.7 462.0 Z M 685.9 418.0 L 724.0 396.0 L 762.1 418.0 L 762.1 462.0 L 724.0 484.0 L 685.9 462.0 Z M 762.1 418.0 L 800.2 396.0 L 838.3 418.0 L 838.3 462.0 L 800.2 484.0 L 762.1 462.0 Z M 838.3 418.0 L 876.4 396.0 L 914.5 418.0 L 914.5 462.0 L 876.4 484.0 L 838.3 462.0 Z M 914.5 418.0 L 952.6 396.0 L 990.7 418.0 L 990.7 462.0 L 952.6 484.0 L 914.5 462.0 Z M 990.7 418.0 L 1028.8 396.0 L 1066.9 418.0 L 1066.9 462.0 L 1028.8 484.0 L 990.7 462.0 Z M 1066.9 418.0 L 1105.0 396.0 L 1143.2 418.0 L 1143.2 462.0 L 1105.0 484.0 L 1066.9 462.0 Z M 1143.2 418.0 L 1181.3 396.0 L 1219.4 418.0 L 1219.4 462.0 L 1181.3 484.0 L 1143.2 462.0 Z M 1219.4 418.0 L 1257.5 396.0 L 1295.6 418.0 L 1295.6 462.0 L 1257.5 484.0 L 1219.4 462.0 Z M 38.1 484.0 L 76.2 462.0 L 114.3 484.0 L 114.3 528.0 L 76.2 550.0 L 38.1 528.0 Z M 114.3 484.0 L 152.4 462.0 L 190.5 484.0 L 190.5 528.0 L 152.4 550.0 L 114.3 528.0 Z M 190.5 484.0 L 228.6 462.0 L 266.7 484.0 L 266.7 528.0 L 228.6 550.0 L 190.5 528.0 Z M 266.7 484.0 L 304.8 462.0 L 342.9 484.0 L 342.9 528.0 L 304.8 550.0 L 266.7 528.0 Z M 342.9 484.0 L 381.1 462.0 L 419.2 484.0 L 419.2 528.0 L 381.1 550.0 L 342.9 528.0 Z M 419.2 484.0 L 457.3 462.0 L 495.4 484.0 L 495.4 528.0 L 457.3 550.0 L 419.2 528.0 Z M 495.4 484.0 L 533.5 462.0 L 571.6 484.0 L 571.6 528.0 L 533.5 550.0 L 495.4 528.0 Z M 571.6 484.0 L 609.7 462.0 L 647.8 484.0 L 647.8 528.0 L 609.7 550.0 L 571.6 528.0 Z M 647.8 484.0 L 685.9 462.0 L 724.0 484.0 L 724.0 528.0 L 685.9 550.0 L 647.8 528.0 Z M 724.0 484.0 L 762.1 462.0 L 800.2 484.0 L 800.2 528.0 L 762.1 550.0 L 724.0 528.0 Z M 800.2 484.0 L 838.3 462.0 L 876.4 484.0 L 876.4 528.0 L 838.3 550.0 L 800.2 528.0 Z M 876.4 484.0 L 914.5 462.0 L 952.6 484.0 L 952.6 528.0 L 914.5 550.0 L 876.4 528.0 Z M 952.6 484.0 L 990.7 462.0 L 1028.8 484.0 L 1028.8 528.0 L 990.7 550.0 L 952.6 528.0 Z M 1028.8 484.0 L 1066.9 462.0 L 1105.0 484.0 L 1105.0 528.0 L 1066.9 550.0 L 1028.8 528.0 Z M 1105.0 484.0 L 1143.2 462.0 L 1181.3 484.0 L 1181.3 528.0 L 1143.2 550.0 L 1105.0 528.0 Z M 1181.3 484.0 L 1219.4 462.0 L 1257.5 484.0 L 1257.5 528.0 L 1219.4 550.0 L 1181.3 528.0 Z M 1257.5 484.0 L 1295.6 462.0 L 1333.7 484.0 L 1333.7 528.0 L 1295.6 550.0 L 1257.5 528.0 Z M 0.0 550.0 L 38.1 528.0 L 76.2 550.0 L 76.2 594.0 L 38.1 616.0 L 0.0 594.0 Z M 76.2 550.0 L 114.3 528.0 L 152.4 550.0 L 152.4 594.0 L 114.3 616.0 L 76.2 594.0 Z M 152.4 550.0 L 190.5 528.0 L 228.6 550.0 L 228.6 594.0 L 190.5 616.0 L 152.4 594.0 Z M 228.6 550.0 L 266.7 528.0 L 304.8 550.0 L 304.8 594.0 L 266.7 616.0 L 228.6 594.0 Z M 304.8 550.0 L 342.9 528.0 L 381.1 550.0 L 381.1 594.0 L 342.9 616.0 L 304.8 594.0 Z M 381.1 550.0 L 419.2 528.0 L 457.3 550.0 L 457.3 594.0 L 419.2 616.0 L 381.1 594.0 Z M 457.3 550.0 L 495.4 528.0 L 533.5 550.0 L 533.5 594.0 L 495.4 616.0 L 457.3 594.0 Z M 533.5 550.0 L 571.6 528.0 L 609.7 550.0 L 609.7 594.0 L 571.6 616.0 L 533.5 594.0 Z M 609.7 550.0 L 647.8 528.0 L 685.9 550.0 L 685.9 594.0 L 647.8 616.0 L 609.7 594.0 Z M 685.9 550.0 L 724.0 528.0 L 762.1 550.0 L 762.1 594.0 L 724.0 616.0 L 685.9 594.0 Z M 762.1 550.0 L 800.2 528.0 L 838.3 550.0 L 838.3 594.0 L 800.2 616.0 L 762.1 594.0 Z M 838.3 550.0 L 876.4 528.0 L 914.5 550.0 L 914.5 594.0 L 876.4 616.0 L 838.3 594.0 Z M 914.5 550.0 L 952.6 528.0 L 990.7 550.0 L 990.7 594.0 L 952.6 616.0 L 914.5 594.0 Z M 990.7 550.0 L 1028.8 528.0 L 1066.9 550.0 L 1066.9 594.0 L 1028.8 616.0 L 990.7 594.0 Z M 1066.9 550.0 L 1105.0 528.0 L 1143.2 550.0 L 1143.2 594.0 L 1105.0 616.0 L 1066.9 594.0 Z M 1143.2 550.0 L 1181.3 528.0 L 1219.4 550.0 L 1219.4 594.0 L 1181.3 616.0 L 1143.2 594.0 Z M 1219.4 550.0 L 1257.5 528.0 L 1295.6 550.0 L 1295.6 594.0 L 1257.5 616.0 L 1219.4 594.0 Z M 38.1 616.0 L 76.2 594.0 L 114.3 616.0 L 114.3 660.0 L 76.2 682.0 L 38.1 660.0 Z M 114.3 616.0 L 152.4 594.0 L 190.5 616.0 L 190.5 660.0 L 152.4 682.0 L 114.3 660.0 Z M 190.5 616.0 L 228.6 594.0 L 266.7 616.0 L 266.7 660.0 L 228.6 682.0 L 190.5 660.0 Z M 266.7 616.0 L 304.8 594.0 L 342.9 616.0 L 342.9 660.0 L 304.8 682.0 L 266.7 660.0 Z M 342.9 616.0 L 381.1 594.0 L 419.2 616.0 L 419.2 660.0 L 381.1 682.0 L 342.9 660.0 Z M 419.2 616.0 L 457.3 594.0 L 495.4 616.0 L 495.4 660.0 L 457.3 682.0 L 419.2 660.0 Z M 495.4 616.0 L 533.5 594.0 L 571.6 616.0 L 571.6 660.0 L 533.5 682.0 L 495.4 660.0 Z M 571.6 616.0 L 609.7 594.0 L 647.8 616.0 L 647.8 660.0 L 609.7 682.0 L 571.6 660.0 Z M 647.8 616.0 L 685.9 594.0 L 724.0 616.0 L 724.0 660.0 L 685.9 682.0 L 647.8 660.0 Z M 724.0 616.0 L 762.1 594.0 L 800.2 616.0 L 800.2 660.0 L 762.1 682.0 L 724.0 660.0 Z M 800.2 616.0 L 838.3 594.0 L 876.4 616.0 L 876.4 660.0 L 838.3 682.0 L 800.2 660.0 Z M 876.4 616.0 L 914.5 594.0 L 952.6 616.0 L 952.6 660.0 L 914.5 682.0 L 876.4 660.0 Z M 952.6 616.0 L 990.7 594.0 L 1028.8 616.0 L 1028.8 660.0 L 990.7 682.0 L 952.6 660.0 Z M 1028.8 616.0 L 1066.9 594.0 L 1105.0 616.0 L 1105.0 660.0 L 1066.9 682.0 L 1028.8 660.0 Z M 1105.0 616.0 L 1143.2 594.0 L 1181.3 616.0 L 1181.3 660.0 L 1143.2 682.0 L 1105.0 660.0 Z M 1181.3 616.0 L 1219.4 594.0 L 1257.5 616.0 L 1257.5 660.0 L 1219.4 682.0 L 1181.3 660.0 Z M 1257.5 616.0 L 1295.6 594.0 L 1333.7 616.0 L 1333.7 660.0 L 1295.6 682.0 L 1257.5 660.0 Z M 0.0 682.0 L 38.1 660.0 L 76.2 682.0 L 76.2 726.0 L 38.1 748.0 L 0.0 726.0 Z M 76.2 682.0 L 114.3 660.0 L 152.4 682.0 L 152.4 726.0 L 114.3 748.0 L 76.2 726.0 Z M 152.4 682.0 L 190.5 660.0 L 228.6 682.0 L 228.6 726.0 L 190.5 748.0 L 152.4 726.0 Z M 228.6 682.0 L 266.7 660.0 L 304.8 682.0 L 304.8 726.0 L 266.7 748.0 L 228.6 726.0 Z M 304.8 682.0 L 342.9 660.0 L 381.1 682.0 L 381.1 726.0 L 342.9 748.0 L 304.8 726.0 Z M 381.1 682.0 L 419.2 660.0 L 457.3 682.0 L 457.3 726.0 L 419.2 748.0 L 381.1 726.0 Z M 457.3 682.0 L 495.4 660.0 L 533.5 682.0 L 533.5 726.0 L 495.4 748.0 L 457.3 726.0 Z M 533.5 682.0 L 571.6 660.0 L 609.7 682.0 L 609.7 726.0 L 571.6 748.0 L 533.5 726.0 Z M 609.7 682.0 L 647.8 660.0 L 685.9 682.0 L 685.9 726.0 L 647.8 748.0 L 609.7 726.0 Z M 685.9 682.0 L 724.0 660.0 L 762.1 682.0 L 762.1 726.0 L 724.0 748.0 L 685.9 726.0 Z M 762.1 682.0 L 800.2 660.0 L 838.3 682.0 L 838.3 726.0 L 800.2 748.0 L 762.1 726.0 Z M 838.3 682.0 L 876.4 660.0 L 914.5 682.0 L 914.5 726.0 L 876.4 748.0 L 838.3 726.0 Z M 914.5 682.0 L 952.6 660.0 L 990.7 682.0 L 990.7 726.0 L 952.6 748.0 L 914.5 726.0 Z M 990.7 682.0 L 1028.8 660.0 L 1066.9 682.0 L 1066.9 726.0 L 1028.8 748.0 L 990.7 726.0 Z M 1066.9 682.0 L 1105.0 660.0 L 1143.2 682.0 L 1143.2 726.0 L 1105.0 748.0 L 1066.9 726.0 Z M 1143.2 682.0 L 1181.3 660.0 L 1219.4 682.0 L 1219.4 726.0 L 1181.3 748.0 L 1143.2 726.0 Z M 1219.4 682.0 L 1257.5 660.0 L 1295.6 682.0 L 1295.6 726.0 L 1257.5 748.0 L 1219.4 726.0 Z M 38.1 748.0 L 76.2 726.0 L 114.3 748.0 L 114.3 792.0 L 76.2 814.0 L 38.1 792.0 Z M 114.3 748.0 L 152.4 726.0 L 190.5 748.0 L 190.5 792.0 L 152.4 814.0 L 114.3 792.0 Z M 190.5 748.0 L 228.6 726.0 L 266.7 748.0 L 266.7 792.0 L 228.6 814.0 L 190.5 792.0 Z M 266.7 748.0 L 304.8 726.0 L 342.9 748.0 L 342.9 792.0 L 304.8 814.0 L 266.7 792.0 Z M 342.9 748.0 L 381.1 726.0 L 419.2 748.0 L 419.2 792.0 L 381.1 814.0 L 342.9 792.0 Z M 419.2 748.0 L 457.3 726.0 L 495.4 748.0 L 495.4 792.0 L 457.3 814.0 L 419.2 792.0 Z M 495.4 748.0 L 533.5 726.0 L 571.6 748.0 L 571.6 792.0 L 533.5 814.0 L 495.4 792.0 Z M 571.6 748.0 L 609.7 726.0 L 647.8 748.0 L 647.8 792.0 L 609.7 814.0 L 571.6 792.0 Z M 647.8 748.0 L 685.9 726.0 L 724.0 748.0 L 724.0 792.0 L 685.9 814.0 L 647.8 792.0 Z M 724.0 748.0 L 762.1 726.0 L 800.2 748.0 L 800.2 792.0 L 762.1 814.0 L 724.0 792.0 Z M 800.2 748.0 L 838.3 726.0 L 876.4 748.0 L 876.4 792.0 L 838.3 814.0 L 800.2 792.0 Z M 876.4 748.0 L 914.5 726.0 L 952.6 748.0 L 952.6 792.0 L 914.5 814.0 L 876.4 792.0 Z M 952.6 748.0 L 990.7 726.0 L 1028.8 748.0 L 1028.8 792.0 L 990.7 814.0 L 952.6 792.0 Z M 1028.8 748.0 L 1066.9 726.0 L 1105.0 748.0 L 1105.0 792.0 L 1066.9 814.0 L 1028.8 792.0 Z M 1105.0 748.0 L 1143.2 726.0 L 1181.3 748.0 L 1181.3 792.0 L 1143.2 814.0 L 1105.0 792.0 Z M 1181.3 748.0 L 1219.4 726.0 L 1257.5 748.0 L 1257.5 792.0 L 1219.4 814.0 L 1181.3 792.0 Z M 1257.5 748.0 L 1295.6 726.0 L 1333.7 748.0 L 1333.7 792.0 L 1295.6 814.0 L 1257.5 792.0 Z M 0.0 814.0 L 38.1 792.0 L 76.2 814.0 L 76.2 858.0 L 38.1 880.0 L 0.0 858.0 Z M 76.2 814.0 L 114.3 792.0 L 152.4 814.0 L 152.4 858.0 L 114.3 880.0 L 76.2 858.0 Z M 152.4 814.0 L 190.5 792.0 L 228.6 814.0 L 228.6 858.0 L 190.5 880.0 L 152.4 858.0 Z M 228.6 814.0 L 266.7 792.0 L 304.8 814.0 L 304.8 858.0 L 266.7 880.0 L 228.6 858.0 Z M 304.8 814.0 L 342.9 792.0 L 381.1 814.0 L 381.1 858.0 L 342.9 880.0 L 304.8 858.0 Z M 381.1 814.0 L 419.2 792.0 L 457.3 814.0 L 457.3 858.0 L 419.2 880.0 L 381.1 858.0 Z M 457.3 814.0 L 495.4 792.0 L 533.5 814.0 L 533.5 858.0 L 495.4 880.0 L 457.3 858.0 Z M 533.5 814.0 L 571.6 792.0 L 609.7 814.0 L 609.7 858.0 L 571.6 880.0 L 533.5 858.0 Z M 609.7 814.0 L 647.8 792.0 L 685.9 814.0 L 685.9 858.0 L 647.8 880.0 L 609.7 858.0 Z M 685.9 814.0 L 724.0 792.0 L 762.1 814.0 L 762.1 858.0 L 724.0 880.0 L 685.9 858.0 Z M 762.1 814.0 L 800.2 792.0 L 838.3 814.0 L 838.3 858.0 L 800.2 880.0 L 762.1 858.0 Z M 838.3 814.0 L 876.4 792.0 L 914.5 814.0 L 914.5 858.0 L 876.4 880.0 L 838.3 858.0 Z M 914.5 814.0 L 952.6 792.0 L 990.7 814.0 L 990.7 858.0 L 952.6 880.0 L 914.5 858.0 Z M 990.7 814.0 L 1028.8 792.0 L 1066.9 814.0 L 1066.9 858.0 L 1028.8 880.0 L 990.7 858.0 Z M 1066.9 814.0 L 1105.0 792.0 L 1143.2 814.0 L 1143.2 858.0 L 1105.0 880.0 L 1066.9 858.0 Z M 1143.2 814.0 L 1181.3 792.0 L 1219.4 814.0 L 1219.4 858.0 L 1181.3 880.0 L 1143.2 858.0 Z M 1219.4 814.0 L 1257.5 792.0 L 1295.6 814.0 L 1295.6 858.0 L 1257.5 880.0 L 1219.4 858.0 Z M 38.1 880.0 L 76.2 858.0 L 114.3 880.0 L 114.3 924.0 L 76.2 946.0 L 38.1 924.0 Z M 114.3 880.0 L 152.4 858.0 L 190.5 880.0 L 190.5 924.0 L 152.4 946.0 L 114.3 924.0 Z M 190.5 880.0 L 228.6 858.0 L 266.7 880.0 L 266.7 924.0 L 228.6 946.0 L 190.5 924.0 Z M 266.7 880.0 L 304.8 858.0 L 342.9 880.0 L 342.9 924.0 L 304.8 946.0 L 266.7 924.0 Z M 342.9 880.0 L 381.1 858.0 L 419.2 880.0 L 419.2 924.0 L 381.1 946.0 L 342.9 924.0 Z M 419.2 880.0 L 457.3 858.0 L 495.4 880.0 L 495.4 924.0 L 457.3 946.0 L 419.2 924.0 Z M 495.4 880.0 L 533.5 858.0 L 571.6 880.0 L 571.6 924.0 L 533.5 946.0 L 495.4 924.0 Z M 571.6 880.0 L 609.7 858.0 L 647.8 880.0 L 647.8 924.0 L 609.7 946.0 L 571.6 924.0 Z M 647.8 880.0 L 685.9 858.0 L 724.0 880.0 L 724.0 924.0 L 685.9 946.0 L 647.8 924.0 Z M 724.0 880.0 L 762.1 858.0 L 800.2 880.0 L 800.2 924.0 L 762.1 946.0 L 724.0 924.0 Z M 800.2 880.0 L 838.3 858.0 L 876.4 880.0 L 876.4 924.0 L 838.3 946.0 L 800.2 924.0 Z M 876.4 880.0 L 914.5 858.0 L 952.6 880.0 L 952.6 924.0 L 914.5 946.0 L 876.4 924.0 Z M 952.6 880.0 L 990.7 858.0 L 1028.8 880.0 L 1028.8 924.0 L 990.7 946.0 L 952.6 924.0 Z M 1028.8 880.0 L 1066.9 858.0 L 1105.0 880.0 L 1105.0 924.0 L 1066.9 946.0 L 1028.8 924.0 Z M 1105.0 880.0 L 1143.2 858.0 L 1181.3 880.0 L 1181.3 924.0 L 1143.2 946.0 L 1105.0 924.0 Z M 1181.3 880.0 L 1219.4 858.0 L 1257.5 880.0 L 1257.5 924.0 L 1219.4 946.0 L 1181.3 924.0 Z M 1257.5 880.0 L 1295.6 858.0 L 1333.7 880.0 L 1333.7 924.0 L 1295.6 946.0 L 1257.5 924.0 Z M 0.0 946.0 L 38.1 924.0 L 76.2 946.0 L 76.2 990.0 L 38.1 1012.0 L 0.0 990.0 Z M 76.2 946.0 L 114.3 924.0 L 152.4 946.0 L 152.4 990.0 L 114.3 1012.0 L 76.2 990.0 Z M 152.4 946.0 L 190.5 924.0 L 228.6 946.0 L 228.6 990.0 L 190.5 1012.0 L 152.4 990.0 Z M 228.6 946.0 L 266.7 924.0 L 304.8 946.0 L 304.8 990.0 L 266.7 1012.0 L 228.6 990.0 Z M 304.8 946.0 L 342.9 924.0 L 381.1 946.0 L 381.1 990.0 L 342.9 1012.0 L 304.8 990.0 Z M 381.1 946.0 L 419.2 924.0 L 457.3 946.0 L 457.3 990.0 L 419.2 1012.0 L 381.1 990.0 Z M 457.3 946.0 L 495.4 924.0 L 533.5 946.0 L 533.5 990.0 L 495.4 1012.0 L 457.3 990.0 Z M 533.5 946.0 L 571.6 924.0 L 609.7 946.0 L 609.7 990.0 L 571.6 1012.0 L 533.5 990.0 Z M 609.7 946.0 L 647.8 924.0 L 685.9 946.0 L 685.9 990.0 L 647.8 1012.0 L 609.7 990.0 Z M 685.9 946.0 L 724.0 924.0 L 762.1 946.0 L 762.1 990.0 L 724.0 1012.0 L 685.9 990.0 Z M 762.1 946.0 L 800.2 924.0 L 838.3 946.0 L 838.3 990.0 L 800.2 1012.0 L 762.1 990.0 Z M 838.3 946.0 L 876.4 924.0 L 914.5 946.0 L 914.5 990.0 L 876.4 1012.0 L 838.3 990.0 Z M 914.5 946.0 L 952.6 924.0 L 990.7 946.0 L 990.7 990.0 L 952.6 1012.0 L 914.5 990.0 Z M 990.7 946.0 L 1028.8 924.0 L 1066.9 946.0 L 1066.9 990.0 L 1028.8 1012.0 L 990.7 990.0 Z M 1066.9 946.0 L 1105.0 924.0 L 1143.2 946.0 L 1143.2 990.0 L 1105.0 1012.0 L 1066.9 990.0 Z M 1143.2 946.0 L 1181.3 924.0 L 1219.4 946.0 L 1219.4 990.0 L 1181.3 1012.0 L 1143.2 990.0 Z M 1219.4 946.0 L 1257.5 924.0 L 1295.6 946.0 L 1295.6 990.0 L 1257.5 1012.0 L 1219.4 990.0 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#EFE6CE",
+    "strokeWeight": 1
+   },
+   "name": "honeycomb"
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 340,
+   "y": 164,
+   "width": 96,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIDE FINISHED",
+   "x": 350,
+   "y": 170.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 444,
+   "y": 164,
+   "width": 100,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "FOCUS BRANCH",
+   "x": 454,
+   "y": 170.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 552,
+   "y": 164,
+   "width": 44,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "2/4",
+   "x": 562,
+   "y": 170.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 604,
+   "y": 164,
+   "width": 84,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "GRAPH ONLY",
+   "x": 614,
+   "y": 170.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIVEMIND / WORKSPACE",
+   "x": 1200,
+   "y": 168,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#A0916F",
+    "letterSpacing": "12%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 700,
+   "y": 164,
+   "width": 460,
+   "height": 44,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5C27A",
+    "strokeWeight": 1.2,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       2
+      ],
+      "radius": 6,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       20
+      ],
+      "radius": 48,
+      "spread": 0,
+      "color": "#2820101F",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 719.5,
+   "y": 181.5,
+   "width": 9.0,
+   "height": 9.0,
+   "parent": 2,
+   "props": {
+    "fill": "#3F7A55"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HYPERAGENT · 3 SUPERAGENTS · 4 WORKERS · LIVE",
+   "x": 740,
+   "y": 180,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "5%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 560,
+   "y": 228,
+   "width": 520,
+   "height": 210,
+   "parent": 2,
+   "props": {
+    "fills": [
+     {
+      "type": "radialGradient",
+      "stops": [
+       "#FFF8E5",
+       "#F0C050",
+       "#C88030"
+      ]
+     }
+    ],
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       0
+      ],
+      "radius": 80,
+      "spread": -10,
+      "color": "#8A5A1C3D",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       24
+      ],
+      "radius": 48,
+      "spread": 0,
+      "color": "#60481833",
+      "showBehind": true
+     }
+    ],
+    "opacity": 0.9
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 604,
+   "y": 320,
+   "width": 432,
+   "height": 186,
+   "parent": 2,
+   "props": {
+    "fills": [
+     {
+      "type": "radialGradient",
+      "stops": [
+       "#FFF8E5",
+       "#F0C050",
+       "#C88030"
+      ]
+     }
+    ],
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       0
+      ],
+      "radius": 80,
+      "spread": -10,
+      "color": "#8A5A1C3D",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       24
+      ],
+      "radius": 48,
+      "spread": 0,
+      "color": "#60481833",
+      "showBehind": true
+     }
+    ],
+    "opacity": 0.92
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 640,
+   "y": 404,
+   "width": 360,
+   "height": 150,
+   "parent": 2,
+   "props": {
+    "fills": [
+     {
+      "type": "radialGradient",
+      "stops": [
+       "#FFF8E5",
+       "#F0C050",
+       "#C88030"
+      ]
+     }
+    ],
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       0
+      ],
+      "radius": 80,
+      "spread": -10,
+      "color": "#8A5A1C3D",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       24
+      ],
+      "radius": 48,
+      "spread": 0,
+      "color": "#60481833",
+      "showBehind": true
+     }
+    ],
+    "opacity": 0.95
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 360,
+   "y": 258,
+   "width": 292,
+   "height": 108,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 12,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       1
+      ],
+      "radius": 3,
+      "spread": 0,
+      "color": "#28201012",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       8
+      ],
+      "radius": 24,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 360,
+   "y": 258,
+   "width": 292,
+   "height": 30,
+   "parent": 2,
+   "props": {
+    "fill": "#3F3115",
+    "cornerRadius": 12
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SUPERAGENT · backend",
+   "x": 374,
+   "y": 266,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#FBF3DC",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Maps the repository and splits work",
+   "x": 374,
+   "y": 300,
+   "parent": 2,
+   "props": {
+    "fontSize": 11,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3 workers · 2 queued · routing healthy",
+   "x": 374,
+   "y": 318,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 628.5,
+   "y": 270.5,
+   "width": 7.0,
+   "height": 7.0,
+   "parent": 2,
+   "props": {
+    "fill": "#3F7A55"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1040,
+   "y": 236,
+   "width": 220,
+   "height": 76,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       1
+      ],
+      "radius": 3,
+      "spread": 0,
+      "color": "#28201012",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       8
+      ],
+      "radius": 24,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKER · tailwind-builder",
+   "x": 1052,
+   "y": 246,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "5%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "editing 3 files · 41%",
+   "x": 1052,
+   "y": 264,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1052,
+   "y": 288,
+   "width": 196,
+   "height": 5,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8",
+    "cornerRadius": 999
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1052,
+   "y": 288,
+   "width": 80,
+   "height": 5,
+   "parent": 2,
+   "props": {
+    "fill": "#E8B850",
+    "cornerRadius": 999
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 652,
+   "y": 300,
+   "width": 128,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0 12.0 L 128.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#D9A02F",
+    "strokeWeight": 1.4,
+    "dashes": [
+     8,
+     8
+    ]
+   },
+   "name": "bee-route"
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 716.4,
+   "y": 303.0,
+   "width": 12,
+   "height": 8.399999999999999,
+   "parent": 2,
+   "path": "M 0 3.4 L 8.6 3.4 L 7.4 7.4 L 1.2 7.4 Z",
+   "props": {
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 717.36,
+   "y": 302.03999999999996,
+   "width": 4.08,
+   "height": 2.64,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "opacity": 0.9
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 723.36,
+   "y": 302.03999999999996,
+   "width": 4.08,
+   "height": 2.64,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "opacity": 0.9
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 720.72,
+   "y": 306.12,
+   "width": 6.0,
+   "height": 1.6,
+   "parent": 2,
+   "props": {
+    "fill": "#E8B850"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 900,
+   "y": 274,
+   "width": 140,
+   "height": 36,
+   "parent": 2,
+   "path": "M 0 36.0 L 140.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#D9A02F",
+    "strokeWeight": 1.4,
+    "dashes": [
+     8,
+     8
+    ]
+   },
+   "name": "bee-route"
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 971.0,
+   "y": 287.8,
+   "width": 12,
+   "height": 8.399999999999999,
+   "parent": 2,
+   "path": "M 0 3.4 L 8.6 3.4 L 7.4 7.4 L 1.2 7.4 Z",
+   "props": {
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 971.96,
+   "y": 286.84,
+   "width": 4.08,
+   "height": 2.64,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "opacity": 0.9
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 977.96,
+   "y": 286.84,
+   "width": 4.08,
+   "height": 2.64,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "opacity": 0.9
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 975.32,
+   "y": 290.92,
+   "width": 6.0,
+   "height": 1.6,
+   "parent": 2,
+   "props": {
+    "fill": "#E8B850"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 976.52,
+   "y": 290.44,
+   "width": 2.4000000000000004,
+   "height": 1.2,
+   "parent": 2,
+   "props": {
+    "fill": "#14100A"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 428,
+   "width": 1128,
+   "height": 560,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 18,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       0
+      ],
+      "radius": 80,
+      "spread": -10,
+      "color": "#8A5A1C3D",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       24
+      ],
+      "radius": 48,
+      "spread": 0,
+      "color": "#60481833",
+      "showBehind": true
+     }
+    ]
+   },
+   "name": "chat-dock"
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 844,
+   "y": 438,
+   "width": 64,
+   "height": 10,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8",
+    "cornerRadius": 999
+   },
+   "name": "dock-grip"
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "grip 64x12, topmost hit target",
+   "x": 918,
+   "y": 436,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#8A5A1C",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 313,
+   "y": 452,
+   "width": 1126,
+   "height": 50,
+   "parent": 2,
+   "props": {
+    "fills": [
+     {
+      "type": "linearGradient",
+      "stops": [
+       "#3F3115",
+       "#604818"
+      ],
+      "from": [
+       0,
+       0
+      ],
+      "to": [
+       1,
+       1
+      ]
+     }
+    ],
+    "cornerRadius": 14
+   },
+   "name": "dock-header"
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 333.33974596215563,
+   "y": 467.0,
+   "width": 17.32050807568877,
+   "height": 20,
+   "parent": 2,
+   "path": "M 0.00 5.00 L 8.66 0.00 L 17.32 5.00 L 17.32 15.00 L 8.66 20.00 L 0.00 15.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 1.8
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Hive AI Assistant",
+   "x": 364,
+   "y": 466,
+   "parent": 2,
+   "props": {
+    "fontSize": 15,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#FFFFFF"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1326,
+   "y": 473,
+   "width": 8,
+   "height": 8,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "IDLE",
+   "x": 1340,
+   "y": 471,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#F6E7BE",
+    "letterSpacing": "10%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "×",
+   "x": 1402,
+   "y": 463,
+   "parent": 2,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#FBF3DC"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 340,
+   "y": 522,
+   "width": 24,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "You · 09:41",
+   "x": 372,
+   "y": 518,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#75663F",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ILLUSTRATIVE COPY · NOT RUN DATA",
+   "x": 1090,
+   "y": 518,
+   "parent": 2,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#8A5A1C",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 372,
+   "y": 534,
+   "width": 880,
+   "height": 44,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "What changed in the new chat dock and Help?",
+   "x": 386,
+   "y": 546,
+   "parent": 2,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115",
+    "textAutoResize": "height"
+   },
+   "width": 840
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 340,
+   "y": 592,
+   "width": 24,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 5.76
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 346.3881553834768,
+   "y": 597.52,
+   "width": 11.223689233046326,
+   "height": 12.96,
+   "parent": 2,
+   "path": "M 0.00 3.24 L 5.61 0.00 L 11.22 3.24 L 11.22 9.72 L 5.61 12.96 L 0.00 9.72 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Hive AI Assistant · just now",
+   "x": 372,
+   "y": 588,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#75663F",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The dock now spans the main column: 1128 px at 1440. It keeps a 420 px minimum, 560 px default and 760 px maximum; the optional tray adds 240 px. Help is a nav destination, not a dock tab.",
+   "x": 372,
+   "y": 606,
+   "parent": 2,
+   "props": {
+    "fontSize": 11.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115",
+    "lineHeight": 17,
+    "textAutoResize": "height"
+   },
+   "width": 880
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 372,
+   "y": 690,
+   "width": 880,
+   "height": 58,
+   "parent": 2,
+   "props": {
+    "fill": "#FFF7F5",
+    "cornerRadius": 10,
+    "stroke": "#B23A2E",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "REFUSED BY NAME · NOT SILENT",
+   "x": 386,
+   "y": 698,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#B23A2E",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "E_CALL_LIMIT - the run reached its bounded provider/tool budget. Start a smaller run; do not retry blindly.",
+   "x": 386,
+   "y": 714,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115",
+    "lineHeight": 14,
+    "textAutoResize": "height"
+   },
+   "width": 850
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "REFUSAL",
+   "x": 1180,
+   "y": 698,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#B23A2E",
+    "letterSpacing": "10%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 330,
+   "y": 762,
+   "width": 1076,
+   "height": 30,
+   "parent": 2,
+   "props": {
+    "fill": "#F1E9CF",
+    "cornerRadius": 6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SESSION & PERMISSIONS · CLASSIC",
+   "x": 342,
+   "y": 770,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 1390,
+   "y": 775,
+   "width": 7,
+   "height": 4.8999999999999995,
+   "parent": 2,
+   "path": "M 0 0 L 3.5 4.2 L 7.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 330,
+   "y": 800,
+   "width": 976,
+   "height": 64,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Type your prompt...",
+   "x": 346,
+   "y": 824,
+   "parent": 2,
+   "props": {
+    "fontSize": 13,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1184,
+   "y": 814,
+   "width": 36,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 1196,
+   "y": 826,
+   "width": 12,
+   "height": 12,
+   "parent": 2,
+   "path": "M 2 12 L 12 2 M 5 2 L 12 2 L 12 9",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1226,
+   "y": 814,
+   "width": 36,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1237,
+   "y": 827,
+   "width": 14,
+   "height": 12,
+   "parent": 2,
+   "props": {
+    "fill": "none",
+    "cornerRadius": 2,
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1268,
+   "y": 814,
+   "width": 36,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 999
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 1281,
+   "y": 825,
+   "width": 12,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0 6 L 12 0 L 8 12 L 5 7 Z",
+   "props": {
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ENTER SUBMITS · SHIFT+ENTER NEWLINE · CTRL+0 RECENTRES",
+   "x": 330,
+   "y": 872,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#A0916F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 330,
+   "y": 892,
+   "width": 1078,
+   "height": 1,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CONTROLS",
+   "x": 330,
+   "y": 906,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 392,
+   "y": 911,
+   "width": 6,
+   "height": 4.199999999999999,
+   "parent": 2,
+   "path": "M 0 0 L 3.0 3.6 L 6.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "STATE & SETTINGS",
+   "x": 430,
+   "y": 906,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 548,
+   "y": 911,
+   "width": 6,
+   "height": 4.199999999999999,
+   "parent": 2,
+   "path": "M 0 0 L 3.0 3.6 L 6.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CLEAR",
+   "x": 1270,
+   "y": 906,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIDE",
+   "x": 1360,
+   "y": 906,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#4E3A15",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "tray +240 when open",
+   "x": 1000,
+   "y": 906,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#8A5A1C",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 330,
+   "y": 934,
+   "width": 1078,
+   "height": 42,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "DOCK GEOMETRY",
+   "x": 344,
+   "y": 943,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#8A5A1C",
+    "letterSpacing": "10%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "min 420 · default 560 · max 760 · bottom edge fixed during resize · 12 px viewport gap",
+   "x": 344,
+   "y": 958,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "letterSpacing": "2%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 996,
+   "width": 1440,
+   "height": 28,
+   "parent": 2,
+   "props": {
+    "fill": "#F1E9CF"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "02 · HELP — NAV DESTINATION, NOT A DOCK TAB",
+   "x": 24,
+   "y": 1002,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "source: web/src/panels/HelpPanel.tsx · no dead controls",
+   "x": 1040,
+   "y": 1002,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 1024,
+   "width": 1440,
+   "height": 52,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 1076,
+   "width": 1440,
+   "height": 1,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 16,
+   "y": 1035,
+   "width": 30,
+   "height": 30,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 7.199999999999999
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 23.985194229346046,
+   "y": 1041.9,
+   "width": 14.029611541307908,
+   "height": 16.200000000000003,
+   "parent": 2,
+   "path": "M 0.00 4.05 L 7.01 0.00 L 14.03 4.05 L 14.03 12.15 L 7.01 16.20 L 0.00 12.15 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#E8B850",
+    "strokeWeight": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind",
+   "x": 54,
+   "y": 1039,
+   "parent": 2,
+   "props": {
+    "fontSize": 17,
+    "fontFamily": "Inter",
+    "fontStyle": "Bold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1024,
+   "y": 1036,
+   "width": 116,
+   "height": 28,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIDE CHAT",
+   "x": 1034,
+   "y": 1044.5,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1150,
+   "y": 1034,
+   "width": 32,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "?",
+   "x": 1161,
+   "y": 1040,
+   "parent": 2,
+   "props": {
+    "fontSize": 13,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1194,
+   "y": 1036,
+   "width": 104,
+   "height": 28,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 999,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1205,
+   "y": 1047,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#3F7A55"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CONNECTED",
+   "x": 1218,
+   "y": 1045,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Medium",
+    "fill": "#3F3115",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1312,
+   "y": 1032,
+   "width": 32,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#F6E7BE",
+    "cornerRadius": 999
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HM",
+   "x": 1322,
+   "y": 1042,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "OPERATOR",
+   "x": 1350,
+   "y": 1044,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SCENE 13B / HELP",
+   "x": 900,
+   "y": 1045,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#A0916F",
+    "letterSpacing": "10%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 1076,
+   "width": 72,
+   "height": 724,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 72,
+   "y": 1076,
+   "width": 1,
+   "height": 724,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 28.205771365940052,
+   "y": 1107.0,
+   "width": 15.588457268119894,
+   "height": 18,
+   "parent": 2,
+   "path": "M 0.00 4.50 L 7.79 0.00 L 15.59 4.50 L 15.59 13.50 L 7.79 18.00 L 0.00 13.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Workspace",
+   "x": -4,
+   "y": 1148,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33,
+   "y": 1188,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 27,
+   "y": 1195,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 39,
+   "y": 1195,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agents",
+   "x": -4,
+   "y": 1228,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 1268,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 1275,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 27,
+   "y": 1282,
+   "width": 18,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15",
+    "cornerRadius": 2
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Data",
+   "x": -4,
+   "y": 1308,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 28.205771365940052,
+   "y": 1347.0,
+   "width": 15.588457268119894,
+   "height": 18,
+   "parent": 2,
+   "path": "M 0.00 4.50 L 7.79 0.00 L 15.59 4.50 L 15.59 13.50 L 7.79 18.00 L 0.00 13.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.7
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Models",
+   "x": -4,
+   "y": 1388,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 27,
+   "y": 1428,
+   "width": 18,
+   "height": 16,
+   "parent": 2,
+   "path": "M 0 8 L 8 8 L 12 2 L 18 2 M 8 8 L 12 14 L 18 14",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Routing",
+   "x": -4,
+   "y": 1468,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 27,
+   "y": 1511,
+   "width": 18,
+   "height": 12,
+   "parent": 2,
+   "path": "M 2 12 A 12 12 0 0 1 16 12 M 5 9 A 8 8 0 0 1 13 9",
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33.5,
+   "y": 1518.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Remote",
+   "x": -4,
+   "y": 1548,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 28,
+   "y": 1588,
+   "width": 16,
+   "height": 16,
+   "parent": 2,
+   "props": {
+    "fill": "none",
+    "stroke": "#4E3A15",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 33,
+   "y": 1593,
+   "width": 6,
+   "height": 6,
+   "parent": 2,
+   "props": {
+    "fill": "#4E3A15"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Settings",
+   "x": -4,
+   "y": 1628,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 12,
+   "y": 1654,
+   "width": 48,
+   "height": 48,
+   "parent": 2,
+   "props": {
+    "fill": "#282010",
+    "cornerRadius": 11
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 26,
+   "y": 1665,
+   "width": 20,
+   "height": 20,
+   "parent": 2,
+   "props": {
+    "fill": "none",
+    "cornerRadius": 999,
+    "stroke": "#E8B850",
+    "strokeWeight": 1.8
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "?",
+   "x": 31,
+   "y": 1668,
+   "parent": 2,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#E8B850"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Help",
+   "x": -4,
+   "y": 1708,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Inter",
+    "fontStyle": "Medium",
+    "fill": "#282010",
+    "textAlign": "center",
+    "textAutoResize": "height"
+   },
+   "width": 80
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 72,
+   "y": 1076,
+   "width": 240,
+   "height": 724,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 1076,
+   "width": 1,
+   "height": 724,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1092,
+   "width": 216,
+   "height": 32,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 8,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Project: HiveMind AI",
+   "x": 96,
+   "y": 1100,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Medium",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 276,
+   "y": 1105,
+   "width": 7,
+   "height": 4.8999999999999995,
+   "parent": 2,
+   "path": "M 0 0 L 3.5 4.2 L 7.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1136,
+   "width": 104,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKSPACE",
+   "x": 94,
+   "y": 1142,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 194,
+   "y": 1136,
+   "width": 70,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SWARM",
+   "x": 204,
+   "y": 1142,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1166,
+   "width": 80,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ROUTING",
+   "x": 94,
+   "y": 1172,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 170,
+   "y": 1166,
+   "width": 80,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HISTORY",
+   "x": 180,
+   "y": 1172,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "AGENTS IN RUN",
+   "x": 84,
+   "y": 1206,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "3 ACTIVE · 1 QUEUED",
+   "x": 84,
+   "y": 1220,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1236,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 1242.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "SUPER #69a5678a",
+   "x": 108,
+   "y": 1243,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 1245.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1266,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 1272.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKER #0da1931a",
+   "x": 108,
+   "y": 1273,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 1275.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1296,
+   "width": 216,
+   "height": 24,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.80384757729337,
+   "y": 1302.0,
+   "width": 10.392304845413264,
+   "height": 12,
+   "parent": 2,
+   "path": "M 0.00 3.00 L 5.20 0.00 L 10.39 3.00 L 10.39 9.00 L 5.20 12.00 L 0.00 9.00 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "WORKER #e41b9538",
+   "x": 108,
+   "y": 1303,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 283.5,
+   "y": 1305.5,
+   "width": 5.0,
+   "height": 5.0,
+   "parent": 2,
+   "props": {
+    "fill": "#C88030"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TEMPLATES · 8",
+   "x": 84,
+   "y": 1346,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1362,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1368.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "agent",
+   "x": 106,
+   "y": 1368,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 1368,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1390,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1396.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "chatbot",
+   "x": 106,
+   "y": 1396,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1418,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1424.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "code-reviewer",
+   "x": 106,
+   "y": 1424,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1446,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1452.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "content-writer",
+   "x": 106,
+   "y": 1452,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1474,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1480.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "data-analyst",
+   "x": 106,
+   "y": 1480,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1502,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1508.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "planner",
+   "x": 106,
+   "y": 1508,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 1508,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1530,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1536.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "subagent",
+   "x": 106,
+   "y": 1536,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 1536,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1558,
+   "width": 216,
+   "height": 22,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 90.6698729810778,
+   "y": 1564.0,
+   "width": 8.660254037844386,
+   "height": 10,
+   "parent": 2,
+   "path": "M 0.00 2.50 L 4.33 0.00 L 8.66 2.50 L 8.66 7.50 L 4.33 10.00 L 0.00 7.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#6B5A33",
+    "strokeWeight": 1.3
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "superagent",
+   "x": 106,
+   "y": 1564,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CATALOG",
+   "x": 242,
+   "y": 1564,
+   "parent": 2,
+   "props": {
+    "fontSize": 7,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "6%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 84,
+   "y": 1636,
+   "width": 216,
+   "height": 66,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 8
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "TIP",
+   "x": 96,
+   "y": 1646,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#8A5A1C",
+    "letterSpacing": "12%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Drag the dock grip up or down; Help lives in the nav rail.",
+   "x": 96,
+   "y": 1660,
+   "parent": 2,
+   "props": {
+    "fontSize": 9.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 12,
+    "textAutoResize": "height"
+   },
+   "width": 192
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "STATE & SETTINGS",
+   "x": 84,
+   "y": 1774,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 286,
+   "y": 1775,
+   "width": 7,
+   "height": 4.8999999999999995,
+   "parent": 2,
+   "path": "M 0 0 L 3.5 4.2 L 7.0 0",
+   "props": {
+    "fill": "none",
+    "stroke": "#75663F",
+    "strokeWeight": 1.4
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 1076,
+   "width": 1128,
+   "height": 724,
+   "parent": 2,
+   "props": {
+    "fill": "#F8F4EB"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1100,
+   "width": 64,
+   "height": 64,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF3DC",
+    "cornerRadius": 18,
+    "stroke": "#E5C27A",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "vector",
+   "x": 401.5455173280957,
+   "y": 1113.0,
+   "width": 32.90896534380867,
+   "height": 38,
+   "parent": 2,
+   "path": "M 0.00 9.50 L 16.45 0.00 L 32.91 9.50 L 32.91 28.50 L 16.45 38.00 L 0.00 28.50 Z",
+   "props": {
+    "fill": "none",
+    "stroke": "#3F3115",
+    "strokeWeight": 1.6
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HELP & TUTORIALS",
+   "x": 466,
+   "y": 1100,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#8A5A1C",
+    "letterSpacing": "14%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "What do you want to do?",
+   "x": 466,
+   "y": 1116,
+   "parent": 2,
+   "props": {
+    "fontSize": 30,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind is a local multi-agent workspace. The HyperAgent plans; SuperAgents split the work; Workers execute; Subagents help read-only. Every risky action is approved or refused by name, and every run is recorded locally.",
+   "x": 466,
+   "y": 1158,
+   "parent": 2,
+   "props": {
+    "fontSize": 12,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 17,
+    "textAutoResize": "height"
+   },
+   "width": 880
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1216,
+   "width": 300,
+   "height": 142,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 14,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       1
+      ],
+      "radius": 3,
+      "spread": 0,
+      "color": "#28201012",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       8
+      ],
+      "radius": 24,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "First run",
+   "x": 400,
+   "y": 1229,
+   "parent": 2,
+   "props": {
+    "fontSize": 18,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 402,
+   "y": 1261,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Choose a policy in SESSION & PERMISSIONS.",
+   "x": 414,
+   "y": 1258,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 402,
+   "y": 1286,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Type a small task in the composer; press Enter.",
+   "x": 414,
+   "y": 1283,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 402,
+   "y": 1311,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Watch the graph: HYPER plans, SUPER splits, WORKER executes.",
+   "x": 414,
+   "y": 1308,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 402,
+   "y": 1336,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Approve or deny side effects inline.",
+   "x": 414,
+   "y": 1333,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 706,
+   "y": 1216,
+   "width": 300,
+   "height": 142,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 14,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       1
+      ],
+      "radius": 3,
+      "spread": 0,
+      "color": "#28201012",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       8
+      ],
+      "radius": 24,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The dock",
+   "x": 720,
+   "y": 1229,
+   "parent": 2,
+   "props": {
+    "fontSize": 18,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 722,
+   "y": 1261,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Drag the top grip to resize the chat.",
+   "x": 734,
+   "y": 1258,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 722,
+   "y": 1286,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "CONTROLS opens spawn / re-route / cancel / kill.",
+   "x": 734,
+   "y": 1283,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 722,
+   "y": 1311,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "STATE & SETTINGS shows provider, model and key.",
+   "x": 734,
+   "y": 1308,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 722,
+   "y": 1336,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HIDE removes it; the header Chat button brings it back.",
+   "x": 734,
+   "y": 1333,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 1026,
+   "y": 1216,
+   "width": 300,
+   "height": 142,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 14,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1,
+    "effects": [
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       1
+      ],
+      "radius": 3,
+      "spread": 0,
+      "color": "#28201012",
+      "showBehind": true
+     },
+     {
+      "type": "dropShadow",
+      "offset": [
+       0,
+       8
+      ],
+      "radius": 24,
+      "spread": 0,
+      "color": "#28201014",
+      "showBehind": true
+     }
+    ]
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Safety",
+   "x": 1040,
+   "y": 1229,
+   "parent": 2,
+   "props": {
+    "fontSize": 18,
+    "fontFamily": "Playfair Display",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1042,
+   "y": 1261,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "classic asks before side effects; plan refuses writes.",
+   "x": 1054,
+   "y": 1258,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1042,
+   "y": 1286,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "standard allows workspace writes; trusted removes prompts.",
+   "x": 1054,
+   "y": 1283,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1042,
+   "y": 1311,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Never use trusted on a workspace you do not trust.",
+   "x": 1054,
+   "y": 1308,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "ellipse",
+   "x": 1042,
+   "y": 1336,
+   "width": 4,
+   "height": 4,
+   "parent": 2,
+   "props": {
+    "fill": "#D9A02F"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Every refusal has a name; the run ledger keeps it.",
+   "x": 1054,
+   "y": 1333,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 258
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1376,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Workspace",
+   "x": 398,
+   "y": 1383,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The live agent graph and the resizable chat dock.",
+   "x": 398,
+   "y": 1396,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 826,
+   "y": 1376,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agents",
+   "x": 838,
+   "y": 1383,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Roster, jobs, todos, memory, lessons, and proposals.",
+   "x": 838,
+   "y": 1396,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1416,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Data",
+   "x": 398,
+   "y": 1423,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Runs, revisions, evidence, and snapshots.",
+   "x": 398,
+   "y": 1436,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 826,
+   "y": 1416,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Models",
+   "x": 838,
+   "y": 1423,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Model catalogue, usage, cache counters, and balance.",
+   "x": 838,
+   "y": 1436,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1456,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Routing",
+   "x": 398,
+   "y": 1463,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Which model or strategy handles a task.",
+   "x": 398,
+   "y": 1476,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 826,
+   "y": 1456,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Remote",
+   "x": 838,
+   "y": 1463,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Remote principals and daemons are local records today.",
+   "x": 838,
+   "y": 1476,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1496,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Settings",
+   "x": 398,
+   "y": 1503,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Provider profile, key status, diagnostics, and FigCraft.",
+   "x": 398,
+   "y": 1516,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 826,
+   "y": 1496,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "FigCraft",
+   "x": 838,
+   "y": 1503,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Design boards and the gallery; the live UI uses tokens.",
+   "x": 838,
+   "y": 1516,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1536,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Screen access",
+   "x": 398,
+   "y": 1543,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agents cannot see your desktop, browser, or screen.",
+   "x": 398,
+   "y": 1556,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 826,
+   "y": 1536,
+   "width": 420,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1",
+    "cornerRadius": 10,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Workspace",
+   "x": 838,
+   "y": 1543,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#3F3115",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "The agent sees only the configured workspace root.",
+   "x": 838,
+   "y": 1556,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "lineHeight": 13,
+    "textAutoResize": "height"
+   },
+   "width": 396
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 386,
+   "y": 1584,
+   "width": 130,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#F0C050",
+    "cornerRadius": 6,
+    "stroke": "#D9A02F",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Go to Workspace",
+   "x": 400,
+   "y": 1594,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "SemiBold",
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 528,
+   "y": 1584,
+   "width": 184,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Provider & key settings",
+   "x": 542,
+   "y": 1594,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 724,
+   "y": 1584,
+   "width": 164,
+   "height": 36,
+   "parent": 2,
+   "props": {
+    "fill": "#FFFFFF",
+    "cornerRadius": 6,
+    "stroke": "#E5E1D8",
+    "strokeWeight": 1
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Agent roster & jobs",
+   "x": 738,
+   "y": 1594,
+   "parent": 2,
+   "props": {
+    "fontSize": 10.5,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#3F3115"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "HiveMind · press ? in the header for the quick canvas guide.",
+   "x": 386,
+   "y": 1644,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "letterSpacing": "4%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 1670,
+   "width": 1128,
+   "height": 118,
+   "parent": 2,
+   "props": {
+    "fill": "#FBF8F1"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 312,
+   "y": 1670,
+   "width": 118,
+   "height": 1,
+   "parent": 2,
+   "props": {
+    "fill": "#E5E1D8"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "ANATOMY NOTES",
+   "x": 386,
+   "y": 1684,
+   "parent": 2,
+   "props": {
+    "fontSize": 8.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#8A5A1C",
+    "letterSpacing": "12%"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Help is reached from the 72 px nav rail (Help item), not from the chat dock.",
+   "x": 386,
+   "y": 1702,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "textAutoResize": "height"
+   },
+   "width": 980
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "This page is static copy: three tutorials, ten feature explanations and three working buttons. No dead controls.",
+   "x": 386,
+   "y": 1720,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "textAutoResize": "height"
+   },
+   "width": 980
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Source: web/src/panels/HelpPanel.tsx at commit e83a444. This board is a design proposal; it does not claim runtime behaviour.",
+   "x": 386,
+   "y": 1738,
+   "parent": 2,
+   "props": {
+    "fontSize": 10,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#6B5A33",
+    "textAutoResize": "height"
+   },
+   "width": 980
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "Source note: HelpPanel.tsx declares two features named 'Workspace' (lines 37 and 46); this board mirrors that label and does not fix the defect.",
+   "x": 386,
+   "y": 1756,
+   "parent": 2,
+   "props": {
+    "fontSize": 9,
+    "fontFamily": "Inter",
+    "fontStyle": "Regular",
+    "fill": "#75663F",
+    "textAutoResize": "height"
+   },
+   "width": 980
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PROPOSED · NOT WATCHDOG-AUDITED",
+   "x": 1140,
+   "y": 1684,
+   "parent": 2,
+   "props": {
+    "fontSize": 8,
+    "fontFamily": "Consolas",
+    "fontStyle": "SemiBold",
+    "fill": "#B23A2E",
+    "letterSpacing": "8%"
+   }
+  }
+ },
+ {
+  "command": "node.create",
+  "params": {
+   "type": "rectangle",
+   "x": 0,
+   "y": 1788,
+   "width": 1440,
+   "height": 12,
+   "parent": 2,
+   "props": {
+    "fill": "#282010"
+   }
+  }
+ },
+ {
+  "command": "text.create",
+  "params": {
+   "text": "PROPOSED BOARD · generated by docs/ui/figcraft/ChatDock/build/build_chatdock.py · figcraft-cli 0.17.0 · no runtime data",
+   "x": 16,
+   "y": 1789,
+   "parent": 2,
+   "props": {
+    "fontSize": 7.5,
+    "fontFamily": "Consolas",
+    "fontStyle": "Regular",
+    "fill": "#FBF3DC",
+    "letterSpacing": "2%"
+   }
+  }
+ },
+ {
+  "command": "file.saveAs",
+  "params": {
+   "path": "C:/Users/Riley/Desktop/hiverouter-v1/docs/ui/figcraft/ChatDock/ChatDock-Help.figcraft"
+  }
+ }
+]

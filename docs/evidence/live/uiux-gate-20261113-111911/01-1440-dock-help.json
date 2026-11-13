@@ -1,0 +1,136 @@
+{
+  "name": "01-1440-dock-help",
+  "status": "FAIL",
+  "startedAt": "2026-11-13T17:21:09.789Z",
+  "baseURL": "http://127.0.0.1:8100/#/workspace/workspace",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "steps": [
+    {
+      "step": "initial-1440",
+      "dock": {
+        "x": 72,
+        "y": 340,
+        "w": 1368,
+        "h": 560,
+        "right": 1440,
+        "bottom": 900
+      }
+    },
+    {
+      "step": "initial-stored-height",
+      "initialStored": null,
+      "initialHeight": 560
+    },
+    {
+      "step": "after-drag",
+      "dock": {
+        "x": 72,
+        "y": 220,
+        "w": 1368,
+        "h": 680,
+        "right": 1440,
+        "bottom": 900
+      },
+      "storedAfterDrag": "680"
+    },
+    {
+      "step": "after-reload",
+      "dock": {
+        "x": 72,
+        "y": 220,
+        "w": 1368,
+        "h": 680,
+        "right": 1440,
+        "bottom": 900
+      }
+    },
+    {
+      "step": "controls-open",
+      "dock": {
+        "x": 72,
+        "y": 52,
+        "w": 1368,
+        "h": 848,
+        "right": 1440,
+        "bottom": 900
+      },
+      "ariaExpanded": "true"
+    }
+  ],
+  "checks": [
+    {
+      "name": "dock x flush to 72px rail",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "dock right edge flush to 1440",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "dock bottom flush to 900",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":340,\"w\":1368,\"h\":560,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "resize separator visible",
+      "pass": true,
+      "detail": "{\"x\":724,\"y\":352,\"w\":64,\"h\":12,\"right\":788,\"bottom\":364}"
+    },
+    {
+      "name": "drag upward increases dock height by ~120px",
+      "pass": true,
+      "detail": "before=560 after=680"
+    },
+    {
+      "name": "dock bottom stays fixed after resize",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":220,\"w\":1368,\"h\":680,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "resized height persisted to localStorage",
+      "pass": true,
+      "detail": "stored=680 measured=680"
+    },
+    {
+      "name": "resize persists across reload",
+      "pass": true,
+      "detail": "beforeReload=680 afterReload=680"
+    },
+    {
+      "name": "dock bottom stays fixed after reload",
+      "pass": true,
+      "detail": "{\"x\":72,\"y\":220,\"w\":1368,\"h\":680,\"right\":1440,\"bottom\":900}"
+    },
+    {
+      "name": "CONTROLS expands the dock by the 210px tray",
+      "pass": false,
+      "detail": "closed=680 open=848"
+    },
+    {
+      "name": "zero console errors",
+      "pass": true,
+      "detail": "0 error console message(s)"
+    },
+    {
+      "name": "zero page errors",
+      "pass": true,
+      "detail": "0 uncaught page error(s)"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failedRequests": [],
+  "artifacts": [
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\01-1440-initial.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\02-1440-after-resize.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\03-1440-after-reload.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\04-1440-controls.png",
+    "C:\\Users\\Riley\\Desktop\\hiverouter-v1\\docs\\evidence\\live\\uiux-gate-20261113-111911\\FAIL-01-1440-dock-help.png"
+  ],
+  "error": "Error: GATE FAIL: CONTROLS expands the dock by the 210px tray — closed=680 open=848\n    at check (file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:86:20)\n    at file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:205:7\n    at withEvidence (file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:104:5)\n    at file:///C:/Users/Riley/Desktop/hiverouter-v1/e2e/specs/uiux-gate.spec.ts:141:5\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1646:9\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1135:11\n    at TimeoutManager.withRunnable (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:403:14)\n    at TestInfoImpl._runWithTimeout (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1133:7)\n    at C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1644:7\n    at WorkerMain._runTest (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1617:5)\n    at WorkerMain.runTestGroup (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\worker\\workerProcessEntry.js:1519:9)\n    at process.<anonymous> (C:\\Users\\Riley\\Desktop\\hiverouter-v1\\e2e\\node_modules\\playwright\\lib\\common\\index.js:2032:25)"
+}

@@ -1,6 +1,7 @@
 /** In-app tutorials and plain-English explanations. No dead controls. */
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
+import { InfoTip } from './InfoTip';
 
 const TUTORIALS = [
   {
@@ -48,61 +49,171 @@ const FEATURES = [
 export function HelpPanel() {
   const setNav = useUiStore((state) => state.setNav);
   return (
-    <div className="h-full overflow-y-auto p-5">
-      <div className="mx-auto flex max-w-[980px] items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[18px] border border-honey-500 bg-honey-100">
-          <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3Z" fill="none" stroke="var(--color-ink-800)" strokeWidth="1.4" />
-            <path d="M9.8 9.3a2.4 2.4 0 1 1 3.4 2.2c-.7.3-1.1.8-1.1 1.5" fill="none" stroke="var(--color-ink-800)" strokeWidth="1.6" strokeLinecap="round" />
-            <circle cx="12" cy="16.3" r="1" fill="var(--color-ink-800)" />
-          </svg>
-        </div>
-        <div>
-          <div className="type-mono-meta text-[10px] tracking-[0.16em] text-meta">HELP & TUTORIALS</div>
-          <h1 className="font-display text-[30px] leading-tight text-ink-900">What do you want to do?</h1>
-          <p className="mt-1 max-w-[64ch] text-[13px] leading-5 text-ink-500">
-            HiveMind is a local multi-agent workspace. The HyperAgent plans; SuperAgents split the
-            work; Workers execute; Subagents help read-only. Every risky action is approved or refused
-            by name, and every run is recorded locally.
+    <section className="help-surface" aria-labelledby="help-title">
+      <div className="help-ambient" aria-hidden="true">
+        <svg className="help-comb" width="100%" height="100%" focusable="false">
+          <defs>
+            <pattern id="help-comb-pattern" width="46" height="80" patternUnits="userSpaceOnUse">
+              <path
+                d="M11.5 0h23L46 20 34.5 40h-23L0 20Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <path
+                d="M-11.5 40h23L23 60 11.5 80h-23L-23 60Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#help-comb-pattern)" />
+        </svg>
+      </div>
+
+      <div className="help-scroll">
+        <div className="mx-auto max-w-[980px]">
+          <header className="help-hero">
+            <div className="flex items-center gap-4 sm:gap-5">
+              <div className="help-mark" aria-hidden="true">
+                <svg width="44" height="44" viewBox="0 0 48 48" focusable="false">
+                  <g
+                    fill="none"
+                    stroke="var(--color-ink-800)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20 8.2 33 15.7v14.9L20 38 7 30.6V15.7Z" />
+                    <path d="M20 16.6 25.8 20v6.8L20 30.2l-5.8-3.4V20Z" />
+                    <path d="m10 20.2 4.2-2.4M30 29.6l-4.2 2.4" opacity=".55" />
+                  </g>
+                  <circle
+                    cx="38.2"
+                    cy="12.2"
+                    r="7.4"
+                    fill="var(--color-honey-200)"
+                    stroke="var(--color-ink-800)"
+                    strokeWidth="1.3"
+                  />
+                  <path
+                    d="M35.5 10.7a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3"
+                    fill="none"
+                    stroke="var(--color-ink-800)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="37.9" cy="16.4" r=".9" fill="var(--color-ink-800)" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <div className="hm-eyebrow flex text-meta">
+                  <span className="help-eyebrow-hex" aria-hidden="true" />
+                  HELP &amp; TUTORIALS
+                </div>
+                <h1 id="help-title" className="hm-display-title mt-1">
+                  What do you want to do?
+                </h1>
+                <p className="mt-2 max-w-[64ch] text-[13px] leading-5 text-ink-500">
+                  HiveMind is a local multi-agent workspace. The HyperAgent plans; SuperAgents split the
+                  work; Workers execute; Subagents help read-only. Every risky action is approved or refused
+                  by name, and every run is recorded locally.
+                </p>
+              </div>
+            </div>
+          </header>
+
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="hm-section-title">Start here</h2>
+              <InfoTip label="How the tutorials work">
+                Each card is a short checklist. Nothing here changes the runtime; the steps only point at
+                the surfaces where the action happens.
+              </InfoTip>
+            </div>
+            <span className="hm-eyebrow text-meta">{TUTORIALS.length} TUTORIALS</span>
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            {TUTORIALS.map((tutorial, index) => (
+              <section
+                key={tutorial.title}
+                className="help-card"
+                aria-labelledby={`help-tutorial-${index}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <h3 id={`help-tutorial-${index}`} className="hm-card-title">
+                    {tutorial.title}
+                  </h3>
+                  <span className="help-card-hex" aria-hidden="true" />
+                </div>
+                <ol className="hm-steps mt-3">
+                  {tutorial.steps.map((step) => (
+                    <li key={step} className="hm-step">{step}</li>
+                  ))}
+                </ol>
+              </section>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-2">
+            <h2 className="hm-section-title">What lives where</h2>
+            <span className="hm-eyebrow text-meta">{FEATURES.length} SURFACES</span>
+          </div>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {FEATURES.map(([name, text], index) => (
+              <div key={`${name}-${index}`} className="help-feature">
+                <div className="hm-eyebrow text-ink-800">{name}</div>
+                <p className="mt-1 text-[12px] leading-[17px] text-ink-500">{text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="type-label hm-action hm-action-primary"
+              onClick={() => setNav('workspace')}
+            >
+              Go to Workspace
+              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="type-label hm-action hm-action-secondary"
+              onClick={() => setNav('settings')}
+            >
+              Provider &amp; key settings
+            </button>
+            <button
+              type="button"
+              className="type-label hm-action hm-action-secondary"
+              onClick={() => setNav('agents')}
+            >
+              Agent roster &amp; jobs
+            </button>
+          </div>
+
+          <p className="mt-5 flex flex-wrap items-center gap-1.5 hm-eyebrow text-meta">
+            <span>{STRINGS.brand.wordmark}</span>
+            <span aria-hidden="true">·</span>
+            <span>Press</span>
+            <kbd className="hm-keycap">?</kbd>
+            <span>in the header for the quick canvas guide.</span>
           </p>
         </div>
       </div>
-
-      <div className="mx-auto mt-5 grid max-w-[980px] gap-3 lg:grid-cols-3">
-        {TUTORIALS.map((tutorial) => (
-          <section key={tutorial.title} className="rounded-[14px] border border-hairline bg-panel p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-            <h2 className="font-display text-[19px] text-ink-900">{tutorial.title}</h2>
-            <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-[12px] leading-[18px] text-ink-600">
-              {tutorial.steps.map((step) => <li key={step}>{step}</li>)}
-            </ol>
-          </section>
-        ))}
-      </div>
-
-      <div className="mx-auto mt-3 grid max-w-[980px] gap-2 sm:grid-cols-2">
-        {FEATURES.map(([name, text]) => (
-          <div key={name} className="rounded-[12px] border border-hairline bg-panel-alt/60 p-3 transition duration-200 hover:-translate-y-0.5 hover:border-honey-400 hover:bg-honey-100/40">
-            <div className="type-mono-meta text-[10px] tracking-[0.12em] text-ink-800">{name}</div>
-            <p className="mt-1 text-[12px] leading-[17px] text-ink-500">{text}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mx-auto mt-4 flex max-w-[980px] flex-wrap gap-2">
-        <button type="button" className="type-label h-9 rounded-[var(--radius-sm)] border border-honey-500 bg-honey-300 px-3 font-semibold text-ink-900 hover:bg-honey-400" onClick={() => setNav('workspace')}>
-          Go to Workspace
-        </button>
-        <button type="button" className="type-label h-9 rounded-[var(--radius-sm)] border border-hairline bg-panel px-3 text-ink-800 hover:bg-panel-alt" onClick={() => setNav('settings')}>
-          Provider & key settings
-        </button>
-        <button type="button" className="type-label h-9 rounded-[var(--radius-sm)] border border-hairline bg-panel px-3 text-ink-800 hover:bg-panel-alt" onClick={() => setNav('agents')}>
-          Agent roster & jobs
-        </button>
-      </div>
-
-      <p className="mx-auto mt-4 max-w-[980px] type-mono-meta text-[10px] text-meta">
-        {STRINGS.brand.wordmark} · press ? in the header for the quick canvas guide.
-      </p>
-    </div>
+    </section>
   );
 }

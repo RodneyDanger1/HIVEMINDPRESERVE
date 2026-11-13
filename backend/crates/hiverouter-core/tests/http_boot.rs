@@ -714,7 +714,7 @@ async fn agent_read_surfaces_are_mounted_and_truthful() {
     let runtime: Value = serde_json::from_str(&body).expect("runtime JSON");
     assert_eq!(runtime["status"], "idle");
     assert_eq!(runtime["caps"]["max_agents"], 64);
-    assert_eq!(runtime["caps"]["max_calls"], 64);
+    assert_eq!(runtime["caps"]["max_calls"], 128);
 
     let (status, body) = http_get(server.addr, "/api/templates").await;
     assert_eq!(status, 200, "templates route: {body}");
