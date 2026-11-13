@@ -1296,6 +1296,28 @@ mod tests {
     use hiverouter_tools::shell::ShellPolicy;
     use hiverouter_tools::tool::{AgentTier, PermissionClass, ToolId};
 
+    #[test]
+    fn workspace_inside_data_dir_is_readable_but_data_files_stay_denied() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let data = temp.path().join("data");
+        let workspace = data.join("workspace");
+        std::fs::create_dir_all(&workspace).expect("workspace dir");
+        std::fs::write(workspace.join("note.txt"), "visible").expect("workspace file");
+        let db = Arc::new(Database::open(&data.join("hive.db")).expect("database"));
+        ToolsBridge::migrate(&db).expect("approvals migration");
+        let bridge = ToolsBridge::new_with_data_dir(&workspace, &data, db);
+        let read = bridge
+            .file_read(&command::FileRead {
+                path: "note.txt".to_owned(),
+            })
+            .expect("workspace file must be readable");
+        assert_eq!(read.text, "visible");
+        let denied = bridge.file_read(&command::FileRead {
+            path: "../hive.db".to_owned(),
+        });
+        assert_eq!(denied.expect_err("data file").code(), "E_PATH_OUTSIDE_JAIL");
+    }
+
     fn args() -> serde_json::Value {
         serde_json::json!({"path": "note.txt", "content": "x"})
     }
