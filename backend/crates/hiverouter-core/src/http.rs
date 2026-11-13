@@ -4620,6 +4620,7 @@ async fn runtime_status(State(state): State<Arc<AppState>>) -> Response {
                 "leaf_max_tokens": state.config.provider.leaf_max_tokens,
             },
             "side_effects_enabled": state.config.side_effects_enabled,
+            "workspace_root": state.config.workspace_root.display().to_string(),
             "last_seq": state.bus.current_seq(),
             "graph_nodes": state.graph.node_count().ok(),
         })),

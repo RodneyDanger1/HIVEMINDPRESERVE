@@ -152,8 +152,27 @@ export function ChatCore() {
   const [sessionReload, setSessionReload] = useState(0);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
-  const workspaceRoot = useUiStore((state) => state.fileTree.root);
+  const fileTreeRoot = useUiStore((state) => state.fileTree.root);
   const projectId = useUiStore((state) => state.project.id);
+  const [configuredWorkspace, setConfiguredWorkspace] = useState<string | null>(null);
+  useEffect(() => {
+    if (connection !== 'open') return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch('/api/runtime', { headers: { accept: 'application/json' } });
+        if (!response.ok) return;
+        const body = (await response.json()) as { workspace_root?: string };
+        if (!cancelled && body.workspace_root) setConfiguredWorkspace(body.workspace_root);
+      } catch {
+        // The create control stays disabled; no invented workspace path.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [connection]);
+  const sessionWorkspace = fileTreeRoot ?? configuredWorkspace;
   useEffect(() => {
     if (connection !== 'open') return;
     let cancelled = false;
@@ -201,7 +220,7 @@ export function ChatCore() {
   const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
   const createSession = async (): Promise<void> => {
     const name = newSessionName.trim();
-    if (!name || !workspaceRoot || sessionBusy) return;
+    if (!name || !sessionWorkspace || sessionBusy) return;
     setSessionBusy(true);
     try {
       const handshake = await fetch('/api/session', { headers: { accept: 'application/json' } });
@@ -218,7 +237,7 @@ export function ChatCore() {
         body: JSON.stringify({
           name,
           project_id: projectId,
-          workspace_root: workspaceRoot,
+          workspace_root: sessionWorkspace,
           permission_policy: permissionPolicy,
         }),
       });
@@ -634,11 +653,11 @@ export function ChatCore() {
             disabled={
               sessionBusy ||
               connection !== 'open' ||
-              !workspaceRoot ||
+              !sessionWorkspace ||
               newSessionName.trim().length === 0
             }
             title={
-              workspaceRoot
+              sessionWorkspace
                 ? 'Create a named session in the current workspace'
                 : 'Workspace is not loaded yet'
             }
