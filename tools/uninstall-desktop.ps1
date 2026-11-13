@@ -20,8 +20,20 @@ $shortcuts = @(
     (Join-Path ([Environment]::GetFolderPath('Desktop')) 'HiveMind.lnk'),
     (Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs\HiveMind\HiveMind.lnk')
 )
+# Remove only shortcuts that point at THIS install root. A clean-install test or
+# a second portable install must never delete another HiveMind install's icons.
+$installedLauncher = Join-Path $InstallRoot 'HiveMind.exe'
+$shell = New-Object -ComObject WScript.Shell
 foreach ($shortcut in $shortcuts) {
-    if (Test-Path -LiteralPath $shortcut) { Remove-Item -LiteralPath $shortcut -Force }
+    if (-not (Test-Path -LiteralPath $shortcut)) { continue }
+    try {
+        $target = $shell.CreateShortcut($shortcut).TargetPath
+        if ($target -and [string]::Equals([IO.Path]::GetFullPath($target), [IO.Path]::GetFullPath($installedLauncher), [StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item -LiteralPath $shortcut -Force
+        }
+    } catch {
+        # An unreadable shortcut is not proof it belongs to this install; keep it.
+    }
 }
 $startFolder = Join-Path ([Environment]::GetFolderPath('StartMenu')) 'Programs\HiveMind'
 if ((Test-Path -LiteralPath $startFolder) -and @(Get-ChildItem -LiteralPath $startFolder -Force).Count -eq 0) {
