@@ -24,6 +24,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $source = Join-Path $root 'dist\HiveMind'
+# The portable zip puts the installer and binaries in the same folder; the
+# repository keeps them under dist\HiveMind.
+if (-not (Test-Path -LiteralPath (Join-Path $source 'HiveMind.exe'))) {
+    $source = $PSScriptRoot
+}
 $launcher = Join-Path $source 'HiveMind.exe'
 $server = Join-Path $source 'hiverouter.exe'
 if (-not (Test-Path -LiteralPath $launcher) -or -not (Test-Path -LiteralPath $server)) {
@@ -118,7 +123,7 @@ if (-not $SkipProvider) {
         install_root = $InstallRoot
         data_root = $DataRoot
         workspace_root = $WorkspaceRoot
-        source = 'dist/HiveMind'
+        source = $source
     } | ConvertTo-Json -Depth 3),
     (New-Object System.Text.UTF8Encoding($false))
 )
