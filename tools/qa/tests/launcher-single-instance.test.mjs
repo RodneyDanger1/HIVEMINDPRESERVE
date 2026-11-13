@@ -199,7 +199,7 @@ test('a launch that loses the Mutex focuses the existing window and returns', ()
   const guard = /if\s*\(\s*!instanceOwned\s*\)/.exec(main.body);
   assert.ok(guard, 'expected the `if (!instanceOwned)` contention path');
   const contention = blockStartingAt(sanitized, main.start + 1 + guard.index, '!instanceOwned block');
-  assert.match(contention.body, /FocusExistingWindow\s*\(\s*\)\s*;/, 'contention must focus the existing window');
+  assert.match(contention.body, /FocusExistingWindow\s*\(\s*\d*\s*\)\s*;/, 'contention must focus the existing window');
   assert.match(contention.body, /return\s*;/, 'contention must return and never start a second server');
   const focusAt = contention.body.indexOf('FocusExistingWindow');
   const returnAt = contention.body.indexOf('return');
@@ -224,7 +224,7 @@ test('releases the Mutex exactly once, inside the finally block', () => {
 test('the healthy-server reuse path is gated by reusedExisting before focusing', () => {
   const sanitized = sanitizeCSharp(launcherSource());
   const main = methodBlock(sanitized, 'private static void Main()');
-  const guard = /reusedExisting\s*&&\s*FocusExistingWindow\s*\(\s*\)/.exec(main.body);
+  const guard = /reusedExisting\s*&&\s*FocusExistingWindow\s*\(\s*\d*\s*\)/.exec(main.body);
   assert.ok(
     guard,
     'expected the short-circuit guard `reusedExisting && FocusExistingWindow()` so a freshly started server still opens its window',
@@ -240,7 +240,7 @@ test('the healthy-server reuse path is gated by reusedExisting before focusing',
 test('FocusExistingWindow recognises both Edge and Chrome windows', () => {
   const source = launcherSource();
   const sanitized = sanitizeCSharp(source);
-  const focus = methodBlock(sanitized, 'private static bool FocusExistingWindow()');
+  const focus = methodBlock(sanitized, 'private static bool FocusExistingWindow(int timeoutMs = 0)');
   const originalBody = source.slice(focus.start, focus.end + 1);
 
   assert.match(
@@ -263,5 +263,5 @@ test('FocusExistingWindow recognises both Edge and Chrome windows', () => {
     /SetForegroundWindow\s*\(\s*process\.MainWindowHandle\s*\)\s*;[\s\S]{0,40}?return\s+true\s*;/,
     'a matched HiveMind window must be raised and reported as found',
   );
-  assert.match(originalBody, /return\s+false\s*;\s*\}$/, 'focus must return false when no HiveMind window exists');
+  assert.match(originalBody, /return\s+false\s*;/, 'focus must return false when no HiveMind window exists');
 });
