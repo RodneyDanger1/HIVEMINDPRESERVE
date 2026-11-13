@@ -25,9 +25,11 @@ describe('CAP-4 workbench mount', () => {
     expect(agentsPanelSource).toContain('timelineSteps');
   });
 
-  it('mounts the real jobs surface', () => {
+  it('mounts the real jobs and session-todo surfaces', () => {
     expect(agentsPanelSource).toContain("from './JobsPanel'");
     expect(agentsPanelSource).toContain('<JobsPanel');
+    expect(agentsPanelSource).toContain("from './SessionTodos'");
+    expect(agentsPanelSource).toContain('<SessionTodos');
   });
 
   it('keeps archive controls and named mobile nav buttons wired', () => {

@@ -25,6 +25,7 @@ import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
 import { A2AInboxPanel } from './A2AInboxPanel';
 import { JobsPanel } from './JobsPanel';
+import { SessionTodos } from './SessionTodos';
 import { Timeline } from '../workbench';
 import type { TimelineAgent, TimelineStatus, TimelineStep } from '../workbench';
 import type { ConnectionStatus } from '../api/client';
@@ -192,6 +193,7 @@ export function AgentsPanel() {
         />
       </div>
       <JobsPanel />
+      <SessionTodos />
       <AgentProfilesPanel />
       <AgentRosterPanel />
       <A2AInboxPanel />
