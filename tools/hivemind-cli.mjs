@@ -241,6 +241,31 @@ const COMMANDS = {
     transport: 'http',
     args: [],
   },
+  sessions: {
+    summary: 'List named sessions, newest first.',
+    safety: 'read',
+    transport: 'http',
+    args: [ARG('limit', 'number', false, 'Max sessions (default 50, max 200).')],
+  },
+  'session-create': {
+    summary: 'Create a named session bound to a workspace and policy.',
+    safety: 'mutating',
+    transport: 'http',
+    args: [
+      ARG('name', 'string', true, 'Human-readable session name.'),
+      ARG('project', 'string', false, 'Project id (default: default).'),
+      ARG('policy', 'string', false, 'Permission policy: classic|plan|standard|trusted.'),
+    ],
+  },
+  'session-policy': {
+    summary: 'Change the default permission policy for a named session.',
+    safety: 'mutating',
+    transport: 'http',
+    args: [
+      ARG('session', 'uuid', true, 'Named session id.'),
+      ARG('policy', 'string', true, 'Permission policy: classic|plan|standard|trusted.'),
+    ],
+  },
   'profile-import': {
     summary: 'Import an agent profile from a JSON file.',
     safety: 'mutating',
@@ -1127,9 +1152,9 @@ async function fetchWithTimeout(url, { timeoutMs = 15_000, ...init } = {}) {
   }
 }
 
-async function httpJson(baseUrl, route, { method = 'GET', body, timeoutMs } = {}) {
+async function httpJson(baseUrl, route, { method = 'GET', body, timeoutMs, headers: extraHeaders } = {}) {
   const url = new URL(route, baseUrl);
-  const headers = { accept: 'application/json', origin: baseUrl.origin };
+  const headers = { accept: 'application/json', origin: baseUrl.origin, ...(extraHeaders || {}) };
   if (ACTIVE_LAUNCH_TOKEN) headers['x-hivemind-launch'] = ACTIVE_LAUNCH_TOKEN;
   if (body !== undefined) headers['content-type'] = 'application/json';
   const response = await fetchWithTimeout(url, {
@@ -1149,6 +1174,17 @@ async function httpJson(baseUrl, route, { method = 'GET', body, timeoutMs } = {}
     throw refusalFromBody(parsed, response.status);
   }
   return parsed;
+}
+
+async function httpAuthedJson(baseUrl, route, options = {}) {
+  const handshake = await httpJson(baseUrl, '/api/session');
+  if (typeof handshake.token !== 'string' || !handshake.token) {
+    throw cliError('E_TOKEN_INVALID', 'GET /api/session returned no session token.', 'Check the server version.');
+  }
+  return httpJson(baseUrl, route, {
+    ...options,
+    headers: { ...(options.headers || {}), authorization: `Bearer ${handshake.token}` },
+  });
 }
 
 function refusalFromBody(body, status) {
@@ -1563,6 +1599,18 @@ async function wsWatch(baseUrl, { runId = null, maxEvents = 100, timeoutMs = 30_
 // Read commands
 // ---------------------------------------------------------------------------
 
+function sessionPolicyOption(options, fallback) {
+  if (options.policy === undefined) {
+    if (fallback !== null) return fallback;
+    throw cliError('E_CLI_USAGE', '--policy is required', 'Use classic|plan|standard|trusted.');
+  }
+  const policy = String(options.policy).trim();
+  if (!['classic', 'plan', 'standard', 'trusted'].includes(policy)) {
+    throw cliError('E_CLI_USAGE', '--policy must be classic|plan|standard|trusted.', 'Omit it to use classic.');
+  }
+  return policy;
+}
+
 function limitOption(options, fallback, max = 100) {
   if (options.limit === undefined) return fallback;
   return readNumber(options.limit, '--limit', 1, max);
@@ -1601,7 +1649,7 @@ async function executeRead(command, options, baseUrl) {
     case 'job': {
       const jobId = String(options.job || '').trim();
       if (!/^[0-9a-fA-F-]{8,80}$/.test(jobId)) {
-        throw usageFailure('--job must be a job id', 'Use the id returned by POST /api/jobs.');
+        throw cliError('E_CLI_USAGE', '--job must be a job id', 'Use the id returned by POST /api/jobs.');
       }
       return httpJson(baseUrl, `/api/jobs/${encodeURIComponent(jobId)}`);
     }
@@ -1649,6 +1697,36 @@ async function executeRead(command, options, baseUrl) {
         ws: session.ws,
         token: session.token ? '[redacted]' : null,
       };
+    }
+    case 'sessions': {
+      const body = await httpJson(baseUrl, '/api/sessions');
+      const limit = limitOption(options, 50, 200);
+      return { ...body, sessions: body.sessions.slice(0, limit) };
+    }
+    case 'session-create': {
+      const name = String(options.name || '').trim();
+      if (!name || name.length > 200) {
+        throw cliError('E_CLI_USAGE', '--name is required', 'Use a short human-readable session name.');
+      }
+      const project = String(options.project || 'default').trim();
+      const policy = sessionPolicyOption(options, 'classic');
+      return httpAuthedJson(baseUrl, '/api/sessions', {
+        method: 'POST',
+        body: {
+          name,
+          project_id: project,
+          workspace_root: resolveWorkspaceRoot(options),
+          permission_policy: policy,
+        },
+      });
+    }
+    case 'session-policy': {
+      const sessionId = assertUuid(options.session, '--session');
+      const policy = sessionPolicyOption(options, null);
+      return httpAuthedJson(baseUrl, `/api/sessions/${encodeURIComponent(sessionId)}/policy`, {
+        method: 'POST',
+        body: { permission_policy: policy },
+      });
     }
     case 'memory':
       if (!options.run) {
