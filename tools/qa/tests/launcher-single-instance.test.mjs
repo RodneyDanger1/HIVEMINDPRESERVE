@@ -237,6 +237,12 @@ test('the healthy-server reuse path is gated by reusedExisting before focusing',
   assert.ok(findPort.index < declaration.index, 'the reuse guard must be derived from the health probe result');
 });
 
+test('reused servers keep their owner runtime record', () => {
+  const source = launcherSource();
+  assert.match(source, /if\s*\(\s*ownsServer\s*\)\s*\{\s*WriteRuntimeFile/s, 'runtime record must only be written for an owned server');
+  assert.match(source, /data\s*!=\s*null\s*&&\s*ownsServer/, 'runtime record must only be removed for an owned server');
+});
+
 test('degraded non-2xx health bodies are still used for reuse', () => {
   const source = launcherSource();
   assert.match(source, /catch\s*\(\s*WebException\s+error\s*\)/, 'WebException must be caught');

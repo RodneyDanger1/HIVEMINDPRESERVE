@@ -91,7 +91,12 @@ namespace HiveMindLauncher
                     ownsServer = true;
                 }
 
-                WriteRuntimeFile(data, port, serverProcess);
+                // Only an owned server has a runtime record this launcher may
+                // rewrite/delete. Reused servers keep the record of their owner.
+                if (ownsServer)
+                {
+                    WriteRuntimeFile(data, port, serverProcess);
+                }
                 // A healthy server plus an existing HiveMind app window means a
                 // relaunch should focus that window, never open another one.
                 if (reusedExisting && FocusExistingWindow(2000))
@@ -148,7 +153,7 @@ namespace HiveMindLauncher
                 {
                     Kill(serverProcess);
                 }
-                if (data != null)
+                if (data != null && ownsServer)
                 {
                     RemoveRuntimeFile(data);
                 }
