@@ -9,7 +9,7 @@ It is **not AGI**, not a self-modifying agent, and not yet a general coding harn
 version remains the release authority; the working tree is pre-release and unsealed.
 
 **Truth baseline (observed 2026-11-12, integration branch):** capability work is
-on `integration/capability-absorb`; schema is **v31** (sessions/policy, repo index,
+on `integration/capability-absorb`; schema is **v32** (sessions/policy, repo index,
 checkpoints, jobs, executed eval, evidence-gated lessons, eval suites/metrics); the registry has **22 tools / 81 grants / 80 named refusals**;
 `/health` is `degraded` with `E_KEY_MISSING` in a keyless profile; docs truth
 checker **19/19 PASS**; the full backend workspace gate passes. This is
@@ -166,9 +166,9 @@ Desktop/Start Menu shortcuts are created.
 
 Current portable package identity is recorded at build time in
 `dist/HiveMind/BUILD.json` (commit/version/built_at/server and launcher hashes,
-`dirty` flag) and `dist/HiveMind/CHECKSUMS.txt` (every packaged file). Do not
+`dirty` flag) and `dist/HiveMind/CHECKSUMS.txt` (every packaged file except the manifest itself). Do not
 copy hashes into prose: they change on each rebuild. The last verified rebuild
-was 2026-11-12, `dirty:false`, schema v31, with CLI and MCP included.
+was 2026-11-12, `dirty:false`, schema v32, with CLI and MCP included.
 
 The install/health receipt is under [docs/evidence/live/](docs/evidence/live/);
 the current index is [INDEX.md](docs/evidence/live/INDEX.md). Health is

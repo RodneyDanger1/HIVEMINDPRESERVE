@@ -42,6 +42,7 @@ export function NavRail() {
             refs.current[index] = element;
           }}
           type="button"
+          aria-label={item.label}
           aria-current={nav === item.id ? 'page' : undefined}
           tabIndex={nav === item.id ? 0 : -1}
           onClick={() => setNav(item.id)}

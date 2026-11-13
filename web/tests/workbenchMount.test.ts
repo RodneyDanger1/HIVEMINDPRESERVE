@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import agentsPanelSource from '../src/panels/AgentsPanel.tsx?raw';
 import dataPanelSource from '../src/panels/DataPanel.tsx?raw';
+import chatCoreSource from '../src/chat/ChatCore.tsx?raw';
+import navRailSource from '../src/panels/NavRail.tsx?raw';
 
 describe('CAP-4 workbench mount', () => {
   it('mounts the real FileTree and Editor in the existing Data surface', () => {
@@ -26,6 +28,13 @@ describe('CAP-4 workbench mount', () => {
   it('mounts the real jobs surface', () => {
     expect(agentsPanelSource).toContain("from './JobsPanel'");
     expect(agentsPanelSource).toContain('<JobsPanel');
+  });
+
+  it('keeps archive controls and named mobile nav buttons wired', () => {
+    expect(chatCoreSource).toContain('Show archived');
+    expect(chatCoreSource).toContain('Archive session');
+    expect(chatCoreSource).toContain("'unarchive' : 'archive'");
+    expect(navRailSource).toContain('aria-label={item.label}');
   });
 
   it('does not invent file rows or editable writes', () => {

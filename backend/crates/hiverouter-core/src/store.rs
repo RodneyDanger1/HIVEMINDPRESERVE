@@ -562,6 +562,9 @@ impl RunStore {
         session_id: &str,
         archived: bool,
     ) -> Result<Session, Refusal> {
+        // Resolve the row first so a missing id is the named SessionNotFound
+        // refusal (404) rather than a generic InternalError from rowcount 0.
+        self.session(session_id)?;
         let now = Timestamp::now();
         self.db
             .with_connection(|connection| {

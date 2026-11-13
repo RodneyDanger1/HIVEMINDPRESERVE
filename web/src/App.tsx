@@ -45,6 +45,7 @@ function AppFrame() {
   const run = useUiStore((state) => state.run);
   const snapshot = useUiStore((state) => state.snapshot);
   const refreshRunSnapshot = useUiStore((state) => state.refreshRunSnapshot);
+  const chatVisible = useUiStore((state) => state.chat.visible);
   const reduced = useAppReducedMotion();
   const suppressHashWrite = useRef(false);
 
@@ -194,13 +195,18 @@ function AppFrame() {
           />
           <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
           {nav === 'workspace' && tab === 'workspace' ? (
-            <div className="absolute inset-x-0 bottom-0 z-30">
+            <div
+              className={
+                'absolute inset-x-0 bottom-0 z-30 max-[640px]:bottom-14 ' +
+                (chatVisible ? 'max-[640px]:hidden' : '')
+              }
+            >
               <ControlBar />
               <Scrubber />
             </div>
           ) : null}
           {nav === 'workspace' && tab === 'history' ? (
-            <div className="absolute inset-x-0 bottom-0 z-30">
+            <div className="absolute inset-x-0 bottom-0 z-30 max-[640px]:bottom-14">
               <Scrubber />
             </div>
           ) : null}

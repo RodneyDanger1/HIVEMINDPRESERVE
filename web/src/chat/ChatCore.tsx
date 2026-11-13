@@ -332,7 +332,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3"
+        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-200px)]"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -539,6 +539,11 @@ export function ChatCore() {
             type="button"
             className="type-mono-meta rounded-[6px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 disabled:opacity-50"
             disabled={!selectedSession || sessionBusy || connection !== 'open'}
+            title={
+              selectedSession
+                ? 'Archive or restore the selected named session'
+                : 'Select a named session to enable archive'
+            }
             onClick={() => void toggleArchive()}
           >
             {selectedSession?.archived_at ? 'Restore session' : 'Archive session'}

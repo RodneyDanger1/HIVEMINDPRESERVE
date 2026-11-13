@@ -678,6 +678,14 @@ async fn archived_sessions_are_hidden_unless_requested_and_can_be_restored() {
     .await;
     assert_eq!(status, 200, "unarchive: {restored:?}");
     assert!(restored["archived_at"].is_null());
+
+    let (missing_status, _) = post(
+        &server,
+        "/api/sessions/00000000-0000-4000-8000-000000000000/archive",
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(missing_status, 404, "unknown session archive must be a 404");
 }
 
 #[tokio::test]

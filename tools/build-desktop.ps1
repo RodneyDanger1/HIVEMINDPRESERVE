@@ -132,7 +132,9 @@ $serverHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $outDir 'h
     server_sha256 = $serverHash
     launcher_sha256 = $launcherHash
 } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $outDir 'BUILD.json') -Encoding ASCII
-$lines = foreach ($file in Get-ChildItem -LiteralPath $outDir -File | Sort-Object Name) {
+# A file cannot contain its own hash; CHECKSUMS.txt deliberately covers every
+# OTHER packaged file and is verified by checking entries, not by self-entry.
+$lines = foreach ($file in Get-ChildItem -LiteralPath $outDir -File | Where-Object Name -ne 'CHECKSUMS.txt' | Sort-Object Name) {
     '{0}  {1}' -f (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant(), $file.Name
 }
 $lines | Set-Content -LiteralPath (Join-Path $outDir 'CHECKSUMS.txt') -Encoding ASCII

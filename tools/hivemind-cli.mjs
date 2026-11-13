@@ -245,7 +245,10 @@ const COMMANDS = {
     summary: 'List named sessions, newest first.',
     safety: 'read',
     transport: 'http',
-    args: [ARG('limit', 'number', false, 'Max sessions (default 50, max 200).')],
+    args: [
+      ARG('limit', 'number', false, 'Max sessions (default 50, max 200).'),
+      ARG('include-archived', 'boolean', false, 'Include archived sessions.'),
+    ],
   },
   'session-create': {
     summary: 'Create a named session bound to a workspace and policy.',
@@ -1711,7 +1714,11 @@ async function executeRead(command, options, baseUrl) {
       };
     }
     case 'sessions': {
-      const body = await httpJson(baseUrl, '/api/sessions');
+      const includeArchived = options['include-archived'] === true;
+      const body = await httpJson(
+        baseUrl,
+        includeArchived ? '/api/sessions?include_archived=true' : '/api/sessions',
+      );
       const limit = limitOption(options, 50, 200);
       return { ...body, sessions: body.sessions.slice(0, limit) };
     }

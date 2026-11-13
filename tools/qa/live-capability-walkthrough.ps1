@@ -37,7 +37,7 @@ try {
     if (-not $started) { throw 'server did not start' }
 
     $health = Api 'GET' '/health'
-    Record 'health schema' ($health.database.schema_version -ge 31) ("schema=" + $health.database.schema_version)
+    Record 'health schema' ($health.database.schema_version -ge 32) ("schema=" + $health.database.schema_version)
 
     $session = Api 'GET' '/api/session'
     $headers = @{ Authorization = "Bearer $($session.token)" }
