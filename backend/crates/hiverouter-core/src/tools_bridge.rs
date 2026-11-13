@@ -134,7 +134,11 @@ impl ToolsBridge {
     /// denying the whole data directory would deny every workspace file. In
     /// that case deny only the sensitive data surfaces; otherwise keep the
     /// stronger whole-directory denial for an external workspace.
-    fn data_denials(workspace_root: &Path, data_dir: &Path, db_path: &Path) -> Vec<PathBuf> {
+    pub(crate) fn data_denials(
+        workspace_root: &Path,
+        data_dir: &Path,
+        db_path: &Path,
+    ) -> Vec<PathBuf> {
         let workspace_inside_data = workspace_root.starts_with(data_dir);
         let mut denied = Vec::new();
         if !workspace_inside_data {

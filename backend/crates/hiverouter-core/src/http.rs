@@ -389,6 +389,7 @@ fn build_engine(
             None
         }
     };
+    let db_path = db.path().to_path_buf();
     let mut engine = RunEngine::new(db, bus, graph, build_executor(config, &personas, &templates), templates)
         .with_personas(personas)
         .with_snapshot_store(snapshots)
@@ -404,7 +405,14 @@ fn build_engine(
     if wire_workspace_jail {
         match WorkspaceJail::open(&config.workspace_root) {
             Ok(jail) => {
-                let jail = jail.deny_path(&config.data_dir);
+                let mut jail = jail;
+                for denied in ToolsBridge::data_denials(
+                    &config.workspace_root,
+                    &config.data_dir,
+                    &db_path,
+                ) {
+                    jail = jail.deny_path(denied);
+                }
                 engine = engine.with_tool_workspace(jail);
             }
             Err(error) => {
