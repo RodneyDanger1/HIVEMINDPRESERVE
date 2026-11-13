@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -13,6 +14,8 @@ namespace HiveMindLauncher
     internal static class Program
     {
         private const string Host = "127.0.0.1";
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
         private const int FirstPort = 8099;
         private const int LastPort = 8199;
         /// <summary>How many free ports to try when a start attempt loses a race.</summary>
@@ -54,6 +57,7 @@ namespace HiveMindLauncher
                 string workspaceRoot = ResolveWorkspaceRoot(data);
 
                 int port = FindReusablePort();
+                bool reusedExisting = port != 0;
                 string failure = null;
                 if (port == 0)
                 {
@@ -70,6 +74,13 @@ namespace HiveMindLauncher
                 }
 
                 WriteRuntimeFile(data, port, serverProcess);
+                // A healthy server plus an existing HiveMind app window means a
+                // relaunch should focus that window, never open another one.
+                if (reusedExisting && FocusExistingWindow())
+                {
+                    ownsServer = false;
+                    return;
+                }
                 bool trackableWindow;
                 Process window = LaunchWindow(port, launchToken, data, out trackableWindow, out failure);
                 if (window == null && !trackableWindow)
@@ -124,6 +135,42 @@ namespace HiveMindLauncher
                     RemoveRuntimeFile(data);
                 }
             }
+        }
+
+        /// <summary>
+        /// Focus the single existing HiveMind app window. Returns false when no
+        /// such window exists so the caller opens exactly one.
+        /// </summary>
+        private static bool FocusExistingWindow()
+        {
+            try
+            {
+                foreach (var name in new[] { "msedge", "chrome" })
+                {
+                    foreach (var process in Process.GetProcessesByName(name))
+                    {
+                        using (process)
+                        {
+                            if (process.MainWindowHandle == IntPtr.Zero || string.IsNullOrEmpty(process.MainWindowTitle))
+                            {
+                                continue;
+                            }
+                            if (process.MainWindowTitle.IndexOf("HiveMind", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                // Foreground-lock may refuse the raise; still report the
+                                // existing window so we do not open a duplicate.
+                                SetForegroundWindow(process.MainWindowHandle);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Fall through: an unreadable process list means "open one".
+            }
+            return false;
         }
 
         private static bool ShouldKillOwnedServer(bool ownsServer, Process serverProcess, TimeSpan lifetime)

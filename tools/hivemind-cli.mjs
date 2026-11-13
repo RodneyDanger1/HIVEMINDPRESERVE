@@ -269,6 +269,12 @@ const COMMANDS = {
       ARG('policy', 'string', true, 'Permission policy: classic|plan|standard|trusted.'),
     ],
   },
+  'session-resume': {
+    summary: 'Read the resume projection for a named session (new run in the same session).',
+    safety: 'read',
+    transport: 'http',
+    args: [ARG('session', 'uuid', true, 'Named session id.')],
+  },
   'session-archive': {
     summary: 'Archive a named session so it is hidden from the default list.',
     safety: 'mutating',
@@ -1746,6 +1752,10 @@ async function executeRead(command, options, baseUrl) {
         method: 'POST',
         body: { permission_policy: policy },
       });
+    }
+    case 'session-resume': {
+      const sessionId = assertUuid(options.session, '--session');
+      return httpJson(baseUrl, `/api/sessions/${encodeURIComponent(sessionId)}/resume`);
     }
     case 'session-archive': {
       const sessionId = assertUuid(options.session, '--session');

@@ -682,6 +682,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/sessions", get(sessions_list).post(session_create))
         .route("/api/sessions/{session_id}", get(session_detail))
         .route(
+            "/api/sessions/{session_id}/resume",
+            get(session_resume),
+        )
+        .route(
             "/api/sessions/{session_id}/archive",
             post(session_archive),
         )
@@ -1017,6 +1021,45 @@ async fn sessions_list(
         Ok(sessions) => (StatusCode::OK, Json(serde_json::json!({ "sessions": sessions }))).into_response(),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
+}
+
+async fn session_resume(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    let session = match store.session(&session_id) {
+        Ok(session) => session,
+        Err(refusal) => return refusal_response(StatusCode::NOT_FOUND, &refusal),
+    };
+    if session.archived_at.is_some() {
+        return refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired);
+    }
+    let runs = match store.runs_for_session(&session_id) {
+        Ok(runs) => runs,
+        Err(refusal) => return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    };
+    let latest = runs.first().map(|run| {
+        serde_json::json!({
+            "run_id": run.id.to_string(),
+            "status": run.status.as_str(),
+            "permission_policy": run.permission_policy.as_str(),
+            "created_at": run.created_at.as_str(),
+            "updated_at": run.updated_at.as_str(),
+        })
+    });
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "session": session,
+            "latest_run": latest,
+            "resume": {
+                "mode": "new_run_same_session",
+                "note": "The engine has no mid-run resume. Resume means submit a new run with this session_id; the session's policy and todos carry over."
+            }
+        })),
+    )
+        .into_response()
 }
 
 async fn session_archive(

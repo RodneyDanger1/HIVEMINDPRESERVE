@@ -642,6 +642,10 @@ async fn archived_sessions_are_hidden_unless_requested_and_can_be_restored() {
     .await;
     assert_eq!(status, 201, "create: {created:?}");
     let id = created["id"].as_str().expect("id");
+    let (status, resume) = get(&server, &format!("/api/sessions/{id}/resume")).await;
+    assert_eq!(status, 200, "resume projection: {resume:?}");
+    assert_eq!(resume["resume"]["mode"], "new_run_same_session");
+
     let (status, archived) = post(
         &server,
         &format!("/api/sessions/{id}/archive"),
@@ -650,6 +654,9 @@ async fn archived_sessions_are_hidden_unless_requested_and_can_be_restored() {
     .await;
     assert_eq!(status, 200, "archive: {archived:?}");
     assert!(archived["archived_at"].is_string());
+    let (archived_resume_status, _) =
+        get(&server, &format!("/api/sessions/{id}/resume")).await;
+    assert_eq!(archived_resume_status, 409);
 
     let (_, active) = get(&server, "/api/sessions").await;
     assert!(
