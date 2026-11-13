@@ -528,7 +528,7 @@ async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
         &json!({ "text": "orphan" }),
     )
     .await;
-    assert_eq!(status, 400, "unknown session must refuse: {refusal:?}");
+    assert_eq!(status, 404, "unknown session must refuse: {refusal:?}");
     assert_eq!(refusal["code"], "E_SESSION_NOT_FOUND");
 
     let (status, refusal) = post(

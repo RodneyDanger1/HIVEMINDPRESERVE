@@ -22,6 +22,7 @@ use crate::entities::TaskRecord;
 use crate::execution::{task_agent_tier, DeltaSink, ProviderExecutor, StreamedReply, ToolTurnTranscript};
 use crate::planner::{Plan, PlanNode};
 use crate::tool_loop;
+use crate::tool_loop::{ToolCallPlan, ToolExecution};
 
 const PLANNER_SYSTEM: &str = "You are the HiveMind planner. Return ONE JSON object only, \
 no markdown fences, no prose. Schema: {\"nodes\":[{\"id\":\"n1\",\"role\":\"superagent\",\
@@ -796,12 +797,13 @@ impl ProviderExecutor for ProviderExecutorAdapter {
         if transcript.is_empty() {
             return Err(Refusal::ProviderInvalidResponse);
         }
+        let compacted = compact_transcript(transcript, MAX_REPLAY_TOOL_BYTES);
         let mut messages = vec![
             ChatMessage::system(self.system_prompt_for(task)),
             ChatMessage::user(task_prompt(prompt, task)),
         ];
         let mut replayed_turns = 0usize;
-        for turn in transcript {
+        for turn in &compacted {
             if turn.results.is_empty() {
                 continue;
             }
@@ -1038,6 +1040,57 @@ impl WirePlan {
 
 /// Unused model/effort imports are kept as compile-time documentation of the
 /// documented vocabulary; the adapter exposes both through `ProviderSettings`.
+/// Bound on compacted Ok tool-result bodies replayed to the provider.
+const MAX_REPLAY_TOOL_BYTES: usize = 131_072;
+
+fn compacted_result_text(plan: &ToolCallPlan, execution: &ToolExecution) -> String {
+    format!(
+        "[compacted turn-result] tool={} args_sha256={} outcome={:?} code={} bytes={} sha256={}",
+        plan.tool,
+        plan.args_sha256,
+        execution.outcome,
+        execution.code.as_deref().unwrap_or("-"),
+        execution.bytes.map_or_else(|| "-".to_owned(), |bytes| bytes.to_string()),
+        execution.sha256.as_deref().unwrap_or("-")
+    )
+}
+
+/// Shrinks older Ok tool-result bodies while preserving every turn, call id,
+/// outcome, refusal code, size and hash. The newest turn is always verbatim.
+fn compact_transcript(
+    transcript: &[ToolTurnTranscript],
+    max_bytes: usize,
+) -> Vec<ToolTurnTranscript> {
+    let mut compacted = transcript.to_vec();
+    let mut retained = 0usize;
+    let mut compact_before = transcript.len();
+    for (index, turn) in transcript.iter().enumerate().rev() {
+        let turn_bytes: usize = turn
+            .results
+            .iter()
+            .filter(|(_, execution)| {
+                execution.outcome == hiverouter_contract::ToolOutcome::Ok
+            })
+            .map(|(_, execution)| execution.text.len())
+            .sum();
+        let is_newest = index + 1 == transcript.len();
+        if !is_newest && retained.saturating_add(turn_bytes) > max_bytes {
+            compact_before = index + 1;
+            break;
+        }
+        retained = retained.saturating_add(turn_bytes);
+        compact_before = index;
+    }
+    for turn in compacted.iter_mut().take(compact_before) {
+        for (plan, execution) in &mut turn.results {
+            if execution.outcome == hiverouter_contract::ToolOutcome::Ok {
+                execution.text = compacted_result_text(plan, execution);
+            }
+        }
+    }
+    compacted
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1204,6 +1257,36 @@ mod tests {
         assert!(value.get("thinking").is_none());
         assert!(value.get("reasoning_effort").is_none());
         assert!(value.get("response_format").is_none());
+    }
+
+    #[test]
+    fn transcript_compaction_bounds_old_bodies_and_preserves_identity() {
+        let make_plan = |id: &str| ToolCallPlan {
+            tool_call_id: id.to_owned(),
+            tool: "file_read".to_owned(),
+            args: serde_json::json!({"path": "a"}),
+            args_sha256: "a".repeat(64),
+            turn: 1,
+        };
+        let transcript: Vec<ToolTurnTranscript> = (0..3)
+            .map(|index| {
+                let id = format!("call-{index}");
+                let plan = make_plan(&id);
+                let execution = ToolExecution::ok(id, "x".repeat(100));
+                ToolTurnTranscript {
+                    assistant_text: String::new(),
+                    reasoning: String::new(),
+                    results: vec![(plan, execution)],
+                }
+            })
+            .collect();
+        let compacted = compact_transcript(&transcript, 150);
+        assert_eq!(compacted.len(), transcript.len());
+        assert_eq!(compacted[2].results[0].1.text, "x".repeat(100));
+        assert_eq!(compacted[0].results[0].1.tool_call_id, "call-0");
+        assert!(compacted[0].results[0].1.text.contains("[compacted turn-result]"));
+        assert!(compacted[0].results[0].1.text.contains(&"a".repeat(64)));
+        assert_eq!(compacted[2].results[0].0.tool_call_id, "call-2");
     }
 
     #[test]
