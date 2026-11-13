@@ -690,12 +690,13 @@ impl RunStore {
         };
         self.db
             .with_connection(|connection| {
-                connection.execute(
+                let transaction = connection.unchecked_transaction()?;
+                transaction.execute(
                     "INSERT INTO todos(id, session_id, seq, text, state, created_at)
                      VALUES (?1, ?2, (SELECT COALESCE(MAX(seq), 0) + 1 FROM todos WHERE session_id = ?2), ?3, 'open', ?4)",
                     params![todo.id, todo.session_id, todo.text, todo.created_at.as_str()],
                 )?;
-                connection.execute(
+                transaction.execute(
                     "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
                      VALUES (?1, ?2, 'todo_added', ?3, ?4)",
                     params![
@@ -705,6 +706,7 @@ impl RunStore {
                         todo.created_at.as_str()
                     ],
                 )?;
+                transaction.commit()?;
                 Ok(())
             })
             .map_err(map)?;

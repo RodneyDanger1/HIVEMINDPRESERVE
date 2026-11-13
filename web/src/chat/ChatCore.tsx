@@ -218,6 +218,38 @@ export function ChatCore() {
     if (!namedSession) setPermissionPolicy('classic');
   }, [sessions, namedSession, setActiveSessionId]);
   const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
+  const changePolicy = async (
+    next: 'classic' | 'plan' | 'standard' | 'trusted',
+  ): Promise<void> => {
+    const previous = permissionPolicy;
+    setPermissionPolicy(next);
+    if (!namedSession) return;
+    try {
+      const handshake = await fetch('/api/session', { headers: { accept: 'application/json' } });
+      if (!handshake.ok) throw new Error('session handshake failed');
+      const token = (await handshake.json()) as { token?: string };
+      const headers: Record<string, string> = {
+        accept: 'application/json',
+        'content-type': 'application/json',
+      };
+      if (token.token) headers.Authorization = `Bearer ${token.token}`;
+      const response = await fetch(
+        `/api/sessions/${encodeURIComponent(namedSession)}/policy`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ permission_policy: next }),
+        },
+      );
+      if (!response.ok) throw new Error(`policy returned ${response.status}`);
+      setSessionReload((current) => current + 1);
+    } catch {
+      // Persist failed: do not show a policy the session does not have.
+      setPermissionPolicy(previous);
+      setSessionLoadError(true);
+    }
+  };
+
   const createSession = async (): Promise<void> => {
     const name = newSessionName.trim();
     if (!name || !sessionWorkspace || sessionBusy) return;
@@ -428,7 +460,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-80px)] max-[640px]:overflow-y-auto"
+        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-80px)] max-[640px]:translate-y-0 max-[640px]:overflow-y-auto"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -612,7 +644,7 @@ export function ChatCore() {
               value={permissionPolicy}
               disabled={connection !== 'open' || replaying}
               onChange={(event) =>
-                setPermissionPolicy(
+                void changePolicy(
                   event.target.value as 'classic' | 'plan' | 'standard' | 'trusted',
                 )
               }

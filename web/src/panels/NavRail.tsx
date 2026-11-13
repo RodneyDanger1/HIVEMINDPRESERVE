@@ -26,12 +26,14 @@ export function NavRail() {
       aria-label={STRINGS.nav.aria}
       className="flex w-[72px] shrink-0 flex-col items-center gap-[20px] border-r border-hairline bg-panel py-3 max-[640px]:fixed max-[640px]:inset-x-0 max-[640px]:bottom-0 max-[640px]:z-40 max-[640px]:h-14 max-[640px]:w-full max-[640px]:flex-row max-[640px]:items-center max-[640px]:justify-around max-[640px]:gap-0 max-[640px]:border-r-0 max-[640px]:border-t max-[640px]:py-0"
       onKeyDown={(event) => {
-        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+        const forward = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+        const backward = event.key === 'ArrowUp' || event.key === 'ArrowLeft';
+        if (!forward && !backward) {
           return;
         }
         event.preventDefault();
         const index = ITEMS.findIndex((item) => item.id === nav);
-        const next = nextRovingIndex(index, event.key === 'ArrowDown' ? 1 : -1, ITEMS.length);
+        const next = nextRovingIndex(index, forward ? 1 : -1, ITEMS.length);
         refs.current[next]?.focus();
       }}
     >

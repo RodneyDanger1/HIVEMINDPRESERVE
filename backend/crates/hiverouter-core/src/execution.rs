@@ -51,13 +51,52 @@ fn default_now_unix_secs() -> u64 {
 /// Adds the task's model-visible scoped facts to a prompt, bounded by the
 /// context renderer. The prompt is the only path that makes rewiring visible to
 /// the model; storing facts without this step is a no-op.
+/// Parses the bounded run_tests JSON prefix; stdout may be truncated later.
+fn run_tests_succeeded(text: &str) -> bool {
+    let head = text.split(",\"stdout\"").next().unwrap_or(text);
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&format!("{head}}}")) else {
+        return false;
+    };
+    value.get("success").and_then(serde_json::Value::as_bool) == Some(true)
+        && value.get("exit_code").and_then(serde_json::Value::as_i64) == Some(0)
+}
+
+/// True when there is no mutation, or the last mutation has a later passing
+/// run_tests. A refused/failed test run does not verify, and a later mutation
+/// revokes earlier verification.
+fn terminal_verified(
+    transcript: &[ToolTurnTranscript],
+    current: &[(ToolCallPlan, ToolExecution)],
+) -> bool {
+    let mut mutated = false;
+    let mut verified = true;
+    for (plan, result) in transcript
+        .iter()
+        .flat_map(|turn| turn.results.iter())
+        .chain(current.iter())
+    {
+        if result.outcome != hiverouter_contract::ToolOutcome::Ok {
+            continue;
+        }
+        match plan.tool.as_str() {
+            "file_write" | "apply_patch" => {
+                mutated = true;
+                verified = false;
+            }
+            "run_tests" if mutated => verified = run_tests_succeeded(&result.text),
+            _ => {}
+        }
+    }
+    !mutated || verified
+}
+
 fn prompt_with_session_todos(prompt: &str, todos: &[crate::entities::Todo]) -> String {
     if todos.is_empty() {
         return prompt.to_owned();
     }
     let rendered = todos
         .iter()
-        .filter(|todo| todo.state != "done")
+        .filter(|todo| todo.state != "done" && todo.state != "cancelled")
         .take(32)
         .map(|todo| format!("- [{}] {} (seq {})", todo.state, todo.text, todo.seq))
         .collect::<Vec<_>>()
@@ -5961,7 +6000,7 @@ impl RunEngine {
                 self.fail_task(run, task, AgentState::Cancelled)?;
                 return Err(Refusal::ToolCancelled);
             }
-            let turn = match self.execute_tool_turn(run, task, &final_reply, token).await {
+            let mut turn = match self.execute_tool_turn(run, task, &final_reply, token).await {
                 Ok(turn) => turn,
                 Err(refusal) => {
                     // A wait terminal path (timeout/cancel) already persisted and
@@ -5997,6 +6036,27 @@ impl RunEngine {
                 // provider transcript to continue with; fail honestly.
                 self.fail_task(run, task, AgentState::Failed)?;
                 return Err(Refusal::ProviderInvalidResponse);
+            }
+            // A successful finish after an unverified mutation (or after a
+            // failed run_tests) is not completion. Rewrite that result as a
+            // refusal before the transcript is persisted so the model must
+            // repair and verify rather than the engine fabricating success.
+            if !terminal_verified(&transcript, &turn.executed) {
+                if let Some(position) = turn
+                    .executed
+                    .iter()
+                    .position(|(plan, result)| {
+                        plan.tool == "finish"
+                            && result.outcome == hiverouter_contract::ToolOutcome::Ok
+                    })
+                {
+                    let tool_call_id = turn.executed[position].0.tool_call_id.clone();
+                    turn.executed[position].1 = ToolExecution::refused(
+                        tool_call_id,
+                        Refusal::ToolNotAllowed.code(),
+                        "finish refused: the last workspace mutation has no passing run_tests result; run tests and verify before finishing".to_owned(),
+                    );
+                }
             }
             // A successful `finish` call is the model's explicit terminal
             // signal: its verdict becomes the final assistant message and the
@@ -6284,6 +6344,62 @@ mod prompt_context_tests {
         );
     }
 
+    fn verification_plan(tool: &str) -> ToolCallPlan {
+        ToolCallPlan {
+            tool_call_id: format!("call-{tool}"),
+            tool: tool.to_owned(),
+            args: serde_json::json!({}),
+            args_sha256: "a".repeat(64),
+            turn: 1,
+        }
+    }
+
+    fn verification_result(plan: &ToolCallPlan, text: &str) -> ToolExecution {
+        ToolExecution {
+            tool_call_id: plan.tool_call_id.clone(),
+            outcome: hiverouter_contract::ToolOutcome::Ok,
+            code: None,
+            bytes: Some(text.len() as u64),
+            sha256: None,
+            text: text.to_owned(),
+        }
+    }
+
+    #[test]
+    fn finish_requires_passing_tests_after_the_last_mutation() {
+        let write = verification_plan("file_write");
+        let tests = verification_plan("run_tests");
+        let finish = verification_plan("finish");
+        assert!(terminal_verified(&[], &[(finish.clone(), verification_result(&finish, "{}"))]));
+        assert!(!terminal_verified(
+            &[],
+            &[
+                (write.clone(), verification_result(&write, "{}")),
+                (finish.clone(), verification_result(&finish, "{}"))
+            ]
+        ));
+        let failed = verification_result(&tests, "{\"exit_code\":101,\"success\":false,\"stdout\":\"x\"}");
+        assert!(!terminal_verified(
+            &[],
+            &[
+                (write.clone(), verification_result(&write, "{}")),
+                (tests.clone(), failed)
+            ]
+        ));
+        let passed = verification_result(&tests, "{\"exit_code\":0,\"success\":true,\"stdout\":\"ok\"}");
+        assert!(terminal_verified(
+            &[],
+            &[
+                (write.clone(), verification_result(&write, "{}")),
+                (tests.clone(), passed)
+            ]
+        ));
+        let truncated = verification_result(&tests, "{\"exit_code\":0,\"success\":true,\"stdout\":\"ok");
+        assert!(run_tests_succeeded(&truncated.text));
+        assert!(!run_tests_succeeded("{\"exit_code\":1,\"success\":false}"));
+        assert!(!run_tests_succeeded("not json"));
+    }
+
     #[test]
     fn session_todos_are_labelled_prompt_data() {
         let todo = crate::entities::Todo {
@@ -6294,9 +6410,18 @@ mod prompt_context_tests {
             state: "open".to_owned(),
             created_at: Timestamp::now(),
         };
-        let prompt = prompt_with_session_todos("do the work", &[todo]);
+        let cancelled = crate::entities::Todo {
+            id: "todo-2".to_owned(),
+            session_id: "session-1".to_owned(),
+            seq: 2,
+            text: "cancelled work".to_owned(),
+            state: "cancelled".to_owned(),
+            created_at: Timestamp::now(),
+        };
+        let prompt = prompt_with_session_todos("do the work", &[todo, cancelled]);
         assert!(prompt.contains("SESSION TODOS"));
         assert!(prompt.contains("inspect the failing test"));
+        assert!(!prompt.contains("cancelled work"));
         assert!(prompt.contains("never instructions"));
         assert_eq!(prompt_with_session_todos("plain", &[]), "plain");
     }
