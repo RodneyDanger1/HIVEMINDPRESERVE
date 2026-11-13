@@ -32,12 +32,26 @@ async function jobRequest(path: string, init?: RequestInit): Promise<Response> {
   return fetch(path, { ...init, headers });
 }
 
+function splitCommand(input: string): string[] | null {
+  const tokens: string[] = [];
+  const pattern = /"([^"]*)"|'([^']*)'|(\S+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(input)) !== null) {
+    tokens.push(match[1] ?? match[2] ?? match[3] ?? '');
+  }
+  return tokens.length > 0 ? tokens : null;
+}
+
 export function JobsPanel() {
   const connection = useUiStore((state) => state.connection);
+  const activeSessionId = useUiStore((state) => state.activeSessionId);
   const [jobs, setJobs] = useState<readonly JobRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [command, setCommand] = useState('');
+  const [startError, setStartError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -78,10 +92,82 @@ export function JobsPanel() {
     }
   };
 
+  const start = async (): Promise<void> => {
+    if (!activeSessionId) {
+      setStartError('Select a named session in the composer first.');
+      return;
+    }
+    const tokens = splitCommand(command);
+    if (tokens === null) {
+      setStartError('Enter an allowlisted command, for example: git status');
+      return;
+    }
+    setStarting(true);
+    setStartError(null);
+    try {
+      const response = await jobRequest('/api/jobs', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          session_id: activeSessionId,
+          program: tokens[0],
+          args: tokens.slice(1),
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as JobRow | { message?: string } | null;
+      if (!response.ok) {
+        throw new Error(
+          body !== null && 'message' in body && body.message
+            ? body.message
+            : `job start returned ${response.status}`,
+        );
+      }
+      if (body !== null && 'id' in body) setSelected(body.id);
+      setCommand('');
+      await load();
+    } catch (failure) {
+      setStartError(failure instanceof Error ? failure.message : 'job start failed');
+    } finally {
+      setStarting(false);
+    }
+  };
+
   const chosen = jobs?.find((job) => job.id === selected) ?? null;
   return (
     <section aria-label="Background jobs" className="surface-panel mt-3 rounded-[var(--radius-card)] p-3">
       <PanelTitle>Background jobs</PanelTitle>
+      <form
+        className="mt-2 flex flex-wrap items-center gap-1"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void start();
+        }}
+      >
+        <label className="sr-only" htmlFor="job-command">
+          Allowlisted command
+        </label>
+        <input
+          id="job-command"
+          className="type-mono-code min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 py-1 text-[11px] text-ink-900"
+          placeholder="git status"
+          value={command}
+          onChange={(event) => setCommand(event.target.value)}
+          disabled={starting}
+        />
+        <button
+          type="submit"
+          className="rounded-[6px] border border-honey-500 bg-honey-300 px-2 py-1 text-[11px] font-semibold text-ink-900 disabled:opacity-50"
+          disabled={starting || command.trim().length === 0 || !activeSessionId}
+          title={activeSessionId ? 'Run through the allowlisted job registry' : 'Select a named session in the composer first'}
+        >
+          Run
+        </button>
+      </form>
+      <p className="type-mono-meta mt-1 text-[10px] text-meta">
+        Command console — allowlisted programs only, no PTY/shell. Select a named session in the
+        composer to enable it.
+      </p>
+      {startError !== null ? <ErrorState message={startError} /> : null}
       {connection !== 'open' ? <EmptyState message="Jobs load when the local server is connected." /> : null}
       {connection === 'open' && jobs === null && error === null ? <LoadingState /> : null}
       {error !== null ? <ErrorState message={error} /> : null}

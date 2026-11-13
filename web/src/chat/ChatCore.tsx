@@ -122,6 +122,7 @@ export function ChatCore() {
   const connection = useUiStore((state) => state.connection);
   const chat = useUiStore((state) => state.chat);
   const setChatVisible = useUiStore((state) => state.setChatVisible);
+  const setActiveSessionId = useUiStore((state) => state.setActiveSessionId);
   const streamingRunId = useUiStore((state) => state.streamingRunId);
   const runStatus = useUiStore((state) => state.run?.status ?? null);
   const cancelRun = useUiStore((state) => state.cancelRun);
@@ -452,7 +453,10 @@ export function ChatCore() {
               className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
               value={namedSession}
               disabled={connection !== 'open' || replaying}
-              onChange={(event) => setNamedSession(event.target.value)}
+              onChange={(event) => {
+                setNamedSession(event.target.value);
+                setActiveSessionId(event.target.value || null);
+              }}
             >
               <option value="">Default session</option>
               {sessions.map((session) => (

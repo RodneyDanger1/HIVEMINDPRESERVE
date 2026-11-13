@@ -300,6 +300,8 @@ export interface UiState {
   readonly settings: SettingsState;
   readonly fileTree: FileTreeState;
   readonly project: { readonly id: string; readonly name: string; readonly owner: string };
+  /** Named session selected in the composer; used by the jobs console. */
+  readonly activeSessionId: string | null;
   readonly reducedMotionOverride: boolean;
   readonly diffOpen: boolean;
 
@@ -349,6 +351,7 @@ export interface UiState {
   setViewport(viewport: ViewportState): void;
   selectTask(taskId: string | null): void;
   setChatVisible(visible: boolean): void;
+  setActiveSessionId(sessionId: string | null): void;
   openDiffModal(): void;
   closeDiffModal(): void;
   dismissRefusal(id: string): void;
@@ -1988,6 +1991,7 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
       settings: initialSettings(),
       fileTree: initialFileTree(),
       project: baseProject(),
+      activeSessionId: null,
       reducedMotionOverride: readReducedMotionOverride(),
       diffOpen: false,
 
@@ -2551,6 +2555,10 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
 
       selectTask(taskId: string | null): void {
         set({ selectedTaskId: taskId });
+      },
+
+      setActiveSessionId(sessionId: string | null): void {
+        set({ activeSessionId: sessionId });
       },
 
       setChatVisible(visible: boolean): void {
