@@ -708,6 +708,26 @@ namespace HiveMindLauncher
                     return reader.ReadToEnd();
                 }
             }
+            catch (WebException error)
+            {
+                // A degraded server may answer /health with a non-2xx status. The
+                // body still identifies the instance; discarding it would start a
+                // second server against the same data directory.
+                var response = error.Response as HttpWebResponse;
+                if (response == null) return null;
+                try
+                {
+                    using (response)
+                    using (var reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                }
+                catch
+                {
+                    return null;
+                }
+            }
             catch
             {
                 return null;

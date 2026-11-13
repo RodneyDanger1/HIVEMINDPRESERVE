@@ -237,6 +237,12 @@ test('the healthy-server reuse path is gated by reusedExisting before focusing',
   assert.ok(findPort.index < declaration.index, 'the reuse guard must be derived from the health probe result');
 });
 
+test('degraded non-2xx health bodies are still used for reuse', () => {
+  const source = launcherSource();
+  assert.match(source, /catch\s*\(\s*WebException\s+error\s*\)/, 'WebException must be caught');
+  assert.match(source, /error\.Response\s+as\s+HttpWebResponse/, 'the error response body must be read');
+});
+
 test('FocusExistingWindow recognises both Edge and Chrome windows', () => {
   const source = launcherSource();
   const sanitized = sanitizeCSharp(source);
