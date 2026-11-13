@@ -46,7 +46,9 @@ namespace HiveMindLauncher
             }
             if (!instanceOwned)
             {
-                FocusExistingWindow();
+                // The first launcher may still be starting the browser; poll
+                // briefly so a fast double-click focuses instead of doing nothing.
+                FocusExistingWindow(3000);
                 return;
             }
             Process serverProcess = null;
@@ -92,7 +94,7 @@ namespace HiveMindLauncher
                 WriteRuntimeFile(data, port, serverProcess);
                 // A healthy server plus an existing HiveMind app window means a
                 // relaunch should focus that window, never open another one.
-                if (reusedExisting && FocusExistingWindow())
+                if (reusedExisting && FocusExistingWindow(2000))
                 {
                     ownsServer = false;
                     return;
@@ -165,36 +167,41 @@ namespace HiveMindLauncher
         /// Focus the single existing HiveMind app window. Returns false when no
         /// such window exists so the caller opens exactly one.
         /// </summary>
-        private static bool FocusExistingWindow()
+        private static bool FocusExistingWindow(int timeoutMs = 0)
         {
-            try
+            var until = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+            do
             {
-                foreach (var name in new[] { "msedge", "chrome" })
+                try
                 {
-                    foreach (var process in Process.GetProcessesByName(name))
+                    foreach (var name in new[] { "msedge", "chrome" })
                     {
-                        using (process)
+                        foreach (var process in Process.GetProcessesByName(name))
                         {
-                            if (process.MainWindowHandle == IntPtr.Zero || string.IsNullOrEmpty(process.MainWindowTitle))
+                            using (process)
                             {
-                                continue;
-                            }
-                            if (process.MainWindowTitle.IndexOf("HiveMind", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                // Foreground-lock may refuse the raise; still report the
-                                // existing window so we do not open a duplicate.
-                                SetForegroundWindow(process.MainWindowHandle);
-                                return true;
+                                if (process.MainWindowHandle == IntPtr.Zero || string.IsNullOrEmpty(process.MainWindowTitle))
+                                {
+                                    continue;
+                                }
+                                if (process.MainWindowTitle.IndexOf("HiveMind", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    // Foreground-lock may refuse the raise; still report the
+                                    // existing window so we do not open a duplicate.
+                                    SetForegroundWindow(process.MainWindowHandle);
+                                    return true;
+                                }
                             }
                         }
                     }
                 }
-            }
-            catch
-            {
-                // Fall through: an unreadable process list means "open one".
-            }
-            return false;
+                catch
+                {
+                    // Fall through and retry until the deadline.
+                }
+                if (DateTime.UtcNow >= until) return false;
+                Thread.Sleep(150);
+            } while (true);
         }
 
         private static bool ShouldKillOwnedServer(bool ownsServer, Process serverProcess, TimeSpan lifetime)
