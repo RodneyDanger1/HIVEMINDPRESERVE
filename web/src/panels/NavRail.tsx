@@ -24,7 +24,7 @@ export function NavRail() {
   return (
     <nav
       aria-label={STRINGS.nav.aria}
-      className="flex w-[72px] shrink-0 flex-col items-center gap-[20px] border-r border-hairline bg-panel py-3"
+      className="flex w-[72px] shrink-0 flex-col items-center gap-[20px] border-r border-hairline bg-panel py-3 max-[640px]:fixed max-[640px]:inset-x-0 max-[640px]:bottom-0 max-[640px]:z-40 max-[640px]:h-14 max-[640px]:w-full max-[640px]:flex-row max-[640px]:items-center max-[640px]:justify-around max-[640px]:gap-0 max-[640px]:border-r-0 max-[640px]:border-t max-[640px]:py-0"
       onKeyDown={(event) => {
         if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
           return;
@@ -45,7 +45,7 @@ export function NavRail() {
           aria-current={nav === item.id ? 'page' : undefined}
           tabIndex={nav === item.id ? 0 : -1}
           onClick={() => setNav(item.id)}
-          className="flex w-full flex-col items-center gap-1.5 text-center"
+          className="flex w-full flex-col items-center gap-1.5 text-center max-[640px]:gap-0"
         >
           <span
             className={
@@ -59,7 +59,7 @@ export function NavRail() {
           </span>
           <span
             className={
-              'text-[11px] font-medium leading-tight ' +
+              'text-[11px] font-medium leading-tight max-[640px]:hidden ' +
               (nav === item.id ? 'text-ink-900' : 'text-ink-500')
             }
           >

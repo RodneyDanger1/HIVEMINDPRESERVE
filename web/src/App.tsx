@@ -175,7 +175,7 @@ function AppFrame() {
       <div className="flex min-h-0 flex-1">
         <NavRail />
         <LibraryPanel />
-        <main id="main-content" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col">
+        <main id="main-content" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col max-[640px]:pb-14">
           {apiKind === 'mock' ? (
             <div className="type-mono-meta border-b border-amber bg-recessed px-4 py-1 text-ink-800">
               {STRINGS.connection.mock}

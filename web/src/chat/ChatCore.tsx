@@ -445,7 +445,7 @@ export function ChatCore() {
           ) : null}
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
             SESSION
             <select
