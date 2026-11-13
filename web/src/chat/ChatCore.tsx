@@ -213,9 +213,8 @@ export function ChatCore() {
       setNamedSession('');
       setActiveSessionId(null);
     }
-    // With no named session there is no inherited policy to show; reset the
-    // per-run override to the documented classic default.
-    if (!namedSession) setPermissionPolicy('classic');
+    // The policy selector is also used for a new/default run when no named
+    // session is selected; do not silently reset an explicit operator choice.
   }, [sessions, namedSession, setActiveSessionId]);
   const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
   const changePolicy = async (
@@ -642,8 +641,12 @@ export function ChatCore() {
             <select
               className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900 disabled:cursor-not-allowed disabled:opacity-60"
               value={permissionPolicy}
-              disabled={connection !== 'open' || replaying || !namedSession}
-              title={namedSession ? 'Policy for this named session/run' : 'Select a named session to edit its policy'}
+              disabled={connection !== 'open' || replaying}
+              title={
+                namedSession
+                  ? 'Policy for this named session/run'
+                  : 'Policy for a new session or the default run'
+              }
               onChange={(event) =>
                 void changePolicy(
                   event.target.value as 'classic' | 'plan' | 'standard' | 'trusted',
