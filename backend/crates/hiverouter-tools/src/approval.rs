@@ -1495,6 +1495,31 @@ mod tests {
     }
 
     #[test]
+    fn migrate_adds_preview_column_to_a_legacy_approvals_table() {
+        let conn = Connection::open_in_memory().expect("db");
+        conn.execute_batch(
+            "CREATE TABLE approvals (
+                approval_id TEXT PRIMARY KEY NOT NULL, run_id TEXT NOT NULL,
+                task_id TEXT NOT NULL, tool_call_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL, args_sha256 TEXT NOT NULL,
+                permission_class TEXT NOT NULL, created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL, nonce TEXT NOT NULL UNIQUE,
+                decision TEXT, decided_at TEXT, reason TEXT, executed_at TEXT
+            );",
+        )
+        .expect("legacy table");
+        migrate(&conn).expect("migrate legacy");
+        let has_preview: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('approvals') WHERE name = 'args_preview'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("pragma");
+        assert_eq!(has_preview, 1);
+    }
+
+    #[test]
     fn replay_carries_the_persisted_redacted_preview() {
         let conn = memory_db();
         let gate = ApprovalGate::default();
