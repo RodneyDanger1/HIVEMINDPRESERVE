@@ -648,6 +648,9 @@ impl RunStore {
         session_id: &str,
         policy: PermissionPolicy,
     ) -> Result<(), Refusal> {
+        if self.session(session_id)?.archived_at.is_some() {
+            return Err(Refusal::DecisionRequired);
+        }
         let changed = self
             .db
             .with_connection(|connection| {
@@ -679,7 +682,9 @@ impl RunStore {
 
     /// Adds a todo to a session.
     pub fn add_todo(&self, session_id: &str, text: &str) -> Result<Todo, Refusal> {
-        self.session(session_id)?;
+        if self.session(session_id)?.archived_at.is_some() {
+            return Err(Refusal::DecisionRequired);
+        }
         let todo = Todo {
             id: Uuid::now_v7().to_string(),
             session_id: session_id.to_owned(),
@@ -724,7 +729,9 @@ impl RunStore {
         if !matches!(state, "open" | "done" | "cancelled") {
             return Err(Refusal::SchemaInvalid);
         }
-        self.session(session_id)?;
+        if self.session(session_id)?.archived_at.is_some() {
+            return Err(Refusal::DecisionRequired);
+        }
         let now = Timestamp::now();
         let changed = self
             .db

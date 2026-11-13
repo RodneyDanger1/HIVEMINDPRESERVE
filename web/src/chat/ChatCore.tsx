@@ -15,6 +15,20 @@ import { CONTROL_INTENTS } from '../state/chatIntents';
 import type { ChatMessage, ToastRefusal } from '../state/store';
 import { MessageBody, TypingDots, WorkingBee } from './ChatMotion';
 
+const SESSION_STORAGE_KEY = 'hivemind.session-id';
+const POLICY_STORAGE_KEY = 'hivemind.session-policy';
+const POLICY_VALUES = ['classic', 'plan', 'standard', 'trusted'] as const;
+type StoredPolicy = (typeof POLICY_VALUES)[number];
+
+function readStoredPolicy(): StoredPolicy {
+  try {
+    const raw = localStorage.getItem(POLICY_STORAGE_KEY);
+    return POLICY_VALUES.includes(raw as StoredPolicy) ? (raw as StoredPolicy) : 'classic';
+  } catch {
+    return 'classic';
+  }
+}
+
 /** Baselines captured immediately before SUBMIT_PROMPT is dispatched. */
 export interface PromptSubmissionBaseline {
   readonly messageIds: ReadonlySet<string>;
@@ -143,10 +157,16 @@ export function ChatCore() {
       permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
     }[]
   >([]);
-  const [namedSession, setNamedSession] = useState('');
-  const [permissionPolicy, setPermissionPolicy] = useState<
-    'classic' | 'plan' | 'standard' | 'trusted'
-  >('classic');
+  const [namedSession, setNamedSession] = useState(() => {
+    try {
+      return localStorage.getItem(SESSION_STORAGE_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const [permissionPolicy, setPermissionPolicy] =
+    useState<StoredPolicy>(readStoredPolicy);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [sessionLoadError, setSessionLoadError] = useState(false);
   const [includeArchived, setIncludeArchived] = useState(false);
   const [sessionReload, setSessionReload] = useState(0);
@@ -198,6 +218,7 @@ export function ChatCore() {
         };
         if (!cancelled) {
           setSessions(body.sessions ?? []);
+          setSessionsLoaded(true);
           setSessionLoadError(false);
         }
       } catch {
@@ -209,13 +230,33 @@ export function ChatCore() {
     };
   }, [connection, includeArchived, sessionReload]);
   useEffect(() => {
-    if (namedSession && !sessions.some((session) => session.id === namedSession)) {
+    if (
+      sessionsLoaded &&
+      namedSession &&
+      !sessions.some((session) => session.id === namedSession)
+    ) {
       setNamedSession('');
       setActiveSessionId(null);
     }
     // The policy selector is also used for a new/default run when no named
     // session is selected; do not silently reset an explicit operator choice.
-  }, [sessions, namedSession, setActiveSessionId]);
+  }, [sessions, sessionsLoaded, namedSession, setActiveSessionId]);
+  useEffect(() => {
+    try {
+      if (namedSession) localStorage.setItem(SESSION_STORAGE_KEY, namedSession);
+      else localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // Storage is optional; the in-memory selection still works.
+    }
+    setActiveSessionId(namedSession || null);
+  }, [namedSession, setActiveSessionId]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(POLICY_STORAGE_KEY, permissionPolicy);
+    } catch {
+      // Storage is optional.
+    }
+  }, [permissionPolicy]);
   const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
   const changePolicy = async (
     next: 'classic' | 'plan' | 'standard' | 'trusted',
@@ -459,7 +500,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-80px)] max-[640px]:translate-y-0 max-[640px]:overflow-y-auto"
+        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-84px)] max-[640px]:translate-y-0 max-[640px]:overflow-y-auto"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -497,7 +538,7 @@ export function ChatCore() {
             </span>
             <button
               type="button"
-              className="type-mono-meta flex min-h-6 min-w-6 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10 max-[640px]:min-h-11 max-[640px]:min-w-11"
+              className="type-mono-meta flex min-h-6 min-w-6 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10 min-h-11 min-w-11"
               onClick={() => setChatVisible(false)}
               aria-label={STRINGS.chat.closeAria}
             >

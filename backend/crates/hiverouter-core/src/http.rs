@@ -1188,6 +1188,12 @@ async fn session_todo_add(
     let store = crate::store::RunStore::new(state.db.clone());
     match store.add_todo(&session_id, text) {
         Ok(todo) => (StatusCode::CREATED, Json(todo)).into_response(),
+        Err(Refusal::DecisionRequired) => {
+            refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired)
+        }
+        Err(Refusal::SessionNotFound) => {
+            refusal_response(StatusCode::NOT_FOUND, &Refusal::SessionNotFound)
+        }
         Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
     }
 }
@@ -1231,6 +1237,9 @@ async fn session_policy(
             Ok(session) => (StatusCode::OK, Json(session)).into_response(),
             Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
         },
+        Err(Refusal::DecisionRequired) => {
+            refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired)
+        }
         Err(refusal) => refusal_response(StatusCode::NOT_FOUND, &refusal),
     }
 }

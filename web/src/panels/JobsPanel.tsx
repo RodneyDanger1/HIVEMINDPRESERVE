@@ -160,7 +160,7 @@ export function JobsPanel() {
         />
         <button
           type="submit"
-          className="rounded-[6px] border border-honey-500 bg-honey-300 px-2 py-1 text-[11px] font-semibold text-ink-900 disabled:opacity-50"
+          className="rounded-[6px] border border-honey-500 bg-honey-300 px-2 py-1 text-[11px] font-semibold text-ink-900 disabled:opacity-50 max-[640px]:min-h-11 max-[640px]:min-w-11"
           disabled={starting || command.trim().length === 0 || !activeSessionId}
           title={activeSessionId ? 'Run through the allowlisted job registry' : 'Select a named session in the composer first'}
         >

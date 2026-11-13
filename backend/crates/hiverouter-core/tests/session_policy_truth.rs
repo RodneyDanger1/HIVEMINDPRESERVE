@@ -682,6 +682,20 @@ async fn archived_sessions_are_hidden_unless_requested_and_can_be_restored() {
     let (archived_resume_status, _) =
         get(&server, &format!("/api/sessions/{id}/resume")).await;
     assert_eq!(archived_resume_status, 409);
+    let (todo_status, _) = post(
+        &server,
+        &format!("/api/sessions/{id}/todos"),
+        &serde_json::json!({ "text": "must not be added" }),
+    )
+    .await;
+    assert_eq!(todo_status, 409, "archived session must refuse todo writes");
+    let (policy_status, _) = post(
+        &server,
+        &format!("/api/sessions/{id}/policy"),
+        &serde_json::json!({ "permission_policy": "trusted" }),
+    )
+    .await;
+    assert_eq!(policy_status, 409, "archived session must refuse policy writes");
 
     let (_, active) = get(&server, "/api/sessions").await;
     assert!(

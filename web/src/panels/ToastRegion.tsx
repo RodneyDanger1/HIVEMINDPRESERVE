@@ -25,7 +25,7 @@ export function ToastRegion() {
       aria-live="assertive"
       aria-label={STRINGS.toast.regionAria}
       data-approval-priority={approvals.length > 0 ? 'modal' : 'normal'}
-      className={`pointer-events-none fixed bottom-20 left-4 flex w-[min(440px,92vw)] flex-col gap-2 ${toastStackZClass(approvals.length)}`}
+      className={`pointer-events-none fixed bottom-20 left-1/2 flex w-[min(440px,92vw)] -translate-x-1/2 flex-col gap-2 ${toastStackZClass(approvals.length)}`}
     >
       <AnimatePresence initial={false}>
         {refusals.map((entry) => (
