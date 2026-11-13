@@ -1,6 +1,6 @@
 # Live / evidence index (2026-11-12, current)
 
-**Current source/package:** `99cab10`, schema **32**, `dirty:false`; server SHA-256 `b853ca979882c171a5c521b976d5a54a468f943b2672b1f2ffba8a118ab4b454`, launcher SHA-256 `dc7a6500364a1ae31ffb834ae5f2592594630374da04daf230a54426a237b2fe`; no provider key configured.
+**Current source/package:** `d5af99b`, schema **32**, `dirty:false`; server SHA-256 `372d3bc07622965f6245d6053036fae599dfb1c408de974743dd43301430da7c`, launcher SHA-256 `60a952fbc195d636b3ac8405cacabd3499351f055471ac0c83ba19082fd62cdb`; no provider key configured.
 
 **Historical snapshot:** the 2026-11-11 rows below were taken at HEAD `1129349` / product `806251b`, schema 24, and are not current-release evidence.
 
