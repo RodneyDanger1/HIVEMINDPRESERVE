@@ -85,7 +85,7 @@ $receipt = [pscustomobject]@{
     skipped = @($steps | Where-Object status -eq 'SKIPPED').Count
     failed = $failed.Count
     steps = $steps
-    verdict = if ($failed.Count -eq 0) { 'PASS' } else { 'FAIL' }
+    verdict = if ($failed.Count -gt 0) { 'FAIL' } elseif (@($steps | Where-Object status -eq 'SKIPPED').Count -gt 0) { 'PARTIAL' } else { 'PASS' }
     note = 'Offline battery; no provider call or key was used. SKIPPED is not PASS.'
 }
 New-Item -ItemType Directory -Force -Path (Join-Path $root 'docs\evidence\live') | Out-Null

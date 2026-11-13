@@ -58,11 +58,28 @@ fn run_tests_is_full_suite(plan: &ToolCallPlan) -> bool {
         return true;
     };
     !args.iter().filter_map(serde_json::Value::as_str).any(|arg| {
-        matches!(
-            arg,
-            "--no-run" | "--list" | "--test" | "--bench" | "--doc" | "--exclude"
-        ) || arg.starts_with("--test=")
+        !arg.starts_with('-')
+            || matches!(
+                arg,
+                "--no-run"
+                    | "--list"
+                    | "--test"
+                    | "--bench"
+                    | "--doc"
+                    | "--exclude"
+                    | "-p"
+                    | "--package"
+                    | "--lib"
+                    | "--tests"
+                    | "--bin"
+                    | "--example"
+                    | "--benches"
+                    | "--only"
+                    | "-k"
+            )
+            || arg.starts_with("--test=")
             || arg.starts_with("--bench=")
+            || arg.starts_with("--package=")
     })
 }
 
@@ -73,18 +90,39 @@ fn shell_command_mutates(plan: &ToolCallPlan) -> bool {
     let Some(program) = plan.args.get("program").and_then(serde_json::Value::as_str) else {
         return false;
     };
-    let first = plan
+    let args: Vec<String> = plan
         .args
         .get("args")
         .and_then(serde_json::Value::as_array)
-        .and_then(|args| args.first())
-        .and_then(serde_json::Value::as_str)
+        .map(|args| {
+            args.iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(str::to_ascii_lowercase)
+                .collect()
+        })
         .unwrap_or_default();
     let program = program.to_ascii_lowercase();
-    let first = first.to_ascii_lowercase();
+    let mut index = 0;
+    // Skip git global options so `git -C repo commit` is still recognized.
+    while index < args.len() {
+        let arg = &args[index];
+        if matches!(
+            arg.as_str(),
+            "-c" | "-C" | "--git-dir" | "--work-tree" | "--exec-path"
+        ) {
+            index = index.saturating_add(2);
+            continue;
+        }
+        if arg.starts_with('-') {
+            index = index.saturating_add(1);
+            continue;
+        }
+        break;
+    }
+    let subcommand = args.get(index).map(String::as_str).unwrap_or_default();
     if program.ends_with("git.exe") || program == "git" {
         return matches!(
-            first.as_str(),
+            subcommand,
             "commit"
                 | "checkout"
                 | "restore"
@@ -97,10 +135,18 @@ fn shell_command_mutates(plan: &ToolCallPlan) -> bool {
                 | "switch"
                 | "rm"
                 | "mv"
+                | "cherry-pick"
+                | "revert"
+                | "am"
+                | "pull"
+                | "submodule"
         );
     }
     if program.ends_with("cargo.exe") || program == "cargo" {
-        return matches!(first.as_str(), "fmt" | "fix" | "add" | "remove" | "update");
+        return matches!(
+            subcommand,
+            "fmt" | "fix" | "add" | "remove" | "update" | "new" | "init" | "clean"
+        );
     }
     false
 }
@@ -6496,6 +6542,12 @@ mod prompt_context_tests {
         let mut full_tests = verification_plan("run_tests");
         full_tests.args = serde_json::json!({ "args": [] });
         assert!(run_tests_is_full_suite(&full_tests));
+        let mut named_tests = verification_plan("run_tests");
+        named_tests.args = serde_json::json!({ "args": ["my_test"] });
+        assert!(!run_tests_is_full_suite(&named_tests));
+        let mut package_tests = verification_plan("run_tests");
+        package_tests.args = serde_json::json!({ "args": ["-p", "crate"] });
+        assert!(!run_tests_is_full_suite(&package_tests));
 
         let mut status = verification_plan("shell_exec");
         status.args = serde_json::json!({ "program": "git.exe", "args": ["status"] });
@@ -6506,6 +6558,18 @@ mod prompt_context_tests {
         let mut fmt = verification_plan("shell_exec");
         fmt.args = serde_json::json!({ "program": "cargo.exe", "args": ["fmt"] });
         assert!(shell_command_mutates(&fmt));
+        let mut git_dir_commit = verification_plan("shell_exec");
+        git_dir_commit.args = serde_json::json!({
+            "program": "git.exe",
+            "args": ["-C", "repo", "commit", "-m", "x"]
+        });
+        assert!(shell_command_mutates(&git_dir_commit));
+        let mut git_dir_status = verification_plan("shell_exec");
+        git_dir_status.args = serde_json::json!({
+            "program": "git.exe",
+            "args": ["-C", "repo", "status"]
+        });
+        assert!(!shell_command_mutates(&git_dir_status));
     }
 
     #[test]
