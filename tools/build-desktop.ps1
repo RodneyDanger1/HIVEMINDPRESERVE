@@ -75,7 +75,9 @@ foreach ($script in @(
     'hivemind-cli.mjs',
     'hivemind.cmd',
     'hivemind.ps1',
-    'hivemind-mcp.mjs'
+    'hivemind-mcp.mjs',
+    'install-desktop.ps1',
+    'uninstall-desktop.ps1'
 )) {
     $source = Join-Path $root "tools\$script"
     if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $outDir -Force }
