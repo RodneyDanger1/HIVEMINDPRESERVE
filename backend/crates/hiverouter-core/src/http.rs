@@ -682,6 +682,14 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/sessions", get(sessions_list).post(session_create))
         .route("/api/sessions/{session_id}", get(session_detail))
         .route(
+            "/api/sessions/{session_id}/archive",
+            post(session_archive),
+        )
+        .route(
+            "/api/sessions/{session_id}/unarchive",
+            post(session_unarchive),
+        )
+        .route(
             "/api/sessions/{session_id}/todos",
             get(session_todos).post(session_todo_add),
         )
@@ -997,10 +1005,40 @@ async fn skill_detail(
     }
 }
 
-async fn sessions_list(State(state): State<Arc<AppState>>) -> Response {
+async fn sessions_list(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<std::collections::BTreeMap<String, String>>,
+) -> Response {
+    let include_archived = params
+        .get("include_archived")
+        .is_some_and(|value| value == "true" || value == "1");
     let store = crate::store::RunStore::new(state.db.clone());
-    match store.sessions() {
+    match store.sessions_with_archived(include_archived) {
         Ok(sessions) => (StatusCode::OK, Json(serde_json::json!({ "sessions": sessions }))).into_response(),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn session_archive(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.set_session_archived(&session_id, true) {
+        Ok(session) => (StatusCode::OK, Json(session)).into_response(),
+        Err(Refusal::SessionNotFound) => refusal_response(StatusCode::NOT_FOUND, &Refusal::SessionNotFound),
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
+    }
+}
+
+async fn session_unarchive(
+    State(state): State<Arc<AppState>>,
+    Path(session_id): Path<String>,
+) -> Response {
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.set_session_archived(&session_id, false) {
+        Ok(session) => (StatusCode::OK, Json(session)).into_response(),
+        Err(Refusal::SessionNotFound) => refusal_response(StatusCode::NOT_FOUND, &Refusal::SessionNotFound),
         Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }

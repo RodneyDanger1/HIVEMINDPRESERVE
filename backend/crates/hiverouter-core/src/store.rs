@@ -428,6 +428,7 @@ impl RunStore {
             permission_policy,
             created_at: now.clone(),
             updated_at: now,
+            archived_at: None,
         };
         self.db
             .with_connection(|connection| {
@@ -469,8 +470,8 @@ impl RunStore {
         self.db
             .with_connection(|connection| {
                 let mut statement = connection.prepare(
-                    "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at
-                     FROM sessions ORDER BY created_at DESC, id DESC",
+                    "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at, archived_at
+                     FROM sessions WHERE archived_at IS NULL ORDER BY created_at DESC, id DESC",
                 )?;
                 let rows = statement.query_map([], |row| {
                     Ok(Session {
@@ -481,6 +482,7 @@ impl RunStore {
                         permission_policy: policy_at(row, 4)?,
                         created_at: timestamp_at(row, 5, "created_at")?,
                         updated_at: timestamp_at(row, 6, "updated_at")?,
+                        archived_at: optional_timestamp_at(row, 7, "archived_at")?,
                     })
                 })?;
                 let mut sessions = Vec::new();
@@ -499,7 +501,7 @@ impl RunStore {
             .with_connection(|connection| {
                 connection
                     .query_row(
-                        "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at
+                        "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at, archived_at
                          FROM sessions WHERE id = ?1",
                         params![id],
                         |row| {
@@ -511,6 +513,7 @@ impl RunStore {
                                 permission_policy: policy_at(row, 4)?,
                                 created_at: timestamp_at(row, 5, "created_at")?,
                                 updated_at: timestamp_at(row, 6, "updated_at")?,
+                                archived_at: optional_timestamp_at(row, 7, "archived_at")?,
                             })
                         },
                     )
@@ -518,6 +521,78 @@ impl RunStore {
             })
             .map_err(map)?;
         session.ok_or(Refusal::SessionNotFound)
+    }
+
+    /// Lists sessions, optionally including archived rows. Newest first.
+    pub fn sessions_with_archived(
+        &self,
+        include_archived: bool,
+    ) -> Result<Vec<Session>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT id, project_id, name, workspace_root, permission_policy, created_at, updated_at, archived_at
+                     FROM sessions WHERE (?1 = 1 OR archived_at IS NULL)
+                     ORDER BY created_at DESC, id DESC",
+                )?;
+                let rows = statement.query_map(params![i64::from(include_archived)], |row| {
+                    Ok(Session {
+                        id: row.get(0)?,
+                        project_id: row.get(1)?,
+                        name: row.get(2)?,
+                        workspace_root: row.get(3)?,
+                        permission_policy: policy_at(row, 4)?,
+                        created_at: timestamp_at(row, 5, "created_at")?,
+                        updated_at: timestamp_at(row, 6, "updated_at")?,
+                        archived_at: optional_timestamp_at(row, 7, "archived_at")?,
+                    })
+                })?;
+                let mut sessions = Vec::new();
+                for row in rows {
+                    sessions.push(row?);
+                }
+                Ok(sessions)
+            })
+            .map_err(map)
+    }
+
+    /// Archives or unarchives one session and journals the change atomically.
+    pub fn set_session_archived(
+        &self,
+        session_id: &str,
+        archived: bool,
+    ) -> Result<Session, Refusal> {
+        let now = Timestamp::now();
+        self.db
+            .with_connection(|connection| {
+                let transaction = connection.unchecked_transaction()?;
+                let changed = transaction.execute(
+                    "UPDATE sessions SET archived_at = ?2, updated_at = ?3 WHERE id = ?1",
+                    params![
+                        session_id,
+                        if archived { Some(now.as_str()) } else { None },
+                        now.as_str()
+                    ],
+                )?;
+                if changed == 0 {
+                    return Err(rusqlite::Error::QueryReturnedNoRows);
+                }
+                transaction.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    params![
+                        Uuid::now_v7().to_string(),
+                        session_id,
+                        if archived { "session_archived" } else { "session_unarchived" },
+                        serde_json::json!({ "archived": archived }).to_string(),
+                        now.as_str()
+                    ],
+                )?;
+                transaction.commit()?;
+                Ok(())
+            })
+            .map_err(map)?;
+        self.session(session_id)
     }
 
     /// Appends a session event (best-effort audit only; never changes run state).
@@ -3179,6 +3254,24 @@ fn timestamp_at(
     Timestamp::parse(&raw).map_err(|_| {
         rusqlite::Error::InvalidColumnType(index, field.to_owned(), rusqlite::types::Type::Text)
     })
+}
+
+fn optional_timestamp_at(
+    row: &rusqlite::Row<'_>,
+    index: usize,
+    field: &str,
+) -> rusqlite::Result<Option<Timestamp>> {
+    let raw: Option<String> = row.get(index)?;
+    raw.map(|value| {
+        Timestamp::parse(&value).map_err(|_| {
+            rusqlite::Error::InvalidColumnType(
+                index,
+                field.to_owned(),
+                rusqlite::types::Type::Text,
+            )
+        })
+    })
+    .transpose()
 }
 
 fn policy_at(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<PermissionPolicy> {

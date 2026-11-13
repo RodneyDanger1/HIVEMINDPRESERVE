@@ -266,6 +266,18 @@ const COMMANDS = {
       ARG('policy', 'string', true, 'Permission policy: classic|plan|standard|trusted.'),
     ],
   },
+  'session-archive': {
+    summary: 'Archive a named session so it is hidden from the default list.',
+    safety: 'mutating',
+    transport: 'http',
+    args: [ARG('session', 'uuid', true, 'Named session id.')],
+  },
+  'session-unarchive': {
+    summary: 'Restore an archived named session.',
+    safety: 'mutating',
+    transport: 'http',
+    args: [ARG('session', 'uuid', true, 'Named session id.')],
+  },
   'profile-import': {
     summary: 'Import an agent profile from a JSON file.',
     safety: 'mutating',
@@ -1726,6 +1738,20 @@ async function executeRead(command, options, baseUrl) {
       return httpAuthedJson(baseUrl, `/api/sessions/${encodeURIComponent(sessionId)}/policy`, {
         method: 'POST',
         body: { permission_policy: policy },
+      });
+    }
+    case 'session-archive': {
+      const sessionId = assertUuid(options.session, '--session');
+      return httpAuthedJson(baseUrl, `/api/sessions/${encodeURIComponent(sessionId)}/archive`, {
+        method: 'POST',
+        body: {},
+      });
+    }
+    case 'session-unarchive': {
+      const sessionId = assertUuid(options.session, '--session');
+      return httpAuthedJson(baseUrl, `/api/sessions/${encodeURIComponent(sessionId)}/unarchive`, {
+        method: 'POST',
+        body: {},
       });
     }
     case 'memory':

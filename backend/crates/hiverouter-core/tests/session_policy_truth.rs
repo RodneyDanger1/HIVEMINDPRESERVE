@@ -626,6 +626,61 @@ async fn lesson_candidate_requires_two_passing_evals_and_rolls_back() {
 }
 
 #[tokio::test]
+async fn archived_sessions_are_hidden_unless_requested_and_can_be_restored() {
+    let temp = tempfile::tempdir().expect("temp");
+    let server = TestServer::start(&temp).await;
+    let (status, created) = post(
+        &server,
+        "/api/sessions",
+        &serde_json::json!({
+            "name": "archivable",
+            "project_id": "p",
+            "workspace_root": temp.path().to_string_lossy(),
+            "permission_policy": "classic"
+        }),
+    )
+    .await;
+    assert_eq!(status, 201, "create: {created:?}");
+    let id = created["id"].as_str().expect("id");
+    let (status, archived) = post(
+        &server,
+        &format!("/api/sessions/{id}/archive"),
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(status, 200, "archive: {archived:?}");
+    assert!(archived["archived_at"].is_string());
+
+    let (_, active) = get(&server, "/api/sessions").await;
+    assert!(
+        active["sessions"]
+            .as_array()
+            .expect("sessions")
+            .iter()
+            .all(|session| session["id"] != id),
+        "archived session must be hidden by default"
+    );
+    let (_, all) = get(&server, "/api/sessions?include_archived=true").await;
+    assert!(
+        all["sessions"]
+            .as_array()
+            .expect("sessions")
+            .iter()
+            .any(|session| session["id"] == id),
+        "include_archived must return it"
+    );
+
+    let (status, restored) = post(
+        &server,
+        &format!("/api/sessions/{id}/unarchive"),
+        &serde_json::json!({}),
+    )
+    .await;
+    assert_eq!(status, 200, "unarchive: {restored:?}");
+    assert!(restored["archived_at"].is_null());
+}
+
+#[tokio::test]
 async fn eval_suite_runs_cases_and_reports_metrics() {
     let temp = tempfile::tempdir().expect("temp");
     let server = TestServer::start(&temp).await;
@@ -873,8 +928,8 @@ fn v24_database_migrates_to_v31_without_losing_legacy_rows() {
         .expect("seed v24 rows");
 
     let migrated = database.migrate().expect("migrate to head");
-    assert_eq!(migrated, 31, "the CAP head is v31 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval, 30 lessons, 31 eval suites)");
-    assert_eq!(database.schema_version().expect("version"), 31);
+    assert_eq!(migrated, 32, "the CAP head is v32 (25 sessions, 26 repo, 27 checkpoints, 28 jobs, 29 eval, 30 lessons, 31 eval suites, 32 session archive)");
+    assert_eq!(database.schema_version().expect("version"), 32);
     let applied = database.applied_migrations().expect("applied migrations");
     for (version, name) in [
         (25_i64, "sessions_policy_todos"),
@@ -884,6 +939,7 @@ fn v24_database_migrates_to_v31_without_losing_legacy_rows() {
         (29, "executed_eval"),
         (30, "lesson_candidates"),
         (31, "eval_suites"),
+        (32, "session_archive"),
     ] {
         assert!(
             applied.iter().any(|(applied_version, applied_name, _)| {
@@ -980,7 +1036,7 @@ fn v24_database_migrates_to_v31_without_losing_legacy_rows() {
         })
         .expect("legacy row after down");
     assert_eq!(legacy_rows, 1, "the down migration must not delete legacy runs");
-    assert_eq!(database.migrate().expect("re-up to head"), 31);
+    assert_eq!(database.migrate().expect("re-up to head"), 32);
     let after_roundtrip = store.get_run(run_id).expect("legacy run after roundtrip");
     assert_eq!(after_roundtrip.project_id, "legacy-project");
     assert_eq!(

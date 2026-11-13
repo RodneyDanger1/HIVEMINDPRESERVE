@@ -46,6 +46,8 @@ pub struct Session {
     pub created_at: Timestamp,
     /// Last update timestamp.
     pub updated_at: Timestamp,
+    /// Archive timestamp; `None` means the session is active.
+    pub archived_at: Option<Timestamp>,
 }
 
 /// One session todo row.
