@@ -136,7 +136,12 @@ export function ChatCore() {
     [tasks],
   );
   const [sessions, setSessions] = useState<
-    readonly { id: string; name: string; archived_at?: string | null }[]
+    readonly {
+      id: string;
+      name: string;
+      archived_at?: string | null;
+      permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+    }[]
   >([]);
   const [namedSession, setNamedSession] = useState('');
   const [permissionPolicy, setPermissionPolicy] = useState<
@@ -146,6 +151,9 @@ export function ChatCore() {
   const [includeArchived, setIncludeArchived] = useState(false);
   const [sessionReload, setSessionReload] = useState(0);
   const [sessionBusy, setSessionBusy] = useState(false);
+  const [newSessionName, setNewSessionName] = useState('');
+  const workspaceRoot = useUiStore((state) => state.fileTree.root);
+  const projectId = useUiStore((state) => state.project.id);
   useEffect(() => {
     if (connection !== 'open') return;
     let cancelled = false;
@@ -162,7 +170,12 @@ export function ChatCore() {
         );
         if (!response.ok) throw new Error('sessions unavailable');
         const body = (await response.json()) as {
-          sessions?: readonly { id: string; name: string; archived_at?: string | null }[];
+          sessions?: readonly {
+            id: string;
+            name: string;
+            archived_at?: string | null;
+            permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+          }[];
         };
         if (!cancelled) {
           setSessions(body.sessions ?? []);
@@ -176,7 +189,57 @@ export function ChatCore() {
       cancelled = true;
     };
   }, [connection, includeArchived, sessionReload]);
+  useEffect(() => {
+    if (namedSession && !sessions.some((session) => session.id === namedSession)) {
+      setNamedSession('');
+      setActiveSessionId(null);
+    }
+    // With no named session there is no inherited policy to show; reset the
+    // per-run override to the documented classic default.
+    if (!namedSession) setPermissionPolicy('classic');
+  }, [sessions, namedSession, setActiveSessionId]);
   const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
+  const createSession = async (): Promise<void> => {
+    const name = newSessionName.trim();
+    if (!name || !workspaceRoot || sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      const handshake = await fetch('/api/session', { headers: { accept: 'application/json' } });
+      if (!handshake.ok) throw new Error('session handshake failed');
+      const token = (await handshake.json()) as { token?: string };
+      const headers: Record<string, string> = {
+        accept: 'application/json',
+        'content-type': 'application/json',
+      };
+      if (token.token) headers.Authorization = `Bearer ${token.token}`;
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name,
+          project_id: projectId,
+          workspace_root: workspaceRoot,
+          permission_policy: permissionPolicy,
+        }),
+      });
+      if (!response.ok) throw new Error(`create returned ${response.status}`);
+      const created = (await response.json()) as {
+        id: string;
+        permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+      };
+      setNewSessionName('');
+      setSessionReload((current) => current + 1);
+      setNamedSession(created.id);
+      setActiveSessionId(created.id);
+      if (created.permission_policy) setPermissionPolicy(created.permission_policy);
+      setSessionLoadError(false);
+    } catch {
+      setSessionLoadError(true);
+    } finally {
+      setSessionBusy(false);
+    }
+  };
+
   const toggleArchive = async (): Promise<void> => {
     if (!selectedSession || sessionBusy) return;
     setSessionBusy(true);
@@ -197,6 +260,7 @@ export function ChatCore() {
       if (!selectedSession.archived_at) {
         setNamedSession('');
         setActiveSessionId(null);
+        setPermissionPolicy('classic');
       }
     } catch {
       setSessionLoadError(true);
@@ -332,7 +396,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-200px)]"
+        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-200px)] max-[640px]:overflow-y-auto"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -490,8 +554,11 @@ export function ChatCore() {
               value={namedSession}
               disabled={connection !== 'open' || replaying}
               onChange={(event) => {
-                setNamedSession(event.target.value);
-                setActiveSessionId(event.target.value || null);
+                const nextId = event.target.value;
+                setNamedSession(nextId);
+                setActiveSessionId(nextId || null);
+                const chosen = sessions.find((session) => session.id === nextId);
+                if (chosen?.permission_policy) setPermissionPolicy(chosen.permission_policy);
               }}
             >
               <option value="">Default session</option>
@@ -547,6 +614,37 @@ export function ChatCore() {
             onClick={() => void toggleArchive()}
           >
             {selectedSession?.archived_at ? 'Restore session' : 'Archive session'}
+          </button>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1">
+          <label className="sr-only" htmlFor="new-session-name">
+            New session name
+          </label>
+          <input
+            id="new-session-name"
+            className="type-mono-code min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 py-0.5 text-[10px] text-ink-900"
+            placeholder="New session name"
+            value={newSessionName}
+            disabled={sessionBusy || connection !== 'open'}
+            onChange={(event) => setNewSessionName(event.target.value)}
+          />
+          <button
+            type="button"
+            className="type-mono-meta rounded-[6px] border border-honey-500 bg-honey-300 px-1.5 py-0.5 text-[10px] font-semibold text-ink-900 disabled:opacity-50"
+            disabled={
+              sessionBusy ||
+              connection !== 'open' ||
+              !workspaceRoot ||
+              newSessionName.trim().length === 0
+            }
+            title={
+              workspaceRoot
+                ? 'Create a named session in the current workspace'
+                : 'Workspace is not loaded yet'
+            }
+            onClick={() => void createSession()}
+          >
+            Create
           </button>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1">

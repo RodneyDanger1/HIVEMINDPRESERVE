@@ -1690,6 +1690,10 @@ impl RunEngine {
                 if session.project_id != project_id {
                     return Err(Refusal::SessionNotFound);
                 }
+                if session.archived_at.is_some() {
+                    // Archive is a real admission state, not just a list filter.
+                    return Err(Refusal::DecisionRequired);
+                }
                 (Some(session.id), requested_policy.unwrap_or(session.permission_policy))
             }
             Some(_) => return Err(Refusal::SessionNotFound),

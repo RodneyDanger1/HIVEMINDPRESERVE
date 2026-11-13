@@ -1390,6 +1390,21 @@ async fn job_start(
     else {
         return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
     };
+    // HTTP jobs are operator-initiated but still bound to a real, active
+    // session; an arbitrary string must not create an unattributable job.
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.session(session_id) {
+        Ok(session) if session.archived_at.is_some() => {
+            return refusal_response(StatusCode::CONFLICT, &Refusal::DecisionRequired);
+        }
+        Ok(_) => {}
+        Err(Refusal::SessionNotFound) => {
+            return refusal_response(StatusCode::NOT_FOUND, &Refusal::SessionNotFound);
+        }
+        Err(refusal) => {
+            return refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal);
+        }
+    }
     let mut request = JobRequest::new(session_id, program, args);
     if let Some(cwd) = body.get("cwd").and_then(serde_json::Value::as_str) {
         request = request.with_cwd(cwd);
