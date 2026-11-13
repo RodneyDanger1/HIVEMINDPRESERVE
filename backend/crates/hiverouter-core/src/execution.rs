@@ -51,6 +51,60 @@ fn default_now_unix_secs() -> u64 {
 /// Adds the task's model-visible scoped facts to a prompt, bounded by the
 /// context renderer. The prompt is the only path that makes rewiring visible to
 /// the model; storing facts without this step is a no-op.
+/// A full-suite test run may verify a mutation. Compile-only, list-only, and
+/// filtered runs are intentionally excluded from verification credit.
+fn run_tests_is_full_suite(plan: &ToolCallPlan) -> bool {
+    let Some(args) = plan.args.get("args").and_then(serde_json::Value::as_array) else {
+        return true;
+    };
+    !args.iter().filter_map(serde_json::Value::as_str).any(|arg| {
+        matches!(
+            arg,
+            "--no-run" | "--list" | "--test" | "--bench" | "--doc" | "--exclude"
+        ) || arg.starts_with("--test=")
+            || arg.starts_with("--bench=")
+    })
+}
+
+/// Shell commands can mutate the workspace despite being Execute-class. Treat
+/// known mutating git/cargo invocations as mutations; read-only queries do not
+/// demand a test run.
+fn shell_command_mutates(plan: &ToolCallPlan) -> bool {
+    let Some(program) = plan.args.get("program").and_then(serde_json::Value::as_str) else {
+        return false;
+    };
+    let first = plan
+        .args
+        .get("args")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|args| args.first())
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or_default();
+    let program = program.to_ascii_lowercase();
+    let first = first.to_ascii_lowercase();
+    if program.ends_with("git.exe") || program == "git" {
+        return matches!(
+            first.as_str(),
+            "commit"
+                | "checkout"
+                | "restore"
+                | "clean"
+                | "apply"
+                | "merge"
+                | "rebase"
+                | "reset"
+                | "stash"
+                | "switch"
+                | "rm"
+                | "mv"
+        );
+    }
+    if program.ends_with("cargo.exe") || program == "cargo" {
+        return matches!(first.as_str(), "fmt" | "fix" | "add" | "remove" | "update");
+    }
+    false
+}
+
 /// Parses the bounded run_tests JSON prefix; stdout may be truncated later.
 fn run_tests_succeeded(text: &str) -> bool {
     let head = text.split(",\"stdout\"").next().unwrap_or(text);
@@ -83,7 +137,13 @@ fn terminal_verified(
                 mutated = true;
                 verified = false;
             }
-            "run_tests" if mutated => verified = run_tests_succeeded(&result.text),
+            "shell_exec" if shell_command_mutates(plan) => {
+                mutated = true;
+                verified = false;
+            }
+            "run_tests" if mutated => {
+                verified = run_tests_is_full_suite(plan) && run_tests_succeeded(&result.text);
+            }
             _ => {}
         }
     }
@@ -6426,6 +6486,26 @@ mod prompt_context_tests {
         assert!(run_tests_succeeded(&truncated.text));
         assert!(!run_tests_succeeded("{\"exit_code\":1,\"success\":false}"));
         assert!(!run_tests_succeeded("not json"));
+
+        let mut partial_tests = verification_plan("run_tests");
+        partial_tests.args = serde_json::json!({ "args": ["--no-run"] });
+        assert!(!run_tests_is_full_suite(&partial_tests));
+        let mut filtered_tests = verification_plan("run_tests");
+        filtered_tests.args = serde_json::json!({ "args": ["--test", "one"] });
+        assert!(!run_tests_is_full_suite(&filtered_tests));
+        let mut full_tests = verification_plan("run_tests");
+        full_tests.args = serde_json::json!({ "args": [] });
+        assert!(run_tests_is_full_suite(&full_tests));
+
+        let mut status = verification_plan("shell_exec");
+        status.args = serde_json::json!({ "program": "git.exe", "args": ["status"] });
+        assert!(!shell_command_mutates(&status));
+        let mut commit = verification_plan("shell_exec");
+        commit.args = serde_json::json!({ "program": "git.exe", "args": ["commit", "-m", "x"] });
+        assert!(shell_command_mutates(&commit));
+        let mut fmt = verification_plan("shell_exec");
+        fmt.args = serde_json::json!({ "program": "cargo.exe", "args": ["fmt"] });
+        assert!(shell_command_mutates(&fmt));
     }
 
     #[test]
