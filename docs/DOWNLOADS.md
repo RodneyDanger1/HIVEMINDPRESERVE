@@ -1,13 +1,13 @@
-# HiveMind downloads and first-run truth (2026-11-10)
+# HiveMind downloads and first-run truth (2026-11-13)
 
 There is **no public 1.2 download, MSI, code-signed installer, or auto-updater**. The only current package is the local `dist/HiveMind.zip` built from the working tree.
 
 ## Current local package
 
 - Path: `dist/HiveMind.zip`
-- SHA-256: `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`
-- Built from: `806251b`, `dirty:false`
-- Version: `1.2.0-dev`; schema 24.
+- SHA-256: `9C44A0C09B2BF8EC9105D284F7179983C5EEDBB7A0076A3D4580B2DEB9002E1F`
+- Built from: `941ca2b`, `dirty:false`
+- Version: `1.2.0-dev`; schema 32; includes CLI and MCP stdio.
 - Install receipt: `docs/evidence/live/install-1.2.0-dev.json`.
 
 ## Build and install (per-user, Windows x64)
