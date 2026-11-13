@@ -1008,8 +1008,8 @@ impl ToolsBridge {
 
     /// Wire projection for a fresh request whose arguments are still held in
     /// memory: includes a bounded, redacted preview. Replay projections use
-    /// [`Self::approval_request_event`] and omit it because the persisted row
-    /// stores only the digest.
+    /// [`Self::approval_request_event`], which now carries the persisted
+    /// bounded preview so reloaded approvals are not blind.
     #[must_use]
     pub fn approval_request_event_with_args(
         request: &ApprovalRequest,
@@ -1037,10 +1037,9 @@ impl ToolsBridge {
             task_id: Some(request.task_id),
             tool_call_id: Some(request.tool_call_id.clone()),
             args_sha256: Some(request.args_sha256.clone()),
-            // The persisted approval row carries only the digest; the preview
-            // must not be reconstructed from a lossy source. Producers that
-            // still hold the live args can attach it at publish time.
-            args_preview: None,
+            // The persisted preview is bounded and already redacted; replay and
+            // CLI review use exactly the same bytes the live approval showed.
+            args_preview: request.args_preview.clone(),
             expires_at: Some(request.expires_at.clone()),
         }
     }
@@ -1613,6 +1612,10 @@ mod tests {
             assert_eq!(event.run_id, Some(run));
             assert_eq!(event.task_id, Some(task));
             assert!(event.args_sha256.as_deref().map(str::len) == Some(64));
+            assert!(
+                event.args_preview.as_ref().is_some_and(|preview| !preview.is_empty()),
+                "replay must carry the persisted bounded preview"
+            );
         }
         assert!(ledger_rows(&temp).is_empty(), "projection must not ledger");
     }

@@ -102,6 +102,8 @@ pub struct ApprovalRequest {
     pub permission_class: PermissionClass,
     /// SHA-256 of the exact argument bytes (the binding).
     pub args_sha256: String,
+    /// Bounded, redacted argument preview retained for replay/CLI review.
+    pub args_preview: Option<String>,
     /// Commit time.
     pub created_at: Timestamp,
     /// Expiry time (created_at + [`APPROVAL_TTL_SECS`]).
@@ -160,6 +162,7 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
             tool_call_id    TEXT NOT NULL,
             tool_name       TEXT NOT NULL,
             args_sha256     TEXT NOT NULL,
+            args_preview    TEXT,
             permission_class TEXT NOT NULL,
             created_at      TEXT NOT NULL,
             expires_at      TEXT NOT NULL,
@@ -174,6 +177,15 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
         CREATE INDEX IF NOT EXISTS approvals_session
             ON approvals (run_id, tool_name, args_sha256, decision);",
     )?;
+    // Additive upgrade for databases created before replay previews existed.
+    let has_preview: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM pragma_table_info('approvals') WHERE name = 'args_preview'",
+        [],
+        |row| row.get(0),
+    )?;
+    if has_preview == 0 {
+        conn.execute("ALTER TABLE approvals ADD COLUMN args_preview TEXT", [])?;
+    }
     let duplicate_groups: i64 = conn.query_row(
         "SELECT COUNT(*) FROM (
              SELECT 1 FROM approvals WHERE decision IS NULL
@@ -216,9 +228,9 @@ pub fn migrate(conn: &Connection) -> Result<(), ToolError> {
 pub fn insert_request(conn: &Connection, request: &ApprovalRequest) -> Result<(), ToolError> {
     let result = conn.execute(
         "INSERT INTO approvals (
-            approval_id, run_id, task_id, tool_call_id, tool_name, args_sha256,
+            approval_id, run_id, task_id, tool_call_id, tool_name, args_sha256, args_preview,
             permission_class, created_at, expires_at, nonce, decision, decided_at
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, NULL, NULL)",
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, NULL, NULL)",
         params![
             request.approval_id.to_string(),
             request.run_id.to_string(),
@@ -226,6 +238,7 @@ pub fn insert_request(conn: &Connection, request: &ApprovalRequest) -> Result<()
             request.tool_call_id,
             request.tool.id(),
             request.args_sha256,
+            request.args_preview,
             request.permission_class.label(),
             request.created_at.as_str(),
             request.expires_at.as_str(),
@@ -264,7 +277,7 @@ pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<Appro
     let row = conn
         .query_row(
             "SELECT approval_id, run_id, task_id, tool_call_id, tool_name, args_sha256,
-                    permission_class, created_at, expires_at, nonce
+                    args_preview, permission_class, created_at, expires_at, nonce
              FROM approvals WHERE approval_id = ?1",
             params![approval_id],
             |row| {
@@ -275,10 +288,11 @@ pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<Appro
                     row.get::<_, String>(3)?,
                     row.get::<_, String>(4)?,
                     row.get::<_, String>(5)?,
-                    row.get::<_, String>(6)?,
+                    row.get::<_, Option<String>>(6)?,
                     row.get::<_, String>(7)?,
                     row.get::<_, String>(8)?,
                     row.get::<_, String>(9)?,
+                    row.get::<_, String>(10)?,
                 ))
             },
         )
@@ -291,6 +305,7 @@ pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<Appro
         tool_call_id,
         tool_name,
         args_sha256,
+        args_preview,
         permission_class,
         created_at,
         expires_at,
@@ -335,6 +350,7 @@ pub fn load_request(conn: &Connection, approval_id: &str) -> Result<Option<Appro
         tool,
         permission_class,
         args_sha256,
+        args_preview,
         created_at: Timestamp::parse(&created_at).map_err(|error| {
             ToolError::new(
                 Refusal::InternalError,
@@ -878,6 +894,7 @@ impl ApprovalGate {
             tool,
             permission_class,
             args_sha256: hash_args(args),
+            args_preview: Some(hiverouter_contract::redact_args_preview(args)),
             created_at: Timestamp::from_unix_secs(now_unix_secs),
             expires_at: Timestamp::from_unix_secs(now_unix_secs.saturating_add(self.ttl_secs)),
             nonce: Uuid::now_v7().to_string(),
@@ -1475,6 +1492,30 @@ mod tests {
             .code(),
             "E_APPROVAL_TIMEOUT"
         );
+    }
+
+    #[test]
+    fn replay_carries_the_persisted_redacted_preview() {
+        let conn = memory_db();
+        let gate = ApprovalGate::default();
+        let request = gate
+            .request(
+                &conn,
+                RunId::new(),
+                TaskId::new(),
+                "call-preview",
+                ToolId::FileWrite,
+                PermissionClass::Mutate,
+                &serde_json::json!({"path": "notes.txt", "token": "sk-live-secret"}),
+                now(),
+            )
+            .expect("request");
+        let loaded = load_request(&conn, &request.approval_id.to_string())
+            .expect("load")
+            .expect("row");
+        let preview = loaded.args_preview.expect("preview persisted");
+        assert!(preview.contains("notes.txt"));
+        assert!(!preview.contains("sk-live-secret"));
     }
 
     #[test]

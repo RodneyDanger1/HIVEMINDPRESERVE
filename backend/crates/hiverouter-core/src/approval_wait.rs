@@ -1,4 +1,4 @@
-﻿//! In-process approval waiters.
+//! In-process approval waiters.
 //!
 //! One run can have at most one live approval wait per task turn. The engine
 //! arms a waiter before publishing `APPROVAL_REQUEST`; the WebSocket resolve arm
@@ -113,6 +113,7 @@ mod tests {
                 tool: ToolId::FileWrite,
                 permission_class: PermissionClass::Mutate,
                 args_sha256: "a".repeat(64),
+                args_preview: None,
                 created_at: Timestamp::now(),
                 expires_at: Timestamp::now(),
                 nonce: "nonce-1".to_owned(),
