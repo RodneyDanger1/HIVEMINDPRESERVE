@@ -1,0 +1,316 @@
+{
+  "console": [],
+  "pageerrors": [],
+  "failedRequests": [],
+  "steps": [
+    {
+      "name": "initial-1440",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/01-1440-initial.png",
+      "chat": {
+        "x": 596,
+        "y": 588,
+        "w": 560,
+        "h": 300,
+        "bottom": 888
+      },
+      "sep": {
+        "x": 848,
+        "y": 600,
+        "w": 56,
+        "h": 6,
+        "bottom": 606
+      },
+      "storedHeight": null,
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "name": "drag-leave-handle",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/02-1440-after-drag-usual.png",
+      "chat": {
+        "x": 596,
+        "y": 588,
+        "w": 560,
+        "h": 300,
+        "bottom": 888
+      },
+      "storedHeight": null
+    },
+    {
+      "name": "hover-after-drag-stale",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/03-1440-hover-after-drag.png",
+      "chat": {
+        "x": 596,
+        "y": 588,
+        "w": 560,
+        "h": 300,
+        "bottom": 888
+      },
+      "storedHeight": null
+    },
+    {
+      "name": "handle-metrics",
+      "sep": {
+        "x": 848,
+        "y": 600,
+        "w": 56,
+        "h": 6,
+        "bottom": 606
+      },
+      "note": "handlers bound only to separator; no setPointerCapture"
+    },
+    {
+      "name": "tab-hit-targets",
+      "controls": {
+        "x": 608,
+        "y": 852,
+        "w": 71.4,
+        "h": 24,
+        "bottom": 876
+      },
+      "state": {
+        "x": 683.4,
+        "y": 852,
+        "w": 126.9,
+        "h": 24,
+        "bottom": 876
+      },
+      "hide": {
+        "x": 1100.3,
+        "y": 852,
+        "w": 43.7,
+        "h": 24,
+        "bottom": 876
+      }
+    },
+    {
+      "name": "controls-open",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/04-1440-controls.png",
+      "before": {
+        "x": 596,
+        "y": 588,
+        "w": 560,
+        "h": 300,
+        "bottom": 888
+      },
+      "after": {
+        "x": 596,
+        "y": 378,
+        "w": 560,
+        "h": 510,
+        "bottom": 888
+      },
+      "ariaExpanded": "true",
+      "tray": {
+        "clientH": 149,
+        "scrollH": 149,
+        "overflow": 0
+      },
+      "viewportH": 900
+    },
+    {
+      "name": "state-open",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/05-1440-state.png",
+      "chat": {
+        "x": 596,
+        "y": 378,
+        "w": 560,
+        "h": 510,
+        "bottom": 888
+      },
+      "ariaExpanded": "true"
+    },
+    {
+      "name": "hidden",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/06-1440-hidden.png",
+      "chatCount": 0,
+      "showBtn": {
+        "x": 817.5,
+        "y": 68,
+        "w": 117.1,
+        "h": 34,
+        "bottom": 102
+      }
+    },
+    {
+      "name": "shown-again",
+      "shot": "C:/Users/Riley/Desktop/hiverouter-v1/ledgers/visual-dock-8099/shots/07-1440-shown-again.png",
+      "chat": {
+        "x": 596,
+        "y": 378,
+        "w": 560,
+        "h": 510,
+        "bottom": 888
+      },
+      "activeEl": "<body>\n    <div id=\"root\"><div class=\"flex h-full min-h-0 flex-col bg-canvas text-ink-900\"><a class=\"skip-link\" href=\"#hive-canvas\">Skip to canvas</a><header cl"
+    },
+    {
+      "name": "initial-375",
+      "shot": "08-375-initial.png",
+      "chat": {
+        "x": 22.5,
+        "y": 181.5,
+        "w": 329.9,
+        "h": 300,
+        "bottom": 481.5
+      }
+    },
+    {
+      "name": "controls-375",
+      "shot": "09-375-controls.png",
+      "chat": {
+        "x": 22.5,
+        "y": 76.5,
+        "w": 329.9,
+        "h": 510,
+        "bottom": 586.5
+      },
+      "hide": {
+        "x": 296.8,
+        "y": 356.5,
+        "w": 43.7,
+        "h": 24,
+        "bottom": 380.5
+      },
+      "controls": {
+        "x": 34.5,
+        "y": 356.5,
+        "w": 71.4,
+        "h": 24,
+        "bottom": 380.5
+      }
+    },
+    {
+      "name": "drag-375",
+      "shot": "10-375-after-drag.png",
+      "chat": {
+        "x": 22.5,
+        "y": 76.5,
+        "w": 329.9,
+        "h": 510,
+        "bottom": 586.5
+      },
+      "storedHeight": null
+    }
+  ],
+  "overlap": {
+    "chatRect": [
+      596,
+      378,
+      560,
+      510
+    ],
+    "overlapped": [
+      {
+        "label": "Hide the chat core (the hive stays)",
+        "r": [
+          1100,
+          388,
+          44,
+          44
+        ]
+      },
+      {
+        "label": "Map this repository",
+        "r": [
+          616,
+          504,
+          520,
+          30
+        ]
+      },
+      {
+        "label": "Review an API change",
+        "r": [
+          616,
+          540,
+          520,
+          30
+        ]
+      },
+      {
+        "label": "Explain a failure",
+        "r": [
+          616,
+          576,
+          520,
+          30
+        ]
+      },
+      {
+        "label": "○AUTO-APPROVE OFF",
+        "r": [
+          617,
+          644,
+          142,
+          26
+        ]
+      },
+      {
+        "label": "Archive session",
+        "r": [
+          732,
+          674,
+          118,
+          22
+        ]
+      },
+      {
+        "label": "Create",
+        "r": [
+          1079,
+          703,
+          56,
+          22
+        ]
+      },
+      {
+        "label": "Spawn remote agent",
+        "r": [
+          723,
+          732,
+          173,
+          22
+        ]
+      },
+      {
+        "label": "Spawn daemon",
+        "r": [
+          900,
+          732,
+          126,
+          22
+        ]
+      },
+      {
+        "label": "Attach a text file to the prompt",
+        "r": [
+          1019,
+          612,
+          32,
+          32
+        ]
+      },
+      {
+        "label": "Stop the active run",
+        "r": [
+          1059,
+          612,
+          32,
+          32
+        ]
+      },
+      {
+        "label": "Submit prompt",
+        "r": [
+          1099,
+          612,
+          32,
+          32
+        ]
+      }
+    ]
+  }
+}

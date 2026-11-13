@@ -61,7 +61,7 @@ import {
   type ApprovalResolveState,
 } from './approval';
 
-export type NavSection = 'workspace' | 'agents' | 'data' | 'models' | 'routing' | 'remote' | 'settings';
+export type NavSection = 'workspace' | 'agents' | 'data' | 'models' | 'routing' | 'remote' | 'settings' | 'help';
 export type TabId = 'workspace' | 'swarm' | 'routing' | 'history';
 export type ToastRefusal = { readonly id: string; readonly refusal: Refusal; readonly at: number };
 export type PendingCommand = { readonly name: ServerCommandName; readonly startedAt: number };

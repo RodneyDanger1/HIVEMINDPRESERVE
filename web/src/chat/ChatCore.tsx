@@ -4,16 +4,48 @@
  * Submits only SUBMIT_PROMPT; replies stream from REPLY_DELTA events; every
  * refusal is named by ToastRegion, never silently dropped.
  */
-import { memo, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { useUiStore, useUiStoreApi } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { isTerminal } from '../state/agentState';
 import { useAppReducedMotion } from '../state/useAppReducedMotion';
 import { validatePromptText } from '../api/contract';
 import { clientRefusal } from '../api/refusals';
+import { InfoTip } from '../panels/InfoTip';
+import { ControlBar } from '../panels/ControlBar';
+import { DOT_STATES, visualFor } from '../state/agentState';
+import { StateDot } from '../flow/nodes';
+import { APP_VERSION } from '../version';
 import { CONTROL_INTENTS } from '../state/chatIntents';
 import type { ChatMessage, ToastRefusal } from '../state/store';
 import { MessageBody, TypingDots, WorkingBee } from './ChatMotion';
+
+const CHAT_HEIGHT_KEY = 'hivemind.chat-height';
+const MIN_CHAT_HEIGHT = 300;
+const DOCK_TRAY_HEIGHT = 210;
+
+function readChatHeight(): number {
+  try {
+    const stored = localStorage.getItem(CHAT_HEIGHT_KEY);
+    if (stored === null) return 560;
+    const raw = Number(stored);
+    // The old 390/480 defaults left too little transcript once a run refusal
+    // or the session panel was visible; migrate those exact defaults forward
+    // without overriding a deliberate larger resize.
+    if (raw === 390 || raw === 480) return 560;
+    return Number.isFinite(raw) ? Math.min(760, Math.max(MIN_CHAT_HEIGHT, raw)) : 560;
+  } catch {
+    return 560;
+  }
+}
 
 const SESSION_STORAGE_KEY = 'hivemind.session-id';
 const POLICY_STORAGE_KEY = 'hivemind.session-policy';
@@ -142,7 +174,17 @@ export function ChatCore() {
   const cancelRun = useUiStore((state) => state.cancelRun);
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const runErrorCode = useUiStore((state) => state.run?.errorCode ?? null);
-  const keyPresent = useUiStore((state) => state.settings.keyPresent);
+  const runId = useUiStore((state) => state.run?.id ?? null);
+  const [dismissedErrorRunId, setDismissedErrorRunId] = useState<string | null>(null);
+  const settings = useUiStore((state) => state.settings);
+  const probeSettings = useUiStore((state) => state.probeSettings);
+  const keyPresent = settings.keyPresent;
+  const approvals = useUiStore((state) => state.approvals);
+  const resolvingApprovals = useUiStore((state) => state.resolvingApprovals);
+  const resolveApproval = useUiStore((state) => state.resolveApproval);
+  const pendingApproval = approvals[0] ?? null;
+  const approvalBusy =
+    pendingApproval === null || resolvingApprovals.includes(pendingApproval.approvalId);
   const toolActivity = useUiStore((state) => state.toolActivity);
   const tasks = useUiStore((state) => state.tasks);
   const activeAgents = useMemo(
@@ -172,6 +214,35 @@ export function ChatCore() {
   const [sessionReload, setSessionReload] = useState(0);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [newSessionName, setNewSessionName] = useState('');
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [chatHeight, setChatHeight] = useState(readChatHeight);
+  const [dockTab, setDockTab] = useState<'controls' | 'state' | null>(null);
+  const [resizing, setResizing] = useState(false);
+  const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  const startResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    resizeRef.current = { startY: event.clientY, startHeight: chatHeight };
+    setResizing(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveResize = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (resizeRef.current === null) return;
+    const next = Math.min(
+      760,
+      Math.max(MIN_CHAT_HEIGHT, resizeRef.current.startHeight + (resizeRef.current.startY - event.clientY)),
+    );
+    setChatHeight(next);
+  };
+  const endResize = (): void => {
+    resizeRef.current = null;
+    setResizing(false);
+    try {
+      localStorage.setItem(CHAT_HEIGHT_KEY, String(chatHeight));
+    } catch {
+      // Selection still works for this session.
+    }
+  };
   const fileTreeRoot = useUiStore((state) => state.fileTree.root);
   const projectId = useUiStore((state) => state.project.id);
   const [configuredWorkspace, setConfiguredWorkspace] = useState<string | null>(null);
@@ -409,6 +480,12 @@ export function ChatCore() {
   );
 
   useEffect(() => {
+    // The State tab is only useful when it shows the live provider/key state;
+    // without this the values stay "—" until the operator opens Settings.
+    if (connection === 'open') void probeSettings();
+  }, [connection, probeSettings]);
+
+  useEffect(() => {
     const node = listRef.current;
     if (node) {
       // An empty thread must show its starters from the top. Scrolling an
@@ -419,17 +496,9 @@ export function ChatCore() {
   }, [messages]);
 
   if (!chat.visible) {
-    return (
-      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center">
-        <button
-          type="button"
-          className="pointer-events-auto surface-panel type-label rounded-[var(--radius-pill)] px-4 py-2 text-ink-800"
-          onClick={() => setChatVisible(true)}
-        >
-          {STRINGS.chat.reopen}
-        </button>
-      </div>
-    );
+    // The header owns the one canonical Show/Hide control; a second floating
+    // reopen pill only duplicated it and collided with the HUD.
+    return null;
   }
 
   /**
@@ -496,15 +565,54 @@ export function ChatCore() {
     void submit();
   };
 
+  const attachFile = async (file: File | null): Promise<void> => {
+    if (file === null) return;
+    if (file.size > 60_000) {
+      setAttachError('Text attachments are limited to 60 KB.');
+      return;
+    }
+    try {
+      const text = await file.text();
+      setDraft((current) =>
+        `${current}${current.trim().length > 0 ? '\n\n' : ''}[Attached text file: ${file.name}]\n\`\`\`\n${text}\n\`\`\``,
+      );
+      setAttachError(null);
+      composerRef.current?.focus();
+    } catch {
+      setAttachError('That file could not be read as text.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 left-[72px] z-40 flex items-end justify-center max-[640px]:bottom-14 max-[640px]:left-0">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-84px)] max-[640px]:translate-y-0 max-[640px]:overflow-y-auto"
-        style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
+        className="chat-core pointer-events-auto surface-panel z-40 flex max-h-[calc(100vh-52px)] w-full flex-col rounded-t-[18px] border-x-0 border-b-0 p-3 max-[640px]:!h-auto max-[640px]:max-h-[calc(100dvh-110px)] max-[640px]:overflow-y-auto"
+        style={{
+          height: chatHeight + (dockTab === null ? 0 : DOCK_TRAY_HEIGHT),
+          boxShadow: 'var(--shadow-e2)',
+          border: 'none',
+          transition:
+            reduced || resizing
+              ? 'none'
+              : 'height 180ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms ease',
+        }}
       >
+        <div
+          role="separator"
+          aria-label="Resize chat panel"
+          aria-orientation="horizontal"
+          title="Drag to resize"
+          className="mx-auto mb-1 h-3 w-16 shrink-0 cursor-row-resize touch-none rounded-full bg-white/35 hover:bg-white/60"
+          onPointerDown={startResize}
+          onPointerMove={moveResize}
+          onPointerUp={endResize}
+          onPointerCancel={endResize}
+        />
         <header
-          className="-mx-3 -mt-3 mb-2 flex h-11 items-center justify-between gap-2 rounded-t-[18px] px-3 text-white"
+          className="-mx-3 mb-2 flex h-11 items-center justify-between gap-2 rounded-t-[18px] px-3 text-white"
           style={{ background: 'linear-gradient(135deg, var(--color-ink-800), var(--color-honey-800))' }}
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -547,15 +655,35 @@ export function ChatCore() {
           </div>
         </header>
 
-        {runRefusal === null ? null : (
+        {runRefusal === null || runId === dismissedErrorRunId ? null : (
           <div
             role="alert"
             className="mt-2 rounded-[var(--radius-sm)] border border-signal bg-ink-900 px-2 py-1.5 text-canvas"
           >
-            <div className="type-label text-honey-200">Run refused</div>
-            <div className="type-mono-meta mt-0.5 text-honey-200">{runRefusal.code}</div>
-            <div className="mt-1 text-[12.5px] leading-[17px]">{runRefusal.message}</div>
-            <div className="type-mono-meta mt-1 text-honey-100/85">how_to_fix: {runRefusal.how_to_fix}</div>
+            <div className="flex items-center gap-2">
+              <span className="type-label text-honey-200">Run refused</span>
+              <span className="type-mono-meta text-honey-200">{runRefusal.code}</span>
+              <button
+                type="button"
+                className="type-mono-meta ml-auto min-h-7 min-w-7 rounded-[4px] border border-white/20 text-honey-100 hover:bg-white/10"
+                aria-label="Dismiss run refusal"
+                onClick={() => setDismissedErrorRunId(runId)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-1 line-clamp-2 text-[12px] leading-[16px]">{runRefusal.message}</div>
+            <details className="mt-1">
+              <summary className="type-mono-meta cursor-pointer text-[10px] text-honey-100/85">
+                What to do
+              </summary>
+              <div className="mt-1 text-[11px] leading-4 text-honey-100/85">
+                {runRefusal.how_to_fix}
+                {runErrorCode === 'E_SCHEMA_INVALID'
+                  ? ' The planner returned a plan that did not match the schema; retry once, then shorten the prompt if it repeats.'
+                  : ''}
+              </div>
+            </details>
           </div>
         )}
 
@@ -650,6 +778,10 @@ export function ChatCore() {
           ) : null}
         </div>
 
+        <details className="mt-2 max-h-[132px] shrink-0 overflow-y-auto rounded-[8px] border border-hairline bg-panel-alt/50 px-2 py-1">
+          <summary className="type-mono-meta cursor-pointer select-none text-[10px] tracking-[0.08em] text-ink-700">
+            SESSION &amp; PERMISSIONS · {permissionPolicy}
+          </summary>
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
             SESSION
@@ -701,6 +833,21 @@ export function ChatCore() {
             </select>
           </label>
         </div>
+        <button
+          type="button"
+          aria-pressed={permissionPolicy === 'trusted'}
+          className={
+            'type-mono-meta mt-1 flex items-center gap-1.5 rounded-[8px] border px-2 py-1 text-[10px] ' +
+            (permissionPolicy === 'trusted'
+              ? 'border-signal bg-signal/10 text-signal'
+              : 'border-hairline bg-panel text-ink-700 hover:bg-honey-100')
+          }
+          title="Trusted policy runs side effects without approval prompts. Use only in a workspace you trust."
+          onClick={() => void changePolicy(permissionPolicy === 'trusted' ? 'classic' : 'trusted')}
+        >
+          <span aria-hidden="true">{permissionPolicy === 'trusted' ? '●' : '○'}</span>
+          AUTO-APPROVE {permissionPolicy === 'trusted' ? 'ON' : 'OFF'}
+        </button>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <label className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
             <input
@@ -757,7 +904,13 @@ export function ChatCore() {
           </button>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1 max-[640px]:hidden">
-          <span className="type-mono-meta text-[10px] tracking-[0.12em] text-meta">ROOT CONTROL</span>
+          <span className="flex items-center gap-1 type-mono-meta text-[10px] tracking-[0.12em] text-meta">
+            ROOT CONTROL
+            <InfoTip label="What root control does">
+              These buttons only fill the composer. The server decides whether the HyperAgent may
+              spawn a remote or daemon; nothing is spawned by clicking here.
+            </InfoTip>
+          </span>
           {CONTROL_INTENTS.map((intent) => (
             <button
               key={intent.id}
@@ -775,12 +928,43 @@ export function ChatCore() {
             </button>
           ))}
         </div>
-        <p className="type-mono-meta mt-0.5 text-[10px] leading-[14px] text-meta max-[640px]:hidden">
-          These fill a prompt, not a command. The server&apos;s bounded HyperAgent root-control
-          turn (when enabled) decides whether to call spawn_remote_agent / spawn_daemon; success
-          is shown only by the server projection.
-        </p>
 
+        </details>
+        {pendingApproval ? (
+          <div role="alert" className="mt-2 rounded-[10px] border border-amber bg-panel-alt px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="type-mono-meta text-[10px] tracking-[0.1em] text-ink-800">
+                APPROVAL NEEDED
+              </span>
+              <span className="type-mono-code truncate text-[10px] text-ink-900">{pendingApproval.tool}</span>
+            </div>
+            {pendingApproval.argsPreview ? (
+              <p className="mt-1 line-clamp-2 break-all font-mono text-[10px] leading-4 text-ink-500">
+                {pendingApproval.argsPreview}
+              </p>
+            ) : null}
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                aria-label={`Approve ${pendingApproval.tool}`}
+                disabled={approvalBusy || pendingApproval.nonce === null || connection !== 'open'}
+                className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] border border-verify bg-verify/10 text-[11px] font-semibold text-verify disabled:opacity-50"
+                onClick={() => void resolveApproval(pendingApproval.approvalId, 'approve')}
+              >
+                <span aria-hidden="true">✓</span> Approve
+              </button>
+              <button
+                type="button"
+                aria-label={`Deny ${pendingApproval.tool}`}
+                disabled={approvalBusy || pendingApproval.nonce === null || connection !== 'open'}
+                className="flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] border border-signal bg-signal/10 text-[11px] font-semibold text-signal disabled:opacity-50"
+                onClick={() => void resolveApproval(pendingApproval.approvalId, 'deny', 'operator denied in chat')}
+              >
+                <span aria-hidden="true">✕</span> Deny
+              </button>
+            </div>
+          </div>
+        ) : null}
         <form className="mt-2 flex h-14 items-center gap-2 rounded-[12px] border border-hairline bg-panel px-3" onSubmit={onSubmit}>
           <label className="sr-only" htmlFor="composer">
             {STRINGS.composer.placeholder}
@@ -801,6 +985,25 @@ export function ChatCore() {
             rows={1}
             disabled={connection !== 'open' || replaying}
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".txt,.md,.json,.jsonl,.py,.js,.mjs,.cjs,.ts,.tsx,.jsx,.rs,.css,.html,.yml,.yaml,.toml,.csv,.log"
+            onChange={(event) => void attachFile(event.target.files?.[0] ?? null)}
+          />
+          <button
+            type="button"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline text-ink-700 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Attach a text file to the prompt"
+            title="Attach a text file (up to 60 KB); its contents are added to the prompt."
+            disabled={connection !== 'open' || replaying}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <svg width="14" height="14" viewBox="0 0 18 18" aria-hidden="true">
+              <path d="M6.2 9.2 10.8 4.6a2.4 2.4 0 0 1 3.4 3.4l-5.6 5.6a3.6 3.6 0 0 1-5.1-5.1l5.4-5.4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
           <button
             type="button"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-hairline text-ink-800 hover:bg-honey-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -825,7 +1028,76 @@ export function ChatCore() {
             </svg>
           </button>
         </form>
+        {attachError ? <p className="type-mono-meta mt-1 text-signal">{attachError}</p> : null}
         <p className="type-mono-meta mt-1 text-meta">{STRINGS.composer.hint}</p>
+        <p className="type-mono-meta mt-1 text-[10px] leading-4 text-meta">
+          CAPABILITIES: text + workspace files + approved tools. <strong className="text-ink-700">No screen, vision, or desktop control.</strong>
+        </p>
+        <div className="mt-1 shrink-0 border-t border-hairline pt-1">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-expanded={dockTab === 'controls'}
+              className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-700 hover:bg-honey-100 aria-expanded:bg-honey-200"
+              onClick={() => setDockTab(dockTab === 'controls' ? null : 'controls')}
+            >
+              CONTROLS
+            </button>
+            <button
+              type="button"
+              aria-expanded={dockTab === 'state'}
+              className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-700 hover:bg-honey-100 aria-expanded:bg-honey-200"
+              onClick={() => setDockTab(dockTab === 'state' ? null : 'state')}
+            >
+              STATE &amp; SETTINGS
+            </button>
+            <button
+              type="button"
+              aria-label="Clear the visible chat transcript"
+              title="Clear the transcript shown here. The run ledger keeps the recorded history."
+              className="type-mono-meta ml-auto min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-500 hover:bg-honey-100"
+              onClick={() => store.setState({ messages: [], refusals: [] })}
+            >
+              CLEAR
+            </button>
+            <button
+              type="button"
+              aria-label="Hide the chat dock"
+              className="type-mono-meta min-h-8 rounded-[6px] px-2 py-1 text-[10px] text-ink-500 hover:bg-honey-100"
+              onClick={() => setChatVisible(false)}
+            >
+              HIDE
+            </button>
+          </div>
+          {dockTab === null ? null : (
+            <div className="dock-tray mt-1 max-h-[190px] overflow-y-auto">
+              {dockTab === 'controls' ? (
+                <ControlBar />
+              ) : (
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-1 py-1">
+                  <span className="type-mono-meta text-[10px] text-meta">provider</span>
+                  <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.provider ?? '—'}</span>
+                  <span className="type-mono-meta text-[10px] text-meta">model</span>
+                  <span className="type-mono-code truncate text-[10px] text-ink-800">{settings.model ?? '—'}</span>
+                  <span className="type-mono-meta text-[10px] text-meta">key</span>
+                  <span className="type-mono-code text-[10px] text-ink-800">{settings.keyPresent === null ? '—' : settings.keyPresent ? 'present' : 'missing'}</span>
+                  <span className="type-mono-meta text-[10px] text-meta">reasoning</span>
+                  <span className="type-mono-code text-[10px] text-ink-800">{settings.reasoningEffort ?? '—'}</span>
+                  <span className="type-mono-meta text-[10px] text-meta">version</span>
+                  <span className="type-mono-code text-[10px] text-ink-800">{APP_VERSION}</span>
+                  <div className="col-span-2 mt-1 flex flex-wrap gap-2 border-t border-hairline pt-1">
+                    {DOT_STATES.map((state) => (
+                      <span key={state} className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
+                        <StateDot state={state} size={7} />
+                        {visualFor(state).label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

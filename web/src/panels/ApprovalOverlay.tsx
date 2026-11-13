@@ -199,6 +199,7 @@ export function ApprovalOverlay() {
   const resolvingApprovals = useUiStore((state) => state.resolvingApprovals);
   const approveResolveStates = useUiStore((state) => state.approvalResolve);
   const connection = useUiStore((state) => state.connection);
+  const chatVisible = useUiStore((state) => state.chat.visible);
   const resolveApproval = useUiStore((state) => state.resolveApproval);
   const retryApproval = useUiStore((state) => state.retryApproval);
   const dismissApproval = useUiStore((state) => state.dismissApproval);
@@ -242,6 +243,14 @@ export function ApprovalOverlay() {
   }, [activeApprovalId]);
 
   if (approvals.length === 0) {
+    return null;
+  }
+  // When the chat is actually mounted, its inline check/deny card owns the
+  // decision. The modal remains the fallback when the chat is hidden and in
+  // isolated render tests, so no approval becomes unreachable.
+  const inlineApprovalHost =
+    typeof document !== 'undefined' && document.getElementById('composer') !== null;
+  if (chatVisible && inlineApprovalHost) {
     return null;
   }
 

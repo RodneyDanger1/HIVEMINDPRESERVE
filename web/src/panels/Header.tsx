@@ -1,5 +1,6 @@
 /** Global top bar (S08/S09/S28): brand, quick agent search, connection and operator. */
 import { useState } from 'react';
+import { GuideOverlay } from './GuideOverlay';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 
@@ -29,6 +30,7 @@ export function Header() {
   const replaying = useUiStore((state) => state.history.replayGraph !== null);
   const exitHistoryReplay = useUiStore((state) => state.exitHistoryReplay);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   const onWorkspace = nav === 'workspace' && tab === 'workspace';
@@ -85,7 +87,13 @@ export function Header() {
                 ? STRINGS.chat.toggleHideAria
                 : STRINGS.chat.toggleShowAria
           }
-          title={chatIntent === 'navigate-show' ? STRINGS.chat.toggleWorkspaceHint : undefined}
+          title={
+            chatIntent === 'navigate-show'
+              ? STRINGS.chat.toggleWorkspaceHint
+              : chatVisible
+                ? 'Hide the bottom chat dock.'
+                : 'Show the bottom chat dock.'
+          }
           aria-pressed={chatVisible}
           className="type-mono-meta flex h-8 items-center gap-1 rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 text-ink-700 hover:bg-panel-alt hover:text-ink-900"
           onClick={toggleChat}
@@ -103,7 +111,18 @@ export function Header() {
         </button>
         <button
           type="button"
+          aria-label="Open HiveMind guide"
+          title="What am I looking at?"
+          aria-expanded={guideOpen}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-hairline bg-panel text-[13px] font-semibold text-ink-700 hover:bg-panel-alt hover:text-ink-900"
+          onClick={() => setGuideOpen(true)}
+        >
+          ?
+        </button>
+        <button
+          type="button"
           aria-label="Search agents"
+          title="Find an agent in the current run."
           aria-expanded={searchOpen}
           className="flex h-8 w-8 items-center justify-center rounded-full text-ink-500 hover:bg-panel-alt hover:text-ink-900"
           onClick={() => setSearchOpen((open) => !open)}
@@ -176,6 +195,7 @@ export function Header() {
           </ul>
         </div>
       ) : null}
+      <GuideOverlay open={guideOpen} onClose={() => setGuideOpen(false)} />
     </header>
   );
 }

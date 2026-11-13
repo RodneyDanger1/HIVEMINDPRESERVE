@@ -16,6 +16,30 @@ namespace HiveMindLauncher
         private const string Host = "127.0.0.1";
         /// <summary>One launcher at a time; a second launch focuses, never duplicates.</summary>
         private static readonly Mutex InstanceMutex = new Mutex(false, "Local\\HiveMindLauncher.v1");
+        private static readonly object LogLock = new object();
+
+        /// <summary>Append one runtime line; logging must never break startup.</summary>
+        private static void AppendLog(string path, string line)
+        {
+            if (line == null)
+            {
+                return;
+            }
+            try
+            {
+                lock (LogLock)
+                {
+                    File.AppendAllText(path,
+                        DateTime.UtcNow.ToString("o") + " " + line + Environment.NewLine);
+                }
+            }
+            catch
+            {
+                // A read-only or full data directory must not prevent the app
+                // from starting; the failed log is not silently presented as
+                // evidence because no log line exists to read.
+            }
+        }
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
         private const int FirstPort = 8099;
@@ -606,10 +630,10 @@ namespace HiveMindLauncher
                     WorkingDirectory = workspaceRoot,
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    // Never redirect without concurrent readers: a chatty child can
-                    // fill a pipe and deadlock before health is reachable.
-                    RedirectStandardOutput = false,
-                    RedirectStandardError = false,
+                    // Redirect only with the asynchronous readers below; a chatty
+                    // child would otherwise fill a pipe and deadlock before health.
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                 };
                 ApplyProviderKey(start, data);
                 start.EnvironmentVariables["HIVEROUTER_LAUNCH_TOKEN"] = launchToken;
@@ -626,6 +650,14 @@ namespace HiveMindLauncher
                 failure = "The server process did not start.";
                 return false;
             }
+            string stdoutLog = Path.Combine(data, "server.stdout.log");
+            string stderrLog = Path.Combine(data, "server.stderr.log");
+            serverProcess.OutputDataReceived += (_, args) => AppendLog(stdoutLog, args.Data);
+            serverProcess.ErrorDataReceived += (_, args) => AppendLog(stderrLog, args.Data);
+            serverProcess.BeginOutputReadLine();
+            serverProcess.BeginErrorReadLine();
+            AppendLog(Path.Combine(data, "launcher.log"),
+                "server starting pid=" + serverProcess.Id + " port=" + candidate);
             if (WaitForHealth(candidate, HealthTimeoutMs, serverProcess))
             {
                 return true;

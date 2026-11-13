@@ -433,3 +433,19 @@
 [data-ambient-motion="calm"] .ambient-bee-swarm {
   opacity: 0.55;
 }
+/* Inline operator explanations: hover or keyboard focus reveals the text. */
+.hm-info { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.hm-info-dot { display: inline-flex; height: 15px; width: 15px; align-items: center; justify-content: center; border: 1px solid var(--color-hairline); border-radius: 999px; font-family: var(--font-mono); font-size: 9px; color: var(--color-ink-500); cursor: help; }
+.hm-info-bubble { position: absolute; bottom: calc(100% + 6px); left: 50%; z-index: 80; width: 240px; transform: translateX(-50%); border: 1px solid var(--color-hairline); border-radius: 8px; background: var(--color-panel); padding: 8px 9px; font-size: 11px; line-height: 15px; color: var(--color-ink-700); box-shadow: var(--shadow-e2); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+.hm-info:hover .hm-info-bubble, .hm-info:focus-visible .hm-info-bubble { opacity: 1; }
+.hm-info:focus-visible { outline: 2px solid var(--color-ink-700); outline-offset: 2px; border-radius: 999px; }
+
+.hive-entrance-glow { animation: hive-entrance-pulse 3.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes hive-entrance-pulse { 0%,100% { opacity: 0.18; } 50% { opacity: 0.55; } }
+[data-ambient-motion="off"] .hive-entrance-glow { animation: none; opacity: 0.28; }
+
+/* Dock tray and chat reveal: short, compositor-friendly, reduced-motion safe. */
+.dock-tray { animation: dock-tray-in 170ms cubic-bezier(0.2, 0, 0, 1); }
+@keyframes dock-tray-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .dock-tray { animation: none; } }
+[data-ambient-motion="off"] .dock-tray { animation: none; }

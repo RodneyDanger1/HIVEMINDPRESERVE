@@ -44,6 +44,15 @@ export function SnapshotBanner({
   if (!isSnapshotDegraded(snapshot)) {
     return null;
   }
+  // A fresh workspace has no committed revision yet. That is the normal empty
+  // state, not an incident; showing a technical "unconfirmed" strip here makes
+  // a new user think something is broken.
+  if (
+    snapshot.status !== 'failed' &&
+    snapshot.incomplete.some((item) => item.includes('NO-COMMITTED-REVISION'))
+  ) {
+    return null;
+  }
   const loading = snapshot.status === 'loading';
   const tone = snapshotBannerTone(snapshot.status);
   const title = snapshotBannerTitle(snapshot.status) ?? STRINGS.snapshot.degraded;

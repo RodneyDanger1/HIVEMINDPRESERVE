@@ -17,6 +17,7 @@ import { ControlBar } from './panels/ControlBar';
 import { Scrubber } from './panels/Scrubber';
 import { ToastRegion } from './panels/ToastRegion';
 import { SettingsPanel } from './panels/SettingsPanel';
+import { HelpPanel } from './panels/HelpPanel';
 import { DataPanel } from './panels/DataPanel';
 import { AgentsPanel } from './panels/AgentsPanel';
 import { ModelsPanel } from './panels/ModelsPanel';
@@ -163,6 +164,8 @@ function AppFrame() {
       <RemotePanel />
     ) : nav === 'settings' ? (
       <SettingsPanel />
+    ) : nav === 'help' ? (
+      <HelpPanel />
     ) : (
       workspaceView
     );
@@ -194,13 +197,8 @@ function AppFrame() {
             }}
           />
           <div className="relative min-h-0 flex-1 overflow-hidden">{content}</div>
-          {nav === 'workspace' && tab === 'workspace' ? (
-            <div
-              className={
-                'absolute inset-x-0 bottom-0 z-30 max-[640px]:bottom-14 ' +
-                (chatVisible ? 'max-[640px]:hidden' : '')
-              }
-            >
+          {nav === 'workspace' && tab === 'workspace' && !chatVisible ? (
+            <div className="absolute inset-x-0 bottom-0 z-30 max-[640px]:bottom-14">
               <ControlBar />
               <Scrubber />
             </div>

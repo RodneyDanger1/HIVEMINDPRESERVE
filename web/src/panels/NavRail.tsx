@@ -6,14 +6,15 @@ import type { NavSection } from '../state/store';
 import { nextRovingIndex } from '../a11y/keyboard';
 import { NavIcon } from './NavIcon';
 
-const ITEMS: ReadonlyArray<{ id: NavSection; label: string }> = [
-  { id: 'workspace', label: STRINGS.nav.workspace },
-  { id: 'agents', label: STRINGS.nav.agents },
-  { id: 'data', label: STRINGS.nav.data },
-  { id: 'models', label: STRINGS.nav.models },
-  { id: 'routing', label: STRINGS.nav.routing },
-  { id: 'remote', label: STRINGS.nav.remote },
-  { id: 'settings', label: STRINGS.nav.settings },
+const ITEMS: ReadonlyArray<{ id: NavSection; label: string; hint: string }> = [
+  { id: 'workspace', label: STRINGS.nav.workspace, hint: 'The live hive graph and the chat dock.' },
+  { id: 'agents', label: STRINGS.nav.agents, hint: 'Agent roster, jobs, todos, memory, and proposals.' },
+  { id: 'data', label: STRINGS.nav.data, hint: 'Runs, commits, evidence, and exported data.' },
+  { id: 'models', label: STRINGS.nav.models, hint: 'Provider model catalogue, usage, and balance.' },
+  { id: 'routing', label: STRINGS.nav.routing, hint: 'Model and task routing rules.' },
+  { id: 'remote', label: STRINGS.nav.remote, hint: 'Remote principals, devices, grants, and daemons.' },
+  { id: 'settings', label: STRINGS.nav.settings, hint: 'Provider, key, diagnostics, and FigCraft.' },
+  { id: 'help', label: STRINGS.nav.help, hint: 'Tutorials and plain-English explanations of every feature.' },
 ];
 
 export function NavRail() {
@@ -45,6 +46,7 @@ export function NavRail() {
           }}
           type="button"
           aria-label={item.label}
+          title={`${item.label}: ${item.hint}`}
           aria-current={nav === item.id ? 'page' : undefined}
           tabIndex={nav === item.id ? 0 : -1}
           onClick={() => setNav(item.id)}

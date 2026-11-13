@@ -117,7 +117,7 @@ export function RemoteLane() {
   return (
     <section
       aria-label="Detached remote lane"
-      className="surface-panel pointer-events-auto absolute bottom-24 right-4 z-20 w-[220px] rounded-[var(--radius-card)] p-2"
+      className="surface-panel pointer-events-auto absolute right-4 top-20 z-20 w-[220px] rounded-[var(--radius-card)] p-2"
     >
       <button
         type="button"

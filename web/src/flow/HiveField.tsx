@@ -87,12 +87,20 @@ export function HiveField({ center = true }: { center?: boolean }) {
       <div className="motion-honeycomb-glow absolute inset-0" />
       <svg className="absolute inset-0 h-full w-full" width="100%" height="100%" focusable="false">
         <defs>
-          <pattern id="hivefield-honeycomb" width="48" height="42" patternUnits="userSpaceOnUse">
+          <pattern id="hivefield-honeycomb" width="48" height="84" patternUnits="userSpaceOnUse">
             <path
               d="M12 0L36 0L48 21L36 42L12 42L0 21Z"
               fill="none"
-              stroke="var(--color-honey-200)"
-              strokeWidth="1"
+              stroke="var(--color-honey-300)"
+              strokeWidth="1.1"
+              opacity="0.42"
+            />
+            <path
+              d="M-12 42L12 42L24 63L12 84L-12 84L-24 63Z"
+              fill="none"
+              stroke="var(--color-honey-300)"
+              strokeWidth="1.1"
+              opacity="0.42"
             />
           </pattern>
           {/* A soft vertical column of honey light that travels left to right. */}
@@ -153,10 +161,19 @@ export function HiveField({ center = true }: { center?: boolean }) {
                 <ellipse cx="310" cy={cy - 44} rx="104" ry="24" fill="url(#hivefield-spec)" />
               </g>
             ))}
+            {/* The hive entrance: a dark arch and landing board at the base. */}
+            <g className="hive-entrance">
+              <ellipse cx="310" cy="604" rx="92" ry="15" fill="var(--color-honey-800)" opacity="0.22" />
+              <path d="M244 606 Q244 548 310 548 Q376 548 376 606 Z" fill="var(--color-ink-900)" opacity="0.9" />
+              <path d="M260 604 Q260 564 310 564 Q360 564 360 604 Z" fill="var(--color-ink-900)" />
+              <ellipse className="hive-entrance-glow" cx="310" cy="580" rx="24" ry="12" fill="var(--color-honey-300)" opacity="0.28" />
+              <circle cx="310" cy="574" r="4" fill="var(--color-honey-200)" />
+              <path d="M232 608 H388" stroke="var(--color-honey-700)" strokeWidth="6" strokeLinecap="round" />
+            </g>
           </symbol>
         </defs>
 
-        <rect width="100%" height="100%" fill="url(#hivefield-honeycomb)" opacity="0.9" />
+        <rect width="100%" height="100%" fill="url(#hivefield-honeycomb)" opacity="0.95" />
         {reduced ? null : (
           <rect
             key={rippleCycle}
@@ -183,9 +200,9 @@ export function HiveField({ center = true }: { center?: boolean }) {
         />
         {reduced ? null : (
           <g className="ambient-bee-swarm" aria-hidden="true">
-            <AmbientBee scale={0.1} duration="19s" begin="-2s" opacity={0.62} />
-            <AmbientBee scale={0.15} duration="23s" begin="-9s" opacity={0.5} />
-            <AmbientBee scale={0.2} duration="27s" begin="-15s" opacity={0.42} />
+            <AmbientBee scale={0.7} duration="19s" begin="-2s" opacity={0.8} />
+            <AmbientBee scale={0.95} duration="23s" begin="-9s" opacity={0.65} />
+            <AmbientBee scale={1.2} duration="27s" begin="-15s" opacity={0.5} />
           </g>
         )}
       </svg>

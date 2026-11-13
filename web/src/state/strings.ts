@@ -39,6 +39,7 @@ export const STRINGS = {
     routing: 'Routing',
     remote: 'Remote',
     settings: 'Settings',
+    help: 'Help',
   },
   tabs: {
     aria: 'Workspace tabs',

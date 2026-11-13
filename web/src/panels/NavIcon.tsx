@@ -27,6 +27,13 @@ export function NavIcon({ id, active }: { readonly id: NavSection; readonly acti
       {id === 'settings' ? (
         <path {...common} d="M12 8.2A3.8 3.8 0 1 0 12 15.8 3.8 3.8 0 0 0 12 8.2Z M12 2.8v2.4 M12 18.8v2.4 M4.5 4.5l1.7 1.7 M17.8 17.8l1.7 1.7 M2.8 12h2.4 M18.8 12h2.4 M4.5 19.5l1.7-1.7 M17.8 6.2l1.7-1.7" />
       ) : null}
+      {id === 'help' ? (
+        <>
+          <path {...common} d="M12 2.6 20.1 7.3v9.4L12 21.4 3.9 16.7V7.3Z" />
+          <path {...common} d="M9.6 9.2a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1.8-1.1 1.6" />
+          <path {...common} d="M12 16.6h.01" />
+        </>
+      ) : null}
     </svg>
   );
 }

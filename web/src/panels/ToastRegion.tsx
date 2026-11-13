@@ -1,4 +1,5 @@
 /** S14 refusal/error toasts: "REFUSED BY NAME · NOT SILENT" (name + how_to_fix). */
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
@@ -19,6 +20,17 @@ export function ToastRegion() {
   const approvals = useUiStore((state) => state.approvals);
   const dismiss = useUiStore((state) => state.dismissRefusal);
   const reduced = useAppReducedMotion();
+
+  // Toasts are transient by default. A refusal is still recorded in the run
+  // ledger; the banner should not become permanent UI clutter (especially the
+  // keyless refusal that predates a newly configured provider key).
+  useEffect(() => {
+    if (refusals.length === 0) return;
+    const timer = window.setTimeout(() => {
+      for (const entry of refusals) dismiss(entry.id);
+    }, 14_000);
+    return () => window.clearTimeout(timer);
+  }, [refusals, dismiss]);
 
   return (
     <div

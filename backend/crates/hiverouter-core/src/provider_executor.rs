@@ -131,8 +131,21 @@ impl ProviderExecutorAdapter {
             self.record_pending_usage(usage);
         }
         let content = message_text(&completion)?;
-        let wire: WirePlan = serde_json::from_str(strip_fences(&content))
-            .map_err(|_| Refusal::SchemaInvalid)?;
+        let raw = strip_fences(&content);
+        let wire: WirePlan = match serde_json::from_str(&raw) {
+            Ok(plan) => plan,
+            Err(error) => {
+                // The operator sees the named refusal; the server log gets the
+                // bounded diagnosis needed to distinguish prose, truncation,
+                // and a genuinely malformed plan.
+                eprintln!(
+                    "planner schema invalid: {error}; content_bytes={} content_prefix={:?}",
+                    raw.len(),
+                    raw.chars().take(240).collect::<String>()
+                );
+                return Err(Refusal::SchemaInvalid);
+            }
+        };
         wire.into_plan()
     }
 

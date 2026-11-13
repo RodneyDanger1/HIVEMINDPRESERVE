@@ -130,7 +130,6 @@ function CanvasInner() {
   } | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const chatVisible = useUiStore((state) => state.chat.visible);
-  const setChatVisible = useUiStore((state) => state.setChatVisible);
   const runStatus = useUiStore((state) => state.run?.status ?? null);
   const interactiveGraph = runStatus !== null && isRunActive(runStatus);
 
@@ -218,7 +217,6 @@ function CanvasInner() {
   }, [baseNodes, history.replayGraph, positionOverrides, dropTargetId]);
 
   const hasTasks = Object.keys(visibleTasks).length > 0;
-  const taskCount = Object.keys(tasks).length;
   const liveNodes = useMemo<CanvasNode[]>(() => {
     if (history.replayGraph) {
       return [];
@@ -324,20 +322,20 @@ function CanvasInner() {
     return { sx, sy, tx, ty };
   }, [dragSourceId, dropTargetId, getNode, viewport]);
 
+  const fittedRunRef = useRef<string | null>(null);
+
   useEffect(() => {
-    // First graph: fit the whole swarm so child cards are never born outside
-    // the viewport. Ctrl+0 still returns to the hive origin.
-    if (history.replayGraph || !hasTasks) {
+    // Fit once per run. Re-fitting on every NODE_SPAWN discarded the operator's
+    // pan/zoom while a run was still growing. Ctrl+0 remains the explicit fit.
+    if (history.replayGraph || !hasTasks || fittedRunRef.current === runId) {
       return;
     }
     let timer: number | null = null;
     const id = requestAnimationFrame(() => {
-      // Debounce the fit until the initial burst of NODE_SPAWN events has
-      // settled; otherwise the first card fits the viewport and the rest are
-      // born outside it. A quiet 240ms window is well below human perception.
       timer = window.setTimeout(() => {
-        void fitView({ padding: chatVisible ? 0.08 : 0.18, duration: 0, minZoom: 0.75, maxZoom: 0.75 });
-      }, 240);
+        fittedRunRef.current = runId;
+        void fitView({ padding: chatVisible ? 0.08 : 0.18, duration: 0, minZoom: 0.1, maxZoom: 1 });
+      }, 420);
     });
     return () => {
       cancelAnimationFrame(id);
@@ -345,7 +343,7 @@ function CanvasInner() {
         window.clearTimeout(timer);
       }
     };
-  }, [runId, taskCount, hasTasks, history.replayGraph, fitView, chatVisible]);
+  }, [runId, hasTasks, history.replayGraph, fitView, chatVisible]);
 
   const edges = useMemo<Edge[]>(() => buildEdges(visibleTasks), [visibleTasks]);
 
@@ -553,14 +551,7 @@ function CanvasInner() {
         <span className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 py-1 text-meta">
           {Object.keys(displayedVisibleTasks).length}/{Object.keys(displayedTasks).length}
         </span>
-        <button
-          type="button"
-          aria-pressed={!chatVisible}
-          className="type-mono-meta rounded-[var(--radius-pill)] border border-hairline bg-panel px-2 py-1 text-ink-500 hover:bg-honey-100"
-          onClick={() => setChatVisible(!chatVisible)}
-        >
-          {chatVisible ? 'Graph only' : 'Show chat'}
-        </button>
+
       </div>
       <ReactFlow
         nodes={history.replayGraph ? replayNodes : liveNodes}
@@ -570,6 +561,11 @@ function CanvasInner() {
         minZoom={0.1}
         maxZoom={3}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        onInit={(instance) => {
+          // World origin is the hive. React Flow's default viewport puts the
+          // origin at the pane's top-left; centre it before the first paint.
+          void instance.setCenter(0, 0, { zoom: 1, duration: 0 });
+        }}
         nodesFocusable
         edgesFocusable
         deleteKeyCode={null}
@@ -663,11 +659,11 @@ function CanvasInner() {
         aria-label="Hierarchy legend"
       >
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 type-mono-meta text-[11px] text-meta">
-          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-500" />HYPER</span>
-          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-400" />SUPER</span>
-          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-verify" />SUB</span>
-          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-600" />WORKER</span>
-          <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-ink-500" />TOOL</span>
+          <span title="HYPER: planner and root controller" className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-500" />HYPER</span>
+          <span title="SUPER: branch lead that splits and aggregates work" className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-400" />SUPER</span>
+          <span title="SUB: temporary read-only helper under a worker" className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-verify" />SUB</span>
+          <span title="WORKER: executes files, tests, and approved commands" className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-honey-600" />WORKER</span>
+          <span title="TOOL: a recorded tool call and its outcome" className="flex items-center gap-1"><i className="h-2 w-2 rounded-full bg-ink-500" />TOOL</span>
           <span className="flex items-center gap-1 text-honey-700">bee route</span>
           <span className="flex items-center gap-1 text-signal">broken</span>
         </div>
