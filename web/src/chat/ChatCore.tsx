@@ -135,12 +135,17 @@ export function ChatCore() {
     () => Object.values(tasks).filter((task) => !isTerminal(task.state)).length,
     [tasks],
   );
-  const [sessions, setSessions] = useState<readonly { id: string; name: string }[]>([]);
+  const [sessions, setSessions] = useState<
+    readonly { id: string; name: string; archived_at?: string | null }[]
+  >([]);
   const [namedSession, setNamedSession] = useState('');
   const [permissionPolicy, setPermissionPolicy] = useState<
     'classic' | 'plan' | 'standard' | 'trusted'
   >('classic');
   const [sessionLoadError, setSessionLoadError] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const [sessionReload, setSessionReload] = useState(0);
+  const [sessionBusy, setSessionBusy] = useState(false);
   useEffect(() => {
     if (connection !== 'open') return;
     let cancelled = false;
@@ -151,10 +156,13 @@ export function ChatCore() {
         const token = (await handshake.json()) as { token?: string };
         const headers: Record<string, string> = { accept: 'application/json' };
         if (token.token) headers.Authorization = `Bearer ${token.token}`;
-        const response = await fetch('/api/sessions', { headers });
+        const response = await fetch(
+          includeArchived ? '/api/sessions?include_archived=true' : '/api/sessions',
+          { headers },
+        );
         if (!response.ok) throw new Error('sessions unavailable');
         const body = (await response.json()) as {
-          sessions?: readonly { id: string; name: string }[];
+          sessions?: readonly { id: string; name: string; archived_at?: string | null }[];
         };
         if (!cancelled) {
           setSessions(body.sessions ?? []);
@@ -167,7 +175,35 @@ export function ChatCore() {
     return () => {
       cancelled = true;
     };
-  }, [connection]);
+  }, [connection, includeArchived, sessionReload]);
+  const selectedSession = sessions.find((session) => session.id === namedSession) ?? null;
+  const toggleArchive = async (): Promise<void> => {
+    if (!selectedSession || sessionBusy) return;
+    setSessionBusy(true);
+    try {
+      const handshake = await fetch('/api/session', { headers: { accept: 'application/json' } });
+      if (!handshake.ok) throw new Error('session handshake failed');
+      const token = (await handshake.json()) as { token?: string };
+      const headers: Record<string, string> = { accept: 'application/json' };
+      if (token.token) headers.Authorization = `Bearer ${token.token}`;
+      const response = await fetch(
+        `/api/sessions/${encodeURIComponent(selectedSession.id)}/${
+          selectedSession.archived_at ? 'unarchive' : 'archive'
+        }`,
+        { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: '{}' },
+      );
+      if (!response.ok) throw new Error(`archive returned ${response.status}`);
+      setSessionReload((current) => current + 1);
+      if (!selectedSession.archived_at) {
+        setNamedSession('');
+        setActiveSessionId(null);
+      }
+    } catch {
+      setSessionLoadError(true);
+    } finally {
+      setSessionBusy(false);
+    }
+  };
   const submitOptions = {
     ...(namedSession ? { sessionId: namedSession } : {}),
     policy: permissionPolicy,
@@ -462,6 +498,7 @@ export function ChatCore() {
               {sessions.map((session) => (
                 <option key={session.id} value={session.id}>
                   {session.name}
+                  {session.archived_at ? ' (archived)' : ''}
                 </option>
               ))}
             </select>
@@ -487,6 +524,25 @@ export function ChatCore() {
               <option value="trusted" title="explicit full-local opt-in">trusted — full local</option>
             </select>
           </label>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <label className="type-mono-meta flex items-center gap-1 text-[10px] text-meta">
+            <input
+              type="checkbox"
+              checked={includeArchived}
+              disabled={connection !== 'open'}
+              onChange={(event) => setIncludeArchived(event.target.checked)}
+            />
+            Show archived
+          </label>
+          <button
+            type="button"
+            className="type-mono-meta rounded-[6px] border border-hairline bg-panel px-1.5 py-0.5 text-[10px] text-ink-800 hover:border-honey-400 disabled:opacity-50"
+            disabled={!selectedSession || sessionBusy || connection !== 'open'}
+            onClick={() => void toggleArchive()}
+          >
+            {selectedSession?.archived_at ? 'Restore session' : 'Archive session'}
+          </button>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1">
           <span className="type-mono-meta text-[10px] tracking-[0.12em] text-meta">ROOT CONTROL</span>
