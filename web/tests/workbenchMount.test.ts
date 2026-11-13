@@ -23,6 +23,11 @@ describe('CAP-4 workbench mount', () => {
     expect(agentsPanelSource).toContain('timelineSteps');
   });
 
+  it('mounts the real jobs surface', () => {
+    expect(agentsPanelSource).toContain("from './JobsPanel'");
+    expect(agentsPanelSource).toContain('<JobsPanel');
+  });
+
   it('does not invent file rows or editable writes', () => {
     expect(dataPanelSource).not.toContain('sample');
     expect(dataPanelSource).not.toContain('mock');

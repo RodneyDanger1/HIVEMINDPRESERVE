@@ -24,6 +24,7 @@ import { LessonsPanel } from './LessonsPanel';
 import { AgentHierarchy } from './AgentHierarchy';
 import { AgentRosterPanel } from './AgentRosterPanel';
 import { A2AInboxPanel } from './A2AInboxPanel';
+import { JobsPanel } from './JobsPanel';
 import { Timeline } from '../workbench';
 import type { TimelineAgent, TimelineStatus, TimelineStep } from '../workbench';
 import type { ConnectionStatus } from '../api/client';
@@ -190,6 +191,7 @@ export function AgentsPanel() {
           emptyMessage={timelineEmptyMessage}
         />
       </div>
+      <JobsPanel />
       <AgentProfilesPanel />
       <AgentRosterPanel />
       <A2AInboxPanel />
