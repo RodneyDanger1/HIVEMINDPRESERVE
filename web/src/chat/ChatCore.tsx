@@ -428,7 +428,7 @@ export function ChatCore() {
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-4">
       <section
         aria-label={STRINGS.chat.aria}
-        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-200px)] max-[640px]:overflow-y-auto"
+        className="chat-core pointer-events-auto surface-panel z-40 flex h-[560px] max-h-[calc(100vh-96px)] w-[min(400px,92%)] -translate-y-8 flex-col rounded-[18px] p-3 max-[640px]:h-auto max-[640px]:max-h-[calc(100dvh-80px)] max-[640px]:overflow-y-auto"
         style={{ boxShadow: 'var(--shadow-e2)', border: 'none', transition: reduced ? 'none' : 'box-shadow 160ms ease' }}
       >
         <header
@@ -679,7 +679,7 @@ export function ChatCore() {
             Create
           </button>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-1">
+        <div className="mt-1 flex flex-wrap items-center gap-1 max-[640px]:hidden">
           <span className="type-mono-meta text-[10px] tracking-[0.12em] text-meta">ROOT CONTROL</span>
           {CONTROL_INTENTS.map((intent) => (
             <button
@@ -698,7 +698,7 @@ export function ChatCore() {
             </button>
           ))}
         </div>
-        <p className="type-mono-meta mt-0.5 text-[10px] leading-[14px] text-meta">
+        <p className="type-mono-meta mt-0.5 text-[10px] leading-[14px] text-meta max-[640px]:hidden">
           These fill a prompt, not a command. The server&apos;s bounded HyperAgent root-control
           turn (when enabled) decides whether to call spawn_remote_agent / spawn_daemon; success
           is shown only by the server projection.
