@@ -42,7 +42,7 @@ describe('splash phase machine', () => {
 
   it('reports progress and labels for every connection state', () => {
     expect(splashProgress('open')).toBe(100);
-    expect(splashProgress('error')).toBe(100);
+    expect(splashProgress('error')).toBe(0);
     expect(splashProgress('connecting')).toBe(46);
     expect(splashProgress('reconnecting')).toBe(18);
     expect(splashProgress('idle')).toBe(18);

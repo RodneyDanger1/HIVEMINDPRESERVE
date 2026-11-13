@@ -498,7 +498,7 @@ export function ChatCore() {
             </span>
             <button
               type="button"
-              className="type-mono-meta flex min-h-6 min-w-6 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10"
+              className="type-mono-meta flex min-h-6 min-w-6 items-center justify-center whitespace-nowrap rounded-[var(--radius-sm)] border border-white/25 px-1.5 py-0.5 text-[16px] leading-none text-white/90 hover:bg-white/10 max-[640px]:min-h-11 max-[640px]:min-w-11"
               onClick={() => setChatVisible(false)}
               aria-label={STRINGS.chat.closeAria}
             >
@@ -640,7 +640,7 @@ export function ChatCore() {
           <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
             POLICY
             <select
-              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
+              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900 disabled:cursor-not-allowed disabled:opacity-60"
               value={permissionPolicy}
               disabled={connection !== 'open' || replaying || !namedSession}
               title={namedSession ? 'Policy for this named session/run' : 'Select a named session to edit its policy'}

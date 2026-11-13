@@ -66,7 +66,7 @@ export function Header() {
         </span>
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-3">
+      <div className="ml-auto flex min-w-0 shrink-0 items-center gap-3 max-[640px]:gap-1">
         {replaying ? (
           <button
             type="button"
@@ -115,7 +115,7 @@ export function Header() {
         </button>
         <div
           className={
-            'type-mono-meta rounded-[var(--radius-pill)] border px-2 py-1 ' +
+            'type-mono-meta rounded-[var(--radius-pill)] border px-2 py-1 max-[640px]:max-w-[110px] truncate ' +
             (connection === 'open'
               ? 'border-verify text-verify'
               : connection === 'reconnecting' || connection === 'connecting'

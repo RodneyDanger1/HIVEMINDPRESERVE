@@ -22,9 +22,10 @@ export function splashSettled(connection: string): boolean {
 }
 
 export function splashProgress(connection: string): number {
-  if (splashSettled(connection)) {
-    return 100;
-  }
+  if (connection === 'open') return 100;
+  // Offline is settled but not complete: showing 100% next to "runtime is
+  // offline" would claim a boot that did not happen.
+  if (connection === 'error' || connection === 'closed') return 0;
   return connection === 'connecting' ? 46 : 18;
 }
 
