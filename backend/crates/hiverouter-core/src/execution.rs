@@ -2860,6 +2860,7 @@ impl RunEngine {
         run: &Run,
         task: &TaskRecord,
         reply: &StreamedReply,
+        prior: &[ToolTurnTranscript],
         token: &CancellationToken,
     ) -> Result<ToolTurnResult, Refusal> {
         if reply.tool_calls.is_empty() {
@@ -2967,7 +2968,16 @@ impl RunEngine {
                             }
                             Ok(tier) => {
                                 self.publish_tool_call(run, task, &plan);
-                                if plan.tool == "spawn_agent" {
+                                if matches!(plan.tool.as_str(), "finish" | "report_result")
+                                    && !terminal_verified(prior, &executed)
+                                {
+                                    ToolExecution::refused(
+                                        plan.tool_call_id.clone(),
+                                        Refusal::ToolNotAllowed.code(),
+                                        "completion refused: the last workspace mutation has no passing run_tests result; run tests and verify before finishing"
+                                            .to_owned(),
+                                    )
+                                } else if plan.tool == "spawn_agent" {
                                     // Real model-spawned child path (M-010): caps are
                                     // enforced before the child row exists, the child
                                     // runs to a terminal state here, and its result is
@@ -6012,7 +6022,10 @@ impl RunEngine {
                 self.fail_task(run, task, AgentState::Cancelled)?;
                 return Err(Refusal::ToolCancelled);
             }
-            let mut turn = match self.execute_tool_turn(run, task, &final_reply, token).await {
+            let mut turn = match self
+                .execute_tool_turn(run, task, &final_reply, &transcript, token)
+                .await
+            {
                 Ok(turn) => turn,
                 Err(refusal) => {
                     // A wait terminal path (timeout/cancel) already persisted and
