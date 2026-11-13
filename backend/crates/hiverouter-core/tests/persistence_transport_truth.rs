@@ -624,6 +624,49 @@ async fn ws_submit_prompt_refuses_an_explicit_unknown_policy() {
 }
 
 #[tokio::test]
+async fn archived_session_cannot_admit_a_new_run() {
+    let database = Arc::new(Database::open_in_memory().expect("in-memory db"));
+    database.migrate().expect("migrations");
+    let store = RunStore::new(database.clone());
+    let session = store
+        .create_session(
+            "project-archive",
+            "archive gate",
+            "C:\\ws",
+            PermissionPolicy::Classic,
+        )
+        .expect("session");
+    store
+        .set_session_archived(&session.id, true)
+        .expect("archive session");
+    let engine = Arc::new(RunEngine::new(
+        database.clone(),
+        Arc::new(EventBus::new()),
+        Arc::new(GraphAuthority::new()),
+        Arc::new(KeylessExecutor) as Arc<dyn ProviderExecutor>,
+        Arc::new(TemplateRegistry::default()),
+    ));
+    let error = engine
+        .submit_prompt_scoped(
+            "must not run",
+            "project-archive",
+            Some(&session.id),
+            None,
+            Uuid::now_v7(),
+        )
+        .expect_err("archived session must refuse admission");
+    assert_eq!(error, Refusal::DecisionRequired);
+    assert!(
+        store
+            .list_runs(10)
+            .expect("runs")
+            .iter()
+            .all(|run| run.session_id.as_deref() != Some(session.id.as_str())),
+        "a refused archived-session submit must not create a run row"
+    );
+}
+
+#[tokio::test]
 async fn valid_session_and_policy_decode_and_the_engine_persists_them() {
     // Build the exact envelope the UI would send; `handle_client_text` passes it
     // through `schema::decode_command`, so decoding here is the transport gate.

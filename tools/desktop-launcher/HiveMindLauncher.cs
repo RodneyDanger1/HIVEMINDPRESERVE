@@ -14,6 +14,8 @@ namespace HiveMindLauncher
     internal static class Program
     {
         private const string Host = "127.0.0.1";
+        /// <summary>One launcher at a time; a second launch focuses, never duplicates.</summary>
+        private static readonly Mutex InstanceMutex = new Mutex(false, "Local\\HiveMindLauncher.v1");
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
         private const int FirstPort = 8099;
@@ -33,6 +35,20 @@ namespace HiveMindLauncher
         [STAThread]
         private static void Main()
         {
+            bool instanceOwned = false;
+            try
+            {
+                instanceOwned = InstanceMutex.WaitOne(0);
+            }
+            catch (AbandonedMutexException)
+            {
+                instanceOwned = true;
+            }
+            if (!instanceOwned)
+            {
+                FocusExistingWindow();
+                return;
+            }
             Process serverProcess = null;
             string data = null;
             bool ownsServer = false;
@@ -133,6 +149,14 @@ namespace HiveMindLauncher
                 if (data != null)
                 {
                     RemoveRuntimeFile(data);
+                }
+                try
+                {
+                    InstanceMutex.ReleaseMutex();
+                }
+                catch
+                {
+                    // Process teardown releases it anyway.
                 }
             }
         }
