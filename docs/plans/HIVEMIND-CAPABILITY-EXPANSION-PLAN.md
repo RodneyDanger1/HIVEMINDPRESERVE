@@ -168,12 +168,12 @@ HiveMind run unless configured.
 |---|---|
 | v25 | `sessions`, `sessions_events`, `todos`; nullable `runs.session_id`, `runs.permission_policy` (no product-mode field) |
 | v26 | `repo_files`, `repo_chunks`, `repo_fts` |
-| v27 | `file_ops`, `checkpoint_blobs`, `checkpoints` |
-| v28 | `jobs`, `terminal_sessions`, `terminal_chunks` |
-| v29 | `skills`, `mcp_servers`, provider/session config (CAP-8) |
-| v30 | `lessons`, `lesson_evidence`, `acceptance_runs` (CAP-9) |
-| v31 | eval suites/runs/trials/metrics (CAP-9) |
-| v32 | optional memory vectors/embedding jobs (CAP-9) |
+| v27 | `checkpoints`, `checkpoint_blobs` (`file_ops` was not shipped) |
+| v28 | `jobs` only (terminal session/chunk tables were not shipped) |
+| v29 | `eval_runs` (skills remain file-backed; MCP is the packaged JS server) |
+| v30 | `lesson_candidates` (legacy EVO-GATE proposals remain file-backed) |
+| v31 | `eval_suites`, `eval_cases` plus executed `eval_runs` |
+| v32 | `sessions.archived_at` (session archive; optional vectors remain deferred) |
 
 No table/column is dropped; v24 remains readable. Every migration has up/down and a v24→latest
 roundtrip with backup/restore.

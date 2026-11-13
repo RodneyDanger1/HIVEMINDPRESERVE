@@ -282,8 +282,9 @@ new ToolIds/grants, and the final census is derived by a test, not hardcoded.
 
 ### CAP-9 — Learning, eval, optional vector
 - **Files:** learning/eval/memory modules.
-- **Schema:** v30 lessons/acceptance, v31 eval suites/runs/trials/metrics, v32 optional memory
-  vectors/embedding jobs.
+- **Schema as shipped:** v30 `lesson_candidates`, v31 `eval_suites`/`eval_cases`, v32
+  `sessions.archived_at` (session archive). Optional memory vectors/embedding jobs remain
+  deferred and would need a future migration.
 - **Behavior:** trace manifest; candidate lessons; executed baseline/candidate eval; activation/
   rollback; FTS + optional local embeddings; no autonomous code mutation.
 - **Tests:** shape-only receipt refused; executed eval; non-inferiority; rollback; scope/trust.
