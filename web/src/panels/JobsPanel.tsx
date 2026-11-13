@@ -99,9 +99,13 @@ export function JobsPanel() {
     }
     const tokens = splitCommand(command);
     if (tokens === null) {
-      setStartError('Enter an allowlisted command, for example: git status');
+      setStartError('Enter an allowlisted command, for example: git.exe status');
       return;
     }
+    // The server allowlist is exact (bare *.exe names). Accept the natural
+    // spelling for the two shipped tools without widening the server policy.
+    const program =
+      tokens[0] === 'git' ? 'git.exe' : tokens[0] === 'cargo' ? 'cargo.exe' : tokens[0];
     setStarting(true);
     setStartError(null);
     try {
@@ -110,7 +114,7 @@ export function JobsPanel() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           session_id: activeSessionId,
-          program: tokens[0],
+          program,
           args: tokens.slice(1),
         }),
       });
@@ -149,7 +153,7 @@ export function JobsPanel() {
         <input
           id="job-command"
           className="type-mono-code min-w-0 flex-1 rounded-[6px] border border-hairline bg-panel px-2 py-1 text-[11px] text-ink-900"
-          placeholder="git status"
+          placeholder="git.exe status"
           value={command}
           onChange={(event) => setCommand(event.target.value)}
           disabled={starting}
@@ -164,8 +168,8 @@ export function JobsPanel() {
         </button>
       </form>
       <p className="type-mono-meta mt-1 text-[10px] text-meta">
-        Command console — allowlisted programs only, no PTY/shell. Select a named session in the
-        composer to enable it.
+        Command console — allowlisted programs only (`git`, `cargo`), no PTY/shell. Select a named
+        session in the composer to enable it.
       </p>
       {startError !== null ? <ErrorState message={startError} /> : null}
       {connection !== 'open' ? <EmptyState message="Jobs load when the local server is connected." /> : null}
