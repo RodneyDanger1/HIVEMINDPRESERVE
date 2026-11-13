@@ -164,6 +164,22 @@ const COMMANDS = {
     transport: 'http',
     args: [ARG('job', 'uuid', true, 'Background job id.')],
   },
+  'job-start': {
+    summary: 'Start an allowlisted background job in an active named session.',
+    safety: 'mutating',
+    transport: 'http',
+    args: [
+      ARG('session', 'uuid', true, 'Named session id.'),
+      ARG('program', 'string', true, 'Allowlisted program (git.exe/cargo.exe).'),
+      ARG('args', 'string', false, 'JSON array of arguments.'),
+    ],
+  },
+  'job-kill': {
+    summary: 'Kill a running background job. Requires --yes.',
+    safety: 'destructive',
+    transport: 'http',
+    args: [ARG('job', 'uuid', true, 'Background job id.')],
+  },
   revisions: {
     summary: 'List committed revisions for one run.',
     safety: 'read',
@@ -1673,6 +1689,36 @@ async function executeRead(command, options, baseUrl) {
         throw cliError('E_CLI_USAGE', '--job must be a job id', 'Use the id returned by POST /api/jobs.');
       }
       return httpJson(baseUrl, `/api/jobs/${encodeURIComponent(jobId)}`);
+    }
+    case 'job-start': {
+      const sessionId = assertUuid(options.session, '--session');
+      const program = String(assertRequired(options, 'program')).trim();
+      let args = [];
+      if (options.args !== undefined) {
+        try {
+          const parsed = JSON.parse(String(options.args));
+          if (!Array.isArray(parsed) || parsed.some((value) => typeof value !== 'string')) {
+            throw new Error('not a string array');
+          }
+          args = parsed;
+        } catch {
+          throw cliError('E_CLI_USAGE', '--args must be a JSON array of strings.', 'Example: --args \'["--version"]\'');
+        }
+      }
+      return httpAuthedJson(baseUrl, '/api/jobs', {
+        method: 'POST',
+        body: { session_id: sessionId, program, args },
+      });
+    }
+    case 'job-kill': {
+      const jobId = assertUuid(options.job, '--job');
+      if (!options.yes) {
+        throw cliError('E_CLI_USAGE', 'job-kill is destructive; pass --yes.', 'Only kill a job you started.');
+      }
+      return httpAuthedJson(baseUrl, `/api/jobs/${encodeURIComponent(jobId)}/kill`, {
+        method: 'POST',
+        body: {},
+      });
     }
     case 'revisions':
       return httpJson(baseUrl, `/api/history/runs/${runIdOption(options)}/revisions`);
