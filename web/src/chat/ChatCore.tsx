@@ -454,7 +454,7 @@ export function ChatCore() {
               disabled={connection !== 'open' || replaying}
               onChange={(event) => setNamedSession(event.target.value)}
             >
-              <option value="">Default (no named session)</option>
+              <option value="">Default session</option>
               {sessions.map((session) => (
                 <option key={session.id} value={session.id}>
                   {session.name}
@@ -477,10 +477,10 @@ export function ChatCore() {
                 )
               }
             >
-              <option value="classic">classic — approve every side effect</option>
-              <option value="plan">plan — refuse mutations</option>
-              <option value="standard">standard — auto workspace edits</option>
-              <option value="trusted">trusted — explicit full-local opt-in</option>
+              <option value="classic" title="approve every side effect">classic — ask</option>
+              <option value="plan" title="refuse mutations">plan — no writes</option>
+              <option value="standard" title="auto-approve workspace edits">standard — workspace</option>
+              <option value="trusted" title="explicit full-local opt-in">trusted — full local</option>
             </select>
           </label>
         </div>

@@ -47,7 +47,7 @@ export function Header() {
     .slice(0, 6);
 
   return (
-    <header className="relative flex h-[52px] shrink-0 items-center gap-3 border-b border-hairline bg-panel px-3">
+    <header className="relative flex h-[52px] shrink-0 items-center gap-1.5 border-b border-hairline bg-panel px-3 sm:gap-3">
       <div className="flex min-w-0 items-center gap-2">
         <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true" className="shrink-0">
           <path
@@ -61,7 +61,9 @@ export function Header() {
             fill="var(--color-honey-400)"
           />
         </svg>
-        <span className="truncate text-[17px] font-semibold leading-none text-ink-900">HiveMind</span>
+        <span className="hidden truncate text-[17px] font-semibold leading-none text-ink-900 sm:inline">
+          HiveMind
+        </span>
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
