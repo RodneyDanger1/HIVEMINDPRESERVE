@@ -8,6 +8,7 @@ class FakeUiApi implements UiApi {
   readonly kind = 'ws' as const;
   readonly sends: Array<{
     readonly name: ServerCommandName;
+    readonly payload: unknown;
     readonly correlationId: string | undefined;
     readonly resolve: () => void;
     readonly reject: (error: Error) => void;
@@ -24,11 +25,11 @@ class FakeUiApi implements UiApi {
   }
   send<N extends ServerCommandName>(
     name: N,
-    _payload: unknown,
+    payload: unknown,
     options?: { readonly correlationId?: string },
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.sends.push({ name, correlationId: options?.correlationId, resolve, reject });
+      this.sends.push({ name, payload, correlationId: options?.correlationId, resolve, reject });
     });
   }
   subscribe(listener: (event: DecodedEvent, envelope: Envelope<unknown>) => void): () => void {
@@ -100,6 +101,23 @@ describe('UI store command lifecycle', () => {
 
     api.emit({ name: 'RUN_CREATED', payload: { run_id: 'run-1', status: 'running' } });
     expect(store.getState().run?.id).toBe('run-1');
+  });
+
+  it('binds a named session and permission policy to SUBMIT_PROMPT', async () => {
+    const { api, store } = await connectedStore();
+    const submission = store.getState().submitPrompt('scoped work', {
+      sessionId: '00000000-0000-0000-0000-000000000001',
+      policy: 'trusted',
+    });
+    await Promise.resolve();
+    expect(api.sends[0]?.name).toBe('SUBMIT_PROMPT');
+    expect(api.sends[0]?.payload).toMatchObject({
+      text: 'scoped work',
+      session_id: '00000000-0000-0000-0000-000000000001',
+      permission_policy: 'trusted',
+    });
+    api.resolveNext();
+    await submission;
   });
 
   it('refuses empty prompts before sending', async () => {

@@ -305,7 +305,13 @@ export interface UiState {
 
   init(): Promise<void>;
   dispose(): void;
-  submitPrompt(text: string): Promise<void>;
+  submitPrompt(
+    text: string,
+    options?: {
+      readonly sessionId?: string;
+      readonly policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+    },
+  ): Promise<void>;
   /**
    * Send SPAWN_SUB_HIVE for the explicit parent when given, otherwise the
    * selected task, otherwise the run's HyperAgent root. The class matrix is
@@ -2066,7 +2072,13 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
         api.close();
       },
 
-      async submitPrompt(text: string): Promise<void> {
+      async submitPrompt(
+        text: string,
+        options?: {
+          readonly sessionId?: string;
+          readonly policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+        },
+      ): Promise<void> {
         const refusalCode = validatePromptText(text);
         if (refusalCode) {
           pushRefusal(clientRefusal(refusalCode));
@@ -2078,7 +2090,15 @@ export function createUiStore(api: UiApi, options: UiStoreOptions = {}): StoreAp
             { id: uuidv7(), role: 'user', text, runId: null, streaming: false },
           ],
         });
-        await run('SUBMIT_PROMPT', { text, project_id: get().project.id });
+        const payload: {
+          text: string;
+          project_id: string;
+          session_id?: string;
+          permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+        } = { text, project_id: get().project.id };
+        if (options?.sessionId) payload.session_id = options.sessionId;
+        if (options?.policy) payload.permission_policy = options.policy;
+        await run('SUBMIT_PROMPT', payload);
       },
 
       async spawnSubHive(parentTaskId?: string): Promise<void> {

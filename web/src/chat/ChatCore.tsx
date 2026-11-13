@@ -134,6 +134,43 @@ export function ChatCore() {
     () => Object.values(tasks).filter((task) => !isTerminal(task.state)).length,
     [tasks],
   );
+  const [sessions, setSessions] = useState<readonly { id: string; name: string }[]>([]);
+  const [namedSession, setNamedSession] = useState('');
+  const [permissionPolicy, setPermissionPolicy] = useState<
+    'classic' | 'plan' | 'standard' | 'trusted'
+  >('classic');
+  const [sessionLoadError, setSessionLoadError] = useState(false);
+  useEffect(() => {
+    if (connection !== 'open') return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const handshake = await fetch('/api/session', { headers: { accept: 'application/json' } });
+        if (!handshake.ok) throw new Error('session handshake failed');
+        const token = (await handshake.json()) as { token?: string };
+        const headers: Record<string, string> = { accept: 'application/json' };
+        if (token.token) headers.Authorization = `Bearer ${token.token}`;
+        const response = await fetch('/api/sessions', { headers });
+        if (!response.ok) throw new Error('sessions unavailable');
+        const body = (await response.json()) as {
+          sessions?: readonly { id: string; name: string }[];
+        };
+        if (!cancelled) {
+          setSessions(body.sessions ?? []);
+          setSessionLoadError(false);
+        }
+      } catch {
+        if (!cancelled) setSessionLoadError(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [connection]);
+  const submitOptions = {
+    ...(namedSession ? { sessionId: namedSession } : {}),
+    policy: permissionPolicy,
+  };
   const liveLabel =
     connection !== 'open'
       ? 'offline'
@@ -217,14 +254,14 @@ export function ChatCore() {
     if (validatePromptText(text) !== null) {
       // The store validates before appending and raises the named refusal
       // toast; this call therefore sends nothing and renders no user message.
-      await submitPrompt(text);
+      await submitPrompt(text, submitOptions);
       return;
     }
     const before = store.getState();
     const baseline = promptSubmissionBaseline(before.messages, before.refusals, Date.now());
     inFlightRef.current = true;
     try {
-      await submitPrompt(text);
+      await submitPrompt(text, submitOptions);
     } finally {
       inFlightRef.current = false;
     }
@@ -408,6 +445,45 @@ export function ChatCore() {
           ) : null}
         </div>
 
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
+            SESSION
+            <select
+              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
+              value={namedSession}
+              disabled={connection !== 'open' || replaying}
+              onChange={(event) => setNamedSession(event.target.value)}
+            >
+              <option value="">Default (no named session)</option>
+              {sessions.map((session) => (
+                <option key={session.id} value={session.id}>
+                  {session.name}
+                </option>
+              ))}
+            </select>
+            {sessionLoadError ? (
+              <span className="text-signal">Sessions unavailable; default will be used.</span>
+            ) : null}
+          </label>
+          <label className="type-mono-meta flex flex-col gap-0.5 text-[10px] text-meta">
+            POLICY
+            <select
+              className="type-mono-code rounded-[8px] border border-hairline bg-panel px-1.5 py-1 text-[11px] text-ink-900"
+              value={permissionPolicy}
+              disabled={connection !== 'open' || replaying}
+              onChange={(event) =>
+                setPermissionPolicy(
+                  event.target.value as 'classic' | 'plan' | 'standard' | 'trusted',
+                )
+              }
+            >
+              <option value="classic">classic — approve every side effect</option>
+              <option value="plan">plan — refuse mutations</option>
+              <option value="standard">standard — auto workspace edits</option>
+              <option value="trusted">trusted — explicit full-local opt-in</option>
+            </select>
+          </label>
+        </div>
         <div className="mt-1 flex flex-wrap items-center gap-1">
           <span className="type-mono-meta text-[10px] tracking-[0.12em] text-meta">ROOT CONTROL</span>
           {CONTROL_INTENTS.map((intent) => (
