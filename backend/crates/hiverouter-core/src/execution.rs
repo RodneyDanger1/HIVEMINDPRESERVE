@@ -5994,6 +5994,18 @@ impl RunEngine {
         let mut transcript: Vec<ToolTurnTranscript> = Vec::new();
         loop {
             if final_reply.tool_calls.is_empty() {
+                // Normal fallback bypass: after the engine refused a terminal
+                // call, a plain-text reply must not silently complete the run.
+                let refused_terminal = transcript.iter().flat_map(|turn| turn.results.iter()).any(
+                    |(plan, result)| {
+                        (plan.tool == "finish" || plan.tool == "report_result")
+                            && result.outcome == hiverouter_contract::ToolOutcome::Refused
+                    },
+                );
+                if refused_terminal && !terminal_verified(&transcript, &[]) {
+                    self.fail_task(run, task, AgentState::Failed)?;
+                    return Err(Refusal::ToolNotAllowed);
+                }
                 break;
             }
             if token.is_cancelled() {
@@ -6042,19 +6054,22 @@ impl RunEngine {
             // refusal before the transcript is persisted so the model must
             // repair and verify rather than the engine fabricating success.
             if !terminal_verified(&transcript, &turn.executed) {
-                if let Some(position) = turn
+                let terminal_calls: Vec<usize> = turn
                     .executed
                     .iter()
-                    .position(|(plan, result)| {
-                        plan.tool == "finish"
+                    .enumerate()
+                    .filter(|(_, (plan, result))| {
+                        (plan.tool == "finish" || plan.tool == "report_result")
                             && result.outcome == hiverouter_contract::ToolOutcome::Ok
                     })
-                {
+                    .map(|(index, _)| index)
+                    .collect();
+                for position in terminal_calls {
                     let tool_call_id = turn.executed[position].0.tool_call_id.clone();
                     turn.executed[position].1 = ToolExecution::refused(
                         tool_call_id,
                         Refusal::ToolNotAllowed.code(),
-                        "finish refused: the last workspace mutation has no passing run_tests result; run tests and verify before finishing".to_owned(),
+                        "completion refused: the last workspace mutation has no passing run_tests result; run tests and verify before finishing".to_owned(),
                     );
                 }
             }

@@ -1035,8 +1035,13 @@ impl Database {
         connection.execute_batch(
             "PRAGMA journal_mode = WAL;
              PRAGMA synchronous = NORMAL;
-             PRAGMA foreign_keys = ON;",
+             PRAGMA foreign_keys = ON;
+             PRAGMA wal_autocheckpoint = 1000;
+             PRAGMA journal_size_limit = 16777216;",
         )?;
+        // Bound WAL growth from a previous long-lived process. Busy is not a
+        // startup failure: another writer may hold the WAL briefly.
+        let _ = connection.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()));
         Ok(())
     }
 
