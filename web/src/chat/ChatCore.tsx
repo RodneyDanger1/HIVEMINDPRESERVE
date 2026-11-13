@@ -244,13 +244,26 @@ export function ChatCore() {
       if (!response.ok) throw new Error(`create returned ${response.status}`);
       const created = (await response.json()) as {
         id: string;
+        name?: string;
         permission_policy?: 'classic' | 'plan' | 'standard' | 'trusted';
+        archived_at?: string | null;
       };
       setNewSessionName('');
-      setSessionReload((current) => current + 1);
+      // Insert first so the reload guard cannot treat the fresh selection as a
+      // hidden/removed session before the refetched list includes it.
+      setSessions((current) => [
+        {
+          id: created.id,
+          name: created.name ?? name,
+          permission_policy: created.permission_policy ?? permissionPolicy,
+          archived_at: created.archived_at ?? null,
+        },
+        ...current,
+      ]);
       setNamedSession(created.id);
       setActiveSessionId(created.id);
       if (created.permission_policy) setPermissionPolicy(created.permission_policy);
+      setSessionReload((current) => current + 1);
       setSessionLoadError(false);
     } catch {
       setSessionLoadError(true);
