@@ -1,6 +1,8 @@
-# Live / evidence index (2026-11-11)
+# Live / evidence index (2026-11-12, current)
 
-**Audit HEAD:** `1129349`; **audit docs commit:** `44e0535`; **README truth follow-up:** `6f91d2b`; **product/install build:** `806251b`, schema 24, `dirty:false`; no provider key configured.
+**Current source/package:** `44207bf`, schema **31**, `dirty:false`; server SHA-256 `2e609ec3754b1e383122238eec53cd28d9ad753697d3eb040d63b9c1b5179011`, launcher SHA-256 `5829e2c138e81828a3da22da7b22815cefad6f2128c273e9a6b96296603aac35`; no provider key configured.
+
+**Historical snapshot:** the 2026-11-11 rows below were taken at HEAD `1129349` / product `806251b`, schema 24, and are not current-release evidence.
 
 **Rule:** a file here proves only what its receipt says. A PASS on a dirty tree is not a release proof; a scale harness is not a live provider run; a screenshot is not a click-through.
 
@@ -15,5 +17,5 @@
 | `install-ui-1440x900.png`, `install-ui-375x812.png` | release server UI | Rendering at both viewports; 8-template library visible at 1440 | Installed-launcher window; every interaction |
 | `ui-splash.png`, `ui-splash-375.png`, `ui-polished-final.png` | earlier UI receipts | Splash/connected UI rendering | Current build behavior |
 
-**Current build identity:** product commit `806251b`; package SHA-256 `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`; server SHA-256 `D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`.
+**Historical build identity:** product commit `806251b`; package SHA-256 `B4BAC18D29560D5C63404649C2953E359FFC6170C1214A3AA1B54DE127811061`; server SHA-256 `D9D7690287E5D9D84CF655525690983A1F109D625EFD7CFD7168CD2529732C78`.
 **Truth audit:** `docs/audit/HIVEMIND-TRUTH-AND-ROADMAP-2026-11-10.md`.

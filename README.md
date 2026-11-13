@@ -178,11 +178,16 @@ the current index is [INDEX.md](docs/evidence/live/INDEX.md). Health is
 
 ## 6. EVO-GATE and learning — real but partial
 
-The root may record a proposal with `applied:false` and
-`requires_human_review:true`. Four designated SuperAgent seats plus the operator
-must authorize it. Before a lesson line can be appended, the operator must place
-a held-out evaluation receipt at
+The legacy proposal path (`applied:false`, `requires_human_review:true`) still
+requires four designated SuperAgent seats plus the operator. Before its lesson
+line can be appended, the operator must place a held-out evaluation receipt at
 `<data_dir>/evolution/eval/<proposal>/receipt.json`.
+
+The newer CAP-9 lesson-candidate path is different and deliberately weaker:
+activation requires two **passing executed-eval receipts for the same suite/case**
+(not four votes and not a held-out receipt), and rollback appends a tombstone
+that removes the lesson from the prompt set. It does not run a non-inferiority
+comparison yet.
 
 The gate validates schema/proposal binding, ≥8 tasks, task-set/evaluator/artifact
 hashes, confidence intervals and `candidate.ci_lower > baseline.ci_upper`; boot
@@ -251,8 +256,10 @@ Codex, Grok Build, or Antigravity**. It now has local sessions, a checkpoint
 journal for approved file mutations, a repo-index module, and a registered
 coding tool surface and bounded repo-context injection, with a mounted
 read-only file tree/editor, packaged headless CLI and read-only MCP stdio, but it
-still lacks diff review, terminal/PTY, plan/todo and MCP mutation tools; its
-monitor is review-only and its learning loop is not executed-eval gated.
+still lacks hunk-level diff review, terminal/PTY, agent-facing todo tools and
+MCP mutation tools; its monitor is review-only. The CAP-9 lesson path is
+executed-eval gated (two comparable passing receipts), while the legacy EVO-GATE
+path remains held-out-receipt gated.
 
 The mandatory-first capability plan is
 [HIVEMIND-FINISH-PLAN-v3.md](docs/plans/HIVEMIND-FINISH-PLAN-v3.md) §0, with the detailed

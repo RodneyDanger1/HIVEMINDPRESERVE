@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUiStore } from '../state/context';
 import { STRINGS } from '../state/strings';
 import { approvalActionsEnabled } from '../state/approval';
+import { ApprovalPreview } from './ApprovalPreview';
 
 export const APPROVAL_DECISIONS = { approve: 'approve', deny: 'deny' } as const;
 export type ApprovalDecision = (typeof APPROVAL_DECISIONS)[keyof typeof APPROVAL_DECISIONS];
@@ -388,11 +389,13 @@ export function ApprovalOverlay() {
                 </dd>
 
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.fields.argsPreview}</dt>
-                <dd
-                  className="type-mono-code max-h-28 overflow-auto whitespace-pre-wrap break-words text-ink-900"
-                  title={view.argsPreview ?? UNKNOWN_VALUE}
-                >
-                  {view.argsPreview ?? UNKNOWN_VALUE}
+                <dd className="min-w-0">
+                  {/*
+                   * Structured, display-only review. A missing preview stays the
+                   * honest "preview unavailable" state; this component never
+                   * touches the approve/deny policy gating below.
+                   */}
+                  <ApprovalPreview tool={view.tool} argsPreview={view.argsPreview} />
                 </dd>
 
                 <dt className="type-mono-meta text-meta">{STRINGS.approval.fields.runId}</dt>
