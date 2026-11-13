@@ -697,6 +697,10 @@ pub fn build_router(state: Arc<AppState>) -> Router {
             "/api/sessions/{session_id}/todos",
             get(session_todos).post(session_todo_add),
         )
+        .route(
+            "/api/sessions/{session_id}/todos/{todo_id}/state",
+            post(session_todo_state),
+        )
         .route("/api/sessions/{session_id}/policy", post(session_policy))
         .route("/api/history/runs", get(history_runs))
         .route("/api/history/runs/{run_id}/revisions", get(history_revisions))
@@ -1185,6 +1189,27 @@ async fn session_todo_add(
     match store.add_todo(&session_id, text) {
         Ok(todo) => (StatusCode::CREATED, Json(todo)).into_response(),
         Err(refusal) => refusal_response(StatusCode::BAD_REQUEST, &refusal),
+    }
+}
+
+async fn session_todo_state(
+    State(state): State<Arc<AppState>>,
+    Path((session_id, todo_id)): Path<(String, String)>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let Some(state_name) = body.get("state").and_then(serde_json::Value::as_str) else {
+        return refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid);
+    };
+    let store = crate::store::RunStore::new(state.db.clone());
+    match store.set_todo_state(&session_id, &todo_id, state_name) {
+        Ok(todo) => (StatusCode::OK, Json(todo)).into_response(),
+        Err(Refusal::DecisionRequired) => {
+            refusal_response(StatusCode::NOT_FOUND, &Refusal::DecisionRequired)
+        }
+        Err(Refusal::SchemaInvalid) => {
+            refusal_response(StatusCode::BAD_REQUEST, &Refusal::SchemaInvalid)
+        }
+        Err(refusal) => refusal_response(StatusCode::SERVICE_UNAVAILABLE, &refusal),
     }
 }
 

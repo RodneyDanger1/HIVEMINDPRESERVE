@@ -57,6 +57,27 @@ export function SessionTodos() {
     void load();
   }, [connection, load]);
 
+  const setState = async (todo: Todo, state: 'open' | 'done'): Promise<void> => {
+    if (!sessionId || busy) return;
+    setBusy(true);
+    try {
+      const response = await todoRequest(
+        `/api/sessions/${encodeURIComponent(sessionId)}/todos/${encodeURIComponent(todo.id)}/state`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ state }),
+        },
+      );
+      if (!response.ok) throw new Error(`todo state returned ${response.status}`);
+      await load();
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'todo update failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const add = async (): Promise<void> => {
     const text = draft.trim();
     if (!text || !sessionId || busy || text.length > 4_000) return;
@@ -101,6 +122,14 @@ export function SessionTodos() {
               <span className="type-mono-meta shrink-0 text-[10px] text-meta">{todo.seq}</span>
               <span className="min-w-0 flex-1 text-[12px] text-ink-900">{todo.text}</span>
               <span className="type-mono-meta shrink-0 text-[10px] text-meta">{todo.state}</span>
+              <button
+                type="button"
+                className="type-mono-meta shrink-0 rounded-[4px] border border-hairline px-1 py-0.5 text-[10px] text-ink-700 disabled:opacity-50"
+                disabled={busy}
+                onClick={() => void setState(todo, todo.state === 'done' ? 'open' : 'done')}
+              >
+                {todo.state === 'done' ? 'Reopen' : 'Done'}
+              </button>
             </li>
           ))}
         </ul>

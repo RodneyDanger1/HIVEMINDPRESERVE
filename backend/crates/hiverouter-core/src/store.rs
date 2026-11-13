@@ -712,6 +712,75 @@ impl RunStore {
         Ok(todos.pop().unwrap_or(todo))
     }
 
+    /// Moves one todo to open/done/cancelled and journals the change.
+    pub fn set_todo_state(
+        &self,
+        session_id: &str,
+        todo_id: &str,
+        state: &str,
+    ) -> Result<Todo, Refusal> {
+        if !matches!(state, "open" | "done" | "cancelled") {
+            return Err(Refusal::SchemaInvalid);
+        }
+        self.session(session_id)?;
+        let now = Timestamp::now();
+        let changed = self
+            .db
+            .with_connection(|connection| {
+                let transaction = connection.unchecked_transaction()?;
+                let changed = transaction.execute(
+                    "UPDATE todos SET state = ?3 WHERE id = ?1 AND session_id = ?2",
+                    params![todo_id, session_id, state],
+                )?;
+                if changed == 0 {
+                    return Err(rusqlite::Error::QueryReturnedNoRows);
+                }
+                transaction.execute(
+                    "INSERT INTO session_events(id, session_id, kind, detail_json, created_at)
+                     VALUES (?1, ?2, 'todo_state_changed', ?3, ?4)",
+                    params![
+                        Uuid::now_v7().to_string(),
+                        session_id,
+                        serde_json::json!({ "todo_id": todo_id, "state": state }).to_string(),
+                        now.as_str()
+                    ],
+                )?;
+                transaction.commit()?;
+                Ok(())
+            })
+            .map_err(map);
+        if changed.is_err() {
+            return Err(Refusal::DecisionRequired);
+        }
+        self.todo(session_id, todo_id)?
+            .ok_or(Refusal::DecisionRequired)
+    }
+
+    /// Reads one todo, or `None` when it does not belong to the session.
+    pub fn todo(&self, session_id: &str, todo_id: &str) -> Result<Option<Todo>, Refusal> {
+        self.db
+            .with_connection(|connection| {
+                connection
+                    .query_row(
+                        "SELECT id, session_id, seq, text, state, created_at FROM todos
+                         WHERE id = ?1 AND session_id = ?2",
+                        params![todo_id, session_id],
+                        |row| {
+                            Ok(Todo {
+                                id: row.get(0)?,
+                                session_id: row.get(1)?,
+                                seq: row.get::<_, i64>(2)? as u64,
+                                text: row.get(3)?,
+                                state: row.get(4)?,
+                                created_at: timestamp_at(row, 5, "created_at")?,
+                            })
+                        },
+                    )
+                    .optional()
+            })
+            .map_err(map)
+    }
+
     /// Lists session todos in order.
     pub fn todos(&self, session_id: &str) -> Result<Vec<Todo>, Refusal> {
         self.db

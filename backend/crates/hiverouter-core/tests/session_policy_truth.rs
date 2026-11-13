@@ -496,6 +496,31 @@ async fn session_todo_routes_add_list_and_refuse_unknown_sessions() {
     assert_eq!(status, 200);
     assert_eq!(list["todos"].as_array().map(Vec::len), Some(1));
     assert_eq!(list["todos"][0]["text"], "inspect the failing test");
+    let todo_id = todo["id"].as_str().expect("todo id");
+
+    let (status, done) = post(
+        &server,
+        &format!("/api/sessions/{session_id}/todos/{todo_id}/state"),
+        &json!({ "state": "done" }),
+    )
+    .await;
+    assert_eq!(status, 200, "todo done: {done:?}");
+    assert_eq!(done["state"], "done");
+    let (status, reopened) = post(
+        &server,
+        &format!("/api/sessions/{session_id}/todos/{todo_id}/state"),
+        &json!({ "state": "open" }),
+    )
+    .await;
+    assert_eq!(status, 200, "todo reopen: {reopened:?}");
+    assert_eq!(reopened["state"], "open");
+    let (status, refusal) = post(
+        &server,
+        &format!("/api/sessions/{session_id}/todos/{todo_id}/state"),
+        &json!({ "state": "bogus" }),
+    )
+    .await;
+    assert_eq!(status, 400, "unknown todo state: {refusal:?}");
 
     let (status, refusal) = post(
         &server,
